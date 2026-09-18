@@ -4,7 +4,7 @@
 //
 // Deterministisch: bei fehlender Priorität greift ein fester Fallback (erste zulässige Option), damit
 // zwei Läufe mit demselben Seed nur an der ablatierten Stelle divergieren.
-import { randomPolicy, canAddSkill } from "./random.js";
+import { randomPolicy, canAddSkill, atDoors, bestDoor } from "./random.js";
 import { greedyFormationStep, frontLoadFormationStep } from "../formation.js";
 import { perkOptionId, perkActionFor } from "../families-policy.js";
 import { VABANQUE_TRICKS } from "../../src/game/constants.js";
@@ -22,12 +22,14 @@ import { VABANQUE_TRICKS } from "../../src/game/constants.js";
 // architectGreedy: die Architekt-Phase mit der planenden Greedy-Policy statt zufällig bauen. Default AUS (Bestand),
 //   ABER für alles Gebäude-Bezogene Pflicht: mit Zufallsbau werden Strukturen kaum geschlossen und der Baufeld-Deckel
 //   nie erreicht → Gebäude-Perks (Richtfest/Bauhütte, Familien mit needsArchitect) messen sich systematisch auf 0.
-export function fixedPolicy(priority, { drop = null, solveFormations = false, frontLoad = false, gate = null, architectGreedy = false } = {}) {
+// exclude: ids, die NIE gewählt werden (mehrere Ablationen zugleich — z. B. „Feuer ohne jeden Hitze-Verstärker").
+export function fixedPolicy(priority, { drop = null, exclude = [], solveFormations = false, frontLoad = false, gate = null, architectGreedy = false } = {}) {
   const base = randomPolicy({ architectGreedy });
   const rank = new Map(priority.map((id, i) => [id, i]));
   const openTricks = typeof frontLoad === "number" ? frontLoad : VABANQUE_TRICKS;
-  // Gesperrt = ablatiert (drop) ODER durch das Pick-Zeitfenster (gate) noch nicht freigegeben.
-  const blocked = (id, s) => id === drop || (!!gate && id === gate.id && (s.cycle || 0) < gate.fromCycle);
+  const never = new Set([drop, ...(exclude || [])].filter(Boolean));
+  // Gesperrt = ablatiert (drop/exclude) ODER durch das Pick-Zeitfenster (gate) noch nicht freigegeben.
+  const blocked = (id, s) => never.has(id) || (!!gate && id === gate.id && (s.cycle || 0) < gate.fromCycle);
   const bestOf = (ids, s) => {
     let best = null, bestR = Infinity;
     for (const id of ids) {
@@ -37,12 +39,19 @@ export function fixedPolicy(priority, { drop = null, solveFormations = false, fr
     }
     return best; // null, wenn keine id priorisiert (dann Fallback beim Aufrufer)
   };
-  const tag = [drop && `drop=${drop}`, gate && `gate=${gate.id}@${gate.fromCycle}`, frontLoad && "frontload"].filter(Boolean).join(",");
+  const tag = [drop && `drop=${drop}`, exclude && exclude.length && `exclude=${exclude.length}`, gate && `gate=${gate.id}@${gate.fromCycle}`, frontLoad && "frontload"].filter(Boolean).join(",");
   return {
     name: tag ? `fixed(${tag})` : "fixed",
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
+          // exp skill rework: die Tür mit dem bestpriorisierten wählbaren Skill (kleinster Rang gewinnt); nichts priorisiert →
+          // die erste Tür mit einem wählbaren Skill, sonst Tür 0. Deterministisch, damit Ablationspaare nur an der Ablation divergieren.
+          if (atDoors(s)) return { type: "CHOOSE_DOOR", index: bestDoor(s, (ids) => {
+            const ok = ids.filter((id) => !blocked(id, s) && canAddSkill(s, id));
+            if (!ok.length) return -Infinity;
+            return -Math.min(...ok.map((id) => (rank.has(id) ? rank.get(id) : Infinity)));
+          }) };
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => !blocked(id, s) && canAddSkill(s, id));
             const pick = bestOf(addable, s) ?? addable[0];

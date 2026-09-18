@@ -5,7 +5,7 @@
 //                            Wert bleibt, Grün/Wachstum gehen bei Deaktivierung verloren).
 // Rest (Formation greedy, Gletscher-Ziel, Präzision-Perks) wie factionPolicy — apfel-zu-apfel.
 import { archetypeOf, isLegendarySkill } from "../../src/game/skills.js";
-import { randomPolicy, canAddSkill } from "./random.js";
+import { randomPolicy, canAddSkill, atDoors, bestDoor } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
 import { isFamilyOffer, perkActionFor } from "../families-policy.js";
 
@@ -16,6 +16,11 @@ export function pivotPolicy(primary, secondary, { pivotCycle = 22, keepPrimary =
   return {
     name: `pivot:${primary}->${secondary}@${pivotCycle}k${keepPrimary}`,
     act(s, rng, mem) {
+      // exp skill rework: an der Tür zählt die Fraktion der aktuellen Phase (vor dem Pivot primary, danach secondary).
+      if (atDoors(s)) {
+        const want = s.cycle < pivotCycle ? primary : secondary;
+        return { type: "CHOOSE_DOOR", index: bestDoor(s, (ids) => ids.filter((id) => archetypeOf(id) === want && !s.skills.includes(id)).length) };
+      }
       if (s.phase === "levelup" && s.skillOffer) {
         const heldPrimary = s.skills.filter((id) => archetypeOf(id) === primary && !isLegendarySkill(id));
         const offerAdd = (arch) => s.skillOffer.filter((id) => canAddSkill(s, id) && archetypeOf(id) === arch);

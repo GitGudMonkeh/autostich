@@ -2,9 +2,12 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, glacierOpts, ROLES, RESET_TO } from "../src/game/glacier.js";
+import { precomputeGlacier, ROLES, BURST_AT, THRESHOLDS, TIER_MULT, KEEP_MAX } from "../src/game/glacier.js";
+import { iceSnapshotOpts, iceTuning } from "../src/game/factions/ice.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
 
-// Eis-Neudesign Phase 3.2 Gruppe A — Snapshot-Modifikatoren (Rissbildung/Zermalmen/Abbruchkante).
+
+// Eis-Neudesign Phase 3.2 Gruppe A — Snapshot-Modifikatoren (Rissbildung/Abbruchkante). §5.2: Zermalmen gestrichen.
 // Getrieben über state.glacierRoles (noch nicht im Skill-Angebots-Pool → kein 5.-Archetyp-Leak). Werte Platzhalter.
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
@@ -18,53 +21,101 @@ const scen = (over = {}) => ({
   activeArchetypes: ["ice"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
 });
 
-describe("glacierOpts — Rollen → Snapshot-opts", () => {
+describe("iceSnapshotOpts — Rollen und Stufe → Snapshot-opts", () => {
   it("baut opts nur für aktive Rollen, komponiert additiv", () => {
-    expect(glacierOpts([])).toEqual({});
-    expect(glacierOpts([ROLES.RISSBILDUNG])).toHaveProperty("burstAt");
-    const all = glacierOpts([ROLES.RISSBILDUNG, ROLES.ZERMALMEN, ROLES.ABBRUCHKANTE]);
+    expect(iceSnapshotOpts([])).toEqual({});
+    expect(iceSnapshotOpts([ROLES.EISBEBEN]).eisbebenPer).toBe(EIS.eisbeben[0].per);
+    const all = iceSnapshotOpts([ROLES.EISBEBEN, ROLES.ABBRUCHKANTE]);
+    expect(all).toHaveProperty("eisbebenPer");
     expect(all).toHaveProperty("burstAt");
-    expect(all).toHaveProperty("kollisionMult");
-    expect(all).toHaveProperty("tierMult");
+  });
+  /* §5.31: die Abbruchkante ist die EINZIGE Quelle für `burstAt` — und sie HEBT die Schwelle (sammeln), sie senkt sie
+     nie. §5.18 hatte mit der Rissbildung die letzte senkende Quelle gestrichen; das muss so bleiben, sonst bricht ein
+     Gletscher früher als sein Text sagt. */
+  it("nur die Abbruchkante setzt die Berst-Schwelle — und sie hebt sie", () => {
+    for (const role of Object.values(ROLES)) {
+      const opts = iceSnapshotOpts([role]);
+      if (role === ROLES.ABBRUCHKANTE) expect(opts.burstAt).toBeGreaterThan(BURST_AT);
+      else expect(opts).not.toHaveProperty("burstAt");
+    }
+    // und jede Stufe hebt weiter als die davor
+    for (let t = 1; t < EIS.abbruchkante.length; t++) expect(EIS.abbruchkante[t].at).toBeGreaterThan(EIS.abbruchkante[t - 1].at);
   });
 });
 
-describe("Rissbildung — senkt die Berst-Schwelle (Tempo)", () => {
-  it("bricht schon bei Masse 6 (statt erst ab 12)", () => {
+/* §5.18 — Gletscherzunge ersetzt Rissbildung auf SK_ICE_13: Masse wird Kampfwert. Der Hebel ist der Grund, warum Eis
+   überhaupt Stiche gewinnen kann; der Bruch bekommt den vollen Sieg-Stack nur bei einem Sieg. */
+describe("Gletscherzunge — Masse wird Kampfwert", () => {
+  it("gewinnt einen Stich, den dieselbe Karte ohne sie verliert", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = 6;
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const riss = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.RISSBILDUNG] }), noCrit);
-    expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0); // Masse 6 < 12: hält
-    expect(riss.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0);
+    const glacierMass = zeros(); glacierMass[0] = 12;   // Normal: 12 / 6 = +2 Wert
+    const opp = oppOf(13);                              // Kartenwert an pos0 ist 12 → ohne Zunge zu wenig
+    const ohne = resolveTrick(scen({ glacierLocked, glacierMass, oppDeck: opp }), noCrit);
+    const mit = resolveTrick(scen({ glacierLocked, glacierMass, oppDeck: opp, glacierRoles: [ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(ohne.lastTrick.result).toBe("loss");
+    expect(mit.lastTrick.result).toBe("win");
+    expect(mit.lastTrick.pValue - ohne.lastTrick.pValue).toBe(2); // genau der Satz der Stufe
   });
-});
 
-describe("Zermalmen — Kollision stärker", () => {
-  it("mit Gletscher-Nachbar größerer Burst als ohne Zermalmen", () => {
-    const glacierLocked = falses(); glacierLocked[0] = true; glacierLocked[1] = true; // Nachbarn (pos 0,1 = Zeile 0)
-    const glacierMass = zeros(); glacierMass[0] = 12; glacierMass[1] = 12;
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const zerm = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.ZERMALMEN] }), noCrit);
-    expect(zerm.lastTrick.breakdown.glacierDirect).toBeGreaterThan(base.lastTrick.breakdown.glacierDirect);
-  });
-});
-
-describe("Abbruchkante — steilere Stufen", () => {
-  it("höhere Stufe zahlt mit Abbruchkante mehr als ohne", () => {
+  /* Die Naht, die beim Bauen zuerst falsch war: der Bruch-Abfall wird dem Feld VOR der Wertberechnung abgezogen. Wer
+     den laufenden Akkumulator liest, lässt den Gletscher ausgerechnet in seiner Bruchrunde mit +0 kämpfen — und das ist
+     die Runde, in der ein Sieg am meisten wert ist, weil der volle Sieg-Stack auf den Bruch geht. */
+  it("liest die Masse DIESES Durchlaufs, auch wenn der Gletscher im selben Stich birst", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = 12; // Stufe 3
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const abb = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.ABBRUCHKANTE] }), noCrit);
-    expect(abb.lastTrick.breakdown.glacierDirect).toBeGreaterThan(base.lastTrick.breakdown.glacierDirect);
+    const glacierMass = zeros(); glacierMass[0] = 12;   // birst in diesem Stich (Berst-Schwelle)
+    const opp = oppOf(13);
+    const s = resolveTrick(scen({ glacierLocked, glacierMass, oppDeck: opp, glacierRoles: [ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(s.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0); // er ist wirklich gebrochen
+    expect(s.lastTrick.result).toBe("win");                         // und hat trotzdem mit +2 gekämpft
+  });
+
+  it("ohne Masse kein Bonus — der Skill hängt an der Ressource, nicht am Besitz", () => {
+    const glacierLocked = falses(); glacierLocked[0] = true;
+    const ohne = resolveTrick(scen({ glacierLocked }), noCrit);
+    const mit = resolveTrick(scen({ glacierLocked, glacierRoles: [ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(mit.lastTrick.pValue).toBe(ohne.lastTrick.pValue);
   });
 });
 
-describe("Rissbildung — Abkalben nach frühem Bruch", () => {
-  it("bricht bei Masse 6 und kalbt auf RESET_TO zurück", () => {
-    const { resetMass, breaks } = precomputeGlacier(
-      (() => { const m = zeros(); m[0] = 6; return m; })(), new Set([0]), glacierOpts([ROLES.RISSBILDUNG]));
-    expect(breaks).toHaveLength(1);
-    expect(resetMass[0]).toBe(RESET_TO);
+/* §5.31: die Abbruchkante hebt die BERST-SCHWELLE, statt die Stufenwucht ein wenig anzuheben. Der Handel ist:
+   seltener bersten, dafür auf einer höheren Sprosse. Die drei Wächter halten beide Seiten des Handels fest. */
+describe("Abbruchkante — der Gletscher sammelt", () => {
+  const at0 = EIS.abbruchkante[0].at;
+
+  it("hält, wo er ohne sie schon bräche", () => {
+    const m = zeros(); m[0] = BURST_AT;                 // genau an der normalen Schwelle
+    expect(precomputeGlacier(m, new Set([0]), {}).breaks).toHaveLength(1);
+    expect(precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE])).breaks).toHaveLength(0);
+  });
+
+  it("birst an der eigenen Schwelle — und zahlt dort mehr als ein normaler Bruch", () => {
+    const m = zeros(); m[0] = at0;
+    const abb = precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE]));
+    const mNorm = zeros(); mNorm[0] = BURST_AT;
+    const norm = precomputeGlacier(mNorm, new Set([0]), {});
+    expect(abb.breaks).toHaveLength(1);
+    expect(abb.payout[0]).toBeGreaterThan(norm.payout[0]);
+    expect(abb.breaks[0].tier).toBeGreaterThan(norm.breaks[0].tier); // die höhere Sprosse ist der Gegenwert
+  });
+
+  /* §5.32: der Wächter zu einem gemessenen Fehler. Der erste Wurf legte die Schwellen ZWISCHEN die Sprossen der
+     Leiter (24 zählt noch zur vierten wie 18, 38 noch zur fünften wie 30). Dann kostet die höhere Stufe Wartezeit,
+     ohne Wucht zu bringen: Stufe 2 zahlte weniger als gar kein Skill, Episch weniger als Stufe 3 — der gierige
+     Spieler ließ ihn fallen (Haltequote 68 % → 20 %). Beide Bedingungen müssen gelten, nicht nur eine. */
+  it("jede Schwelle liegt AUF einer Sprosse, und die Auszahlung steigt mit der Stufe", () => {
+    const tOf = (m) => THRESHOLDS.filter((t) => m >= t).length;
+    // Auszahlung je Durchlauf und Punkt Einkommen: Masse × Wucht ÷ Kletterzeit von KEEP_MAX auf die Schwelle.
+    const proRunde = (B) => B * TIER_MULT[tOf(B)] / (B - KEEP_MAX);
+    for (const r of EIS.abbruchkante) expect(THRESHOLDS).toContain(r.at);
+    expect(proRunde(EIS.abbruchkante[0].at)).toBeGreaterThan(proRunde(BURST_AT)); // Normal lohnt gegen „kein Skill"
+    for (let t = 1; t < EIS.abbruchkante.length; t++)
+      expect(proRunde(EIS.abbruchkante[t].at)).toBeGreaterThan(proRunde(EIS.abbruchkante[t - 1].at));
+  });
+
+  it("die Stufe des Skills verschiebt die Schwelle weiter nach oben", () => {
+    const hoch = iceSnapshotOpts([ROLES.ABBRUCHKANTE], iceTuning([ROLES.ABBRUCHKANTE], { [ROLES.ABBRUCHKANTE]: 3 }));
+    expect(hoch.burstAt).toBe(EIS.abbruchkante[3].at);
+    const m = zeros(); m[0] = at0;                      // reicht für Normal, nicht für Episch
+    expect(precomputeGlacier(m, new Set([0]), hoch).breaks).toHaveLength(0);
   });
 });

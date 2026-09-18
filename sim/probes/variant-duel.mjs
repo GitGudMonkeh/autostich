@@ -1,0 +1,26 @@
+// Duell je Variante: eine Stufentabelle wird VOR dem Laden der Sim umgeschrieben (dieselbe Zeilen-Referenz wie
+// SKILL_DEFS[*].tiers), dann --mode duel mit 100 Läufen. So lassen sich Kennwerte messen, ohne den Code anzufassen.
+// VARIANT = Name aus `V` (Default aktuell); Konstanten dazu über SIM_*-Umgebungsvariablen. Neue Varianten: eine Zeile in `V`.
+// Beispiel (§7.23): die Ladungsserie-Sätze ÷2, ÷4, ÷10 gegen den Stand davor.
+import { BLITZ_TIERS as B, FEUER_TIERS as F } from "../../src/game/skills.js";
+const V = {
+  aktuell:       () => {},
+  serieHalf:     () => { [0.5, 0.75, 1, 1.25].forEach((v, i) => { B.serie[i].critPerStreak = v / 100; }); },
+  serieQuarter:  () => { [0.25, 0.5, 0.75, 1].forEach((v, i) => { B.serie[i].critPerStreak = v / 100; }); },
+  feuerlinieKost5: () => { F.feuerlinie.forEach((r) => { r.cost = 5; }); },
+  // §7.27 Brandschneise: Satz und Breite sind die zwei Regler der Bauform a (Default 3/4/5/6 Positionen, ×1,5).
+  schneise2:     () => { F.schneise.forEach((r) => { r.mult = 2; }); },
+  schneise25:    () => { F.schneise.forEach((r) => { r.mult = 2.5; }); },
+  schneise3:     () => { F.schneise.forEach((r) => { r.mult = 3; }); },
+  schneiseBreit: () => { [5, 6, 7, 8].forEach((v, i) => { F.schneise[i].width = v; }); },
+  schneiseBreit2: () => { [5, 6, 7, 8].forEach((v, i) => { F.schneise[i].width = v; }); F.schneise.forEach((r) => { r.mult = 2; }); },
+  // §7.28 Lichtbogen: der Satz je Stapel ist der einzige Regler (Startwert 0,5 / 1 / 1,5 / 2 % je Stapel).
+  bogenHalb:     () => { [0.0025, 0.005, 0.0075, 0.01].forEach((v, i) => { B.lichtbogen[i].critPerStack = v; }); },
+  bogenDoppelt:  () => { [0.01, 0.02, 0.03, 0.04].forEach((v, i) => { B.lichtbogen[i].critPerStack = v; }); },
+};
+const names = (process.env.VARIANT || "aktuell").split(",").map((s) => s.trim()).filter(Boolean);
+for (const n of names) { if (!V[n]) { console.error(`unbekannte Variante ${n} — bekannt: ${Object.keys(V).join(", ")}`); process.exit(1); } V[n](); }
+const env = Object.entries(process.env).filter(([k]) => k.startsWith("SIM_")).map(([k, v]) => `${k}=${v}`).join(" ");
+console.log(`Variante ${names.join("+")}${env ? ` (${env})` : ""}`);
+const { runDuel } = await import("../duel.js");
+runDuel({ arg: (n, d) => (n === "--runs" ? String(process.env.RUNS || 100) : d), seed0: 1 });

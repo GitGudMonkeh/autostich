@@ -16,7 +16,7 @@ import { RARE, EPIC } from "./enTerms.js";
 export default {
   /* ---- Upgrade tree · branches ---- */
   "branch.deck.name": "Decks",   // in beiden Sprachen dasselbe Wort
-  "branch.deck.desc": "Archetypes & legendaries",
+  "branch.deck.desc": "Factions & legendaries",
   "branch.gen.name": "General",
   "branch.gen.desc": "Build space · energy · rarity · drops",
 
@@ -32,19 +32,19 @@ export default {
   "node.boltLeg2.label": "Legendary II",
   "node.boltLeg2.detail": "2 lightning candidates",
   "node.iceDeck.label": "Ice deck",
-  "node.iceDeck.detail": "Ice archetype playable",
+  "node.iceDeck.detail": "Ice faction playable",
   "node.iceLeg1.label": "Legendary I",
   "node.iceLeg1.detail": "1 ice candidate in the legendary phase",
   "node.iceLeg2.label": "Legendary II",
   "node.iceLeg2.detail": "2 ice candidates",
   "node.plantDeck.label": "Plant deck",
-  "node.plantDeck.detail": "Plant archetype playable",
+  "node.plantDeck.detail": "Plant faction playable",
   "node.plantLeg1.label": "Legendary I",
   "node.plantLeg1.detail": "1 plant candidate in the legendary phase",
   "node.plantLeg2.label": "Legendary II",
   "node.plantLeg2.detail": "2 plant candidates",
   "node.deckReroll.label": "Reroll · legendary phase",
-  "node.deckReroll.detail": "+1 reroll in the archetype legendary phase",
+  "node.deckReroll.detail": "+1 reroll in the faction legendary phase",
   "node.synLeg.label": "Synergy legendaries",
   "node.synLeg.detail": "Coming soon",
 
@@ -95,7 +95,7 @@ export default {
   "weekmod.tightBuild.name": "Tight build",
   "weekmod.tightBuild.desc": `Only ${TIGHT_BUILD_COVER} build-space cells`,
   "weekmod.scarceSkills.name": "Skill scarcity",
-  "weekmod.scarceSkills.desc": "Only 1 skill per archetype",
+  "weekmod.scarceSkills.desc": "Only 1 skill per faction",
   "weekmod.scarcePerks.name": "Perk scarcity",
   "weekmod.scarcePerks.desc": "Only 1 perk per offer",
   "weekmod.noReroll.name": "No reroll",

@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { TOTAL_NODES, ownedCount, emptyProfile } from "../src/game/progression.js";
 
 /* ============================================================
    #global — GLOBALE BESTENLISTE
@@ -27,20 +26,17 @@ import { TOTAL_NODES, ownedCount, emptyProfile } from "../src/game/progression.j
    (`boardMode && \(\n\s*<div …`), finden dann nichts und melden einen Umbau, den es nie gab.
    Gleiche Naht wie in shop-scale.test.js. */
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
-/* Für die „nicht abgetippt"-Prüfung unten: Kommentare erklären die Zahl (und dürfen sie nennen),
-   Code darf sie nicht enthalten. Ohne das Strippen schlüge der Wächter am eigenen Fließtext an. */
-const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 const app = read("src/App.jsx");
 const screen = read("src/ui/LeaderboardScreen.jsx");
-const board = read("src/ui/GlobalLeaderboard.jsx");
 const stats = read("src/ui/RunStats.jsx");
 const detail = read("src/ui/RunDetail.jsx");
 
 describe("#global · die zwei Hub-Einstiege landen in verschiedenen Rollen", () => {
   it("der Ranglisten-Knopf öffnet den Spiel-Einstieg, Kachel und GameOver das Nachschlagen", () => {
     expect(app).toMatch(/onRankedBoard=\{\(\) => setShowLeaderboard\("ranked"\)\}/);
-    // Zwei Aufrufer für die Nachschlage-Rolle: die Hub-Kachel und der Bestenlisten-Knopf im GameOver.
-    expect((app.match(/onLeaderboard=\{\(\) => setShowLeaderboard\("board"\)\}/g) || []).length).toBe(2);
+    // Ein Aufrufer für die Nachschlage-Rolle: die Hub-Kachel. exp: der Bestenlisten-Knopf im GameOver stand in der
+    // Freischaltungs-Liste und ist mit der Meta-Progression gegangen.
+    expect((app.match(/onLeaderboard=\{\(\) => setShowLeaderboard\("board"\)\}/g) || []).length).toBe(1);
   });
 
   it("der Zustand wird als `mode` durchgereicht — sonst sähen beide Einstiege gleich aus", () => {
@@ -94,48 +90,7 @@ describe("#global · im Nachschlage-Modus wird nicht gespielt", () => {
   it("der Global-Reiter fährt fetchGlobalTop (kein `board`-Prop) und schaltet die Baum-Pille an", () => {
     const tab = /\{tab === "global" && \(([\s\S]*?)\n\s*\)\}/.exec(screen);
     expect(tab, "Global-Reiter nicht gefunden").toBeTruthy();
-    expect(tab[1]).toMatch(/showTree/);
     expect(tab[1], "ein `board`-Prop würde auf fetchBoardTop umschalten").not.toMatch(/\bboard=/);
-  });
-});
-
-describe("#global · Baumstand", () => {
-  it("der Nenner kommt aus progression.js, er wird nirgends abgetippt", () => {
-    /* Sonst zeigte die Pille nach einem neuen Knoten weiter „/27", während der Baum 28 hat — und das
-       fiele niemandem auf, weil nichts kaputtgeht. */
-    expect(board).toMatch(/import \{ TOTAL_NODES \} from "\.\.\/game\/progression\.js"/);
-    expect(stats).toMatch(/import \{ TOTAL_NODES \} from "\.\.\/game\/progression\.js"/);
-    expect(stripComments(board), "Nenner im Code abgetippt").not.toMatch(/\b27\b/);
-    expect(stripComments(stats), "Nenner im Code abgetippt").not.toMatch(/\b27\b/);
-    expect(TOTAL_NODES).toBeGreaterThan(0);
-  });
-
-  it("App.jsx veröffentlicht den Stand VOR der Wertung", () => {
-    /* `prevProfile`, nicht `nextProfile`: Der Lauf gehört zu dem Baum, mit dem er gespielt wurde — nicht
-       zu dem, den seine eigene Wertung gerade mitfinanziert hat. */
-    expect(app).toMatch(/tree_nodes: ownedCount\(prevProfile\)/);
-  });
-
-  it("ownedCount zählt gekaufte Knoten und verträgt ein leeres Profil", () => {
-    expect(ownedCount(emptyProfile())).toBe(0);
-    expect(ownedCount(null)).toBe(0);
-    expect(ownedCount(undefined)).toBe(0);
-  });
-
-  it("die Pille zeigt eine Lücke als Lücke, die Detailansicht blendet sie aus", () => {
-    /* Die bewusste Asymmetrie: In einer LISTE muss ein fehlender Wert sichtbar bleiben (sonst vergleicht
-       man Zeilen mit ungleicher Grundlage, ohne es zu merken), in der Einzelansicht ist Abwesenheit
-       einfach Abwesenheit — ein „kein Wert gespeichert"-Kasten wäre dort nur Rauschen. */
-    expect(board).toMatch(/board\.tree\.none\.title/);              // gestrichelte Pille mit Tooltip
-    expect(stats).toMatch(/if \(n == null\) return null;/);          // RunTreeBlock rendert dann gar nichts
-    expect(detail).toMatch(/<RunTreeBlock treeNodes=\{entry\.treeNodes\} \/>/);
-  });
-
-  it("die Baum-Pille erscheint NUR mit showTree", () => {
-    // Ranglisten-Läufe fahren auf fixer Baseline: dort ist der Baum wirkungslos, und eine Pille daneben
-    // behauptete einen Vorteil, den es in dieser Zeile nicht gab.
-    expect(board).toMatch(/\{showTree && <TreePill value=\{r\.tree_nodes\} \/>\}/);
-    expect(board).toMatch(/showTree = false/);                       // Default aus → Wochen-Board unberührt
   });
 });
 

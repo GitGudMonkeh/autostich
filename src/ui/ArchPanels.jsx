@@ -7,6 +7,7 @@ import { t, fmtNum } from "../i18n/index.js";
 import { WIED_F2, WIED_F3, WIED_F4, WIED_STEP, ESKALATION_STEP, OVERLAP_BONUS,
   FARBBLOCK_BASE, TREPPE_BASE, WECHSEL_BASE, MAX_TREPPE_STEP, WECHSEL_MIN_DIFF } from "../game/formations.js";
 import { FAMILY_DEFS } from "../game/families.js";
+import { plantParam, P as PLANT } from "../game/factions/plant.js"; // §6.26 Verwachsung: die Legende zeigt den gehobenen Überlappungsbonus
 
 // #UI: Geteilte Bausteine für Aufstellphase UND Chronik (eine Quelle → keine getrennte Pflege).
 const TIER_ROMAN = ["", "I", "II", "III", "IV"];
@@ -107,6 +108,9 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
 /* Referenz-Legende „Formationen & Rahmenfarben" — die ausführliche Fassung aus der Aufstellphase, jetzt geteilt mit der
    Chronik (statt einer eigenen Kurzfassung), damit beide dieselbe Erklärung zeigen. Eis-Legende hängt automatisch dran. */
 export function FormationLegend({ state = {}, className = "" }) {
+  // §6.26: Verwachsung hebt OVERLAP_BONUS. Die Legende rechnet mit — sonst zeigt sie andere Zahlen, als der Motor
+  // verrechnet (§6.23, derselbe Fehler bei Spalier). Ohne den Skill ist der Zuschlag 0 → Anzeige unverändert.
+  const ovp = plantParam(state.skills, state.skillTiers, PLANT.VERWACHSUNG, "bonus") || 0;
   return (
     <div className={className}>
       <div className="grid grid-cols-1 gap-y-0.5 text-body-5 sm:text-body-3 leading-snug font-medium">
@@ -120,7 +124,7 @@ export function FormationLegend({ state = {}, className = "" }) {
           </div>
         ))}
         <div style={{ color: "#d4a63a" }}>{t("archpanels.roleLegend")}</div>
-        <div style={{ color: "#d4a63a" }}>{t("formlegend.overlap", { f2: dfmt(OVERLAP_BONUS[2]), f3: dfmt(OVERLAP_BONUS[3]), f4: dfmt(OVERLAP_BONUS[4]) })}</div>
+        <div style={{ color: "#d4a63a" }}>{t("formlegend.overlap", { f2: dfmt(OVERLAP_BONUS[2] + ovp), f3: dfmt(OVERLAP_BONUS[3] + ovp), f4: dfmt(OVERLAP_BONUS[4] + ovp) })}</div>
         {/* Die vier Ziffern sind FARBIG (sie ZEIGEN die Rahmenfarbe) — deshalb steht der Satz in zwei Katalog-
             Schlüsseln statt in einem: eine Übersetzung mit Markup drin gäbe es sonst nur als HTML-String. */}
         <div style={{ color: "#9a9aa4" }}>{t("formlegend.frame")} (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — {t("formlegend.frame.hint")}</div>

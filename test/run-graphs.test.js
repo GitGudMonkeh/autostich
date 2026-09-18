@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RunGraphs, sourceShares } from "../src/ui/RunGraphs.jsx";
-import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js"; // #sprache: Sprache explizit setzen statt implizit annehmen
+import { setLocale, SOURCE_LOCALE, READY_LOCALE_IDS } from "../src/i18n/index.js"; // #sprache: Sprache explizit setzen statt implizit annehmen
+// exp: English is inactive on the playground (LOCALES in index.js) — the English render-checks sleep until it is ready again.
+const EN_OFF = !READY_LOCALE_IDS.includes("en");
 
 // #251: Score-Quellen-Zerlegung (Näherung, sequentiell geklemmt, Rest = „Sonstige").
 describe("RunGraphs sourceShares", () => {
@@ -47,7 +49,7 @@ describe("RunGraphs sourceShares", () => {
   });
 
   // Gegenprobe: dieselbe Ansicht auf Englisch — die Durchlauf-Abkürzung wechselt mit (D→C).
-  it("rendert dieselbe Ansicht auf Englisch", () => {
+  it.skipIf(EN_OFF)("rendert dieselbe Ansicht auf Englisch", () => {
     setLocale("en");
     const state = {
       score: 1000, formationScore: 300, critBonusScore: 200, buildingScore: 100, streakScore: 150,

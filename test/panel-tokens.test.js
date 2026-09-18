@@ -142,11 +142,9 @@ const FB_STATE_LITERALS = ["rgba(150, 150, 170, .12)", "#123a25", "#2f7a4f",
        wie M9s Kennungs-Box). #go-ruhe fuehrt den blauen Rahmen ausdruecklich unter "was NICHT
        angefasst ist"; er gehoert dem Architekten, nicht diesem Screen. */
 const GO_STATE_LITERALS = [
-  /* Gold / as-legendary */ "#1c1708", "#14110c", "#0c0c10", "#d4a63a55", "#1a1608", "#141019", "#3a2f12",
-  /* Ueberzug (M4-F03)  */ "rgba(8, 8, 12, .82)",
-  /* Hauch / darunter   */ "#ffffff0d", "#0e0e13",
-  /* Zustandspaare      */ "#3a1214", "#e05555", "#12313f", "#191922", "#241b34", "#6b4fa0",
-  /* Signale            */ "#5a8ade", "#5ec8f0", "#33333e",
+  /* exp: the earn rollup, the onboarding banner, the unlock list and the unlock window left the
+     screen with the meta-progression; their literals (#1c1708, #14110c, #d4a63a55, #1a1608, #141019, #3a2f12, rgba(8, 8, 12, .82), #0e0e13, #3a1214, #e05555, #241b34, #6b4fa0) went with them. */
+  "#ffffff0d", "#12313f", "#191922", "#5a8ade", "#5ec8f0", "#33333e",
 ];
 
 /* #menu-rework M5 — DER LEITFADEN. Fuenfzehn Literale, alle GEZAEHLT statt gepraegt, und die Grenze
@@ -174,14 +172,7 @@ const GO_STATE_LITERALS = [
      `#131318` ist die gewaehlte Reiterflaeche der Handy-Fassung (`.gd-tabs` ist ab 1280 px
        `display: none`), `#000` der Schlagschatten der Handy-Karte — beide unter 1280 px und damit
        in 2c dauerhaft ausgenommen. */
-const GD_STATE_LITERALS = [
-  /* M5-F02      */ "#2a2a33",
-  /* Balken      */ "#0c0c11", "#07070b", "#f4f2ff", "#cfefff",
-  /* Zeichen     */ "#0e0e13", "#33333e",
-  /* Steuerelem. */ "#20202a", "#3a3a4a",
-  /* Kaesten     */ "#1a1826", "#16161c", "#17151f",
-  /* Handy       */ "rgba(6,6,10,.66)", "#131318", "#000",
-];
+/* exp: GD_STATE_LITERALS (GuideOverlay's state literals) left with the file — the guide is out with the onboarding. */
 
 /* #menu-rework M6 — DAS GLOSSAR. Vier Literale, alle GEZAEHLT statt gepraegt, und alle vier stehen
    UNTER 1280 px oder in jeder Breite — die Datei setzt oberhalb des Bruchpunkts gar nichts mehr
@@ -262,7 +253,6 @@ const MIGRATED_JSX = [
      von Fundstellen abgeleitet. Ein Token traegt hier also oft den Wert dieses Screens, einen
      Schritt entfernt — was ihn migriert, macht das Vokabular an seiner Quelle wahr statt an einer
      Kopie. */
-  { path: "src/ui/UpgradeScreen.jsx" },
   /* #menu-rework M7 — DIE STATISTIK UND DAS LAUF-FENSTER, die zwei Screens, die dieser Auftrag
      GESTALTET. Die drei GETEILTEN Komponenten (`RunStats`, `RunGraphs`, `Sparkline`) kommen einen
      Commit spaeter dazu und sind dort ausdruecklich wertetreu umgestellt, nicht umgestaltet: ihr
@@ -298,13 +288,10 @@ const MIGRATED_JSX = [
        Media Query. Der Wert ist damit gleichzeitig der Wertetraeger der schmalen Fassung, und §2c
        nimmt alles unter 1280 px dauerhaft aus. Ihn umzustellen hiesse, das Handy zu bewegen, um einen
        Waechter gruen zu bekommen — dieselbe Lage wie M7s Ueberzug. Gemessen daneben: `--sf-glass` ist
-       ein Verlauf ueber zwei Stopps (.93/.95), dies ist eine flache Flaeche bei .5. */
-    "rgba(23,23,28,0.5)",
-    /* MENU-38, zwei von zwoelf. `.10` an derselben Bonus-Leiste, `.18` an der ruhenden Kante des
-       Kachel-Streifens. Beide rendern unter 1280 px mit, beide gehoeren der durchscheinenden
-       Kanten-Familie, die diese Runde RATSCHT statt einsammelt — und die Kanten-Ratsche weiter unten
-       zaehlt sie. Die anderen zwei dieses Screens (`.22`, `.25`) haben ihn in C3 verlassen. */
-    "rgba(150,150,170,0.10)", "rgba(150,150,170,.18)",
+       ein Verlauf ueber zwei Stopps (.93/.95), dies ist eine flache Flaeche bei .5.
+       exp: die Bonus-Leiste (rgba(23,23,28,0.5) und die .10-Kante) ist mit der Meta-Progression
+       gegangen; von MENU-38s zwei bleibt `.18` an der ruhenden Kante des Kachel-Streifens. */
+    "rgba(150,150,170,.18)",
   ] },
   { path: "src/ui/BrandGrid.jsx" },
   /* --- Der GETEILTE Teilbaum. Er steht hier als KOMPONENTEN, nicht als Ecken dieses Screens:
@@ -321,8 +308,8 @@ const MIGRATED_JSX = [
          gestrichelte Kante sagt „hier fehlt etwas absichtlich", ist also Signal, keine Struktur.
        PERMANENT — `#d4a63a` markiert einen legendaeren Skill. Gold ist eine Rollenfarbe
          (design-sprache.md §3) und steht in 2c unter „meaning-coded borders". */
-  { path: "src/ui/RunStats.jsx",
-    stateLiterals: ["#1e1e26", "#0e0e13", "#131318", "#2f2f3b", "#d4a63a"] },
+  { path: "src/ui/RunStats.jsx", // exp: "#1e1e26" (die Spur des Baum-Balkens) ging mit RunTreeBlock
+    stateLiterals: ["#0e0e13", "#131318", "#2f2f3b", "#d4a63a"] },
   { path: "src/ui/RunGraphs.jsx", stateLiterals: ["#0c0d14"],
     /* M7-G5 — `rounded-[2px]` und `rounded-[3px]` auf 9-px-Farbmarken. `--rd-sm` ist 6 px und machte
        aus einer 9-px-Marke fast einen Kreis; Tailwinds benannte Nachbarn sind 2 px und 4 px. Ein
@@ -358,13 +345,13 @@ const MIGRATED_JSX = [
   { path: "src/ui/LeaderboardScreen.jsx",
     stateLiterals: ["#0c0c10ee", "#26262e", "#17161f", "#131218", "#1c1b24", "#20202a"] },
   { path: "src/ui/GlobalLeaderboard.jsx",
-    stateLiterals: ["#26262e", "#15151d", "#3a3a48"],
+    stateLiterals: ["#26262e", "#3a3a48"],
     /* M8-G6 — `py-[1px]` polstert die ZWEI ZIFFERN der Baum-Pille gegen ihre eigene Kapsel. Das ist
        MENU-51 noch einmal, eine Sprosse kleiner: `--btn-pad-y` (0.625rem) ist das Zehnfache, und
        Tailwinds benannte Nachbarn sind 2 px (py-0.5) und 4 px (py-1) — es gibt kein 1. Die Pille
        steht in JEDER Breite, also waere „auf 2 px hoch" eine Bewegung der Handy-Fassung fuer einen
        gruenen Waechter. Gemeldet, nicht umgeschrieben — dritte Sichtung dieser Familie. */
-    utilExempt: ["py-[1px]"] },
+    utilExempt: [] }, // exp: `py-[1px]` ging mit der Baum-Pille
   { path: "src/ui/WeekMods.jsx", stateLiterals: ["#17161f", "#2a2833", "#1a1922"] },
   /* #menu-rework M9 — die drei kleinen Modals. Sie sind die reinsten Verbraucher der Modal-Schale im
      Baum und standen im Auftrag als BESTAETIGUNG, nicht als Entdeckung: haelt das Vokabular
@@ -384,7 +371,6 @@ const MIGRATED_JSX = [
      `RT` sind in dieser Datei definiert und gehoeren dazu. `DeckDetail`, `SkillSelect`, `CardGrid`
      und `FactionIcon` gehoeren ihr NICHT — dass der Screen sie rendert oder von ihnen gerendert
      wird, macht sie nicht zu seinen. */
-  { path: "src/ui/GuideOverlay.jsx", stateLiterals: GD_STATE_LITERALS },
   /* #menu-rework M6 — das Glossar. `GlossaryOverlay`, `GlossaryButton`, `GlossaryPanel`,
      `GlossaryText`, `NavRow`, `TermRow` und das `Chip` dieser Datei sind darin definiert und
      gehoeren dazu. DIE NEUN EINSTIEGE GEHOEREN IHR NICHT: dass `SkillSelect`, `PerkSelect`,
@@ -1541,7 +1527,7 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/modalStyle.jsx", () => inkOfJsx("src/ui/modalStyle.jsx"), 0],
     ["src/ui/OptionsModal.jsx", () => inkOfJsx("src/ui/OptionsModal.jsx"), 0],
     ["src/ui/optionsBits.jsx", () => inkOfJsx("src/ui/optionsBits.jsx"), 0],
-    ["src/ui/CustomizeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/CustomizeScreen.jsx"), 27],
+    ["src/ui/CustomizeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/CustomizeScreen.jsx"), 25], // exp: die DP-Anzeige im Kopf ist weg (−2)
     /* #menu-rework M4 — der Siegesbildschirm. Tinte ist unveraendert eine benannte Luecke des
        Vokabulars (2c, "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt
        gepraegt. Die Zahl ist hoch, weil dieser Screen der farbigste der Runde ist: jede Waehrung,
@@ -1551,7 +1537,7 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        ausschliesst: die Schale der drei randverankerten Screens ist EINE Regel
        (`.st-root, .lb-root, .go-root`), ihre Literale sind M7s und stehen oben in dessen Zeile. Eine
        Zahl, die zweimal gezaehlt wird, ist keine Messung. */
-    ["src/ui/GameOver.jsx (ganze Datei)", () => inkOfJsx("src/ui/GameOver.jsx"), 23],
+    ["src/ui/GameOver.jsx (ganze Datei)", () => inkOfJsx("src/ui/GameOver.jsx"), 6], // exp: Verdienst, Onboarding-Banner, Freischaltungen und Unlock-Fenster sind weg
     ["index.css — .go-* (M4, ohne die geteilten Schalen-Regeln)", () => inkOfCss([/\.go-/], [/\.st-/, /\.lb-/]), 11],
     /* #menu-rework M5 — der Leitfaden. Tinte ist weiterhin eine benannte Luecke des Vokabulars (2c,
        "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt gepraegt. Der
@@ -1561,7 +1547,6 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        `.st-` und M4 `.st-`/`.lb-` ausschliessen: die Sammelregeln des #eckig-Passes nennen `.gd-`
        neben `.up-`, `.gl-`, `.cz-`, `.st-` und `.lb-`, und ihre Werte gehoeren dem, der sie
        geschrieben hat. Eine Zahl, die zweimal gezaehlt wird, ist keine Messung. */
-    ["src/ui/GuideOverlay.jsx (ganze Datei)", () => inkOfJsx("src/ui/GuideOverlay.jsx"), 19],
     ["index.css — .gd-* (M5, ohne die geteilten Sammelregeln)", () => inkOfCss([/\.gd-/], [/\.up-/, /\.gl-/, /\.cz-/, /\.st-/, /\.lb-/]), 4],
     ["index.css — .op-* (M1)", () => inkOfCss([/\.op-/, /\.as-opt-/]), 16],
     ["index.css — .cz-* Schale (M2a)", () => inkOfCss(M2A_SHELL_SELECTORS), 2],
@@ -1570,7 +1555,6 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        dieses Auftrags: Tinte ist eine benannte Luecke des Vokabulars (2c, „What the vocabulary does
        not claim"), das Fenster ist zu, und der Baum ist der textreichste der migrierten Screens.
        Gezaehlt statt gepraegt — der Nachfolger erbt damit eine gemessene Zahl statt eines Eindrucks. */
-    ["src/ui/UpgradeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/UpgradeScreen.jsx"), 9],
     ["index.css — .up-* (M3)", () => inkOfCss([/\.up-(?!banner)/]), 35],
     /* #menu-rework M3 — DeckDetail.jsx wird GEZAEHLT, NICHT MIGRIERT, und das ist ein Befund (M3-F03),
        keine Bequemlichkeit.
@@ -1584,7 +1568,6 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        hiesse, die Handy-Fassung zu bewegen, um einen Waechter gruen zu bekommen.
        Die Ratsche kostet dagegen nichts und uebergibt M5 eine GEMESSENE Zahl statt eines Eindrucks —
        dieselbe Antwort, die MENU-38 und die Tinte schon bekommen haben: zaehlen, nicht praegen. */
-    ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => inkOfJsx("src/ui/DeckDetail.jsx"), 12],
     /* #menu-rework M7 — die zwei Screens, die dieser Auftrag gestaltet. Tinte ist eine benannte
        Luecke des Vokabulars (2c), das Fenster ist zu, und diese zwei Screens sind zahlen- und
        farbreich: jede Fraktion, jede Kategorie und jede Raritaet bringt ihre eigene mit. Gezaehlt
@@ -1606,15 +1589,15 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        als EINE Regel fuer beide Screens (`.st-eyebrow, .lb-eyebrow`, `.st-sub, .lb-sub`), und diese
        zwei Literale sind M7s — sie stehen oben in dessen Zeile. Ohne den Ausschluss stuende jedes
        von ihnen in zwei Ratschen, und eine Zahl, die zweimal gezaehlt wird, ist keine Messung. */
-    ["src/ui/LeaderboardScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/LeaderboardScreen.jsx"), 1],
-    ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => inkOfJsx("src/ui/GlobalLeaderboard.jsx"), 3],
+    ["src/ui/LeaderboardScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/LeaderboardScreen.jsx"), 0], // exp: die Sperr-Zeile der Rangliste ist weg
+    ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => inkOfJsx("src/ui/GlobalLeaderboard.jsx"), 2], // exp: die Baum-Pille ist weg
     ["src/ui/WeekMods.jsx (ganze Datei)", () => inkOfJsx("src/ui/WeekMods.jsx"), 0],
     ["index.css — .lb-* (M8, ohne die geteilten Kopf-Regeln)", () => inkOfCss([/\.lb-/], [/\.st-/]), 10],
     /* #mainscreen-branding C — DER MAINSCREEN. Tinte ist weiter eine benannte Luecke des Vokabulars
        (2c, "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt gepraegt.
        Die CSS-Zeile schliesst nichts aus: `.hub-`/`.as-hub-` und die vier neuen Familien gehoeren
        diesem Screen allein — kein anderer migrierter Screen traegt eine Regel darauf. */
-    ["src/ui/StartScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/StartScreen.jsx"), 4],
+    ["src/ui/StartScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/StartScreen.jsx"), 3], // exp: Bonus-Leiste und Baum-Kachel sind weg
     ["src/ui/BrandGrid.jsx (ganze Datei)", () => inkOfJsx("src/ui/BrandGrid.jsx"), 0],
     ["index.css — .hub-*/.as-hub-* und die Marke (C)",
       () => inkOfCss([/\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/, /\.as-brandgrid/, /\.as-bg-/, /\.as-week-chip/]), 9],
@@ -1672,7 +1655,7 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     /* Die Zahl der ganzen Datei steht bewusst neben den migrierten Einheiten: die Schale hat nur
        zwei Literale, aber M2b uebernimmt einen Screen mit siebenundzwanzig. Die Ratsche haelt die
        Zahl fest, BEVOR M2b anfaengt — das ist der ganze Sinn der Reihenfolge. */
-    expect(inkOfJsx("src/ui/CustomizeScreen.jsx", undefined)).toBe(27);
+    expect(inkOfJsx("src/ui/CustomizeScreen.jsx", undefined)).toBe(25); // exp: 27 minus die zwei Tinten der DP-Anzeige
   });
 });
 
@@ -1746,10 +1729,8 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        gezogen. Die JSX-Seite steht NICHT auf 0 — `panelStyle()` traegt eine, und die gehoert dem
        Zweig-Pfad unter 1280 px, den dieser Auftrag ausdruecklich nicht anfasst. Sie steht deshalb
        als gemessene Eins da statt als stillschweigende Null. */
-    ["src/ui/UpgradeScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/UpgradeScreen.jsx"), 1],
     ["index.css — .up-* (M3)", () => edgeOfCss([/\.up-(?!banner)/]), 0],
     /* Dieselbe Lage wie bei der Tinte: gezaehlt, nicht migriert — Begruendung dort. */
-    ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => edgeOfJsx("src/ui/DeckDetail.jsx"), 0],
     /* #menu-rework M7. Die CSS-Seite beider Screens steht auf null, und diese Null ist ein
        ERREICHTER Zustand: die durchsichtigen neutralen Kanten von `.st-box`, `.rd-bf`, `.rd-blist2`
        und den geteilten Kacheln sind auf `--ed-quiet` gezogen — dieselbe Umstellung, die M2a
@@ -1792,7 +1773,6 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        die Auskunft im Kopf, die Navigationszeile und die Notiz darunter, alle auf `--ed-quiet`.
        Diese Null ist ein ERREICHTER Zustand — dieselbe Umstellung, die M2a gemessen, M3 vierzehnmal,
        M7 viermal, M8 sechsmal und M4 fuenfmal gezogen hat. */
-    ["src/ui/GuideOverlay.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GuideOverlay.jsx"), 0],
     ["index.css — .gd-* (M5, ohne die geteilten Sammelregeln)", () => edgeOfCss([/\.gd-/], [/\.up-/, /\.gl-/, /\.cz-/, /\.st-/, /\.lb-/]), 0],
     /* #menu-rework M6. Beide Seiten stehen auf null. Die JSX-Seite stand von Anfang an dort — das
        Glossar hat seine Kanten nie durchsichtig-neutral inline gesetzt. Die CSS-Seite trug VIER und
@@ -1817,7 +1797,7 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        `.18` stehen weiter inline, weil sie unter 1280 px mitrendern und ein Inline-Style keine Media
        Query kennt. Vier also, gezaehlt und nicht gepraegt — die Familie wird von dem migriert, der
        `.as-edge-*` anfasst, und der bekommt hier eine Zahl statt eines Eindrucks. */
-    ["src/ui/StartScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/StartScreen.jsx"), 2],
+    ["src/ui/StartScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/StartScreen.jsx"), 1], // exp: die .10-Kante der Bonus-Leiste ist weg
     ["index.css — .hub-*/.as-hub-* und die Marke (C)",
       () => edgeOfCss([/\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/, /\.as-brandgrid/, /\.as-bg-/, /\.as-week-chip/]), 4],
     /* #menu-rework M11. Alle fuenf Einheiten stehen auf null, und DIESE Nullen sind ANWESENHEITEN und
@@ -1906,7 +1886,9 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        rendern unter 1280 px mit, wo diese Runde nichts bewegt, und alle sechs gehoeren einer Familie,
        die MENU-38 ausdruecklich RATSCHT statt einsammelt — sie gehoert dem, der `.as-edge-*` migriert,
        und der bekommt hier eine Zahl statt eines Eindrucks. */
-    const AUSNAHMEN = ["src/ui/UpgradeScreen.jsx (ganze Datei)", "src/ui/Sparkline.jsx (ganze Datei)",
+    /* exp: UpgradeScreen.jsx (M3's one edge in panelStyle) left with the meta-progression; its exception
+       and its counter-check went with the file. */
+    const AUSNAHMEN = ["src/ui/Sparkline.jsx (ganze Datei)",
       "src/ui/StartScreen.jsx (ganze Datei)", "index.css — .hub-*/.as-hub-* und die Marke (C)"];
     const rest = CAP.filter(([name]) => !AUSNAHMEN.includes(name));
     expect(rest.reduce((n, [, c]) => n + c(), 0), "eine migrierte Einheit traegt wieder eine Kante").toBe(0);
@@ -1914,11 +1896,6 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     /* Die Gegenprobe zu jeder Ausnahme: sie ist genau eine, und sie steht genau dort, wo die
        Begruendung sie behauptet. Waechst sie, oder wandert sie an eine andere Stelle, faellt diese
        Zeile — genau dafuer steht sie hier einzeln und nicht als „irgendwo eine". */
-    const up = strip(read("src/ui/UpgradeScreen.jsx"));
-    expect(edgeIn(up), "die benannte Ausnahme ist nicht mehr genau eine").toBe(1);
-    const ps = up.match(/const panelStyle[\s\S]*?\n\}\);/);
-    expect(ps, "panelStyle nicht mehr gefunden").toBeTruthy();
-    expect(edgeIn(ps[0]), "die eine Kante steht nicht mehr in panelStyle").toBe(1);
 
     /* #menu-rework M7 — DIE ZWEITE AUSNAHME IST KEINE KANTE, und deshalb steht sie hier statt in
        einer Umschreibung des Suchausdrucks. `Sparkline.jsx` schreibt `rgba(150, 150, 170, .12)`
@@ -1933,9 +1910,9 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        jede steht genau dort, wo die Begruendung sie behauptet, und die Alphas sind einzeln genannt.
        Waechst eine, oder taucht ein siebtes Alpha auf, faellt diese Zeile. */
     const ss = strip(read("src/ui/StartScreen.jsx"));
-    expect(edgeIn(ss), "der Mainscreen traegt nicht mehr genau zwei Inline-Kanten").toBe(2);
+    expect(edgeIn(ss), "der Mainscreen traegt nicht mehr genau eine Inline-Kante (exp: die Bonus-Leiste ist weg)").toBe(1);
     const ssAlphas = [...ss.matchAll(EDGE_NEUTRAL)].map((m) => m[0].match(/,\s*([0-9.]+)\s*\)/)[1]).sort();
-    expect(ssAlphas, "die zwei inline gebliebenen Alphas sind nicht mehr .10 und .18").toEqual([".18", "0.10"].sort());
+    expect(ssAlphas, "das eine inline gebliebene Alpha ist nicht mehr .18").toEqual([".18"]);
     const cssAlphas = all
       .filter(([sel]) => [/\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/,
         /\.as-brandgrid/, /\.as-bg-/, /\.as-week-chip/].some((r) => r.test(sel)))

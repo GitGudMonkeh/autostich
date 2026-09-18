@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { fmtScore, fmtScoreShort } from "../src/ui/format.js";
-import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+import { setLocale, SOURCE_LOCALE, READY_LOCALE_IDS } from "../src/i18n/index.js";
+// exp: English is inactive on the playground (LOCALES in index.js) — the English render-checks sleep until it is ready again.
+const EN_OFF = !READY_LOCALE_IDS.includes("en");
 
 /* #347/6: Grenzwert-Logik der Score-Formatierer — floort (nicht rundet), Tausendertrennung,
    Mio/Mrd/Bio-Schwellen.
@@ -22,7 +24,7 @@ describe("fmtScore (voller Score, FLOOR + Trennzeichen)", () => {
     expect(fmtScore(NaN)).toBe("0");
     expect(fmtScore("abc")).toBe("0");
   });
-  it("englisch: Komma als Tausendertrenner", () => {
+  it.skipIf(EN_OFF)("englisch: Komma als Tausendertrenner", () => {
     setLocale("en");
     expect(fmtScore(1234)).toBe("1,234");
     expect(fmtScore(1_000_000)).toBe("1,000,000");
@@ -49,7 +51,7 @@ describe("fmtScoreShort (kompakt, Mio/Mrd/Bio)", () => {
     expect(fmtScoreShort(-1_500_000)).toBe("-1,5 Mio.");
   });
   // Englisch kürzt anders ab: M/B/T direkt angehängt, Punkt als Dezimaltrenner (Genre-Konvention).
-  it("englisch: M/B/T ohne Abstand, Dezimalpunkt", () => {
+  it.skipIf(EN_OFF)("englisch: M/B/T ohne Abstand, Dezimalpunkt", () => {
     setLocale("en");
     expect(fmtScoreShort(12_345)).toBe("12,345");
     expect(fmtScoreShort(1_234_567)).toBe("1.2M");

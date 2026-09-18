@@ -85,16 +85,16 @@ der feste **Entscheidungsplan** `DECISION_SCHEDULE` (50 Einträge) vorgibt.
 |---|---|
 | `menu` | Startbildschirm (`StartScreen`): „Neuer Run", lokale + globale Bestenliste. |
 | `play` | Der Autobattler läuft: Stich für Stich, auto-getaktet. |
-| `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`) oder **Skill** (`SkillSelect`); pausiert. In Durchlauf 29 die **Legendär-Phase** (`LegendarySelect`, fixer 7. Slot). |
+| `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`) oder **Skill** (`SkillSelect`, Türen); pausiert. Legendäre sind die fünfte Seltenheit des Skill-Angebots, es gibt keine eigene Phase mehr. |
 | `glacier-target` | Eis: nach jedem Eis-Skill-Pick genau eine Karte als **Gletscher** festfrieren (Pflicht). |
 | `formation` | **Formationsphase** (`FormationPhase`, §22.8): Karten der Aufstellung tauschen. |
 | `shop` | **Architekt** (`ArchitectScreen`, #202 · Shop-Ersatz): Gebäude auf dem 8×5-Baufeld platzieren/aufwerten (keine Münzen). Der Aktionsschlüssel heißt intern noch `shop`. |
 | `gameover` | Nach `MAX_CYCLES` Durchläufen: Endbildschirm (`GameOver`) mit Score, Statistik, Bestenliste. |
 
-**Entscheidungsplan** (`DECISION_SCHEDULE`): fester 50-Einträge-Plan statt eines Zyklus —
-Verteilung **10 Skill · 13 Perk · 13 Formation · 13 Architekt (`shop`) · 1 Legendär**. Die erste
-Entscheidung (Durchlauf 1) ist bewusst ein Skill-Blind-Commit; die Legendär-Phase liegt in Durchlauf 29
-(`LEG_PHASE_CYCLE`, aus dem Plan abgeleitet). Ziel-Flows (Karten/Positionen/Farben wählen) laufen als
+**Entscheidungsplan** (`DECISION_SCHEDULE`, `buildSchedule`): der Block **Skill → Perk → Formation →
+Architekt (`shop`)** wiederholt sich über die `MAX_CYCLES` Durchläufe (50) — Skills in Durchlauf 1, 5, 9 … 49
+(13 Skill-Phasen), jede Formationsphase wird direkt vom Architekten gefangen. Die erste Entscheidung
+(Durchlauf 1) ist bewusst ein Skill-Blind-Commit. Ziel-Flows (Karten/Positionen/Farben wählen) laufen als
 Unter-Overlays der Perk-Auswahl (`CONFIRM_TARGET`, `FAMILY_TARGET_*`).
 
 **Actions (Auszug):** `START_RUN`/`RESET`, `TO_MENU`, `END_RUN`, `RESOLVE_TRICK` (ein Stich; `action.rng`
@@ -135,7 +135,7 @@ score       = scoreVorCrit × (Crit ? critMultiplier : 1)
 
 **Crit:** nur bei Sieg. Der **Basis-Crit ist 0** — Crit-Chance kommt aus den **Präzision-Familien**
 (`families.js` Kat. P) und aus **Blitz-Skills**, auf 100 % gedeckelt; Überschuss > 100 % speist
-Sonderregeln (Überschusskrit, Überschlag, Raserei). Crit-Faktor = `CRIT_BASE_MULT (2,25)` +
+Sonderregeln (Überschusskrit, Raserei). Crit-Faktor = `CRIT_BASE_MULT (2,25)` +
 Präzision-Wucht + Blitz (+`LIGHTNING_CRIT_MULT_PER_SKILL` je Skill) + Legendär-Boni.
 Über den injizierten `rng` gewürfelt → deterministisch.
 
@@ -221,18 +221,21 @@ L11 Zeitraffer (mächtig, teils mit Nachteil; kein Leben mehr → reine Wert-/Sc
 
 ## 9. Skills & Archetypen (#93/#165) — `skills.js`
 
-Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 12`** Skills (3+3+3+3 über alle vier Archetypen,
-`MAX_ARCHETYPES = 4`), bis zu **`SKILL_SLOTS = 6`** gleichzeitig. **Legendäre Skills kommen ausschließlich
-aus der Legendär-Phase** in Durchlauf `LEG_PHASE_CYCLE = 29` und belegen einen fixen 7. Slot (kein Tausch);
-welche Archetypen dort antreten, entscheidet der Upgrade-Baum. **Verstärker-Skills** (`enabler`) werden nur
-angeboten, wenn ihr Basis-Skill gehalten wird.
+Auf **Skill-Runden** stehst du vor **zwei Türen** (`SKILL_DOORS = 2`): jede zeigt **drei Fraktionssymbole**
+(`SKILL_DOOR_SIZE = 3` Skills aus höchstens `SKILL_DOOR_FACTIONS = 2` Fraktionen, Wiederholung erlaubt). Erst das
+Öffnen zeigt die drei Skills mit ihren gewürfelten Stufen (Normal / Selten / Sehr selten / Episch), einer wird
+genommen; gehaltene Skills sind unbegrenzt. **Legendäre Skills** sind die fünfte Seltenheit des Türwurfs
+(`SKILL_LEGENDARY_PER_SLOT` je Platz). Der Angebots-Pool auf exp ist `SKILL_OFFER_ARCHETYPES` (Feuer und Blitz,
+bis Eis und Pflanze überarbeitet sind); die Sim kann ihn je Lauf ersetzen (`--arch`). **Verstärker-Skills**
+(`enabler`) werden nur angeboten, wenn ihr Basis-Skill gehalten wird. Details: `docs/skill-rework.md`.
 
 - **⚡ Blitz** — Ladung/Ionisierung/Crit: Ladung sammeln (`LIGHTNING_MAX_CHARGE`), Karten ionisieren
   (`ION_*` → +Score je Stapel), Gewitterfront/Reaktoren, Legendäre (Donnergott u. a.). Positionsgebundene
   Effekte (Leitfähigkeit/Ionisierung) lesen `actualPos` (korrekt unter Zeitsegment).
-- **🔥 Feuer** — Hitzeleiste 0–`HEAT_MAX`: belohnt totale Überlegenheit mit Feuer-Flat-Score
-  (`FIRE_SCORE_*`); Konsumenten (Flächenbrand/Schmelzpunkt) tauschen Hitze gegen große Boni; Legendäre
-  (Phönixfeuer/Sonnenkern).
+- **🔥 Feuer** — Hitzeleiste 0–`HEAT_MAX` (`factions/fire.js`): Siege mit Abstand erzeugen Hitze, Niederlagen
+  kühlen, je 10 % gehaltener Hitze ein eigener Score-Multiplikator (`HEAT_MULT_PER_10`); die Skills nutzen die
+  Hitze (Konsumenten Flächenbrand/Schmelzpunkt/Schmiede, Schwellen-Skills, Brände); Legendäre (Sonnenkern,
+  Phönixfeuer, Sonnenzorn, Damaststahl).
 - **❄ Eis** — Gletscher-Archetyp (`glacier.js`): jeder Eis-Skill friert eine Karte auf ihrem Brettfeld
   fest. Ein **Gletscher** ist ab dann starr, sammelt aber jeden Durchlauf **Masse** und **birst** an der
   obersten Schwelle über seine Nachbarn (Kaskade/Kollision). **Firn** liegt als Reserve auf offenem Boden

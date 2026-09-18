@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
-  loadOptions, loadUsername, saveUsername, loadTutorialProgress, saveTutorialProgress, tutorialOpened,
+  loadOptions, loadUsername, saveUsername,
   recordRun, recordChampionWeeks, loadProfile, isNoRerollRun, RUN_COMPLETE_DP,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
   isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
@@ -402,7 +402,6 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     saveProfile({ stichPoints: 50, nodes: { B1: 1 }, onboarding: 6 });
     recordHighscore({ score: 500, level: 1, tricks: 9, cycles: 0, ts: 1 });
     saveGhost([10, 20], 200);
-    saveTutorialProgress({ seen: ["grundlagen/wasist"], last: "grundlagen/wasist" });
     saveOptions({ ...DEFAULT_OPTIONS, musicVol: 0.9 });
     saveUsername("Bruder");
 
@@ -415,8 +414,6 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(loadProfile().nodes).toEqual({});
     expect(loadHighscores()).toEqual([]);
     expect(loadGhost().total).toBe(0);
-    expect(loadTutorialProgress()).toEqual({ seen: [], last: null }); // das Tutorial wird wieder angeboten
-    expect(tutorialOpened()).toBe(false);
     // Der Name geht MIT: „reset" soll den Erstbesuch herstellen, und der beginnt bei der
     // Namenseingabe — die zeigt sich genau dann, wenn kein Name gespeichert ist.
     expect(loadUsername()).toBe("");
@@ -510,24 +507,10 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
     global.localStorage.setItem("as_highscores", JSON.stringify({ not: "an array" }));
     expect(loadHighscores()).toEqual([]);
   });
-  it("Username & Tutorial-Fortschritt runden durch localStorage", () => {
+  it("Username rundet durch localStorage", () => {
     expect(loadUsername()).toBe("");
     saveUsername("Tester");
     expect(loadUsername()).toBe("Tester");
-    expect(loadTutorialProgress()).toEqual({ seen: [], last: null });
-    saveTutorialProgress({ seen: ["a/b", "a/b", "c/d"], last: "c/d" });
-    expect(loadTutorialProgress()).toEqual({ seen: ["a/b", "c/d"], last: "c/d" }); // Doppelte fallen weg
-    expect(tutorialOpened()).toBe(true);
-    saveTutorialProgress({ seen: [], last: null }); // „nie geöffnet" bleibt herstellbar (Wiederholbarkeit)
-    expect(tutorialOpened()).toBe(false);
-  });
-
-  /* Der Altschlüssel des geführten Laufs wird nur noch GELESEN: wer ihn gesetzt hat, bekommt das laute
-     Erstkontakt-Angebot nicht erneut. Eine Zeile statt einer Migration. */
-  it("der Altschlüssel des geführten Laufs zählt weiter als schon geöffnet", () => {
-    expect(tutorialOpened()).toBe(false);
-    localStorage.setItem("as_tutorial_done", "1");
-    expect(tutorialOpened()).toBe(true);
   });
   it("ohne localStorage fallen alle Leser sauber auf Defaults zurück (node-Default)", () => {
     delete global.localStorage;
@@ -535,8 +518,6 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
     expect(loadOptions()).toEqual(DEFAULT_OPTIONS);
     expect(loadHighscores()).toEqual([]);
     expect(loadUsername()).toBe("");
-    expect(loadTutorialProgress()).toEqual({ seen: [], last: null });
-    expect(tutorialOpened()).toBe(false);
   });
 });
 
@@ -550,6 +531,17 @@ describe("VITE_PREVIEW-Präfix trennt Namespaces (#152)", () => {
     mod.saveUsername("PreviewUser");
     expect(global.localStorage.getItem("preview_as_username")).toBe("PreviewUser");
     expect(global.localStorage.getItem("as_username")).toBeNull(); // echter Namespace isoliert
+  });
+  it("VITE_STORAGE_NS names the slot and wins over the preview prefix (exp playground)", async () => {
+    global.localStorage = mockLS();
+    vi.resetModules();
+    vi.stubEnv("VITE_PREVIEW", "1");
+    vi.stubEnv("VITE_STORAGE_NS", "exp");
+    const mod = await import("../src/game/storage.js"); // fresh -> P = "exp_"
+    mod.saveUsername("ExpUser");
+    expect(global.localStorage.getItem("exp_as_username")).toBe("ExpUser");
+    expect(global.localStorage.getItem("preview_as_username")).toBeNull(); // /test/ and /pixi/ untouched
+    expect(global.localStorage.getItem("as_username")).toBeNull();
   });
 });
 

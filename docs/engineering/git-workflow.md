@@ -48,6 +48,7 @@ Nothing is authored directly on `test` or `main`.
 | `main` | Production | nobody directly; promotion from `test` only | Pages root `/autostich/` |
 | `test` | Acceptance testing | nobody directly; promotion from `dev` only | `/autostich/test/` |
 | `dev` | Stable internal development / preview | feature integration only | `/autostich/pixi/` |
+| `exp` | Core-loop playground beside the promotion chain; cut from `dev`, never promoted (`AGENTS.md` — *The `exp` branch*) | the owner and the sessions the owner starts on it | `/autostich/exp/` |
 | `feature/*` | Cohesive feature or independent feature | one owner/integrator | CI only |
 | `task/*` | One scoped worker task | one worker | CI only |
 | `archive/*` | Frozen historical snapshots | nobody during normal development | only if explicitly configured |
@@ -749,6 +750,7 @@ Never independently delete or rewrite:
 - `main`
 - `test`
 - `dev`
+- `exp`
 - `archive/*`
 - `gh-pages`
 

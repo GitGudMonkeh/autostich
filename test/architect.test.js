@@ -3,13 +3,15 @@ import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint, occupiedCells,
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
-  architectFormSpec, summarizeArchitect, tierNum, ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
+  architectFormSpec, summarizeArchitect, tierNum, upgradeInfo, bindSpanFor, MAX_TIER,
+  ARCHITECT_OFFER, HAEUSERZEILE_FACTOR, RUND_AB, RUND_AUF, halfOf, rampThresholdFor,
   posOf, rowOf, colOf, N_POS,
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
 import { ARCH_STREAK_CAP } from "../src/game/constants.js";
+import { buildingEffect } from "../src/i18n/buildingText.js"; // Kartentext — muss dieselbe Zahl nennen wie der Motor
 import { archFamily } from "../src/i18n/labels.js"; // UI-Anzeige-Resolver (i18n-Name) — muss jedes Angebot auflösen
-import { computeFormations } from "../src/game/formations.js";
+import { computeFormations, openBorderInfo, SEGMENT_SIZE } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { runOne } from "../sim/run.js";
@@ -142,26 +144,33 @@ describe("Architekt — Angebot (deterministisch)", () => {
     expect(maxLeg).toBeLessThanOrEqual(1);
   });
 
-  it("T2 (#229/#Pool): stufen-inerte Familien OHNE Kick nur Stufe 1; MIT tierKick bis zur Kick-Stufe `at`", () => {
-    // Ihr Effekt kennt keine Stufe → sie dürfen nicht mit höherem Raritätsrahmen angeboten werden (Aufrüsten
-    // ist dort ohnehin No-op). Ausnahme #Pool: inerte Familien MIT tierKick (z. B. Klammer) sind bis `at` sinnvoll
-    // aufwertbar → sie dürfen bis Stufe `at` angeboten werden. Normale Familien skalieren weiter über Stufen > 1.
+  it("T2 (#229/#Pool, Runde 6): tierValue-Leiter hebt das Stufen-Pinning — jede Familie darf Stufen > 1 tragen", () => {
+    // Vor Runde 6 wurden stufen-inerte Familien (joker/transparentFarb/crossSeg) im Angebot auf Stufe 1 gepinnt
+    // (bzw. mit Kick auf ≤ at), weil Aufrüsten dort ein No-op war. Mit der tierValue-Leiter zählt jede Stufe →
+    // das Pinning entfällt. Wächter: jede früher gepinnte Familie taucht über die Seeds auch mit Stufe > 1 auf,
+    // und KEIN Angebot einer Nicht-Legendär-Familie liegt über MAX_TIER.
     const INERT = new Set(["joker", "transparentFarb", "crossSeg"]);
-    let sawInertPinned = false, sawInertKicked = false, sawScaledNormal = false;
+    const seenHighTier = new Set();
     for (let s = 0; s < 300; s++) {
       for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
         if (o.legendary) continue;
         const fam = familyDef(o.familyId);
-        const kind = fam?.base?.kind;
-        if (INERT.has(kind)) {
-          if (fam.tierKick) { sawInertKicked = true; expect(o.tier).toBeLessThanOrEqual(fam.tierKick.at); } // MIT Kick: ≤ at
-          else { sawInertPinned = true; expect(o.tier).toBe(1); }                                            // OHNE Kick: Stufe 1
-        } else if (typeof o.tier === "number" && o.tier > 1) sawScaledNormal = true;
+        expect(o.tier).toBeLessThanOrEqual(MAX_TIER);
+        if (INERT.has(fam?.base?.kind) && o.tier > 1) seenHighTier.add(fam.id);
       }
     }
-    expect(sawInertPinned).toBe(true);  // inerte Familien ohne Kick tauchen auf und bleiben auf Stufe 1
-    expect(sawInertKicked).toBe(true);  // inerte Familien mit Kick tauchen auf und dürfen Stufen > 1 (bis at)
-    expect(sawScaledNormal).toBe(true); // ... normale Familien skalieren weiter über Stufen > 1
+    for (const fam of Object.values(ARCHITECT_FAMILIES)) {
+      if (fam.legendary || !INERT.has(fam.base && fam.base.kind)) continue;
+      expect(seenHighTier.has(fam.id), `${fam.id} muss auch mit Stufe > 1 angeboten werden`).toBe(true);
+    }
+  });
+
+  it("Runde 6 (X4): upgradeInfo — Leiter-Familien sind bis Stufe IV aufwertbar, IV meldet `max`", () => {
+    for (const id of ["A_ARKADE", "A_FRIES", "A_GEWOELBE", "A_PFEILER", "A_KLAMMER", "A_KREUZGANG"]) {
+      const fam = ARCHITECT_FAMILIES[id];
+      for (let t = 1; t < MAX_TIER; t++) expect(upgradeInfo(fam, t).can, `${id} Stufe ${t}`).toBe(true);
+      expect(upgradeInfo(fam, MAX_TIER)).toEqual({ can: false, reason: "max" });
+    }
   });
 });
 
@@ -204,13 +213,68 @@ describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
     expect(architectValueBonus(r, 0, deck[0])).toBe(amt);                        // nicht grün → weiterhin R
   });
 
-  it("target highest/lowest: Effekt liegt nur auf der Ziel-Position", () => {
+  /* Owner-Runde 2026-09-14: der Effekt lag NUR auf der Zielzelle — vier Zellen bezahlt, eine benutzt, und das
+     bei einem Baufeld von MAX_COVER Zellen. Jetzt trägt die Zielkarte den vollen Betrag und jede andere Zelle
+     die Hälfte. Der Wächter hält beides: dass die Zielzelle wirklich die höchste bzw. niedrigste Karte ist
+     (das ist die Familie), und dass der Rest des Fußabdrucks nicht mehr leer ausgeht. */
+  it("target highest/lowest: Zielkarte voll, übrige Zellen die Hälfte", () => {
     const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0); // Werte an 0..3
+    const voll = tierNum(ARCHITECT_FAMILIES.A_FIRST.base.value, 1), halb = Math.floor(voll / 2);
     const hi = precomputeArchitect({ buildings: [B("A_FIRST", [0, 1, 2, 3], 1)] }, idOrder, deck);
-    expect(architectValueBonus(hi, 1, deck[1])).toBe(tierNum(ARCHITECT_FAMILIES.A_FIRST.base.value, 1)); // 9 = höchste
-    expect(architectValueBonus(hi, 3, deck[3])).toBe(0);
+    expect(architectValueBonus(hi, 1, deck[1])).toBe(voll);  // 9 = höchste
+    expect(architectValueBonus(hi, 3, deck[3])).toBe(halb);  // 7 = zweithöchste, zahlt die Hälfte
+    expect(architectValueBonus(hi, 0, deck[0])).toBe(halb);
+    expect(halb).toBeGreaterThan(0);                         // keine tote Fläche mehr
+    expect(halb).toBeLessThan(voll);                         // die Zielzelle bleibt die Pointe
     const lo = precomputeArchitect({ buildings: [B("A_SOCKEL", [0, 1, 2, 3], 1)] }, idOrder, deck);
     expect(architectValueBonus(lo, 0, deck[0])).toBe(tierNum(ARCHITECT_FAMILIES.A_SOCKEL.base.value, 1)); // 2 = niedrigste
+    expect(architectValueBonus(lo, 1, deck[1])).toBe(halb);
+  });
+
+  /* Owner-Runde 2026-09-14 („a": Tore lockern). Zwei Wert-Gebäude trugen ein Tor, das ihre Decke unter das
+     Band drückte — ein Stich lässt sich nur einmal kippen, ein Viertel-Tor deckelt also bei einem Viertel
+     der Wert-Decke. Buntglas verliert die Farbbedingung ab Stufe III (Kick, dieselbe Bauart wie Arkades
+     farbJoker), die Rampe nimmt eine Schwelle mehr. Geprüft wird das VERHALTEN, nicht die Zahl. */
+  it("Buntglas III lässt die Farbbedingung fallen, darunter gilt sie", () => {
+    const deck = fakeDeck(() => 5, (i) => ["R", "B", "G", "Y"][i % 4]);
+    const bei = (tier, pos) => {
+      const pre = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1, 2, 6], tier, { colorChoice: "R" })] }, idOrder, deck);
+      return architectValueBonus(pre, pos, deck[pos]);
+    };
+    const passt = 0, passtNicht = 1; // deck[0] ist R (gewählt), deck[1] ist B
+    expect(bei(2, passt)).toBeGreaterThan(0);
+    expect(bei(2, passtNicht)).toBe(0);              // unter dem Kick zählt nur die Farbe
+    expect(bei(3, passtNicht)).toBeGreaterThan(0);   // ab III jede Karte
+    expect(bei(3, passtNicht)).toBe(bei(3, passt));
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_BUNTGLAS, 4)).not.toContain("passende Farbe"); // der Satz darf sich nicht widersprechen
+  });
+
+  it("die Rampe nennt ihre Schwelle, und der Motor rechnet mit derselben", () => {
+    const grenze = rampThresholdFor(1);
+    const deck = fakeDeck((i) => (i === 0 ? grenze : grenze + 1));
+    const pre = precomputeArchitect({ buildings: [B("A_RAMPE", [0, 1, 5, 6], 1)] }, idOrder, deck);
+    expect(architectValueBonus(pre, 0, deck[0])).toBeGreaterThan(0);  // genau auf der Schwelle zählt
+    expect(architectValueBonus(pre, 1, deck[1])).toBe(0);             // einen darüber nicht
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_RAMPE, 1)).toContain(String(grenze));
+    for (let t = 2; t <= MAX_TIER; t++) expect(rampThresholdFor(t)).toBeGreaterThan(rampThresholdFor(t - 1));
+  });
+
+  /* Die Hälfte ist eine SPIELERZAHL — sie steht auf der Karte und muss deshalb durch dieselbe Rundung wie
+     jede andere. Ohne die gemeinsame Quelle stand „die übrigen Zellen +247" neben einer 495. Der Wächter
+     hält beides zusammen: dass Motor und Kartentext dieselbe Zahl meinen, und dass sie gerundet ist. */
+  it("die halbe Hälfte ist gerundet und steht im Kartentext", () => {
+    for (const base of [5, 115, 160, 335]) for (const t of [1, 2, 3, 4]) {
+      const voll = tierNum(base, t), h = halfOf(voll);
+      expect(h).toBeGreaterThan(0);
+      expect(h).toBeLessThan(voll);
+      if (h >= RUND_AB) expect(h % RUND_AUF, `Hälfte von ${voll} → ${h}`).toBe(0);
+    }
+    // Motor und Text lesen dieselbe Funktion: was der Precompute auf eine Nicht-Zielzelle legt, nennt der Text.
+    const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0);
+    const pre = precomputeArchitect({ buildings: [B("A_GIEBEL", [0, 1, 2, 3], 4)] }, idOrder, deck);
+    const voll = tierNum(ARCHITECT_FAMILIES.A_GIEBEL.base.score, 4);
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(halfOf(voll));
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_GIEBEL, 4)).toContain(String(halfOf(voll)));
   });
 });
 
@@ -287,10 +351,30 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
       B("A_GRUNDSTEIN", [20, 21, 25, 26]), B("A_KATHEDRALE", [30, 31, 32, 33, 34], "legendary"),
     ] }, idOrder, deck);
     expect(spec.jokerF.has(0)).toBe(true);        // Klammer → Farbblock-Joker
-    expect(spec.bind[10]).toBe(2);                // Kreuzgang Stufe 3 → Span 2
+    expect(spec.bind[10]).toBe(3);                // Kreuzgang Stufe 3 → Span 3 (Runde 6: ±1/±2/±3)
     expect(spec.crossSeg.has(0)).toBe(true);      // Pfeiler → Zeile 0 offen (rowOf(0))
     expect(spec.anker[20]).toBeGreaterThan(1);    // Grundstein → Anker-Faktor
     expect(spec.formMult[30]).toBe(ARCHITECT_FAMILIES.A_KATHEDRALE.base.factor); // Kathedrale → ×Faktor
+  });
+
+  /* Owner-Runde 2026-09-14: der Pfeiler öffnete die Grenze im MOTOR (canExtendSeg), die Anzeige kannte aber nur
+     Segmentarbeit und Spalier — im Kartengitter fehlte die Brücke. openBorderInfo ist jetzt die eine Quelle für
+     alle drei Herkünfte. Der Wächter hält beide Richtungen: gemeldet UND vom Lauf tatsächlich gekreuzt. */
+  it("openBorderInfo meldet die Grenze, die der Pfeiler öffnet (eine Quelle mit computeFormations)", () => {
+    const deck = fakeDeck();                                          // durchgehend gleiche Farbe → ein Farbblock je Segment
+    const architect = { buildings: [B("A_PFEILER", [0, 1, 2, 3])] };  // line4 in Zeile 0 → Grenze 0
+    const info = openBorderInfo(idOrder, deck, [], {}, {}, architect);
+    expect(info.active).toBe(true);
+    expect([...info.arch]).toEqual([0]);
+    expect(info.isOpen(0)).toBe(true);
+    expect(info.isOpen(1)).toBe(false);           // nur die berührte Zeile, nicht das ganze Brett
+    // Gegenprobe am Motor: derselbe Lauf wächst über genau diese Grenze hinaus.
+    const fb = (f, p) => (f[p].formations || []).find((x) => x.type === "farbblock");
+    expect(fb(computeFormations(idOrder, deck, {}, [], [], [], {}, null), 4).len).toBe(SEGMENT_SIZE);
+    expect(fb(computeFormations(idOrder, deck, {}, [], [], [], {}, architect), 4).len).toBe(2 * SEGMENT_SIZE);
+    // Ohne Gebäude keine Brücke — und die letzte Zeile hat keine Grenze hinter sich, die sie öffnen könnte.
+    expect(openBorderInfo(idOrder, deck, [], {}, {}, null).active).toBe(false);
+    expect(openBorderInfo(idOrder, deck, [], {}, {}, { buildings: [B("A_PFEILER", [35, 36, 37, 38])] }).active).toBe(false);
   });
 
   it("Grundstein macht abgedeckte Positionen zu Ankern (Formation)", () => {
@@ -309,6 +393,77 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
     const inFarbblock = (forms, p) => (forms[p].formations || []).some((f) => f.type === "farbblock");
     expect(inFarbblock(without, 0)).toBe(false);  // Position 0 (R) hängt ohne Joker nicht am Farbblock (B-Lücke bei 1)
     expect(inFarbblock(withJoker, 0)).toBe(true);  // Joker verbindet 0 über die B-Lücke mit 2..4
+  });
+});
+
+describe("Architekt — Runde 6: jede Aufwertung trägt (X1–X3)", () => {
+  it("X1: tierNum ist streng monoton, und ab 10 enden alle Stufen auf 0 oder 5", () => {
+    /* Owner 2026-09-14: „passe alle Zahlen an, dass sie auf 0 oder 5 enden — schwierig für Spieler, mit 112 zu
+       rechnen." Gerundet wird ab RUND_AB; darunter (Kampfwert 1–9) bleibt die Leiter fein, sonst hätte sie tote
+       Stufen. Die Monotonie aus X1 bleibt die STÄRKERE Regel und wird hier weiter über alle Basen gehalten. */
+    expect([1, 2, 3, 4].map((t) => tierNum(1, t))).toEqual([1, 2, 3, 4]);   // vorher 1/2/2/3 (II→III tot)
+    expect([1, 2, 3, 4].map((t) => tierNum(3, t))).toEqual([3, 5, 7, 9]);   // klein: ungerundet
+    expect([1, 2, 3, 4].map((t) => tierNum(115, t))).toEqual([115, 175, 255, 355]); // Zollhaus, auf 5er gerundet
+    for (const base of [1, 2, 3, 5, 9, 20, 35, 55, 65, 115, 150, 160, 175, 200, 225, 260, 335, 445, 500]) {
+      for (let t = 2; t <= MAX_TIER; t++) expect(tierNum(base, t)).toBeGreaterThan(tierNum(base, t - 1));
+      for (let t = 1; t <= MAX_TIER; t++) {
+        const v = tierNum(base, t);
+        if (v >= RUND_AB) expect(v % RUND_AUF, `Basis ${base}, Stufe ${t} → ${v}`).toBe(0);
+      }
+    }
+    // Auch die Legendären, die keine Stufe tragen, gehen durch dieselbe Rundung.
+    for (const fam of Object.values(ARCHITECT_FAMILIES)) {
+      const feld = fam.category === "score" ? fam.base.score : fam.base.value;
+      if (feld == null) continue;
+      const v = tierNum(feld, fam.legendary ? "legendary" : MAX_TIER);
+      if (v >= RUND_AB) expect(v % RUND_AUF, `${fam.id} → ${v}`).toBe(0);
+    }
+  });
+
+  it("X3: die tierValue-Leiter legt flachen Stichwert auf die Zellen der Formations-Gebäude", () => {
+    const deck = fakeDeck();
+    const at = (tier) => {
+      const pre = precomputeArchitect({ buildings: [B("A_ARKADE", [0, 1], tier)] }, idOrder, deck);
+      return architectValueBonus(pre, 0, deck[0]);
+    };
+    /* Owner-Runde 2026-09-14: die Leiter ist der EINZIGE Zahlen-Griff dieser Familien — sie tragen sonst keinen
+       Betrag, sondern biegen nur die Erkennung. Sie wurde deshalb von 0/1/1/2 auf 1/3/5/7 gezogen, damit die
+       Gebäude das Band erreichen. Geprüft wird die Eigenschaft, nicht die Zahlenreihe: jede Stufe legt zu, und
+       keine Stufe ist mehr leer (vorher war Stufe I ein reiner No-op). */
+    const leiter = [1, 2, 3, 4].map(at);
+    expect(leiter[0]).toBeGreaterThan(0);
+    for (let i = 1; i < leiter.length; i++) expect(leiter[i]).toBeGreaterThan(leiter[i - 1]);
+    expect(leiter).toEqual(ARCHITECT_FAMILIES.A_ARKADE.tierValue.slice(1));
+    // Der Pfeiler hat seine eigene, flachere Leiter — er trägt zusätzlich die offene Segmentgrenze.
+    const pfeiler = precomputeArchitect({ buildings: [B("A_PFEILER", [0, 5, 10, 15], 3)] }, idOrder, deck);
+    expect(architectValueBonus(pfeiler, 5, deck[5])).toBe(ARCHITECT_FAMILIES.A_PFEILER.tierValue[3]);
+    const kreuz3 = precomputeArchitect({ buildings: [B("A_KREUZGANG", [10, 15, 16], 3)] }, idOrder, deck);
+    const kreuz4 = precomputeArchitect({ buildings: [B("A_KREUZGANG", [10, 15, 16], 4)] }, idOrder, deck);
+    expect(architectValueBonus(kreuz4, 10, deck[10])).toBeGreaterThan(architectValueBonus(kreuz3, 10, deck[10]));
+  });
+
+  it("X3: Arkade III wird zum Farbblock-Joker (Kick), bleibt darunter transparent", () => {
+    const deck = fakeDeck();
+    const s1 = architectFormSpec({ buildings: [B("A_ARKADE", [0, 1], 1)] }, idOrder, deck);
+    const s3 = architectFormSpec({ buildings: [B("A_ARKADE", [0, 1], 3)] }, idOrder, deck);
+    expect(s1.transparentFarb.has(0)).toBe(true); expect(s1.jokerF.has(0)).toBe(false);
+    expect(s3.transparentFarb.has(0)).toBe(true); expect(s3.jokerF.has(0)).toBe(true);
+  });
+
+  it("X3: Fries/Gewölbe III schalten den Joker-Typ Farbblock dazu", () => {
+    const deck = fakeDeck();
+    for (const id of ["A_FRIES", "A_GEWOELBE"]) {
+      const fp = id === "A_FRIES" ? [0, 1, 5, 6] : [0, 1, 2, 6];
+      const lo = architectFormSpec({ buildings: [B(id, fp, 2)] }, idOrder, deck);
+      const hi = architectFormSpec({ buildings: [B(id, fp, 3)] }, idOrder, deck);
+      expect(lo.jokerF.has(0), `${id} Stufe 2 ohne Farbblock-Joker`).toBe(false);
+      expect(hi.jokerF.has(0), `${id} Stufe 3 mit Farbblock-Joker`).toBe(true);
+      expect(hi.jokerW.has(0), `${id} behält Wiederholung`).toBe(true);
+    }
+  });
+
+  it("X3: bindSpanFor ist ±1/±2/±3 ohne tote Stufe bis III", () => {
+    expect([1, 2, 3, 4].map(bindSpanFor)).toEqual([1, 2, 3, 3]);
   });
 });
 
@@ -410,6 +565,68 @@ describe("Architekt — Reducer-Aktionen", () => {
     expect(reset.architect.buildings[0].footprint).toEqual([0, 1]);          // zurück auf die Anker-/Bau-Lage
     expect(reset.architect.actedMain).toBe(true);                            // Hauptaktion bleibt verbraucht
     expect(reset.architect.phaseHistory.length).toBe(0);
+  });
+
+  /* Owner-Meldung 2026-09-08: „Drehen, dann Zurücksetzen — das Gebäude steht nicht richtig zurück."
+
+     Die Gruppe darüber schiebt ein Gebäude nur HERUM ([0,1] → [20,21]) — dieselbe Form an einer anderen
+     Stelle. Ein Drehen ist aber eine Verschiebung mit ANDERER FORM, und keine Zusicherung fasste das an.
+     Geprüft wird deshalb nicht der Fußabdruck allein, sondern die LAGE (`currentRotationIndex`): sie ist,
+     was der Spieler sieht, und sie kann falsch sein, während die Zellenzahl stimmt.
+
+     Beide Herkünfte, weil sie ihren Anker aus verschiedenen Quellen holen: ein in DIESER Phase gebautes
+     Gebäude bekommt ihn beim Bauen, ein schon stehendes beim Phasen-Eintritt. `inArchitectPhase()` legt
+     keinen Anker an — für den zweiten Fall wird er hier gesetzt, wie es der Eintritt tut. */
+  describe("Drehen ist eine Verschiebung mit anderer Form — Rückgängig UND Zurücksetzen holen die Lage zurück", () => {
+    const fam = Object.values(ARCHITECT_FAMILIES).find((f) => shapeRotations(f.form).length > 1 && !f.legendary && !f.colorLocked);
+    const rotOf = (fp) => currentRotationIndex(fam.form, fp);
+
+    it("bei einem Gebäude, das in DIESER Phase gebaut wurde", () => {
+      const s = { ...inArchitectPhase(), architect: { ...inArchitectPhase().architect, offers: [{ familyId: fam.id, tier: 1, used: false }] } };
+      const fp0 = [...enumeratePlacements(fam.form, [], [])[0]].sort((a, b) => a - b);
+      const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: fam.id, tier: 1, footprint: fp0 });
+      const b = built.architect.buildings[0];
+      const turnedFp = nextRotationFootprint(fam.form, b.footprint, []);
+      expect(turnedFp, "die Familie hat keine zweite Lage — Probe untauglich").toBeTruthy();
+      const turned = reducer(built, { type: "ARCHITECT_MOVE", buildingId: b.id, footprint: turnedFp });
+      expect(rotOf(turned.architect.buildings[0].footprint)).not.toBe(rotOf(fp0)); // wirklich gedreht
+      for (const act of ["ARCHITECT_UNDO", "ARCHITECT_RESET"]) {
+        const back = reducer(turned, { type: act });
+        expect(back.architect.buildings[0].footprint, `${act} bringt die Zellen nicht zurück`).toEqual(fp0);
+        expect(rotOf(back.architect.buildings[0].footprint), `${act} bringt die LAGE nicht zurück`).toBe(rotOf(fp0));
+      }
+    });
+
+    it("bei einem Gebäude, das schon zu Phasenbeginn stand", () => {
+      const base = inArchitectPhase();
+      const fp0 = [...enumeratePlacements(fam.form, [], [])[0]].sort((a, b) => a - b);
+      const b = { id: 1, familyId: fam.id, tier: 1, footprint: fp0, colorChoice: null };
+      // Phasen-Eintritt nachgebildet: der Anker hält die Lage ALLER stehenden Gebäude (reducer.js, „shop").
+      const s = { ...base, architect: { ...base.architect, buildings: [b], nextId: 2,
+                                        phaseAnchor: { [b.id]: [...fp0] }, phaseHistory: [] } };
+      const turnedFp = nextRotationFootprint(fam.form, fp0, []);
+      const turned = reducer(s, { type: "ARCHITECT_MOVE", buildingId: b.id, footprint: turnedFp });
+      expect(rotOf(turned.architect.buildings[0].footprint)).not.toBe(rotOf(fp0));
+      for (const act of ["ARCHITECT_UNDO", "ARCHITECT_RESET"]) {
+        const back = reducer(turned, { type: act });
+        expect(back.architect.buildings[0].footprint, `${act} bringt die Zellen nicht zurück`).toEqual(fp0);
+        expect(rotOf(back.architect.buildings[0].footprint), `${act} bringt die LAGE nicht zurück`).toBe(rotOf(fp0));
+      }
+    });
+
+    it("auch nach ZWEI Drehungen holt Zurücksetzen die Ausgangslage, nicht die vorletzte", () => {
+      /* Der Unterschied zwischen den zwei Knöpfen: Rückgängig geht EINEN Schritt, Zurücksetzen ganz an den
+         Anfang. Bei einer Familie mit vier Lagen führen beide sonst leicht auf dieselbe Zelle zurück. */
+      const base = inArchitectPhase();
+      const fp0 = [...enumeratePlacements(fam.form, [], [])[0]].sort((a, b) => a - b);
+      const b = { id: 1, familyId: fam.id, tier: 1, footprint: fp0, colorChoice: null };
+      const s = { ...base, architect: { ...base.architect, buildings: [b], nextId: 2, phaseAnchor: { [b.id]: [...fp0] }, phaseHistory: [] } };
+      const t1 = reducer(s, { type: "ARCHITECT_MOVE", buildingId: 1, footprint: nextRotationFootprint(fam.form, fp0, []) });
+      const fp1 = t1.architect.buildings[0].footprint;
+      const t2 = reducer(t1, { type: "ARCHITECT_MOVE", buildingId: 1, footprint: nextRotationFootprint(fam.form, fp1, []) });
+      expect(reducer(t2, { type: "ARCHITECT_UNDO" }).architect.buildings[0].footprint).toEqual(fp1);   // einen Schritt
+      expect(reducer(t2, { type: "ARCHITECT_RESET" }).architect.buildings[0].footprint).toEqual(fp0);  // ganz zurück
+    });
   });
 
   it("Eine Verschiebung legt einen Undo-Schritt an; DONE verwirft die transienten Undo-Daten", () => {

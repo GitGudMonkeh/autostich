@@ -6,22 +6,50 @@
 // also ist das Durchprobieren determinismus-sicher und verbraucht keinen rng-Strom. Nicht anwendbare
 // Tausche (keine Energie) erkennt man daran, dass der Reducer denselben State zurückgibt (=== s).
 import { reducer } from "../src/game/reducer.js";
-import { SEGMENT_SIZE } from "../src/game/formations.js";
+import { SEGMENT_SIZE, openBorderInfo } from "../src/game/formations.js";
 
 const EPS = 1e-9;
 const formScore = (s) => (s.formations || []).reduce((t, f) => t + (f?.mult || 1), 0);
 
-// INTRA-SEGMENT-Tausche (immer, ~80 Paare statt 780) PLUS segmentübergreifende Tausche, an denen eine
-// EINGEFRORENE Karte beteiligt ist. Grund (Eis-Fairness): eingefrorene Karten geben gratis Frosttausche
-// (kostenlos, keine Energie) und wirken als Formations-Joker — ihr Wert liegt gerade darin, segment-
-// übergreifend eine Formation zu vervollständigen. Fire-Builds haben keine frozen Karten → keine Cross-
-// Segment-Probes → weiterhin schnell. Zielfunktion bleibt der Formations-Mult (Kaltfront/Frostspur-
-// Wertboni werden nicht direkt optimiert, aber der Ablations-Score misst sie, wenn Frosttausche fallen).
+/* OPEN REGIONS — the search neighbourhood. A region is a maximal run of consecutive segments joined by
+   OPEN boundaries; formations flow freely inside one, so every pair within it is a candidate swap. With no
+   boundary open every region is exactly one segment and the neighbourhood is the old intra-segment one.
+
+   Why this is not cosmetic: E_SEGMENT (Segmentarbeit), Spalier and the Pfeiler exist to open boundaries, and
+   a solver that only ever probes inside a segment can never construct the formation that spans one. Measured
+   on 30 seeds, forcing those families while searching intra-segment only LOST 13 % score — they cost perk
+   slots and returned nothing —, while the same draft with a boundary-aware neighbourhood gained 49 %. An
+   unconditional bandit therefore learned the wrong sign and dropped them for good. `openBorderInfo` is the
+   same single source the engine and the UI read, so the solver cannot drift from what the rules actually do. */
+function openRegions(s) {
+  const n = s.playerOrder.length;
+  const info = openBorderInfo(s.playerOrder, s.deck, s.skills || [], s.skillTiers || {}, s.familyTiers || {},
+    s.architectEnabled ? s.architect : null);
+  const out = [];
+  let start = 0; // first segment of the region being built
+  const nSeg = Math.ceil(n / SEGMENT_SIZE);
+  for (let g = 0; g < nSeg - 1; g++) {
+    if (info.isOpen(g)) continue;                                   // boundary g open → region keeps growing
+    out.push([start * SEGMENT_SIZE, Math.min(n, (g + 1) * SEGMENT_SIZE)]);
+    start = g + 1;
+  }
+  out.push([start * SEGMENT_SIZE, n]);
+  return out;
+}
+
+// Tausche INNERHALB eines offenen Bereichs (ohne offene Grenze: je Segment, ~80 Paare statt 780) PLUS
+// bereichsübergreifende Tausche, an denen eine EINGEFRORENE Karte beteiligt ist. Grund (Eis-Fairness):
+// eingefrorene Karten geben gratis Frosttausche (kostenlos, keine Energie) und wirken als Formations-Joker —
+// ihr Wert liegt gerade darin, übergreifend eine Formation zu vervollständigen. Fire-Builds haben keine
+// frozen Karten → keine Cross-Probes → weiterhin schnell. Zielfunktion bleibt der Formations-Mult
+// (Kaltfront/Frostspur-Wertboni werden nicht direkt optimiert, aber der Ablations-Score misst sie, wenn
+// Frosttausche fallen); die Überlappungs-Boni stecken bereits multiplikativ in `mult`.
 export function greedyFormationStep(s) {
   const n = s.playerOrder.length;
   const cur = formScore(s);
-  const seg = (p) => Math.floor(p / SEGMENT_SIZE);
   const frozen = (p) => !!s.deck[s.playerOrder[p]]?.frozen;
+  const regions = openRegions(s);
+  const regionOf = (p) => regions.findIndex(([a, b]) => p >= a && p < b);
   let best = null, bestGain = EPS; // strikt positiver Zugewinn nötig
   const probe = (i, j) => {
     const next = reducer(s, { type: "SWAP_CARDS", i, j });
@@ -29,15 +57,12 @@ export function greedyFormationStep(s) {
     const gain = formScore(next) - cur;
     if (gain > bestGain) { bestGain = gain; best = { i, j }; }
   };
-  // intra-Segment: alle Paare
-  for (let a = 0; a < n; a += SEGMENT_SIZE) {
-    const b = Math.min(n, a + SEGMENT_SIZE);
-    for (let i = a; i < b; i++) for (let j = i + 1; j < b; j++) probe(i, j);
-  }
-  // cross-Segment: nur Paare mit ≥1 eingefrorener Karte (gratis Frosttausche)
+  // innerhalb eines offenen Bereichs: alle Paare
+  for (const [a, b] of regions) for (let i = a; i < b; i++) for (let j = i + 1; j < b; j++) probe(i, j);
+  // bereichsübergreifend: nur Paare mit ≥1 eingefrorener Karte (gratis Frosttausche)
   for (let i = 0; i < n; i++) {
     if (!frozen(i)) continue;
-    for (let j = 0; j < n; j++) if (j !== i && seg(i) !== seg(j)) probe(i, j);
+    for (let j = 0; j < n; j++) if (j !== i && regionOf(i) !== regionOf(j)) probe(i, j);
   }
   return best ? { type: "SWAP_CARDS", i: best.i, j: best.j } : { type: "CONFIRM_FORMATION" };
 }

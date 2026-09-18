@@ -1,14 +1,16 @@
 // ❄ Eis (Gletscher-Archetyp) — Feld-Panel. „Gletscher, Brechen & Kaskade": Karten werden als Gletscher festgefroren,
-// sammeln MASSE und brechen ab Stufe 3 (12) gewaltig — einzelne massive Hits. Gezeigt wird (kompakter Durchlauf-Fokus,
-// NICHT das ganze Feld — das ist die Chronik):
+// sammeln MASSE und brechen an der Berst-Schwelle gewaltig — einzelne massive Hits. Die Schwelle ist BUILD-abhängig:
+// natürlich BURST_AT, mit Abbruchkante die Sprosse ihrer Stufe (iceBurstAt, dieselbe Quelle wie der Motor).
+// Gezeigt wird (kompakter Durchlauf-Fokus, NICHT das ganze Feld — das ist die Chronik):
 //   • je Gletscher ein Icon, dessen Größe/Leuchten die Stufe kodiert (klein/matt → groß/hell = kritisch), Masse-Zahl
-//     und drei diskrete Stufen-Segmente (Schwellen 4/8/12).
+//     und je Schwelle ein Stufen-Segment; das Segment der Berst-Schwelle ist hervorgehoben.
 //   • Durchlauf-Kern: Gletscher-Ertrag · Kaskade (Brüche diesen Durchlauf) · größtes Cluster (Dichte treibt die Kaskade).
 //   • Kontext (nur wenn relevant): Firn-Boden lädt · Gegner eingefroren · Duo-Buff · Große Lawine bereit/verbraucht.
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierNeighborFn, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { glacierClusters, glacierFormations, THRESHOLDS, BURST_AT, TOP, ROLES, GROSSE_LAWINE_EVERY } from "../game/glacier.js";
+import { iceNeighborFn, iceBurstAt } from "../game/factions/ice.js"; // Eisbrücke → 8-Nachbarschaft · Berst-Schwelle des Builds (eine Quelle mit der Engine)
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
 import glacierIcon from "./assets/glacier.webp"; // #308b: das detaillierte Gletscher-Bild NUR für das wachsende Panel-Hero-Visual behalten
@@ -17,22 +19,29 @@ import { archetypeLabel, glacierFormName } from "../i18n/labels.js"; // Fraktion
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff";
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
-const KRIT_FROM = 9; // ab dieser Masse gilt ein Gletscher als „kritisch" (kurz vor Stufe 3 / Bruch bei 12)
+const KRIT_SHARE = 0.75; // ab diesem Anteil der Berst-Schwelle gilt ein Gletscher als „kritisch" (bei 12 also ab 9)
 
 // Ein Gletscher-Chip: Positionsnummer (#Spielreihenfolge) + Kartenwert · Icon (Größe = Stufe) + Masse + Stufen-Segmente.
-function Glacier({ mass, order = null, value = null }) {
-  const [T1, T2, T3] = THRESHOLDS;
-  const scale = 0.5 + 0.5 * Math.min(1, mass / T3);
-  const bricht = mass >= T3;                  // Bruch-bereit: höchste Stufe (12) erreicht → bricht
-  const krit = mass >= KRIT_FROM && !bricht;  // kurz davor
+function Glacier({ mass, order = null, value = null, burstAt = BURST_AT }) {
+  /* §5.18: die Berst-Schwelle ist NICHT die letzte Sprosse — die Leiter läuft über sie hinaus bis TOP. Das Icon
+     wächst deshalb bis TOP, das Bruch-Signal hängt an der Schwelle. Owner-Runde 2026-09-14: die Schwelle kam hier
+     fest aus BURST_AT, die Abbruchkante hebt sie aber auf 18/27/40/60 — der Chip rief „bricht", während der
+     Gletscher noch lange weiterwuchs. `burstAt` reicht jetzt die wirksame Schwelle herein. */
+  const scale = 0.5 + 0.5 * Math.min(1, mass / Math.max(TOP, burstAt));
+  const bricht = mass >= burstAt;                                          // Bruch-bereit
+  const krit = mass >= burstAt * KRIT_SHARE && !bricht;                    // kurz davor
+  const stufe = THRESHOLDS.reduce((t, thr) => (mass >= thr ? t + 1 : t), 0);
   const alert = bricht || krit;
   const seg = (thr, i) => {
     const on = mass >= thr;
     const next = !on && (i === 0 || mass >= THRESHOLDS[i - 1]);
+    const istBruch = thr === burstAt; // die Sprosse, an der er bricht — sonst wäre nicht zu sehen, wohin er wächst
     return (
-      <span key={thr} style={{
+      <span key={thr} title={istBruch ? t("bar.ice.seg.burst", { n: thr }) : t("bar.ice.seg", { n: thr })} style={{
         flex: 1, height: 7, background: on ? FROST : "#0d1218",
         border: `1px solid ${on ? FROST_BRIGHT : next ? "#3f7f97" : "#1b2530"}`,
+        outline: istBruch ? `1px solid ${FROST_BRIGHT}` : undefined,
+        outlineOffset: istBruch ? 1 : undefined,
         clipPath: "polygon(14% 0, 100% 0, 86% 100%, 0 100%)",
         boxShadow: on ? "inset 0 0 4px #eafaffaa" : undefined,
       }} />
@@ -44,7 +53,7 @@ function Glacier({ mass, order = null, value = null }) {
       borderRadius: 8, padding: "5px 4px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 46,
       boxShadow: bricht ? `0 0 16px ${FROST}77, inset 0 0 16px ${FROST}18` : krit ? `0 0 12px ${FROST}44, inset 0 0 14px ${FROST}10` : undefined,
     }} className={alert ? "as-glacier-shiver" : undefined} title={t(bricht ? "bar.ice.chip.title.burst" : "bar.ice.chip.title",
-      { mass, tier: mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0 })}>
+      { mass, tier: stufe, at: burstAt })}>
       {alert && <span style={{
         /* #typo: KEIN `--font-mono` — „kritisch"/„bricht" sind Wörter, keine Werte. Die drei Zahlen
            an diesem Chip (Reihenfolge, Kartenwert, Masse) tragen es dagegen sehr wohl. */
@@ -72,9 +81,9 @@ function Glacier({ mass, order = null, value = null }) {
   );
 }
 
-export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnStack = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
+export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnStack = [], glacierYield = 0, glacierRoles = [], glacierRoleTiers = {}, glacierPre = null,
                             deck = [], playerOrder = [],
-                            frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false,
+                            frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, cycle = 0,
                             options = {}, onOption, manyActive = false, skills = [], showSkills = false }) {
   // Hinweis: KEIN early-return vor den Hooks (React rules-of-hooks) — der `!active`-Ausstieg steht unten vor dem JSX.
   // #384: je Gletscher Position (i, = Spielreihenfolge i+1) + Kartenwert (deck[playerOrder[i]].value); nach POSITION sortiert
@@ -86,8 +95,10 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   }
   glaciers.sort((a, b) => a.pos - b.pos); // Deck-/Spielreihenfolge statt Masse
 
+  // Die Berst-Schwelle dieses Builds (Abbruchkante hebt sie) — dieselbe Quelle, die der Motor liest.
+  const burstAt = iceBurstAt(glacierRoles, glacierRoleTiers);
   const cascade = glacierPre?.breaks?.length || 0;                        // Brüche in diesem Durchlauf
-  const clusters = glacierClusters(glacierLocked, glacierNeighborFn(glacierRoles));
+  const clusters = glacierClusters(glacierLocked, iceNeighborFn(glacierRoles));
   const biggest = clusters.reduce((m, c) => Math.max(m, c.length), 0);    // größtes zusammenhängendes Cluster
   // #386 Firn-Boden-Reserve: offener Boden mit Reserve (firnStack) = „lädt"; gefrorene Gletscher halten ihre Restreserve
   // (füllt sie zum Rundenstart wieder auf 12 nach). Getrennt von glacierMass (Gletscher-Eigenmasse).
@@ -98,9 +109,8 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   const duo = new Set([...Object.keys(glacierBuffActive || {}), ...Object.keys(glacierBuffPending || {})]).size;
   const hasLawine = (glacierRoles || []).includes(ROLES.L_LAWINE);
   // Aktive 2D-Gletscher-Formationen (Block/Kreuz/Linie/Fläche) + ihr Burst-Multiplikator — je Typ der höchste Faktor.
-  const eiswall = (glacierRoles || []).includes(ROLES.EISWALL);
   const formByType = {};
-  for (const gf of glacierFormations(glacierLocked, { eiswall }).forms) formByType[gf.type] = Math.max(formByType[gf.type] || 0, gf.factor);
+  for (const gf of glacierFormations(glacierLocked).forms) formByType[gf.type] = Math.max(formByType[gf.type] || 0, gf.factor);
   const activeForms = Object.entries(formByType).sort((a, b) => b[1] - a[1]);
 
   // Brech-Moment: fällt eine hohe Gletschermasse stark ab (Bruch) ODER springt der Ertrag, blitzt ein transienter
@@ -147,7 +157,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   if (!active) return null; // Ausstieg NACH den Hooks (rules-of-hooks): sonst wechselt die Hook-Zahl je Render.
 
   // Phase-3-Headline: „gleich knallt's"-Zustand (ein Gletscher an der Bruch-Schwelle) für die einklappbare Fraktions-Zeile.
-  const readyBreak = glaciers.some((g) => g.mass >= THRESHOLDS[2]);
+  const readyBreak = glaciers.some((g) => g.mass >= burstAt);
   const collapsed = options.collapseFacIce ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacIce: !collapsed });
   const stateText = readyBreak ? t("bar.ice.state.ready") : t("bar.ice.state.count", { n: glaciers.length });
@@ -172,7 +182,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
 
       {glaciers.length > 0 ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-          {glaciers.map((g) => <Glacier key={g.pos} mass={g.mass} order={g.order} value={g.value} />)}
+          {glaciers.map((g) => <Glacier key={g.pos} mass={g.mass} order={g.order} value={g.value} burstAt={burstAt} />)}
         </div>
       ) : (
         <div style={{ fontSize: 11.5, color: "#6a7a86", textAlign: "center", padding: "6px 0" }}>
@@ -186,13 +196,19 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
         </div>
       )}
 
-      {(firn > 0 || reserve > 0 || frozenOpp > 0 || duo > 0 || hasLawine) && (
+      {(burstAt !== BURST_AT || firn > 0 || reserve > 0 || frozenOpp > 0 || duo > 0 || hasLawine) && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          {/* Abbruchkante: die verschobene Schwelle steht als Zahl da, nicht nur im Tooltip des Chips — sie ändert,
+              wann „bricht" überhaupt gilt, und das darf man nicht suchen müssen. */}
+          {burstAt !== BURST_AT && chip(t("bar.ice.burstAt"), burstAt, FROST_BRIGHT)}
           {firn > 0 && chip(t("bar.ice.firnGround"), firn, FROST)}
           {reserve > 0 && chip(t("bar.ice.firnReserve"), reserve, FROST)}
           {frozenOpp > 0 && chip(t("bar.ice.frozenOpp"), frozenOpp, "#7ea6ff")}
           {duo > 0 && chip(t("bar.ice.duoBuff"), duo, "#d4a63a")}
-          {hasLawine && chip(t(grosseLawineFired ? "bar.ice.avalanche.used" : "bar.ice.avalanche.ready"), null, "#d4a63a", grosseLawineFired)}
+          {/* §5.8: die Lawine feuert im Takt, der Chip zählt zum nächsten Schlag herunter statt „bereit/verbraucht" zu zeigen. */}
+          {hasLawine && (((cycle + 1) % GROSSE_LAWINE_EVERY === 0)
+            ? chip(t("bar.ice.avalanche.now"), null, "#d4a63a")
+            : chip(t("bar.ice.avalanche.in", { n: GROSSE_LAWINE_EVERY - ((cycle + 1) % GROSSE_LAWINE_EVERY) }), null, "#d4a63a", true))}
         </div>
       )}
     </FactionShell>

@@ -175,14 +175,19 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
     expect(read("src/ui/PerkSelect.jsx")).toMatch(/<PhaseHairline accent=\{PHASE_ACCENTS\.red\} \/>/);
   });
 
-  it("die Karte hat ab 1280 px KEINE feste Höhe mehr — der Rahmen endet am Inhalt", () => {
-    /* Am Handy ist die feste Höhe richtig (die zentrierte Karte sprang sonst beim Archetyp-Wechsel in
-       Position UND Größe). Ab 1280 px ist die Karte die Mittelspur eines Rasters, dessen Höhe die höheren
-       Flügel bestimmen — der Kopf steht also fest, und der Rahmen darf am Angebot enden statt in der ersten
-       Skill-Runde einen halben Bildschirm Leere zu zeigen. `max-height` bleibt als Deckel. */
+  it("die feste Höhe hängt am Blättern, nicht an der Breite — der Rahmen endet sonst am Inhalt", () => {
+    /* Die feste Höhe hat GENAU EINEN Grund: beim Blättern sprang die zentrierte Karte sonst in Position und
+       Größe, weil jede Archetyp-Seite anders hoch ist. Wo nicht geblättert wird — und das ist alles außer
+       dem Dev-Voll-Katalog — hielt sie nichts konstant und ließ nur Leere unter der letzten Skill-Karte
+       stehen (Owner-Meldung 2026-09-07, docs/muenz-oekonomie.md §5.1). Sie hängt deshalb an `nPages > 1`.
+       Der Deckel gilt unbedingt: er ist der Grund, warum der Inhalt scrollt statt aus dem Bild zu laufen. */
     const skill = read("src/ui/SkillSelect.jsx");
-    expect(skill).toMatch(/height: wide \? undefined : "min\(92dvh, 760px\)"/);
-    expect(skill).toMatch(/maxHeight: wide \? "min\(92dvh, 760px\)" : undefined/);
+    expect(skill, "feste Höhe nur beim Blättern (und dort nur unterhalb 1280 px)")
+      .toMatch(/height: \(!wide && nPages > 1\) \? "min\(92dvh, 760px\)" : undefined/);
+    expect(skill, "der Deckel darf an keiner Bedingung hängen")
+      .toMatch(/maxHeight: "min\(92dvh, 760px\)"/);
+    expect(skill, "kein zweiter, breitenabhängiger Höhen-Zweig daneben")
+      .not.toMatch(/height: wide \?/);
   });
 
   it("die Passiv-Beschreibung merkt sich ihren Zustand und startet zu", () => {
@@ -254,15 +259,26 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
      an den Zweigen selbst — GENAU EINER je Breite. Das ist auf dieser Achse eher strenger als vorher:
      `toMatch` ließ einen zweiten `{wide && …}`-Zweig durchgehen, `toHaveLength(1)` nicht. */
   it("nur EINE Navigation ist gerendert (sonst zwei Tab-Reihenfolgen)", () => {
-    expect(skill.match(/\{wide && nPages > 0 && curG && \(/g) || [], "genau eine Desktop-Navigation")
+    expect(skill.match(/\{wide && nPages > 1 && curG && \(/g) || [], "genau eine Desktop-Navigation")
       .toHaveLength(1);
-    expect(skill.match(/\{!wide && nPages > 0 && curG && \(/g) || [], "genau eine Handy-Navigation")
+    expect(skill.match(/\{!wide && nPages > 1 && curG && \(/g) || [], "genau eine Handy-Navigation")
       .toHaveLength(1);
   });
 
-  it("der Leitfaden bleibt erreichbar (der i-Chip am Pager-Badge fällt auf dem Desktop weg)", () => {
-    expect(skill).toMatch(/\{wide && \(\s*<button type="button" onClick=\{\(\) => setGuideArch\(curG\.arch\)\}/);
+  /* Owner-Meldung 2026-09-07 (docs/muenz-oekonomie.md §5.1): nach der Türwahl stand oben noch ein Banner der
+     führenden Fraktion. Es war die Navigation selbst — bei EINER Seite blieb ein Reiter über die volle Breite
+     bzw. der mittige Fraktions-Chip stehen, beide ohne etwas zum Umschalten. Eine Navigation für eine Seite
+     ist keine Navigation; die Fraktion sagen die Badges der Karten. */
+  it("bei nur einer Seite steht keine Navigation da (das Tür-Angebot blättert nicht)", () => {
+    /* Nur die zwei NAVIGATIONS-Zweige (`wide &&` / `!wide &&`). Der Kartenblock selbst hängt weiter an
+       `nPages > 0` und muss das auch — bei einer Seite sollen die Skills ja erscheinen, nur eben ohne
+       Navigation darüber. Ein Wächter, der beides verböte, hätte das Angebot mit abgeräumt. */
+    expect(skill, "nPages > 0 ließe die Navigation bei einer einzigen Seite stehen")
+      .not.toMatch(/!?wide && nPages > 0 && curG/);
+    expect(skill, "der Kartenblock rendert weiterhin ab EINER Seite").toMatch(/\{nPages > 0 && curG && \(/);
   });
+
+  // exp: „der Leitfaden bleibt erreichbar" stand hier — der Archetyp-Leitfaden ist mit dem Onboarding gegangen.
 
   it("das Angebot steht auf dem Desktop dreispaltig (drei Skills je Fraktion, kein Loch)", () => {
     expect(skill).toMatch(/className="sk-offers grid sm:grid-cols-2/);
@@ -275,8 +291,7 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
        aussieht, als täte sie etwas, und nichts tut. */
     expect(offers[1], "grid-auto-rows: 1fr fehlt (Legendär-Muster)").toMatch(/grid-auto-rows:\s*1fr/);
     expect(offers[1], "align-items: stretch fehlt — items-start gewinnt sonst").toMatch(/align-items:\s*stretch/);
-    // Und die Legendär-Auswahl, von der das Muster stammt, muss es weiter benutzen.
-    expect(read("src/ui/LegendarySelect.jsx"), "Vorbild verloren").toMatch(/gridAutoRows: "1fr"/);
+    // exp skill rework: die Legendär-Auswahl, von der das Muster stammt, ist mit der Legendär-Phase gegangen.
   });
 });
 
@@ -322,8 +337,15 @@ describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () =
   it("beide Knöpfe sind derselbe ActionButton wie in der Perk-Wahl, nicht nachgebaut", () => {
     /* `sk-actbtn` ist seit #lv-ruhe nicht mehr die einzige Klasse am Knopf (die flache Desktop-Optik
        kommt über `lv-actbtn` dazu) — deshalb auf den ANFANG des Klassenstrings prüfen, nicht auf ihn ganz. */
-    expect(skill).toMatch(/<ActionButton kind="reroll" flex className="sk-actbtn\b/);
+    /* Der Neuwurf trägt seit der Münz-Ökonomie (§3.1) ZWEI Sorten: die normale und die goldene des
+       gekauften Legendär-Wurfs. Beide kommen aus dem geteilten Vokabular (`ACTIONBTN_KIND`) — dass die
+       Sonderoptik eine SORTE ist und keine handgemalte Kante am Knopf, ist hier die Invariante. */
+    expect(skill).toMatch(/<ActionButton kind=\{rerollBuy\.legendary \? "rerollLeg" : "reroll"\}[\s\S]{0,160}?className="sk-actbtn\b/);
     expect(skill).toMatch(/<ActionButton kind="decline" flex className="sk-actbtn\b/);
+    const modal = read("src/ui/modalStyle.jsx");
+    for (const kind of ["reroll", "rerollLeg", "decline"]) {
+      expect(modal, `Sorte ${kind} fehlt im geteilten Knopf-Vokabular`).toMatch(new RegExp(`\\b${kind}:\\s*\\{`));
+    }
     // Gegenprobe: keine handgeschriebene Kopie der Kanten-Optik mehr in der Aktionszeile.
     expect(skill, "as-edge-* von Hand — genau das war der sichtbare Unterschied")
       .not.toMatch(/className="as-edge-(strong|neutral) flex-1/);

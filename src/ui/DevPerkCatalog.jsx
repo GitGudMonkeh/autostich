@@ -4,13 +4,14 @@ import { CATEGORIES, PERK_DEFS } from "../game/perks.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { familyDef, rarityLabel } from "../i18n/labels.js"; // #sprache
 import { t } from "../i18n/index.js"; // #sprache
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 
 /* Dev-Run-Perk-Katalog (Test-Layout, nur Preview): statt des Zufallsangebots der KOMPLETTE Perk-Katalog,
    nach Kategorie (A–E + Legendär) aufklappbar. Klick auf eine Familie → Stufe I–IV wählen → onPick({familyId,tier}).
    Flache Legendäre → onPick(perkId). `offer` ist der Voll-Katalog (devCatalog.fullPerkOffer): Familien als
    {familyId,tier}, Legendäre als id-String. Wir zeigen nur, was wirklich im Angebot (also pickbar) ist. */
 const CAT_ORDER = ["A", "B", "C", "D", "E"];
-const LEG_GOLD = "#d4a63a";
+const LEG_GOLD = LEGENDARY_GOLD;
 
 export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
   const [openCat, setOpenCat] = useState("A");        // eine offene Kategorie (Akkordeon)

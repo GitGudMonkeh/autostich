@@ -1,11 +1,12 @@
 import * as C from "./constants.js";
 import { TIER_META } from "./rarity.js";                 // Raritäts-Namen: EINE Quelle (kein „Ungewöhnlich" mehr)
-import { trimmableSkillNames } from "./skills.js";       // trimmbare Skills: aus dem Register, nicht im Text gepflegt
+import { numWord } from "./skills.js";                   // Zahlwörter aus derselben Quelle wie die Skilltexte
 // Eis-Neudesign: die Gletscher-Tuning-Zahlen leben in glacier.js (Single Source, Sim-tunebar) — direkt ziehen, damit
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
-import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
+import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS, BURST_AT as G_BURST_AT,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE } from "./glacier.js";
+  GEO_FLAECHE as G_FLAECHE, GLACIER_MAX as G_MAX, FIRN_REFILL_TARGET as G_REFILL, FIRN_DRAW as G_DRAW,
+  FIRN_GROUND as G_GROUND, KEEP_MAX as G_KEEP_MAX } from "./glacier.js";
 
 /* ============================================================
    GLOSSAR — die EINZIGE Quelle für die Erklärungen der Spielbegriffe (#212 / #201 P1+P9 / Glossar-Rework).
@@ -31,10 +32,7 @@ import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G
 const de = (x) => String(x).replace(".", ",");
 // Prozent(punkte) als ganze Zahl (0,07 → 7).
 const pct = (x) => Math.round(x * 100);
-// Tausendertrenner (2000 → „2.000").
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // Aus den Registern gezogene Aufzählungen (kein Text↔Code-Drift).
-const TRIMMABLE_NAMES = trimmableSkillNames();
 const RARITY_NAMES = Object.values(TIER_META).map((t) => t.label).join(" · ");
 
 // Akzentfarben (hartkodiert, damit das Glossar NICHT von skills.js/ARCHETYPE_META abhängt — das gäbe einen Import-Zyklus).
@@ -92,13 +90,13 @@ export const GLOSSARY = {
      Gemessen wird der Kampfwert, also beides zusammen (engine.js: pValue − oValue). Der Begriff sagt das jetzt
      selbst; die Alt-Formen bleiben in `match`, damit ältere Texte weiter fett markiert werden. */
   wertvorsprung: { category: "grund", label: "Kampfwert-Vorsprung", icon: "⚔", color: CLR.fire,
-    text: "Der Abstand zwischen deinem Kampfwert und dem der Gegnerkarte, also Kartenwert plus Stichwert-Boni, nicht nur der Kartenwert. Nicht ob du gewinnst zählt für Feuer, sondern wie klar: Hitze und Feuer-Score wachsen mit dem Vorsprung.",
+    text: "Der Abstand zwischen deinem Kampfwert und dem der Gegnerkarte, also Kartenwert plus Stichwert-Boni, nicht nur der Kartenwert. Nicht ob du gewinnst zählt für Feuer, sondern wie klar: die Hitze wächst mit dem Vorsprung, und Verbrennung zählt einen Sieg ab ihrer Schwelle mehr.",
     match: ["Kampfwert-Vorsprung", "Wertvorsprung", "Vorsprung", "Wertabstand"] },
   kampfwert: { category: "grund", label: "Kampfwert", icon: "◆", color: CLR.grund,
     text: "Der effektive Wert einer Karte im Stich: Kartenwert plus alle Stichwert-Boni. Der höhere gewinnt.",
     match: ["Kampfwert"] },
   crit: { category: "grund", label: "Crit", icon: "↯", color: CLR.lightning,
-    text: `Kritischer Treffer: der Sieg zählt mit dem Crit-Multiplikator (Basis ×${de(C.CRIT_BASE_MULT)}). Der Basis-Crit ist 0. Crit-Chance kommt aus den Präzision-Familien und aus Blitz-Skills. Jeder Blitz-Skill hebt zudem den Crit-Multiplikator um +${de(C.LIGHTNING_CRIT_MULT_PER_SKILL)}×.`,
+    text: `Kritischer Treffer: der Sieg zählt mit dem Crit-Multiplikator (Basis ×${de(C.CRIT_BASE_MULT)}). Der Basis-Crit ist 0. Crit-Chance kommt aus den Präzision-Familien und aus Blitz (+${pct(C.LIGHTNING_CRIT_SOCKET)} %, sobald Blitz aktiv ist, dazu +${pct(C.LIGHTNING_CRIT_PER_SKILL)} % je gehaltenem Blitz-Skill). Die Crit-Chance ist bei 100 % gedeckelt; jeder Prozentpunkt darüber gibt +${de(C.OVERCRIT_MULT_PER_PP)}× Crit-Multiplikator.`,
     match: ["Crit", "Crits", "kritischer Treffer", "kritischen Treffer"] },
   gleichstand: { category: "grund", label: "Gleichstand", icon: "⇌", color: CLR.grund,
     text: "Gleiche Kampfwerte im Stich, normalerweise ohne Sieg (kein Score).",
@@ -194,112 +192,92 @@ export const GLOSSARY = {
     text: `Eine Skill-Familie mit eigener Identität (Feuer · Blitz · Eis · Pflanze). Der erste Skill schaltet sie frei; bis zu ${C.MAX_ARCHETYPES} mischbar.`,
     match: ["Archetyp", "Archetypen", "Archetyps", "Fraktion", "Fraktionen"] },
   skillslot: { category: "frak", group: "gen", label: "Skill-Slot", icon: "▭", color: CLR.lightning,
-    text: `Du hältst höchstens ${C.SKILL_SLOTS} Skills gleichzeitig. Ist der Vorrat voll, ersetzt ein neuer einen alten. Der legendäre Skill aus der Legendär-Phase belegt einen zusätzlichen, festen Slot.`,
+    text: "Deine Skill-Slots sind nicht begrenzt: jeder gewählte Skill bleibt, Legendäre eingeschlossen. Nur eine Dev-Run-Regel kann ein Limit setzen; dann ersetzt ein neuer Skill einen alten.",
     match: ["Skill-Slot", "Skill-Slots", "Slots"] },
   skillrunde: { category: "frak", group: "gen", label: "Skill-Durchlauf", icon: "◷", color: CLR.lightning,
     text: `Zu festen Zeitpunkten im Lauf (erstmals Durchlauf ${C.FIRST_SKILL_CYCLE}) wählst du Skills statt eines Perks: ${C.SKILLS_OFFERED} Skills zur Auswahl, alle 4 Archetypen dabei.`,
     match: ["Skill-Durchlauf", "Skill-Durchläufe"] },
   consume: { category: "frak", group: "gen", label: "Konsument", icon: "⊗", color: CLR.lightning,
-    text: "Ein Skill, der eine angesammelte Ressource für einen starken Effekt verbraucht: Feuer verbrennt Hitze, Blitz verbraucht Ladung. Mehrere Feuer-Konsumenten wirken gleichzeitig; von den Blitz-Konsumenten immer nur einer, ein neuer ersetzt den alten.",
+    text: "Ein Skill, der eine angesammelte Ressource in Ertrag wandelt: bei Feuer wandelt Schmelzpunkt bei voller Hitzeleiste die Hitze, die nicht mehr auf die Leiste passt, in Basis-Score; die Leiste bleibt voll, verbrannt wird nichts. Die Schmiede braucht Hitze nur als Schwelle. Blitz kennt keine Konsumenten mehr, die Leiste ionisiert selbst.",
     match: ["Konsument", "Konsumenten", "Hitze-Konsument"] },
+  // exp skill rework (docs/skill-rework.md §1): Legendäre sind die fünfte Seltenheit des Skill-Angebots — kein Tor,
+  // keine eigene Phase, kein Ersetzen. (Wortlaut in Phase 4 mit den übrigen Texten abzunehmen.)
   legskill: { category: "frak", group: "gen", label: "Legendärer Skill", icon: "★", color: CLR.gold,
-    text: `Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills kommen ausschließlich aus der Legendär-Phase (Durchlauf ${C.LEG_PHASE_CYCLE}). Welche Archetypen dort antreten, entscheidet der Upgrade-Baum.`,
+    text: "Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills tauchen als fünfte Seltenheit im normalen Skill-Angebot auf: ohne Vorbedingung, immer aus dem Archetyp des Platzes, den sie ersetzen. Mit Glück hält man zwei.",
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
-    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet (Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 %), sonst wäre er verschwendet. Feuer (Weißglut) staut ihn als Überhitzung auf; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
+    text: `Hitze, die ein Sieg nicht mehr auf die Leiste bringt (über ${C.HEAT_MAX} %), wäre verschwendet. Weißglut verlängert die Leiste bis ${C.WEISSGLUT_HEAT_MAX} %, der Schmelzpunkt macht Basis-Score daraus.`,
     match: ["Überlauf", "Überlauf-Wachstum"] },
   bekenntnis: { category: "frak", group: "gen", label: "Bekenntnis", icon: "◉", color: CLR.lightning,
-    text: "Wie stark du dich einem Archetyp verschrieben hast: der Anteil deiner Skill-Slots, den seine Skills belegen. Viele Effekte, vor allem Legendäre, zahlen anteilig danach, voll erst bei reinem Deck.",
-    match: ["Bekenntnis", "Blitz-Bekenntnis", "Feuer-Bekenntnis"] },
+    text: "Wie stark du dich einem Archetyp verschrieben hast. Kein Archetyp skaliert seinen Ertrag mehr daran: jeder Skill wirkt für sich, und die Tiefe zahlt über die Mechanik statt über einen Zähler.",
+    match: ["Bekenntnis", "Pflanzen-Bekenntnis"] },
 
   /* ============ 4 · Feuer ============ */
+  // exp skill rework (§4.2): Hitze, Brand, Weißglut und Schmieden neu beschrieben — Asche, Ascheglut und Glutdividende
+  // sind mit dem Passiv gegangen. Wortlaut in Phase 4 mit den Skilltexten abnehmen.
   heat: { category: "frak", group: "fire", label: "Hitze", icon: "🜂", color: CLR.fire,
-    text: `Siege mit klarem Kampfwert-Vorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Score = (Vorsprung − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill). Großer Vorsprung zahlt weiter, ohne Deckel, mit abnehmendem Zuwachs; klare Niederlagen kühlen ab.`,
+    text: `Siege ab ${C.HEAT_MIN_MARGIN} Kampfwert-Vorsprung heizen die Hitzeleiste (0–${C.HEAT_MAX} %): +${C.HEAT_PER_POINT} % je Punkt Vorsprung über ${C.HEAT_MARGIN_OFFSET}, ohne Deckel. Niederlagen kühlen −${C.HEAT_LOSS} %. Je 10 % gehaltener Hitze zählt jeder Sieg +${pct(C.HEAT_MULT_PER_10)} % Score, als eigener Multiplikator. Die Feuer-Skills nutzen die Hitze.`,
     match: ["Hitze", "Hitzeleiste"] },
-  glutdividende: { category: "frak", group: "fire", label: "Glutdividende", icon: "🜂", color: CLR.fire,
-    text: "Zusätzlicher Score bei jedem Feuer-Sieg, der direkt zählt (ohne Serie/Crit/Formation zu durchlaufen). Je mehr Hitze du hältst, desto mehr, bis zu einem Deckel. Stark im frühen Spiel.",
-    match: ["Glutdividende"] },
   brand: { category: "frak", group: "fire", label: "Brandmal", icon: "🜂", color: CLR.fire,
-    text: `Eine gebrandmarkte Gegnerkarte verliert Wert; jeder Brand gibt +${C.BRAND_ASH} Asche, den Rohstoff der Feuer-Schmiede.`,
-    match: ["Brandmal", "Brand", "Brände", "gebrandmarkte"] },
-  ash: { category: "frak", group: "fire", label: "Asche", icon: "🜂", color: CLR.fire,
-    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Kartenwert); ist die Schmiede voll, verglüht restliche Asche als Ascheglut zu Score.`,
-    match: ["Asche"] },
-  // Zwei getrennte Überlauf-Pfade, die früher beide „Weißglut" hießen (Sprachprüfung B1): HITZE über 100 %
-  // (Skill Weißglut) und ASCHE über die Schmiede-Kapazität (Ascheglut). Ein Wort = eine Bedeutung.
+    text: "Eine gebrandmarkte Gegnerkarte verliert im nächsten Durchlauf ihre Brandpunkte an Wert (nie unter 0). Brände verschiedener Quellen addieren sich; sie erneuern sich je Durchlauf und stapeln sich nur mit Sonnenkern über die Durchläufe.",
+    match: ["Brandmal", "Brand", "Brände", "gebrandmarkte", "Brandpunkt", "Brandpunkte"] },
   whiteheat: { category: "frak", group: "fire", label: "Weißglut", icon: "🜂", color: CLR.fire,
-    text: `Der Hitze-Überlauf: Ist die Hitzeleiste voll, staut sich jeder weitere Hitzegewinn als Überhitzung auf (bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %); je heißer, desto weniger davon kommt an. Jeder Punkt Überhitzung gibt +${Math.round(C.OVERHEAT_SCORE_STEP * 100)} % auf deinen Feuer-Score und baut sich je Stich wieder ab. Braucht den Skill Weißglut.`,
-    match: ["Weißglut", "Überhitzung"] },
-  ashglow: { category: "frak", group: "fire", label: "Ascheglut", icon: "🜂", color: CLR.fire,
-    text: `Der Asche-Überlauf: Ist die Schmiede-Kapazität voll, wird restliche Asche am Durchlauf-Ende in Score-Häppchen verbrannt (+${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche). Asche wird so jeden Durchlauf vollständig ausgegeben, kein toter Haufen mehr.`,
-    match: ["Ascheglut"] },
+    text: `Mit dem Skill Weißglut reicht die Hitzeleiste bis ${C.WEISSGLUT_HEAT_MAX} %, und über ${C.HEAT_MAX} % läuft der Hitze-Multiplikator steiler weiter. Es gibt keinen eigenen Abbau: über ${C.HEAT_MAX} % kühlt nur, was auch darunter kühlt (Niederlagen, Konsumenten).`,
+    match: ["Weißglut"] },
   forge: { category: "frak", group: "fire", label: "Schmieden", icon: "⚒", color: CLR.fire,
-    text: `Asche wird zu dauerhaftem Kartenwert (Ascheschmiede: ${C.FORGE_COST} Asche → +${C.FORGE_VALUE} Wert auf die niedrigste Karte).`,
-    match: ["Schmieden", "geschmiedet", "Schmiede", "Ascheschmiede"] },
+    text: `Hitze wird zu dauerhaftem Kartenwert: die Schmiede gibt am Ende eines Durchlaufs deiner niedrigsten Karte +${C.FORGE_VALUE} Kartenwert, sobald die Hitze ihre Schwelle deckt. Der Schmiedewert bleibt in der Karte, auch nach einem Skill-Wechsel.`,
+    match: ["Schmieden", "geschmiedet", "Geschmiedete", "Schmiede", "Schmiedewert", "Schmiedung"] },
 
   /* ============ 4 · Blitz ============ */
+  // exp skill rework (§3.2): Ladung, Ionisierung und Stapel neu beschrieben — Wortlaut in Phase 4 mit den Skilltexten abnehmen.
   charge: { category: "frak", group: "lightning", label: "Ladung", icon: "↯", color: CLR.lightning,
-    text: `Crits erzeugen Ladung (max ${C.LIGHTNING_MAX_CHARGE}). Bei voller Ladung lösen Blitz-Konsumenten ihren Effekt aus und verbrauchen sie.`,
+    text: `Jeder Crit gibt +1 Ladung (Leiste ${C.LIGHTNING_MAX_CHARGE}). Ist die Leiste voll, ionisiert sie die nächste Karte in der Reihenfolge (ein Stapel und dauerhaft +${C.ION_VALUE_PER_BAR} Kartenwert) und leert sich.`,
     match: ["Ladung", "Ladungen"] },
   ionize: { category: "frak", group: "lightning", label: "Ionisierung", icon: "↯", color: CLR.lightning,
-    text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und erhält danach +1 Stapel (max ${C.ION_MAX_STACKS}). Zusätzlich lädt das ionisierte Feld die Luft auf: jeder Ionisierungsstapel im Deck hebt die Crit-Chance JEDER Siegkarte um +${pct(C.ION_CRIT_PP_PER_STACK)} % (feldweit, bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} %). Wie viele Karten je Ladungsverbrauch ionisieren, wächst mit dem Archetyp: +${C.ION_SPEED_PER_SKILL} je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS}.`,
+    text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel in die Basis, vor den Multiplikatoren, und +${de(C.ION_CRIT_MULT_PER_STACK)}× Crit-Multiplikator je Stapel. Stapel entstehen nur aus der vollen Ladungsleiste und aus Blitz-Skills und sind ohne Deckel.`,
     match: ["Ionisierung", "ionisierte", "ionisierten", "ionisiert"] },
   stapel: { category: "frak", group: "lightning", label: "Stapel (Ionisierung)", icon: "▤", color: CLR.lightning,
-    text: `Eine Ionisierungs-Aufladung auf einer einzelnen Karte (höchstens ${C.ION_MAX_STACKS} je Karte). Jeder Stapel gibt bei Sieg mit der Karte +${C.ION_SCORE_PER_STACK} Score und hebt zusätzlich feldweit die Crit-Chance (siehe Ionisierung). Eine Karte mit ${C.ION_MAX_STACKS} Stapeln ist voll ionisiert und schaltet Sondereffekte frei (u. a. Kurzschluss, Durchschlag).`,
+    text: `Eine Ionisierung auf einer einzelnen Karte, ohne Deckel. Jeder Stapel gibt bei Sieg mit der Karte +${C.ION_SCORE_PER_STACK} Score und +${de(C.ION_CRIT_MULT_PER_STACK)}× Crit-Multiplikator. Blitzfänger macht jede ionisierte Karte stärker, Kurzschluss zählt tiefe Stapel doppelt, Kettenblitz vertieft die tiefste Karte.`,
     match: ["Ionisierungsstapel", "Ionisierungsstapeln", "Stapel", "Stapeln"] },
   kaskade: { category: "frak", group: "gen", label: "Kaskade", icon: "⇶", color: CLR.lightning,
-    text: "Ein Ereignis zündet das nächste. Bei Blitz: ein Crit auf oder neben einer ionisierten Karte erzeugt zusätzliche Ladung. Bei Eis: ein berstender Gletscher reißt seine Nachbarn mit, sodass eine Bruchwelle durchs Cluster läuft.",
+    text: `Ein Ereignis zündet das nächste. Bei Blitz: die Stapel einer Karte machen ihren eigenen Crit wahrscheinlicher (Lichtbogen), und jeder Crit füllt die Ladungsleiste weiter. Bei Eis: jeder angrenzende Gletscher macht einen Bruch wuchtiger, sodass ein dichtes Cluster sich selbst verstärkt.`,
     match: ["Kaskade", "Kaskaden"] },
 
   /* ============ 4 · Eis ============ */
   glacier: { category: "frak", group: "ice", label: "Gletscher", icon: "❄", img: "glacier", color: CLR.ice,
-    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn.`,
+    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn. Auf dem Brett haben höchstens ${G_MAX} Gletscher Platz, egal woher sie kommen; nur das Ewige Schild hebt diese Grenze auf.`,
     match: ["Gletscher", "Gletschern"] },
   masse: { category: "frak", group: "ice", label: "Masse", icon: "❄", color: CLR.ice,
-    text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
+    text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich. Dazu friert jedes offene Feld je Durchlauf +${de(G_GROUND)} Schnee in seine Boden-Reserve. Dieser Teil hängt am Brett, nicht an der Zahl deiner Gletscher, und kommt deshalb auch einem kleinen Eis-Anteil voll zugute.`,
     match: ["Masse"] },
   bersten: { category: "frak", group: "ice", label: "Bersten", icon: "✷", color: CLR.ice,
-    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
+    text: `Erreicht ein Gletscher ${G_BURST_AT} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher; trifft der Bruch einen Gletscher-Nachbarn, kommt die Kollision dazu. Danach bleibt ihm nur, was über ${G_BURST_AT} Masse lag, und davon höchstens ${de(G_KEEP_MAX)}; zum Durchlauf-Beginn füllt er sich aus seiner Boden-Reserve wieder auf.`,
     match: ["Bersten", "bricht", "brechen", "Bruch", "Brüche", "Bruchs", "brechendem", "Berst-Score", "Berst-Schwelle"] },
   cluster: { category: "frak", group: "ice", label: "Cluster", icon: "⧉", color: CLR.ice,
-    text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Viele Eis-Skills messen die Cluster-Größe (z. B. Verschmelzen, Verzahnung); Eisbrücke zählt auch die Diagonalen dazu.",
+    text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Verzahnung misst die Cluster-Größe, Packeis und Frostbund zählen die direkten Nachbarn; Eisbrücke zählt auch die Diagonalen dazu.",
     match: ["Cluster", "Clusters", "Clustern"] },
   eisformation: { category: "frak", group: "ice", label: "Gletscher-Formationen", icon: "❄", color: CLR.ice,
-    text: `Eis ist das einzige Deck mit Gletscher-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten: Block = 2×2 (4 Gletscher, ×${de(G_BLOCK)}), Kreuz = Zentrum + 4 Nachbarn (5, ×${de(G_KREUZ)}), Linie = volle Reihe (5) oder Spalte (8) (×${de(G_LINIE)}), Große Fläche = 3×3 (9, ×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,
+    text: `Eis ist der einzige Archetyp mit Gletscher-Formationen. Geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten: Block = 2×2 (4 Gletscher, ×${de(G_BLOCK)}), Kreuz = Zentrum + 4 Nachbarn (5, ×${de(G_KREUZ)}), Linie = volle Reihe (5) oder Spalte (8) (×${de(G_LINIE)}), Große Fläche = 3×3 (9, ×${de(G_FLAECHE)}). Überlappt ein Gletscher mehrere Formen, zählt die stärkste.`,
     match: ["Gletscher-Formationen", "Gletscher-Formation", "Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Schnee".
   freeze: { category: "frak", group: "ice", label: "Schnee", icon: "❄", color: CLR.ice,
-    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
+    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Jedes offene Feld friert je Durchlauf +${de(G_GROUND)} Schnee an und gibt ${Number.isFinite(G_DRAW) ? `bis zu ${de(G_DRAW)} davon` : "alles davon"} an deine Gletscher ab: aufgeteilt auf alle, der nächstgelegene bekommt am meisten, keiner geht leer aus. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; er startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_REFILL} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Zusätzlich laden Dauerfrost, Schneetreiben und Eiszeit den offenen Boden auf, nie unter einen Gletscher.`,
     match: ["Schnee"] },
 
-  /* ============ 4 · Pflanze ============ */
+  /* ============ 4 · Pflanze (exp skill rework, §6) ============ */
   growth: { category: "frak", group: "plant", label: "Wachstum", icon: "⚘", color: CLR.plant,
-    text: `Eigene Karten wachsen bei Siegen (nur steigend), und zwar umso schneller, je mehr Pflanze-Skills du hältst (volles Tempo ab ${C.PLANT_GROWTH_SKILL_REF} Skills, darunter anteilig). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif); darunter ist sie ein Setzling.`,
-    match: ["Wachstum"] },
-  setzling: { category: "frak", group: "plant", label: "Setzling", icon: "❦", color: CLR.plant,
-    text: `Eine Karte, die schon wächst, aber noch nicht reif ist (Wachstum unter ${C.PLANT_GREEN_THRESHOLD}). Ein Setzling zählt noch NICHT zum grünen Farbblock; erst ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird er grün (reif). Setzlingsbeet gibt der niedrigsten Karte je Segment +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung.`,
-    match: ["Setzling", "Setzlinge", "Setzlingen"] },
-  green: { category: "frak", group: "plant", label: "Grün (reif)", icon: "⚘", color: CLR.plant,
-    text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock: je größer der Block, desto mehr Score. Der Farbblock-Multiplikator für grüne Karten wird auf max. ×1,35 gedeckelt.`,
-    match: ["Grün", "grüne", "grünen", "grüner", "Reife", "reif"] },
-  wurzeln: { category: "frak", group: "plant", label: "Wurzeln", icon: "⚘", color: CLR.plant,
-    text: `Solange du nur Pflanzen-Skills hältst, machen grüne Siege die Karte wertvoller: je ${C.WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${C.PLANT_VALUE_CAP}), ab ${C.WURZELSCHLAG_LOSS_MIN_SKILLS} Skills auch bei jeder ${C.WURZELSCHLAG_LOSS_EVERY}. Niederlage. Das Wachstum bleibt dabei erhalten und zählt weiter für Wurzel-Score und die Legendären.`,
-    match: ["Wurzeln", "Wurzel-Score", "Wurzeln-Score"] },
-  bluete: { category: "frak", group: "plant", label: "Blüte", icon: "❀", color: CLR.plant,
-    text: `Ein Grün-Payoff: Siegt eine grüne Karte mit grünen Nachbarn, gibt sie +${C.BLUETE_SCORE} Blüte-Score je grüner Karte im Segment (Blütezeit ×${C.BLUETEZEIT_MULT} in Formation, Überwucherung nochmals ×2).`,
-    match: ["Blüte", "Blüte-Score", "Blütezeit"] },
-  trimmen: { category: "frak", group: "plant", label: "Trimmen", icon: "✂", color: CLR.plant,
-    text: `Der Wendepunkt vom Wachsen zum Ernten: ersetzt du einen Wachstums-Skill (${TRIMMABLE_NAMES}), zählt das als Trimmung → dauerhaft +${pct(C.TRIM_STEP)} % Wurzel- & Blüten-Score, je mehr Trimmungen desto höher (bis +${pct(C.TRIM_CAP)} %). Die Wachstums-Skills sterben so nicht, sie veredeln die Ernte.`,
-    match: ["Trimmen", "Trimmung", "Trimmungen", "getrimmt"] },
-  colonize: { category: "frak", group: "plant", label: "Kolonisieren / Ausläufer", icon: "⚘", color: CLR.plant,
-    text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom). Besiegst du eine kolonisierte Karte, erntest du Wachstum.",
-    match: ["Kolonisieren", "kolonisierte", "Ausläufer"] },
+    text: `Wachstum liegt je Karte und fällt nie. Ein Sieg gibt der Siegkarte +${C.PLANT_GROWTH_WIN} Wachstum, dazu +${C.PLANT_GROWTH_PER_FORMATION} je Formation an ihrer Position. Wie gut eine Karte steht, entscheidet also mehr als der Sieg selbst. Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum ist sie grün, ab ${C.PLANT_BLOOM_THRESHOLD} blühend. Niederlagen geben nichts.`,
+    match: ["Wachstum", "wächst", "wachsen"] },
+  green: { category: "frak", group: "plant", label: "Grün", icon: "⚘", color: CLR.plant,
+    text: `Eine grüne Karte hat eine neue Farbe: grüne Karten bilden miteinander Farbblöcke, egal welche Farbe sie vorher hatten. Grün ist Farbe, keine Kraft: Kartenwert gibt es dafür nicht, der Score kommt aus den Formationen.`,
+    match: ["Grün", "grüne", "grünen", "grüner", "grünem"] },
+  bloom: { category: "frak", group: "plant", label: "Blühend", icon: "❀", color: CLR.plant,
+    text: `Die dritte Stufe einer Karte (ab ${C.PLANT_BLOOM_THRESHOLD} Wachstum). Ein Sieg mit einer blühenden Karte gibt +${C.PLANT_BLOOM_SCORE_PER_GREEN} Basis-Score je grüner Karte in ihren Formationen, die Score-Quelle des Archetyps. Blühende Karten sind auch grün. Wo grüne Karten gezählt werden, zahlt eine blühende ${numWord(C.PLANT_BLOOM_WEIGHT)}fach; je ${C.PLANT_BLOOM_WEIGHT_PER_GROWTH} weitere Wachstumspunkte zahlt sie einmal mehr.`,
+    match: ["blühend", "blühende", "blühenden", "Blüte"] },
   overgrowth: { category: "frak", group: "plant", label: "Überwucherung", icon: "⚘", color: CLR.plant,
-    text: `Ist das Feld ≥${Math.round(C.UEBERWUCHERUNG_FIELD * 100)} % grün, werden alle Farbblöcke stärker (+${de(C.UEBERWUCHERUNG_FACTOR)} Faktor) und Blüte zählt doppelt.`,
+    text: `Ein Hebel der Pflanze: ist genug vom Feld grün, entstehen rein grüne Formationen mit einer Karte weniger. Die Hebel ändern, was als Formation zählt, statt Score zu addieren.`,
     match: ["Überwucherung"] },
-  eternalSpring: { category: "frak", group: "plant", label: "Ewiger Frühling", icon: "⚘", color: CLR.plant,
-    text: `Farbblock zählt Grün schon ab ${C.EWIGER_FRUEHLING_FARBBLOCK} Karten und Überwucherung schon ab ${Math.round(C.EWIGER_FRUEHLING_FIELD * 100)} % Feld. Je größer dein ewig-grünes Feld, desto mehr Score zahlt jeder grüne Sieg direkt.`,
-    match: ["Ewiger Frühling"] },
+
 
   /* ============ 5 · Präzision · Crit (#267) ============ */
   praez_intro: { category: "praez", label: "Präzision", icon: "◎", color: CLR.lightning,
