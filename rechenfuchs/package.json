@@ -1,0 +1,15 @@
+{
+  "name": "rechenfuchs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Private Mathe-Übungs-App für die 3. Klasse (Bayern) – statische Web-App ohne Build-Step",
+  "scripts": {
+    "start": "node scripts/lokal-server.js",
+    "test": "node --test",
+    "icon": "node scripts/icon-erzeugen.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

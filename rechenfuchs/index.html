@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Rechenfuchs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Private Mathe-Übungs-App für die 3. Klasse">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Rechenfuchs">
+  <meta name="theme-color" content="#fff6e9">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon.png">
+  <link rel="icon" href="icon/fuchs.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+
+    <section id="screen-start" class="screen" hidden>
+      <header class="kopf">
+        <h1 class="app-titel">Rechenfuchs</h1>
+        <p class="begruessung" id="start-begruessung"></p>
+      </header>
+      <div class="start-inhalt">
+        <aside class="karte fuchs-karte">
+          <div id="start-fuchs" class="fuchs-buehne"></div>
+          <p class="punkte" id="start-punkte"></p>
+          <p class="naechste-belohnung" id="start-belohnung"></p>
+        </aside>
+        <nav class="kapitel-liste" id="start-kapitel" aria-label="Übungen"></nav>
+      </div>
+    </section>
+
+    <section id="screen-runde" class="screen" hidden>
+      <header class="kopf kopf-runde">
+        <button type="button" class="knopf knopf-neutral" id="runde-zurueck"></button>
+        <h2 class="runde-titel" id="runde-titel"></h2>
+        <ol class="fortschritt-punkte" id="runde-fortschritt"></ol>
+      </header>
+      <div class="runde-inhalt">
+        <div class="aufgabe-spalte">
+          <div class="karte aufgabe-karte">
+            <p class="aufgabe-zaehler" id="runde-zaehler"></p>
+            <p class="term"><span id="runde-term-text"></span> = <span class="antwort-feld" id="runde-antwort">?</span></p>
+          </div>
+          <div class="karte feedback-karte" id="runde-feedback" aria-live="polite" hidden></div>
+        </div>
+        <div class="eingabe-spalte">
+          <div id="runde-ziffernblock" aria-label="Ziffernblock"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-ergebnis" class="screen" hidden>
+      <header class="kopf">
+        <h1 class="app-titel">Rechenfuchs</h1>
+      </header>
+      <div class="ergebnis-inhalt">
+        <div class="karte ergebnis-karte">
+          <h2 class="ergebnis-titel" id="ergebnis-titel"></h2>
+          <p class="ergebnis-nachricht" id="ergebnis-nachricht"></p>
+          <p class="ergebnis-punkte" id="ergebnis-punkte"></p>
+          <p class="ergebnis-stufe" id="ergebnis-stufe" hidden></p>
+          <div class="knopfreihe">
+            <button type="button" class="knopf knopf-primaer" id="ergebnis-nochmal"></button>
+            <button type="button" class="knopf knopf-neutral" id="ergebnis-uebersicht"></button>
+          </div>
+        </div>
+        <aside class="karte fuchs-karte">
+          <div id="ergebnis-fuchs" class="fuchs-buehne"></div>
+          <p class="neu-freigeschaltet" id="ergebnis-neu" hidden></p>
+          <p class="naechste-belohnung" id="ergebnis-belohnung"></p>
+        </aside>
+      </div>
+    </section>
+
+  </main>
+  <noscript><p class="karte">Für den Rechenfuchs muss JavaScript eingeschaltet sein.</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

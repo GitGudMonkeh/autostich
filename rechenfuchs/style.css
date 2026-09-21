@@ -1,0 +1,165 @@
+/* Rechenfuchs – Querformat-first fürs iPad, große Touch-Ziele (Tasten 72 pt, Knöpfe 56 pt), warme ruhige Farben. */
+
+:root {
+  --bg: #fff6e9;
+  --karte: #ffffff;
+  --text: #2b2b2b;
+  --text-leise: #6a6a6a;
+  --primaer: #e8863a;
+  --primaer-dunkel: #b95f1a;
+  --primaer-hell: #fde4cf;
+  --gruen: #2e9e5b;
+  --gruen-dunkel: #23784a;
+  --gruen-hell: #e2f5e9;
+  --amber: #c98a12;
+  --amber-hell: #fff1cf;
+  --rand: #efd9c1;
+  --schatten: 0 4px 0 #ecd6bd;
+  --radius: 20px;
+  --abstand: 16px;
+}
+
+* { box-sizing: border-box; }
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1.35;
+}
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.screen {
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: calc(var(--abstand) + env(safe-area-inset-top)) calc(var(--abstand) + env(safe-area-inset-right))
+           calc(var(--abstand) + env(safe-area-inset-bottom)) calc(var(--abstand) + env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand);
+}
+
+.karte { background: var(--karte); border-radius: var(--radius); box-shadow: var(--schatten); padding: 20px 24px; }
+
+.knopf { min-height: 56px; min-width: 56px; padding: 12px 24px; border: 0; border-radius: 16px; font-size: 22px; font-weight: 600; }
+.knopf-primaer { background: var(--primaer); color: #fff; box-shadow: 0 4px 0 var(--primaer-dunkel); }
+.knopf-neutral { background: var(--karte); color: var(--text); box-shadow: var(--schatten); }
+.knopf:active { transform: translateY(3px); box-shadow: none; }
+.knopf:disabled { opacity: 0.5; cursor: default; transform: none; }
+.knopfreihe { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+
+/* Kopfzeile */
+.kopf { display: flex; align-items: center; gap: var(--abstand); flex-wrap: wrap; }
+.app-titel { font-size: 32px; font-weight: 800; color: var(--primaer-dunkel); }
+.begruessung { font-size: 22px; color: var(--text-leise); }
+
+/* Fuchs */
+.fuchs-karte { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.fuchs-buehne { display: flex; justify-content: center; width: 100%; }
+.fuchs { width: min(60vw, 240px); height: auto; transform-origin: 50% 90%; animation: wippen 3s ease-in-out infinite; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.fuchs.jubel { animation: huepfen 0.7s ease-in-out 3, wippen 3s ease-in-out 2.1s infinite; }
+.punkte { font-size: 28px; font-weight: 700; }
+.naechste-belohnung { color: var(--text-leise); font-size: 18px; }
+.neu-freigeschaltet { font-size: 22px; font-weight: 700; color: var(--gruen-dunkel); background: var(--gruen-hell); border-radius: 12px; padding: 8px 14px; }
+
+@keyframes wippen {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(-2deg); }
+}
+@keyframes huepfen {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-18px) scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fuchs, .fuchs.jubel { animation: none; }
+}
+
+/* Startseite */
+.start-inhalt { display: grid; grid-template-columns: minmax(240px, 1fr) 2fr; gap: 24px; align-items: start; }
+.kapitel-titel { font-size: 26px; font-weight: 800; }
+.kapitel-untertitel { font-size: 18px; font-weight: 500; color: var(--text-leise); margin-left: 6px; }
+.abschnitt-titel { font-size: 16px; font-weight: 700; color: var(--text-leise); text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
+.unterkapitel-liste { display: flex; flex-direction: column; gap: 12px; }
+.unterkapitel { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 88px; text-align: left; border: 0; }
+.unterkapitel:active { transform: translateY(3px); box-shadow: none; }
+.unterkapitel-text { display: flex; flex-direction: column; gap: 2px; }
+.unterkapitel-titel { font-size: 24px; font-weight: 700; }
+.unterkapitel-beispiel { color: var(--text-leise); font-size: 18px; font-variant-numeric: tabular-nums; }
+.unterkapitel-stand { color: var(--gruen-dunkel); font-size: 16px; }
+.stufe-abzeichen { flex: none; background: var(--primaer-hell); color: var(--primaer-dunkel); font-weight: 700; font-size: 16px; padding: 6px 12px; border-radius: 999px; }
+
+/* Runde */
+.kopf-runde { justify-content: space-between; }
+.runde-titel { font-size: 24px; font-weight: 700; flex: 1; text-align: center; }
+.fortschritt-punkte { display: flex; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.punkt { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--rand); background: var(--karte); }
+.punkt.ist-aktuell { border-color: var(--primaer); background: var(--primaer-hell); }
+.punkt.ist-richtig { border-color: var(--gruen); background: var(--gruen); }
+.punkt.ist-nicht-richtig { border-color: var(--amber); background: var(--amber-hell); }
+
+.runde-inhalt { display: grid; grid-template-columns: 1fr minmax(280px, 380px); gap: 24px; align-items: start; align-content: start; flex: 1; }
+.aufgabe-spalte { display: flex; flex-direction: column; gap: var(--abstand); }
+.aufgabe-zaehler { color: var(--text-leise); font-size: 18px; }
+.term {
+  font-size: clamp(44px, 7vw, 80px);
+  font-weight: 700;
+  text-align: center;
+  margin: 12px 0 8px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.antwort-feld { display: inline-block; min-width: 2.4em; padding: 0 0.15em; border-bottom: 6px solid var(--primaer); color: var(--primaer-dunkel); }
+.antwort-feld.ist-richtig { color: var(--gruen); border-color: var(--gruen); }
+.antwort-feld.ist-nicht-richtig { color: var(--amber); border-color: var(--amber); }
+
+.feedback-karte.ist-richtig { background: var(--gruen-hell); }
+.feedback-karte.ist-nicht-richtig { background: var(--amber-hell); }
+.feedback-titel { font-size: 32px; font-weight: 800; }
+.feedback-punkt { font-size: 22px; font-weight: 700; color: var(--gruen-dunkel); margin-top: 4px; }
+.feedback-loesung { font-size: 24px; margin-top: 6px; }
+.feedback-hinweis { margin-top: 8px; font-size: 20px; }
+.feedback-sogehts { margin-top: 12px; color: var(--text-leise); font-size: 18px; }
+.rechenweg { margin: 4px 0 0; padding-left: 1.4em; font-size: 26px; font-variant-numeric: tabular-nums; }
+.rechenweg li { margin: 2px 0; }
+.feedback-karte .knopf { margin-top: 16px; }
+
+/* Ziffernblock */
+.ziffernblock { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.taste { min-height: 72px; font-size: 34px; font-weight: 600; border: 0; border-radius: 18px; background: var(--karte); box-shadow: var(--schatten); }
+.taste:active { transform: translateY(3px); box-shadow: none; }
+.taste-loeschen { background: var(--primaer-hell); color: var(--primaer-dunkel); }
+.taste-ok { background: var(--gruen); color: #fff; box-shadow: 0 4px 0 var(--gruen-dunkel); font-size: 28px; }
+.taste:disabled { opacity: 0.45; cursor: default; transform: none; }
+.ziffernblock.ist-inaktiv .taste { box-shadow: none; }
+
+/* Ergebnis */
+.ergebnis-inhalt { display: grid; grid-template-columns: 2fr minmax(240px, 1fr); gap: 24px; align-items: start; }
+.ergebnis-titel { font-size: 44px; font-weight: 800; }
+.ergebnis-nachricht { font-size: 26px; margin-top: 8px; }
+.ergebnis-punkte { margin-top: 12px; color: var(--text-leise); }
+.ergebnis-stufe { margin-top: 8px; font-weight: 700; color: var(--primaer-dunkel); }
+
+/* Hochformat und schmale Fenster: alles untereinander */
+@media (orientation: portrait), (max-width: 760px) {
+  .start-inhalt, .runde-inhalt, .ergebnis-inhalt { grid-template-columns: 1fr; }
+  .fuchs { width: min(40vw, 180px); }
+  .ziffernblock { max-width: 420px; margin: 0 auto; }
+}
