@@ -183,8 +183,15 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Skill | Wirkung |
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach. |
-| **Runde** | Hast du alle vier Haltungen einmal getragen, wirft die vollendete Runde etwas ab. |
-| **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. |
+| **Runde** | Hast du alle vier Haltungen einmal getragen, gibt die vollendete Runde etwas auf den Score — **im nächsten Durchlauf**. |
+| **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. Schritt **und Boden** sind Stufenwerte. |
+
+**Runde zahlt verzögert**, und das ist eine Eigenschaft, keine Nebensache: zwischen den Durchläufen
+liegt die Aufstellungsphase. Der Spieler weiß also, dass der Bonus kommt, und kann darauf aufstellen.
+
+**Offen bei Runde:** ob der Bonus ein Multiplikator auf den Durchlauf ist oder ein Flat je Sieg, und
+vor allem, ob **mehrere Runden stapeln**. Mit Beschleunigung sind zwei bis drei Runden in einem
+Durchlauf erreichbar — stapeln sie, ist diese Kombination der Motor, auf den die ganze Linie zeigt.
 
 **Die Linie ist damit durchgehend Tanz-Build.** Alle drei zahlen auf häufiges Wechseln, und sie
 verstärken sich gegenseitig: Beschleunigung erzeugt mehr Wechsel, Anklang lässt sie überlappen, Runde
@@ -335,10 +342,12 @@ Die Schwelle steht bei 5 gewonnenen Stichen. Senkt jeder Wechsel sie, läuft sie
 zweite Stich ein Wechsel — und weil eine Haltung mindestens 3 Stiche hält, klingen ab da **permanent
 drei bis vier Haltungen gleichzeitig**. Bei Schwelle 0 gilt das sogar ohne Sieg.
 
-Das ist genau der Zustand aus §6.6, nur dauerhaft statt als Blitz. Ob das das **Ziel** des Skills ist
-— er wäre dann der Schlüssel zum Vierer-Build — oder sein Fehler, ist eine Design-Entscheidung. Die
-Mechanik braucht so oder so **einen Boden**, oder ein Zurücksetzen der Schwelle (je Durchlauf, oder
-mit jeder vollendeten Runde).
+Das ist genau der Zustand aus §6.6, nur dauerhaft statt als Blitz.
+
+**Erledigt (Owner):** Schritt *und* Boden sind **Stufenwerte** des Skills und stehen damit in der
+Stufentabelle, wie die mehrteiligen Zeilen der Bestandsskills (`ableiter: [{ critEvery, extra, back }, …]`).
+Diese Rechnung bleibt als Begründung stehen, warum der Boden dort **nicht fehlen darf**: ohne ihn
+endet jede Leiter, wie flach sie auch ansetzt, nach wenigen Wechseln bei 0.
 
 Anders als bei den Verlängerern (§6.5) ist das kein Randfall bei extremen Werten: die Leiter läuft
 schon nach vier Wechseln an ihr Ende, und vier Wechsel sind in einem bunten Build ein bis zwei
@@ -373,8 +382,8 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 1. **Welche Haltung ein Verlängerer verlängert** — §6.5. Die einzige offene Frage, die eine *Regel*
    braucht und kein Tarieren.
-2. **Der Boden der Beschleunigungs-Schwelle** — §6.7. Ebenfalls eine Regel, kein Tarieren: ohne Boden
-   endet die Leiter nach vier Wechseln bei 0.
+2. **Stapeln mehrere Runden?** — §5.3. Mit Beschleunigung sind zwei bis drei Runden je Durchlauf
+   erreichbar; ob ihre Boni sich addieren, entscheidet, wie stark die Rotationslinie insgesamt ist.
 3. **Übergriff auf bereits offenen Grenzen** — §5.4.
 3. **Der dritte Rotations-Skill** — geparkt, bis die Haltungen stehen.
 4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Dabei zu bedenken: Pflanze färbt Karten
@@ -445,6 +454,5 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 **Alle 15 Skills stehen.** Was bleibt, in der Reihenfolge, die Eis und Pflanze schon gegangen sind:
 die Farbzuordnung, die drei Legendären, dann die Zahlen.
 
-Vorher zu klären sind die beiden Punkte, die eine **Regel** brauchen und kein Tarieren: welche
-Haltung ein Verlängerer verlängert (§6.5), und wo die Beschleunigungs-Schwelle ihren Boden hat
-(§6.7).
+Vorher zu klären ist der eine Punkt, der eine **Regel** braucht und kein Tarieren: welche Haltung ein
+Verlängerer verlängert (§6.5).
