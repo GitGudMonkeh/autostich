@@ -52,11 +52,10 @@ Läufe reicht, ohne dauerhaft zu sein.
 ## 3. Offen — das muss vom Owner kommen, bevor gebaut wird
 
 1. ~~**Die Schwellen-Leiter selbst.**~~ — **entschieden: 5 / 10 / 15 / 25 Mio als Startwerte** (§2).
-2. **Was „Boss" über die Schwelle hinaus bedeutet.** Ist die vierte Runde nur eine höhere Zahl, oder
-   trägt sie eine eigene Regel (Modifikator, Handicap, Sonderbedingung)? — **Nachgesehen: im Code
-   gibt es heute keinen Boss.** `grep -i boss src/` findet nur „Amboss" (Feuer-Schmiede). Ein Boss
-   wäre also nicht die Anpassung eines bestehenden Gegners, sondern ein neues Ding; wenn die vierte
-   Runde nur eine höhere Schwelle ist, kostet sie dagegen nichts extra.
+2. ~~**Was „Boss" über die Schwelle hinaus bedeutet.**~~ — **nicht Thema dieses Dokuments.** Die
+   Bosse sind vom Owner bereits separat entworfen (2026-09-22). Für die Kampagne bleibt davon nur,
+   dass der Boss der vierten Runde das Ende ist (§2). Randnotiz für den, der es baut: im heutigen
+   Code gibt es noch keinen Boss — `grep -i boss src/` findet nur „Amboss" (Feuer-Schmiede).
 3. **Wie viele Rewards zur Wahl stehen.** Eins wird genommen — aber aus wie vielen? (Die Aufträge
    legen drei aus; dieselbe Zahl wäre naheliegend, ist aber nicht gesetzt.)
 4. **Die Raritätsstufen der Rewards.** Dieselben vier plus Legendär wie sonst im Spiel, oder eigene?
@@ -239,6 +238,32 @@ Perk-Flats), kein Vorfaktor. Über die Gerade lässt sich exakt ablesen, welchen
   **verbreitert die Streuung**, verstärkt den starken Bau.
 
 Bei der Faktor-100-Streuung aus §6 ist das keine Feinheit, sondern die Grundentscheidung des Katalogs.
+
+### Was ein einzelner Hebel trägt
+
+Gepaart, 24 Seeds je Spielweise, je Variante dieselben Seeds; Faktor = Median der Verhältnisse.
+
+| Hebel | alle | naiv | Blitz | Feuer | Eis | Pflanze |
+| --- | --- | --- | --- | --- | --- | --- |
+| Basispunkte 400 → 0 | ×0,77 | ×0,75 | ×0,68 | **×0,47** | ×0,93 | ×0,83 |
+| Basispunkte 400 → 800 | ×1,23 | ×1,25 | ×1,33 | **×1,53** | ×1,07 | ×1,17 |
+| Serien-Schritt 2 → 3 % | ×1,05 | ×1,04 | ×1,08 | ×1,04 | ×1,05 | ×1,03 |
+| Serien-Deckel 150 → 200 % | ×1,00 | ×1,00 | ×1,00 | ×1,00 | ×1,00 | ×1,00 |
+| Crit-Basis 2,25 → 2,75 | ×1,07 | ×1,08 | ×1,07 | ×1,06 | ×1,09 | ×1,05 |
+| Crit-Deckel 8 → 12 | ×1,00 | ×1,00 | ×1,06 | ×1,00 | ×1,00 | ×1,00 |
+| Legendäre Skills ×2 | ×1,00 | ×1,00 | ×1,00 | ×1,00 | ×1,00 | ×1,00 |
+
+**Die Basispunkt-Zeile ist der Beleg für die Aufhol-Wirkung von oben:** verdoppeln bringt Feuer
++53 %, Eis +7 %. Sie landet damit auch genau im Budget-Band aus §7 (×1,25).
+
+**Zwei Deckel binden nach oben nicht.** Der Serien-Deckel greift erst ab Serie 75, die kein Lauf
+erreicht (Gegenprobe: auf 0,1 gesenkt bewegt er den Score, der Knopf lebt also). Der Crit-Deckel
+bindet nur bei Blitz (+6 %); für alle anderen ist er Luft.
+
+> **Die Legendär-Zeile ist NICHT belastbar.** Der Knopf wirkt — auf Chance 1,0 gestellt steigt der
+> Score um Faktor 20 —, aber bei 0,035 → 0,07 ist der Effekt kleiner als das Rauschen von 24 Seeds,
+> und auf 0 gestellt stieg der Score in zwei von drei Stichproben sogar. Wer die Achse braucht, misst
+> sie mit deutlich mehr Seeds neu.
 
 ### Drei naheliegende Hebel gibt es nicht
 
