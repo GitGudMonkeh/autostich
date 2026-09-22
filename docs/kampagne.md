@@ -334,7 +334,7 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | --- | --- | --- |
 | **Standhaftigkeit** | die Serie überlebt X Niederlagen je Durchlauf | X |
 | **Losentscheid** | Stiche, die du um ≤ X verlierst, zählen als Sieg | X |
-| **Vorrecht** | X Karten je Durchlauf dürfen nach dem Aufdecken des Gegnerdecks umgestellt werden | X |
+| **Vorhand** | die ersten X Stiche jedes Durchlaufs gewinnst du automatisch | X |
 
 ### 8 · Kampagnen-Ebene
 
@@ -352,11 +352,16 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | **Handschlag** | **garantiert legendärer Perk** in der ersten Perk-Phase — nächster Lauf und alle folgenden |
 | **Erleuchtung** | **garantiert legendärer Skill** in der Skill-Phase — nächster Lauf und alle folgenden |
 | **Bauherrschaft** | **garantiert legendäres Gebäude** in der ersten Bauphase — nächster Lauf und alle folgenden |
-| **Vermächtnis** | geht ein Lauf verloren, **behältst du die gewählten Rewards** für den Neustart der Kampagne |
+| **Adelsbrief** | **Aufträge geben Beute eine Stufe über ihrem Schwierigkeitsgrad** — leicht zahlt wie mittel, mittel wie schwer, schwer darüber hinaus; und **schwer** bekommt eine nochmals höhere Legendär-Chance |
 
-Die ersten drei stammen vom Owner. *Bauherrschaft* schließt die Reihe Perk / Skill / Gebäude —
-dasselbe Versprechen auf der dritten Angebotsart. *Vermächtnis* ist das einzige Stück im Katalog,
-das den Alles-oder-nichts-Charakter der Kampagne direkt entschärft.
+*Handschlag*, *Erleuchtung* und *Freispruch* stammen vom Owner, *Adelsbrief* ebenfalls.
+*Bauherrschaft* schließt die Reihe Perk / Skill / Gebäude — dasselbe Versprechen auf der dritten
+Angebotsart.
+
+**Adelsbrief greift in die Auftrags-Beute** (`STEP_BAND` in `contracts.js`: leicht [1,2],
+mittel [2,3], schwer [3,4], Legendär-Chance 30 % auf schwer). Eine Stufe höher heißt leicht [2,3],
+mittel [3,4], schwer [4,5]. Offen bleibt, wie weit die Legendär-Chance auf schwer steigt und ob die
+Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
 
 ### Offene Fragen zum Katalog
 
@@ -368,9 +373,14 @@ das den Alles-oder-nichts-Charakter der Kampagne direkt entschärft.
    schneiden oder bewusst als stärkere Kampagnen-Variante führen.
 4. **Achsen 7 und 8 tragen Raritätsstufen schlecht** — der Sprung von „gar nicht" auf „einmal" ist
    größer als jeder Schritt danach.
-5. **Doppelwahl verschärft §5.** Es verdoppelt die Auftrags-Beute und damit auch *Lehrbrief* und
-   *Aufstockung* — genau die beiden Stücke, die schon heute mit „Rewards sind die einzige
-   Power-Achse" kollidieren.
+5. **Doppelwahl und Adelsbrief verschärfen §5 beide.** Doppelwahl verdoppelt die Auftrags-Beute,
+   Adelsbrief hebt ihre Stufe — beides trifft auch *Lehrbrief* und *Aufstockung*, genau die zwei
+   Stücke, die schon heute mit „Rewards sind die einzige Power-Achse" kollidieren. Zusammen
+   genommen ist die Auftrags-Beute damit der zweite große Power-Kanal der Kampagne, ob gewollt
+   oder nicht.
+6. **Nichts im Katalog federt einen verlorenen Lauf ab außer *Gnadengesuch*.** Das ist eine
+   bewusste Lage, keine Lücke — nur sollte sie bekannt sein, wenn die Raritätsstufen verteilt
+   werden.
 
 ---
 
