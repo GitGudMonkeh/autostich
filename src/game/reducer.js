@@ -260,6 +260,8 @@ function contractStep(prev, next, rng = Math.random) {
 
   let contracts = c;
   let perPhase = null;
+  let doubleLoot = next.doubleLoot;   // Doppelwahl-Budget dieses Laufs; nur Stufe I zählt herunter
+  let campaign = next.campaign;       // dieselbe Stufe schreibt ihr Einlösen in den Kampagnen-Stand
   if (next.cycle > prev.cycle) {
     /* Zwei Segen zahlen JE PHASE statt einmal: Stiftung legt Münzen nach, Freilos füllt die
        Neuwurf-Pools wieder auf. Der Durchlaufwechsel ist die eine Stelle, die jede Phase sieht. */
@@ -283,9 +285,20 @@ function contractStep(prev, next, rng = Math.random) {
        vorher — der Stand ist sicher, nur die Auszahlung wartet. */
     if (activeWin && finished >= activeWin.to) {
       const won = CT.isFulfilled({ ...next, contractTally: tally }, active);
+      /* Doppelwahl: das Budget wird beim AUSLEGEN gezogen, nicht beim Wählen. Der Spieler sieht
+         damit von Anfang an „zwei Stücke", statt es erst nach der ersten Wahl zu erfahren — und
+         ein abgebrochener Lauf verbraucht den Gutschein trotzdem, was ehrlicher ist als ihn
+         zurückzugeben. Stufe I schreibt das Einlösen in den Kampagnen-Stand, weil sie ihn
+         überlebt; II und III haben ein unendliches Budget und ziehen nichts ab. */
+      const dbl = won && (next.doubleLoot || 0) > 0;
+      if (dbl && Number.isFinite(next.doubleLoot)) {
+        doubleLoot = next.doubleLoot - 1;
+        if (next.campaign) campaign = { ...next.campaign, double: { ...(next.campaign.double || {}), used: true } };
+      }
       contracts = { ...contracts, active: null,
                     done: won ? [...(contracts.done || []), active.taskId] : contracts.done || [],
-                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null };
+                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null,
+                    pendingLootTake: won ? (dbl ? 2 : 1) : 0 };
     }
     const win = CT.windowFor(finished + 1);
     /* Die Beute des alten Fensters und das Angebot des neuen fallen jetzt auf DIESELBE Grenze. Das
@@ -297,7 +310,7 @@ function contractStep(prev, next, rng = Math.random) {
                     usedTasks: [...new Set([...(contracts.usedTasks || []), ...offers.map((o) => o.taskId)])] };
     }
   }
-  return { ...next, ...(perPhase || {}), contractTally: tally, contracts };
+  return { ...next, ...(perPhase || {}), contractTally: tally, contracts, doubleLoot, campaign };
 }
 
 /* Eis-Neudesign: Gibt es überhaupt noch eine Zelle, die GLACIER_LOCK annehmen würde? Die Phase „glacier-target"
@@ -484,7 +497,7 @@ export function reducer(state, action) {
         unlockedArchetypes: cSetup ? cSetup.archetypes : archPool,
         rareCap: cSetup ? cSetup.rareCap : effRareCap,
         rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
-        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder } : {}),
+        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder, doubleLoot: cSetup.doubleLoot } : {}),
         weekMods: weekModsState,
         challengeBlockArch: [...new Set([...wmBlockArch, ...(cSetup ? cSetup.blockCells : [])])],
         challengeBlockForm: [...new Set(wmBlockForm)] };
@@ -526,17 +539,30 @@ export function reducer(state, action) {
         active: { ...chosen, windowId: c.windowId } } };
     }
 
-    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die anderen zwei verfallen
+    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die übrigen verfallen
       const c = state.contracts;
       if (!state.contractsEnabled || !c || !(c.pendingLoot || []).length) return state;
       const piece = c.pendingLoot.find((p) => p.id === action.lootId && p.tier === action.tier);
       if (!piece) return state;
       const { pendingSkillPick, pendingBorderPick, ...patch } = CT.applyLoot(state, piece, action.rng || Math.random) || {};
+      /* Doppelwahl: `pendingLootTake` sagt, wie viele Griffe die Auslage noch hergibt. Bleibt einer
+         übrig UND liegt noch etwas da, bleibt die Auslage offen und verliert nur das genommene
+         Stück. Ein fehlendes Feld heißt „einer" — alte Spielstände und jeder Lauf ohne den Reward
+         laufen damit unverändert. */
+      const rest = c.pendingLoot.filter((p) => !(p.id === piece.id && p.tier === piece.tier));
+      const uebrig = Math.max(0, (c.pendingLootTake ?? 1) - 1);
+      const nochmal = uebrig > 0 && rest.length > 0;
       /* Vollendung bringt eine Auswahl statt einer Wirkung mit. Sie gehört in den Auftrags-Zustand,
-         nicht in den Lauf-Zustand — sonst müsste jeder andere Codepfad sie kennen. */
+         nicht in den Lauf-Zustand — sonst müsste jeder andere Codepfad sie kennen.
+         Bei zwei Griffen können BEIDE Stücke eine Nachwahl mitbringen. Die zweite darf die erste
+         nicht überschreiben, also werden die Zahlen ADDIERT: beide sind „wähle N davon", und zwei
+         offene Nachwahlen derselben Art sind eine über die Summe. */
+      const mergeRest = (alt, neu) => (!alt ? (neu || null) : !neu ? alt : { ...alt, rest: (alt.rest || 0) + (neu.rest || 0) });
+      const mergeCount = (alt, neu) => (!alt ? (neu || null) : !neu ? alt : { ...alt, count: (alt.count || 0) + (neu.count || 0) });
       return { ...state, ...patch,
-        contracts: { ...c, pendingLoot: null, pendingSkillPick: pendingSkillPick || null,
-                     pendingBorderPick: pendingBorderPick || null,
+        contracts: { ...c, pendingLoot: nochmal ? rest : null, pendingLootTake: nochmal ? uebrig : 0,
+                     pendingSkillPick: mergeRest(c.pendingSkillPick, pendingSkillPick),
+                     pendingBorderPick: mergeCount(c.pendingBorderPick, pendingBorderPick),
                      taken: [...(c.taken || []), { id: piece.id, tier: piece.tier }] } };
     }
 

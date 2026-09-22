@@ -1528,6 +1528,7 @@ export default {
 
   "contract.loot.title": "Auftrag erfüllt",
   "contract.loot.take": "Nehmen",
+  "contract.loot.two": "Doppelwahl: du nimmst {n} Stücke.",
 
   "contract.step.leicht": "Leicht",
   "contract.step.mittel": "Mittel",

@@ -672,3 +672,169 @@ describe("Schließer und Lauf-Ende im Reducer", () => {
     expect(beendet.campaign.lost).toBe(true);   // nach drei Durchläufen reißt die Schwelle nicht
   });
 });
+
+/* ============================================================================
+   DOPPELWAHL — nach einem erfüllten Auftrag liegen zwei Stücke statt einem an.
+
+   Drei Stufen mit drei verschiedenen Lebensdauern (docs/kampagne.md §9), und zwei davon überleben
+   den Lauf nicht, in dem sie gelten. Geprüft wird deshalb an beiden Enden: das Budget, das der
+   Kampagnen-Stand liefert, UND was der Reducer daraus macht, wenn die Auslage wirklich dasteht.
+   ============================================================================ */
+describe("Doppelwahl · das Budget je Lauf", () => {
+  const camp = (over) => ({ ...CP.emptyCampaign(), ...over });
+
+  it("gibt ohne den Reward nichts her", () => {
+    expect(CP.doubleLootFor(null)).toBe(0);
+    expect(CP.doubleLootFor(camp({}))).toBe(0);
+    expect(CP.doubleLootFor(camp({ held: { sold: 3 } }))).toBe(0);
+  });
+
+  it("Stufe I ist ein Gutschein: einer, und nach dem Einlösen keiner", () => {
+    const frisch = camp({ held: { doppelwahl: 1 }, double: { run: 2, used: false } });
+    expect(CP.doubleLootFor(frisch)).toBe(1);
+    expect(CP.doubleLootFor({ ...frisch, double: { run: 2, used: true } })).toBe(0);
+    // Er hängt NICHT am Lauf — ein Gutschein, der erst zwei Läufe später eingelöst wird, gilt noch.
+    expect(CP.doubleLootFor({ ...frisch, run: 4 })).toBe(1);
+  });
+
+  it("Stufe II gilt genau den Lauf, der auf die Wahl folgt", () => {
+    const c = camp({ run: 2, held: { doppelwahl: 2 }, double: { run: 2, used: false } });
+    expect(CP.doubleLootFor(c)).toBe(Infinity);
+    expect(CP.doubleLootFor({ ...c, run: 3 })).toBe(0);
+    expect(CP.doubleLootFor({ ...c, run: 1 })).toBe(0);
+  });
+
+  it("Stufe III gilt immer, auch ohne jede Marke", () => {
+    for (const run of [1, 2, 3, 4]) {
+      expect(CP.doubleLootFor(camp({ run, held: { doppelwahl: 3 } }))).toBe(Infinity);
+    }
+    expect(CP.doubleLootFor(camp({ run: 3, held: { doppelwahl: 3 }, double: { run: 1, used: true } }))).toBe(Infinity);
+  });
+
+  it("die Wahl setzt die Marke auf den Lauf, der jetzt beginnt — und ein Upgrade setzt sie neu", () => {
+    const c = camp({ run: 1 });
+    const nachI = CP.takeReward(c, { id: "doppelwahl", tier: 1 });
+    expect(nachI.double).toEqual({ run: 2, used: false });
+    expect(nachI.run).toBe(2);
+    const gebraucht = { ...nachI, double: { run: 2, used: true }, run: 3 };
+    const nachII = CP.takeReward(gebraucht, { id: "doppelwahl", tier: 2 });
+    expect(nachII.double, "das Upgrade armiert neu, gekauft ist gekauft").toEqual({ run: 4, used: false });
+    // Ein anderer Reward lässt die Marke in Ruhe.
+    expect(CP.takeReward(nachII, { id: "sold", tier: 1 }).double).toEqual({ run: 4, used: false });
+  });
+
+  it("reicht das Budget durch die Lauf-Konfiguration", () => {
+    const setup = (c) => CP.runSetup(c, CP.UNLOCK_IDS, { energy: 4, cover: 24, coins: 3, positions: 40, rng: () => 0 });
+    expect(setup(camp({}))).toMatchObject({ doubleLoot: 0 });
+    expect(setup(camp({ run: 2, held: { doppelwahl: 2 }, double: { run: 2 } }))).toMatchObject({ doubleLoot: Infinity });
+    expect(setup(camp({ held: { doppelwahl: 1 } }))).toMatchObject({ doubleLoot: 1 });
+  });
+});
+
+describe("Doppelwahl · die Auslage im Reducer", () => {
+  const run = (over = {}) => {
+    const s = reducer(null, { type: "START_RUN", rng: makeRng(5), seed: 5, architect: true, contracts: true });
+    return { ...s, ...over };
+  };
+  const stueck = (id, tier) => ({ kind: "family", id, category: id, tier, effect: {} });
+  const auslage = (take, pieces) => run({
+    contracts: { ...run().contracts, pendingLoot: pieces, pendingLootTake: take },
+  });
+
+  it("nimmt ohne Doppelwahl genau eins und schließt die Auslage", () => {
+    const s = auslage(1, [stueck("a", 1), stueck("b", 1), stueck("c", 1)]);
+    const nach = reducer(s, { type: "PICK_LOOT", lootId: "a", tier: 1 });
+    expect(nach.contracts.pendingLoot).toBe(null);
+    expect(nach.contracts.taken.map((t) => t.id)).toEqual(["a"]);
+  });
+
+  it("verhält sich ohne das Feld wie vorher — ein Griff", () => {
+    const ohneFeld = run();
+    const s = { ...ohneFeld, contracts: { ...ohneFeld.contracts, pendingLoot: [stueck("a", 1), stueck("b", 1)] } };
+    expect(s.contracts.pendingLootTake).toBeUndefined();
+    expect(reducer(s, { type: "PICK_LOOT", lootId: "a", tier: 1 }).contracts.pendingLoot).toBe(null);
+  });
+
+  it("lässt bei zwei Griffen die Auslage offen und nimmt nur das gewählte Stück heraus", () => {
+    const s = auslage(2, [stueck("a", 1), stueck("b", 1), stueck("c", 1)]);
+    const erste = reducer(s, { type: "PICK_LOOT", lootId: "b", tier: 1 });
+    expect(erste.contracts.pendingLoot.map((p) => p.id)).toEqual(["a", "c"]);
+    expect(erste.contracts.pendingLootTake).toBe(1);
+    expect(erste.contracts.taken.map((t) => t.id)).toEqual(["b"]);
+    const zweite = reducer(erste, { type: "PICK_LOOT", lootId: "c", tier: 1 });
+    expect(zweite.contracts.pendingLoot, "nach dem zweiten Griff ist Schluss").toBe(null);
+    expect(zweite.contracts.pendingLootTake).toBe(0);
+    expect(zweite.contracts.taken.map((t) => t.id)).toEqual(["b", "c"]);
+  });
+
+  it("schließt auch dann, wenn nach dem ersten Griff nichts mehr daliegt", () => {
+    const s = auslage(2, [stueck("a", 1)]);
+    expect(reducer(s, { type: "PICK_LOOT", lootId: "a", tier: 1 }).contracts.pendingLoot).toBe(null);
+  });
+
+  it("legt zwei Nachwahlen zusammen, statt die erste zu überschreiben", () => {
+    /* Das war der Grund, warum die Doppelwahl nicht nebenbei ging: beide Stücke können eine
+       Nachwahl mitbringen, und die zweite hätte die erste stumm gelöscht. */
+    const voll = { kind: "legendary", id: "vollendung", tier: 5, effect: { skillToEpic: 1, skillUpRest: 1 } };
+    const s = run({ skills: ["s1", "s2", "s3"], skillTiers: { s1: 0, s2: 1, s3: 0 } });
+    const armed = { ...s, contracts: { ...s.contracts, pendingLoot: [voll, { ...voll, tier: 4 }], pendingLootTake: 2 } };
+    const erste = reducer(armed, { type: "PICK_LOOT", lootId: "vollendung", tier: 5 });
+    expect(erste.contracts.pendingSkillPick).toEqual({ rest: 1 });
+    const zweite = reducer(erste, { type: "PICK_LOOT", lootId: "vollendung", tier: 4 });
+    expect(zweite.contracts.pendingSkillPick, "beide Nachwahlen, als Summe").toEqual({ rest: 2 });
+  });
+});
+
+describe("Doppelwahl · im echten Auftragslauf", () => {
+  /* Die Naht, die ein gestellter Zustand NICHT prüft: aus `state.doubleLoot` müssen beim Auslegen
+     wirklich zwei Griffe werden. Mit handgesetztem `pendingLootTake` bleibt sie still — genau das
+     ist bei der Gegenprobe aufgefallen. Also ein echter Lauf bis zur ersten Auszahlung. */
+  const bisZurBeute = (campaign, seed = 1) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, campaign, unlocked: CP.UNLOCK_IDS });
+    let guard = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      const c = s.contracts || {};
+      if ((c.pendingLoot || []).length) return s;           // hier wollen wir hin
+      if (c.pendingBorderPick) { s = reducer(s, { type: "PICK_CONTRACT_BORDER", borders: [] }); continue; }
+      if (c.pendingSkillPick) { s = reducer(s, { type: "PICK_CONTRACT_SKILL", skillId: null }); continue; }
+      if ((c.offers || []).length) {
+        const o = c.offers.find((x) => x.step === "leicht") || c.offers[0];
+        s = reducer(s, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step });
+        continue;
+      }
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return null;
+  };
+
+  const kampagne = (held) => ({ ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"], held });
+  /* Nicht jeder Seed erfüllt einen Auftrag. Der erste, der es tut, wird für BEIDE Seiten benutzt —
+     sonst verglichen die zwei Läufe verschiedene Bretter. */
+  const SEED = [1, 2, 3, 4, 5, 6, 7, 8].find((n) => bisZurBeute(kampagne({}), n));
+
+  it("legt mit dem Reward zwei Griffe aus, ohne ihn einen", () => {
+    expect(SEED, "kein Seed erfüllt einen Auftrag — der Test misst nichts").toBeDefined();
+    const ohne = bisZurBeute(kampagne({}), SEED);
+    expect(ohne).not.toBeNull();
+    expect(ohne.contracts.pendingLootTake).toBe(1);
+    expect(ohne.doubleLoot).toBe(0);
+
+    const mit = bisZurBeute(kampagne({ doppelwahl: 3 }), SEED);
+    expect(mit).not.toBeNull();
+    expect(mit.contracts.pendingLootTake).toBe(2);
+    expect(mit.doubleLoot).toBe(Infinity);
+    // Kontrolle: dieselbe Auslage, nur die Zahl der Griffe unterscheidet sich.
+    expect(mit.contracts.pendingLoot.map((p) => p.id)).toEqual(ohne.contracts.pendingLoot.map((p) => p.id));
+  }, 30_000);
+
+  it("Stufe I löst den Gutschein ein und schreibt das in den Kampagnen-Stand", () => {
+    const s = bisZurBeute(kampagne({ doppelwahl: 1 }), SEED);
+    expect(s).not.toBeNull();
+    expect(s.contracts.pendingLootTake, "der Gutschein zahlt einmal zwei").toBe(2);
+    expect(s.doubleLoot, "und ist danach leer").toBe(0);
+    expect(s.campaign.double.used, "das überlebt den Lauf, also steht es im Stand").toBe(true);
+  }, 30_000);
+});

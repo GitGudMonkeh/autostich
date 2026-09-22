@@ -1172,6 +1172,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "contract.loot.nachlass.t4","i18n","Neuwürfe kosten nichts mehr, bei Skills, Perks und Gebäuden.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.loot.take","i18n","Nehmen","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.loot.title","i18n","Auftrag erfüllt","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"contract.loot.two","i18n","Doppelwahl: du nimmst {n} Stücke.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.loot.veredelung.name","i18n","Veredelung","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.loot.veredelung.t1","i18n","Im nächsten Skill-Angebot steht jeder Skill eine Stufe höher.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.loot.veredelung.t2","i18n","In den nächsten drei Skill-Angeboten steht jeder Skill eine Stufe höher.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""

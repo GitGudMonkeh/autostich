@@ -1393,15 +1393,19 @@ function AutostichGame() {
           Fensters und Angebot des neuen auf dieselbe Durchlaufgrenze. Erst die Beute samt ihrer
           Nachwahl, dann der neue Aufsteller — zwei Vollbild-Overlays gleichzeitig wären ein Stapel. */}
       {state.contractsEnabled && (state.contracts?.pendingLoot || []).length > 0 && (
-        <ContractLoot pieces={state.contracts.pendingLoot}
+        <ContractLoot pieces={state.contracts.pendingLoot} take={state.contracts.pendingLootTake ?? 1}
           onPick={(p) => dispatch({ type: "PICK_LOOT", lootId: p.id, tier: p.tier })} />
       )}
-      {state.contractsEnabled && state.contracts?.pendingBorderPick && (
+      {/* Beide Nachwahlen warten, solange die Auslage noch offen ist. Vor der Doppelwahl konnte das
+          nicht kollidieren — mit ihr schon: das erste genommene Stück kann eine Nachwahl mitbringen,
+          während der zweite Griff noch aussteht. Dieselbe Vorrang-Regel, die das Auftrags-Angebot
+          unten schon befolgt. */}
+      {state.contractsEnabled && state.contracts?.pendingBorderPick && !(state.contracts?.pendingLoot || []).length && (
         <ContractBorderPick count={state.contracts.pendingBorderPick.count}
           borders={borderPickState(state, openBordersNow(state))}
           onPick={(bs) => dispatch({ type: "PICK_CONTRACT_BORDER", borders: bs })} />
       )}
-      {state.contractsEnabled && state.contracts?.pendingSkillPick && (
+      {state.contractsEnabled && state.contracts?.pendingSkillPick && !(state.contracts?.pendingLoot || []).length && (
         <ContractSkillPick skills={upgradableSkills(state)} skillTiers={state.skillTiers || {}}
           rest={state.contracts.pendingSkillPick.rest || 0}
           onPick={(id) => dispatch({ type: "PICK_CONTRACT_SKILL", skillId: id })} />

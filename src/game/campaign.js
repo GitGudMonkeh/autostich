@@ -177,7 +177,7 @@ export const REWARDS = [
   { id: "lueckenschluss", axis: "rules", values: [1, 1, 2], scopes: ["one", "all", "all"] },
   // 8 · Kampagnen-Ebene
   { id: "fuersprache", axis: "campaign", values: [10, 20, 30] },
-  { id: "doppelwahl", axis: "campaign", requires: "contracts", values: [1, 1, 1], scopes: ["next", "run", "always"], pending: true },
+  { id: "doppelwahl", axis: "campaign", requires: "contracts", values: [1, 1, 1], scopes: ["next", "run", "always"] },
 ];
 
 export const REWARD_BY_ID = Object.fromEntries(REWARDS.map((r) => [r.id, r]));
@@ -211,7 +211,7 @@ export const rewardScope = (id, tier) => {
    Doppelwahl braucht ZWEI Beutewahlen hintereinander (PICK_LOOT in reducer.js). Beide Stuecke
    koennen eine Nachwahl mitbringen (Vollendung, Durchlass), und die zweite ueberschriebe die erste;
    dazu haelt Stufe III den Bereich „always", der ueber den Lauf hinaus mitgefuehrt werden muss. */
-export const PENDING_REWARDS = ["doppelwahl"];
+export const PENDING_REWARDS = [];
 
 export const rewardAvailable = (id, unlocked = []) => {
   const r = REWARD_BY_ID[id];
@@ -381,6 +381,27 @@ export const streakSurvivesWith = (state, lossesThisCycle = 0) => {
 /* Lückenschluss: how many foreign cards a formation run may skip. It feeds `gap` in
    `markRuns` (formations.js) — the very regler E_PACE and E_COLORBRIDGE already turn, so this is
    an existing dial, not a new mechanic. `scope` decides whether it applies per run or per phase. */
+/* Doppelwahl: nach einem erfüllten Auftrag liegen zwei Stücke statt einem an.
+
+   Die drei Stufen haben drei verschiedene LEBENSDAUERN (docs/kampagne.md §9), und zwei davon
+   überleben den Lauf nicht, in dem sie gelten — deshalb steht das Gedächtnis im Kampagnen-Stand
+   und nicht im Lauf:
+     I  „beim nächsten Auftrag"      ein Gutschein, gilt bis er eingelöst ist
+     II „jeden Auftrag dieses Laufs" genau der Lauf, der auf die Wahl folgt
+     III „dauerhaft"                 jeder Auftrag bis zum Endboss
+
+   Zurück kommt ein BUDGET je Lauf: Infinity für II/III, 1 für den ungenutzten Gutschein, 0 sonst.
+   Der Lauf zieht davon ab; nur Stufe I schreibt das Einlösen in den Stand zurück. */
+export function doubleLootFor(campaign) {
+  const c = campaign || {};
+  const tier = (c.held || {}).doppelwahl;
+  if (!tier) return 0;
+  if (tier >= 3) return Infinity;
+  const d = c.double || {};
+  if (tier === 2) return (c.run || 1) === d.run ? Infinity : 0;
+  return d.used ? 0 : 1;
+}
+
 export function formationGapOf(state) {
   const held = heldOf(state);
   const tier = held && held.lueckenschluss;
@@ -468,6 +489,7 @@ export function runSetup(campaign, unlocked = [], { energy = 4, cover = 24, coin
     blockCells: [],
     priceLadder: eff.priceLadder || null,   // Wucherer; null = die normale Treppe
     threshold: thresholdWith(c),
+    doubleLoot: doubleLootFor(c),           // Doppelwahl: Budget für DIESEN Lauf
   };
 
   /* Denkmalpfleger zieht seine sechs Zellen ZUFÄLLIG (Owner 2026-09-22) und legt sie auf dieselbe
@@ -485,5 +507,11 @@ export function takeReward(campaign, offer) {
   if (!campaign || !offer) return campaign;
   const held = { ...(campaign.held || {}), [offer.id]: offer.tier };
   const axes = offer.axis ? { ...(campaign.axes || {}), [offer.id]: offer.axis } : campaign.axes;
-  return { ...campaign, held, axes, offer: null, pending: null, run: campaign.run + 1 };
+  const run = campaign.run + 1;
+  /* Die Doppelwahl merkt sich, AB WANN sie gilt: Stufe II meint „dieser Lauf" und das ist der,
+     der jetzt beginnt. Ein Upgrade setzt die Marke neu — sonst hätte die frisch gekaufte Stufe II
+     einen Lauf, der schon vorbei ist. Der Gutschein der Stufe I wird beim Upgrade wieder frisch,
+     und das ist richtig: gekauft ist gekauft. */
+  const double = offer.id === "doppelwahl" ? { run, used: false } : campaign.double;
+  return { ...campaign, held, axes, double, offer: null, pending: null, run };
 }

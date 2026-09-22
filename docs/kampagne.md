@@ -826,12 +826,9 @@ Kampagne — das ist ihr Zweck.
    zurück — derselbe Fehler, den die Aufträge daneben schon einmal hatten. Damit lässt sich ein
    Lauf allerdings beliebig oft neu beginnen, bis die Schwelle fällt. Ob der Neustart in der
    Kampagne gesperrt gehört, ist eine Produktfrage und steht offen.
-3. **Ein Reward steht im Katalog, aber nicht im Angebot** (`pending: true` am Eintrag,
-   `CP.PENDING_REWARDS`). Ein gewähltes Stück, das nichts tut, ist schlimmer als eines, das es
-   noch nicht gibt; der Filter sitzt in `rewardAvailable` und ein Wächter hält ihn ehrlich.
-   Offen ist die **Doppelwahl**: sie braucht zwei Beutewahlen hintereinander (`PICK_LOOT`), beide
-   Stücke können eine Nachwahl mitbringen (Vollendung, Durchlass) und die zweite überschriebe die
-   erste; Stufe III hält zudem den Bereich „always", der über den Lauf hinaus mitgeführt werden muss.
+3. **Alle sechzehn Rewards wirken.** Die Flagge `pending: true` und `CP.PENDING_REWARDS` bleiben als
+   Mechanik stehen (Filter in `rewardAvailable`, Wächter in `test/campaign.test.js`): ein gewähltes
+   Stück, das nichts tut, ist schlimmer als eines, das es noch nicht gibt. Die Liste ist leer.
 
 ### Der Lückenschluss und die elfte Stelle
 
@@ -853,7 +850,31 @@ Die Wirkung selbst prüfen zwei verschiedene Tests, weil es zwei verschiedene Fr
 Erkennung in `test/formations-gap.test.js`, den Motor im Lauf in `test/campaign.test.js`
 (derselbe Seed mit und ohne Reward, Kontrolle auf gleiche Auslage).
 
+### Die Doppelwahl und ihre drei Lebensdauern
+
+`doubleLootFor(campaign)` gibt ein **Budget je Lauf** zurück: `Infinity` für Stufe II und III,
+`1` für den ungenutzten Gutschein der Stufe I, sonst `0`. `runSetup` reicht es als
+`state.doubleLoot` in den Lauf; beim Auslegen der Beute wird daraus `contracts.pendingLootTake`
+(1 oder 2), und `PICK_LOOT` zählt herunter.
+
+Zwei der drei Stufen überleben den Lauf nicht, in dem sie gelten — deshalb steht ihr Gedächtnis im
+Kampagnen-Stand (`campaign.double = { run, used }`) und nicht im Lauf:
+
+| Stufe | Bedeutung | Gedächtnis |
+| --- | --- | --- |
+| I · Normal | beim nächsten Auftrag | `used`, gesetzt beim Einlösen |
+| II · Selten | jeden Auftrag **dieses** Laufs | `run`, gesetzt bei der Wahl |
+| III · Sehr selten | dauerhaft | keins |
+
+Das Budget wird beim **Auslegen** gezogen, nicht beim Wählen: der Spieler sieht dann von Anfang an
+„zwei Stücke", statt es nach der ersten Wahl zu erfahren. Ein Upgrade armiert die Marke neu.
+
+**Zwei Dinge, die nebenbei zu beheben waren.** Beide genommenen Stücke können eine Nachwahl
+mitbringen (Vollendung, Durchlass); die zweite hätte die erste stumm überschrieben, also werden die
+Zahlen addiert — beide sind „wähle N davon". Und die zwei Nachwahl-Overlays hingen in `App.jsx`
+nicht an der offenen Auslage, standen mit der Doppelwahl also gleichzeitig mit ihr auf dem Schirm;
+sie befolgen jetzt dieselbe Vorrang-Regel wie das Auftrags-Angebot.
+
 ### Was noch nicht da ist
 
 - Ebene 2 und 3 (Schwellen, Bosse, Rewards ab Episch).
-- Die Doppelwahl (siehe oben) — 15 der 16 Rewards wirken.
