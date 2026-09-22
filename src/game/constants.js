@@ -464,17 +464,12 @@ export const EWIGER_FRUEHLING_FORM_MULT   = envNum("SIM_EWIGER_FRUEHLING_FORM_MU
    Mindestdauer fallen.
    ============================================================ */
 export const STANCE_THRESHOLD    = envNum("SIM_STANCE_THRESHOLD", 5);    // gewonnene Stiche einer Grundfarbe bis zum Wechsel (Owner)
-export const STANCE_MIN_DURATION = envNum("SIM_STANCE_MIN_DURATION", 3); // Stiche, die eine Haltung ab dem Auslösen mindestens klingt (Owner: „mal mit 3 starten")
+/* Der Nachklang beginnt AM WECHSEL (Owner): „die alte Haltung wirkt noch in die neue hinein." Sie klingt so
+   viele Stiche nach, unabhängig davon, wie lange sie vorher aktiv war — jeder Wechsel erzeugt damit
+   Überlappung. Die Gegen-Lesart (Mindestdauer ab dem Auslösen) ist gemessen und verworfen: sie ließ in 81–91 %
+   der Stiche nur EINE Haltung klingen und vier der fünfzehn Skills leerlaufen (§6.8.1). */
+export const STANCE_MIN_DURATION = envNum("SIM_STANCE_MIN_DURATION", 3); // Stiche, die eine abgelöste Haltung nachklingt (Owner: „mal mit 3 starten")
 export const STANCE_START        = "R";                                  // der Lauf startet in Rot, Zähler 0 (Owner) — fest, nicht gewürfelt
-/* ZWEI LESARTEN des Nachklangs, und sie führen zu verschiedenen Spielen. Sie stehen beide in der Historie:
-   A (0, Default, so steht §2 im Dokument): die Mindestdauer läuft AB DEM AUSLÖSEN. Eine Haltung, die lange
-     aktiv war, hat ihre Mindestdauer längst verbraucht und verstummt mit der Ablösung. Überlappung entsteht
-     dann genau dann, wenn zwei WECHSEL innerhalb der Mindestdauer fallen — und das ist selten.
-   B (1, die ursprüngliche Formulierung des Owners: „nach wechsel hallt sie 3 stiche lang nach"): der Nachklang
-     beginnt AM WECHSEL. Jeder Wechsel erzeugt dann garantiert Überlappung, unabhängig davon, wie lange die
-     abgelöste Haltung schon lief.
-   Welche gilt, ist eine Owner-Entscheidung — gemessen ist beides (docs/haltungen-fraktion.md §6.8). */
-export const STANCE_AFTERGLOW_ON_SWITCH = envNum("SIM_STANCE_AFTERGLOW_ON_SWITCH", 0);
 // Grundwerte der vier Passive (§3, Owner). Sie stehen und skalieren NICHT mit der Zahl gehaltener Skills.
 export const STANCE_CRIT         = envNum("SIM_STANCE_CRIT", 0.5);       // Blau: Crit-Chance, solange sie klingt — additiv, kein Mindestwert
 export const STANCE_SCORE_MULT   = envNum("SIM_STANCE_SCORE_MULT", 1.4); // Gelb: glatter Multiplikator auf den Sieg-Score

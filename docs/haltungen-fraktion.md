@@ -47,10 +47,13 @@ Das ist die zweite Dimension auf derselben Entscheidung, die das Spiel ohnehin t
   aufeinanderfolgend** sein.
 - **Nur die auslösende Farbe setzt ihren Zähler zurück.** Die anderen drei zählen weiter — eine Farbe
   kann also bei 4 stehen, während eine andere gerade auslöst, und im Stich darauf direkt nachziehen.
-- Eine Haltung ist ab dem Auslösen **mindestens 3 Stiche** aktiv (Stiche, nicht Siege) und darüber
-  hinaus so lange, bis eine andere sie ablöst.
+- Eine Haltung ist aktiv, bis eine andere sie ablöst. **Beim Wechsel klingt sie noch 3 Stiche nach** —
+  „die alte Haltung wirkt noch in die neue hinein" (Owner). Der Nachklang beginnt AM WECHSEL, nicht beim
+  Auslösen: wie lange sie vorher aktiv war, spielt keine Rolle.
 - Eine Haltung wirkt **immer auf voller Stärke**, auch im Nachklang. Es gibt keine Abschwächung.
-- Damit gilt: **Überlappung entsteht genau dann, wenn zwei Wechsel innerhalb von 3 Stichen fallen.**
+- Damit gilt: **jeder Wechsel erzeugt Überlappung.** Fallen mehrere Wechsel dicht hintereinander, stapeln
+  sich die Nachklänge und es klingen drei oder vier Haltungen zugleich.
+  *(Die Gegen-Lesart — Mindestdauer ab dem Auslösen — ist gemessen und verworfen: §6.8.1.)*
 - Wechsel passieren **mitten im Durchlauf**, nicht an einer Grenze.
 - Das Brett **darf mitten im Durchlauf neu gelesen und gerechnet werden**, wo aktuelle Werte das
   nötig machen.
@@ -75,8 +78,8 @@ Das ist die zweite Dimension auf derselben Entscheidung, die das Spiel ohnehin t
 
 **Der Mechanismus in einem Satz, für Spielertext später:**
 
-> Eine Haltung wird bei fünf gewonnenen Stichen ihrer Farbe aktiv, bleibt aktiv bis eine andere sie
-> ablöst, mindestens aber drei Stiche lang — immer auf voller Stärke.
+> Eine Haltung wird bei fünf gewonnenen Stichen ihrer Farbe aktiv und bleibt es, bis eine andere sie ablöst.
+> Danach klingt sie noch drei Stiche nach — immer auf voller Stärke.
 
 ### 2.1 · Blöcke gegen bunt — die Build-Achse
 
@@ -84,8 +87,8 @@ Sie fällt aus dem Mechanismus heraus, ohne dass eine Regel sie ansagen muss:
 
 | Aufstellung | Zähler | Wechsel | Ergebnis |
 | --- | --- | --- | --- |
-| **Farbblöcke** | steigen nacheinander | weit auseinander | eine Haltung, lang. Campen. |
-| **Bunt gemischt** | steigen gemeinsam | bündeln sich | mehrere Haltungen gleichzeitig. Tanzen. |
+| **Farbblöcke** | steigen nacheinander | weit auseinander | eine Haltung, lang — der Nachklang ist verklungen, bevor der nächste Wechsel kommt. Campen. |
+| **Bunt gemischt** | steigen gemeinsam | bündeln sich | die Nachklänge stapeln sich, drei bis vier Haltungen zugleich. Tanzen. |
 
 Und es bepreist sich selbst: **bunt bauen heißt, auf den Farbblock als Formation zu verzichten.**
 Stapel gegen Multiplikator, ohne Sonderregel.
@@ -575,83 +578,62 @@ Geprüft, ob ein Regler das hebt (je 10 Läufe, Build „Tanzen"):
 Die Schwelle tut **gar nichts** (sie beschleunigt alle vier Zähler gleichmäßig), die Mindestdauer bringt bis
 1,36 und sättigt dann. Anklang Episch (8) ist also bereits das Ende der Fahnenstange.
 
-#### 6.8.1 · Zwei Lesarten des Nachklangs — die Stelle, an der es sich entscheidet
+#### 6.8.1 · Der Nachklang — **entschieden**
 
-Im Verlauf stehen zwei verschiedene Formulierungen, und sie ergeben verschiedene Spiele:
+Im Verlauf standen zwei Formulierungen, und sie ergaben verschiedene Spiele:
 
-- **A** (§2, so gebaut): die Mindestdauer läuft **ab dem Auslösen**. Eine Haltung, die lange aktiv war, hat sie
-  verbraucht und verstummt mit der Ablösung.
-- **B** (die ursprüngliche Ansage des Owners: *„nach wechsel hallt sie 3 stiche lang nach"*): der Nachklang
-  beginnt **am Wechsel**. Jeder Wechsel erzeugt dann garantiert Überlappung.
+- **A** — Mindestdauer **ab dem Auslösen**. Eine Haltung, die lange aktiv war, hat sie verbraucht und verstummt
+  mit der Ablösung. Überlappung entsteht nur, wenn zwei *Wechsel* dicht aufeinanderfolgen.
+- **B** — Nachklang **ab dem Wechsel**: *„die alte Haltung wirkt noch in die neue hinein."* Jeder Wechsel
+  erzeugt Überlappung.
 
-Gemessen, dieselben 20 Seeds (`SIM_STANCE_AFTERGLOW_ON_SWITCH`):
+**Der Owner hat B gesetzt.** Gemessen, dieselben 20 Seeds:
 
-| Build | A · Median | A · Ø klingend | A · 2 Haltungen | B · Median | B · Ø klingend | B · 2 Haltungen |
+| Build | A · Median | A · Ø klingend | A · 2+ Haltungen | B · Median | B · Ø klingend | B · 2+ Haltungen |
 | --- | --- | --- | --- | --- | --- | --- |
-| Campen | 4.524.607 | 1,17 | 13 % | **6.483.143** | **1,56** | **37 %** |
-| Tanzen | 3.463.553 | 1,23 | 15 % | **4.812.090** | **1,69** | **39 %** |
-| Überlappung | 4.916.004 | 1,10 | 8 % | **6.494.397** | **1,50** | **35 %** |
+| Campen | 5.300.774 | 1,25 | 23 % | **6.878.269** | **1,76** | **58 %** |
+| Tanzen | 3.645.630 | 1,26 | 22 % | **4.992.161** | **1,74** | **55 %** |
+| Überlappung | 5.044.064 | 1,13 | 11 % | **6.814.465** | **1,54** | **45 %** |
 
-**B hebt die Fraktion um rund 40 % und macht die Überlappung erst zu einer Mechanik** — aus 8–15 % werden
-35–39 % der Stiche mit zwei klingenden Haltungen, und die grüne Geometrie schlägt durch (×Form 2,59 → 5,77 im
-Block-Build). Alle vier gleichzeitig bleiben auch in B die Ausnahme (0,4–1,6 %).
+B **verdoppelt die Fraktion mono** (4.743.795 → 9.658.869) und macht die Überlappung erst zu einer Mechanik:
+aus 11–23 % werden 45–58 % der Stiche mit zwei oder mehr klingenden Haltungen, drei zugleich in 8–15 %, alle
+vier in 0,7–2,4 %. Die grüne Geometrie schlägt jetzt durch (×Form im Block-Build 2,86 → 4,42).
 
-Der Schalter steht auf A (Dokumentenstand). **Welche gilt, ist eine Owner-Entscheidung**, und sie ist die
-größte offene Frage des Entwurfs — an ihr hängt, ob Mitklang, Verankerung und der ganze Tanz-Build überhaupt
-etwas zu tun haben.
+Nebenwirkung, die damit erledigt ist: die frühere Annahme in §8, ein Selbst-Auslösen frische die Mindestdauer
+auf, hat keinen Gegenstand mehr. Der Nachklang entsteht ausschließlich beim Wechsel; ein Selbst-Auslösen hält
+nur den Zähler unten.
 
-### 6.9 · Die 15 Skills, gemessen — **gemessen**
+### 6.10 · Erste Paar-Erkundung — **gemessen, grob**
 
-`--mode skills --arch stance`, Explore 900 / Greedy 150, gepaarte Ablation. Sortiert nach Median-Δ: was der
-gierige Spieler verliert, wenn er genau diesen Skill nie nimmt.
+Je 30 Seeds, Fraktions-Policy, keine Tarierung. Das Bild ist ein Gefühl, kein Urteil.
 
-| Skill | Linie | Halte | Wirkung | Sieg-Quote der Ablation |
-| --- | --- | --- | --- | --- |
-| **Beschleunigung** | Rotation | 79 % | **+18 %** | 65 % |
-| **Anklang** | Rotation | 86 % | **+14 %** | 64 % |
-| **Runde** | Rotation | 58 % | +6 % | 70 % |
-| Doppelbindung | Überlappung | 88 % | +5 % | 67 % |
-| Übertrag | Crit | 49 % | +3 % | 61 % |
-| Schwungrad | Crit | 99 % | +3 % | 52 % |
-| Stauung | Score | 91 % | +2 % | 61 % |
-| Übergriff | Überlappung | 58 % | 0 % | 52 % |
-| Grundrauschen | Crit | 93 % | −0 % | 50 % |
-| Kehrtwende | Ergebnis | 97 % | −2 % | 46 % |
-| Rückhalt | Ergebnis | 85 % | −3 % | 41 % |
-| Verankerung | Überlappung | 97 % | −4 % | 45 % |
-| Mitklang | Score | 97 % | −5 % | 40 % |
-| Beharrlichkeit | Score | 100 % | −8 % | 37 % |
-| Genugtuung | Ergebnis | 100 % | −10 % | 43 % |
+| Paar | Median | p90 | Siegquote | gegen den stärkeren Mono | gegen den schwächeren |
+| --- | --- | --- | --- | --- | --- |
+| Feuer + Eis | 27.058.760 | 91.200.383 | 64,5 % | −80 % | +38 % |
+| **Feuer + Prisma** | 15.360.042 | 26.128.418 | 67,4 % | **−22 %** | +59 % |
+| Pflanze + Blitz | 28.904.993 | 67.116.383 | 62,9 % | −72 % | −33 % |
+| Pflanze + Prisma | 22.382.449 | 46.182.894 | 59,0 % | −48 % | +132 % |
+| **Prisma + Blitz** | 24.862.857 | 65.457.608 | **70,4 %** | −76 % | +157 % |
 
-**Belastbar sind die beiden oberen und die beiden unteren Zeilen** — dazwischen liegt alles im Rauschen einer
-Ablation, deren Pfade auseinanderlaufen (Sieg-Quoten um 50 %). Die Stufen-Lifts sind noch dünner besetzt und
-hier bewusst nicht wiedergegeben.
+Mono zum Vergleich: Eis 133.246.931 · Blitz 104.205.158 · Pflanze 43.320.034 · Feuer 19.581.167 ·
+**Prisma 9.658.869**.
 
-**Die Rotations-Linie IST die Fraktion.** Beschleunigung und Anklang tragen zusammen +32 %; alle drei
-Rotations-Skills stehen oben. Damit ist die Warnung aus §5.3 gemessen: *„eine Linie, die immer wirkt, wird auch
-immer genommen"* — und die vier Haltungslinien werden von ihr verdrängt.
+**Jedes** Paar liegt unter seinem stärkeren Mono, auch die beiden ohne Prisma (Feuer+Eis −80 %,
+Pflanze+Blitz −72 %). Mischen kostet in diesem Spiel — das ist der Boden, gegen den zu lesen ist, kein
+Prisma-Effekt.
 
-**Die vier Haltungslinien tragen nichts.** Acht ihrer zwölf Skills messen null oder negativ. Das ist dieselbe
-Ursache wie in §6.8: eine Linie, deren Haltung in 81–91 % der Stiche nicht klingt, kann strukturell nichts
-beitragen, egal wie ihre Zahlen stehen. Mitklang (−5 %) und Verankerung (−4 %) sind die klarsten Fälle — beide
-zahlen ausschließlich auf Überlappung, die es kaum gibt.
+Was daraus heraussticht:
 
-**Korrektur, die diese Messung ausgelöst hat:** in der ersten Runde maßen Schwungrad (−5 %) und Kehrtwende
-(−12 %) schädlich. Die Ursache lag im Code, nicht im Entwurf: die Verlängerung wurde sofort auf den
-Nachklang-Zähler der aktiven Haltung gelegt und zählte dort jeden Takt wieder herunter — sie war verpufft,
-bevor sie jemand brauchen konnte. Verlängerungen werden jetzt gesammelt und bei der ABLÖSUNG eingelöst, dem
-einzigen Moment, in dem „verlängert die Haltung" etwas bedeuten kann. Campen stieg dadurch um 17 %
-(4.524.607 → 5.300.774), und der gierige Spieler hält seither 12,8 statt 5,8 Skills.
-
-Der Stand danach, mono gegen die anderen vier (dieselben 25 Seeds, Fraktions-Policy):
-
-| Fraktion | Median | p90 ÷ Median |
-| --- | --- | --- |
-| Eis | 155.237.412 | 8,8 |
-| Blitz | 105.236.611 | 3,4 |
-| Pflanze | 43.587.934 | 15,8 |
-| Feuer | 17.422.914 | 6,5 |
-| **Prisma** | **4.743.795** | **1,5** |
+- **Feuer + Prisma ist die günstigste Mischung im Feld** (−22 %). Das ist zugleich ein schwaches Kompliment:
+  der Abstand ist klein, weil Feuer der schwächste der vier ist.
+- **Prisma + Blitz hat die beste Siegquote aller Paare** (70,4 %). Die rote Leiter und Blitz' Crit greifen
+  ineinander — Blau addiert +50 % Crit-Chance auf ein Deck, das ohnehin crittet, und der Überschuss über 100 %
+  wird zu Crit-Multiplikator (§2).
+- **Prisma gewinnt von jedem Partner mehr, als es gibt** (+59 % bis +157 %, während der Partner 22–76 %
+  verliert). Das ist die Signatur einer Fraktion ohne eigenen Motor — dieselbe Ursache wie §6.8 A.
+- **Die in §2.2 vorhergesagte Pflanze-Explosion tritt nicht ein.** Pflanze + Prisma liegt mit 22,4 Mio im
+  Mittelfeld der Paare, nicht darüber. Der Hebel („das Brett liest sich als ein grüner Farbblock, die
+  Grundfarben bleiben bunt") existiert, trägt aber nicht weit genug, um etwas zu sprengen.
 
 ---
 
@@ -757,12 +739,15 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 `--mode skills --arch stance`), die Zahlen stehen in §6.8 und §6.9. Damit ist Schritt 1 des Owner-Plans erledigt
 — und er hat drei Fragen aufgeworfen, die vor dem Entwurf der Legendären beantwortet gehören:
 
-1. **Welche Lesart des Nachklangs gilt?** (§6.8.1) Sie entscheidet, ob Überlappung eine Mechanik ist oder eine
-   Randnotiz, und damit, ob vier der fünfzehn Skills etwas zu tun haben. Größte offene Frage des Entwurfs.
-2. **Bekommt die Fraktion einen Sammler?** (§6.8 A) Ohne einen liegt sie um Faktor 3,7 unter der schwächsten
-   der anderen vier, und ihr p90 steht bei 1,5 ihres Medians — sie hat keine Spitze, weil sich nichts aufbaut.
-3. **Was wird aus den vier Haltungslinien?** (§6.9) Acht ihrer zwölf Skills messen null oder negativ, während
-   die Rotations-Linie allein +32 % trägt. Das ist die Warnung aus §5.3, eingetreten.
+1. ~~Welche Lesart des Nachklangs gilt?~~ **Entschieden: ab dem Wechsel** (§6.8.1). Sie hat die Fraktion mono
+   verdoppelt und die Überlappung erst zu einer Mechanik gemacht.
+2. **Bekommt die Fraktion einen Sammler?** (§6.8 A) Auch nach der Entscheidung liegt sie mit 9,7 Mio um Faktor
+   2 unter Feuer und Faktor 14 unter Eis, und ihr p90 steht bei 1,9 ihres Medians — sie hat kaum Spitze, weil
+   sich nichts aufbaut. In den Paaren zeigt sich dasselbe: Prisma gewinnt von jedem Partner mehr, als es gibt
+   (§6.10).
+3. **Was wird aus den vier Haltungslinien?** (§6.9) Acht ihrer zwölf Skills maßen null oder negativ, während
+   die Rotations-Linie allein +32 % trug. Das ist die Warnung aus §5.3, eingetreten — die Messung stammt
+   allerdings noch aus der alten Nachklang-Lesart und gehört wiederholt, bevor daraus etwas folgt.
 
 Erst danach **die drei Legendären** — bewusst zuletzt, damit sie sich an einem gemessenen Stand messen.
 

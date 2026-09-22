@@ -113,35 +113,52 @@ describe("Haltungen — der Mechanismus (§2)", () => {
     }
     expect(s.stance).toBe("G");
   });
-  it("die abgelöste Haltung klingt die Mindestdauer nach — auf VOLLER Stärke, ohne Abschwächung", () => {
-    let s = st({ counts: { B: C.STANCE_THRESHOLD - 1 } });
-    s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;      // Rot wird abgelöst
+  it("die abgelöste Haltung wirkt in die neue hinein — volle Mindestdauer, volle Stärke, egal wie lange sie lief", () => {
+    // Rot ist seit dem Laufbeginn aktiv, also lange. Trotzdem bekommt es beim Wechsel den vollen Nachklang:
+    // er beginnt AM WECHSEL, nicht beim Auslösen (Owner).
+    let s = st({ counts: { B: C.STANCE_THRESHOLD - 1 }, ranFor: { R: 40 } });
+    s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;
     expect(s.stance).toBe("B");
-    // Rot ist eben erst abgelöst worden und hat keine Rest-Mindestdauer mehr (es klang als aktive Haltung).
+    expect(s.ring.R).toBe(C.STANCE_MIN_DURATION);
+    expect(ringsNow(s, "R")).toBe(true);                     // Rot wirkt weiter
+    expect(stanceLift(s)).toBe(1);                           // und zwar auf voller Stärke
+    expect(stanceCrit(s, [], {})).toBe(C.STANCE_CRIT);       // Blau trägt dazu
+    expect(ringCount(s)).toBe(2);
+    // Nach der Mindestdauer ist Rot still.
+    for (let i = 0; i < C.STANCE_MIN_DURATION; i++) s = stanceTick(s, [], {}, {}).stance;
     expect(ringsNow(s, "R")).toBe(false);
-    expect(stanceCrit(s, [], {})).toBe(C.STANCE_CRIT);       // Blau trägt jetzt
-  });
-  it("Überlappung entsteht genau dann, wenn zwei Wechsel innerhalb der Mindestdauer fallen (§2)", () => {
-    let s = st({ counts: { B: C.STANCE_THRESHOLD - 1, G: C.STANCE_THRESHOLD - 1 } });
-    s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;      // Wechsel 1 → Blau, ring 3
     expect(ringCount(s)).toBe(1);
-    s = stanceTick(s, [], {}, { wonSuit: "G" }).stance;      // Wechsel 2 → Grün, Blau klingt nach
+  });
+  it("JEDER Wechsel erzeugt Überlappung — dichte Wechsel stapeln sie (§2)", () => {
+    let s = st({ counts: { B: C.STANCE_THRESHOLD - 1, G: C.STANCE_THRESHOLD - 1 } });
+    s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;      // Wechsel 1 → Blau, Rot klingt nach
+    expect(ringCount(s)).toBe(2);
+    s = stanceTick(s, [], {}, { wonSuit: "G" }).stance;      // Wechsel 2 → Grün, Blau UND Rot klingen
     expect(s.stance).toBe("G");
     expect(ringsNow(s, "B")).toBe(true);
-    expect(ringCount(s)).toBe(2);
-    // ... und hört nach der Mindestdauer auf.
-    for (let i = 0; i < C.STANCE_MIN_DURATION; i++) s = stanceTick(s, [], {}, {}).stance;
-    expect(ringsNow(s, "B")).toBe(false);
-    expect(ringCount(s)).toBe(1);
+    expect(ringsNow(s, "R")).toBe(true);
+    expect(ringCount(s)).toBe(3);
+    // ... und es läuft der Reihe nach aus: Rot war zuerst dran und verstummt zuerst, ein Stich vor Blau.
+    s = stanceTick(s, [], {}, {}).stance;
+    expect(ringCount(s)).toBe(3);                            // Rot hat noch einen Stich
+    s = stanceTick(s, [], {}, {}).stance;
+    expect(ringsNow(s, "R")).toBe(false);
+    expect(ringsNow(s, "B")).toBe(true);
+    s = stanceTick(s, [], {}, {}).stance;
+    expect(ringCount(s)).toBe(1);                            // nur noch die aktive Haltung
   });
-  it("Selbst-Auslösen frischt die Mindestdauer auf, zählt aber NICHT als Wechsel (Owner)", () => {
-    let s = st({ counts: { R: C.STANCE_THRESHOLD - 1 }, carried: ["R"] });
+  it("Selbst-Auslösen hält nur den Zähler unten — kein Wechsel, kein Nachklang (Owner)", () => {
+    const s = st({ counts: { R: C.STANCE_THRESHOLD - 1 }, carried: ["R"] });
     const r = stanceTick(s, [], {}, { wonSuit: "R" });
     expect(r.switched).toBe(false);
     expect(r.stance.stance).toBe("R");
     expect(r.stance.switches).toBe(0);
     expect(r.stance.counts.R).toBe(0);                        // Zähler gedeckelt: fällt zurück
-    expect(r.stance.ring.R).toBe(C.STANCE_MIN_DURATION);
+    // Kein Nachklang: die Haltung ist ohnehin aktiv, es gibt nichts zu überbrücken. Der Nachklang entsteht
+    // ausschließlich beim WECHSEL.
+    expect(r.stance.ring.R).toBe(0);
+    expect(ringsNow(r.stance, "R")).toBe(true);               // aktiv, also klingend
+    expect(ringCount(r.stance)).toBe(1);
   });
   it("der Zähler ist gedeckelt — die aktive Farbe steht nie hoch, das Pendeln ist an der Wurzel aus", () => {
     let s = st();
@@ -303,12 +320,10 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     for (let i = 0; i < max + 3; i++) s = extendStance(s, skills, {}, "crit");
     expect(s.ext).toBe(max);                                   // das Budget deckelt, keine Sonderregel
     expect(s.ring.B).toBe(0);                                  // noch nichts auf dem Nachklang — er wird erst beim Wechsel gelegt
-    // Die Verlängerung wird bei der ABLÖSUNG eingelöst: die alte Haltung klingt entsprechend länger nach.
+    // Die Verlängerung wird bei der ABLÖSUNG eingelöst: sie kommt auf die Mindestdauer obendrauf.
     const after = stanceTick({ ...s, counts: { ...s.counts, G: C.STANCE_THRESHOLD - 1 } }, [], {}, { wonSuit: "G" }).stance;
     expect(after.stance).toBe("G");
-    // Der Nachklang wird NACH dem Abbau dieses Takts gelegt — wie beim Auslösen auch, sonst verlöre jede Haltung
-    // ihren ersten Stich. Die abgelöste Haltung klingt also genau `max` Stiche nach.
-    expect(after.ring.B).toBe(max);
+    expect(after.ring.B).toBe(C.STANCE_MIN_DURATION + max);
     expect(ringsNow(after, "B")).toBe(true);
     expect(after.ext).toBe(0);                                 // Budget für die neue Haltung frisch
     // Ohne den Skill verpufft nichts, weil nichts gesammelt wird.
@@ -400,8 +415,8 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
     expect(one.stance.ext).toBe(1);
     const handover = stanceTick({ ...one.stance, counts: { ...one.stance.counts, Y: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "Y" }).stance;
     expect(handover.stance).toBe("Y");
-    expect(handover.ring.R).toBe(1);                           // die eine gesammelte Verlängerung, eingelöst
-    expect(ringsNow(handover, "R")).toBe(true);                // Rot klingt nach, obwohl seine Mindestdauer längst weg war
+    expect(handover.ring.R).toBe(C.STANCE_MIN_DURATION + 1);   // Mindestdauer plus die eine gesammelte Verlängerung
+    expect(ringsNow(handover, "R")).toBe(true);
   });
 });
 
@@ -413,9 +428,11 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     const skills = [S.ANKLANG];
     let s = st({ counts: { B: C.STANCE_THRESHOLD - 1, G: C.STANCE_THRESHOLD - 1 } });
     s = stanceTick(s, skills, {}, { wonSuit: "B" }).stance;
+    expect(s.ring.R).toBe(T.anklang[0].duration);              // Rot klingt länger nach als ohne den Skill
     s = stanceTick(s, skills, {}, { wonSuit: "G" }).stance;
-    expect(s.ring.B).toBe(T.anklang[0].duration - 1);
+    expect(s.ring.B).toBe(T.anklang[0].duration);
     expect(ringsNow(s, "B")).toBe(true);
+    expect(ringCount(s)).toBe(3);                              // Rot klingt dank der längeren Dauer noch mit
   });
   it("SK_STANCE_14 Runde: alle vier getragen → Basis-Score je Sieg im NÄCHSTEN Durchlauf; Stapeln erst Episch", () => {
     const skills = [S.RUNDE];

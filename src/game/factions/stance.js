@@ -222,23 +222,26 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
   const ring = { ...st.ring };
   for (const s of STANCE_SUITS) ring[s] = Math.max(0, (ring[s] || 0) - 1);
   let next = { ...st, ring };
-  let switched = false;
+  let switched = false, triggered = false;
   if (wonSuit && STANCE_SUITS.includes(wonSuit)) {
     const counts = { ...next.counts, [wonSuit]: (next.counts[wonSuit] || 0) + 1 };
     if (counts[wonSuit] >= next.threshold) {
       counts[wonSuit] = 0; // nur die auslösende Farbe fällt zurück — die anderen drei zählen weiter
-      // Ein Selbst-Auslösen frischt die Mindestdauer auf, zählt aber NICHT als Haltungswechsel (§2, Owner):
-      // damit steht die aktive Farbe nie auf einem hohen Zählerstand und das Pendeln ist an der Wurzel aus.
-      next = { ...next, ring: { ...next.ring, [wonSuit]: minDuration(skills, skillTiers) } };
+      triggered = true;
+      // Ein Selbst-Auslösen zählt NICHT als Haltungswechsel (§2, Owner) und tut sonst nichts: die Haltung ist
+      // ohnehin aktiv. Es hält nur den Zähler unten, und damit ist das Pendeln an der Wurzel ausgeschlossen.
       if (wonSuit !== next.stance) {
         switched = true;
-        /* Hier wird der Nachklang der ABGELÖSTEN Haltung festgelegt — und nur hier. Lesart B
-           (STANCE_AFTERGLOW_ON_SWITCH) setzt ihn frisch auf die Mindestdauer, Lesart A (Default, §2) lässt
-           stehen, was von ihrer eigenen Mindestdauer noch übrig ist. In beiden Fällen kommen die gesammelten
-           Verlängerungen obendrauf: das ist der Moment, in dem „verlängert die Haltung" überhaupt etwas
-           bedeuten kann. */
-        const base = C.STANCE_AFTERGLOW_ON_SWITCH ? minDuration(skills, skillTiers) : (next.ring[next.stance] || 0);
-        next = { ...next, ring: { ...next.ring, [next.stance]: base + (next.ext || 0) } };
+        /* Der Nachklang wird HIER festgelegt, beim Wechsel (Owner): „die alte Haltung wirkt noch in die neue
+           hinein." Sie bekommt die volle Mindestdauer, unabhängig davon, wie lange sie schon aktiv war — jeder
+           Wechsel erzeugt also Überlappung, nicht nur ein Wechsel, der dicht auf den vorigen folgt. Die
+           gesammelten Verlängerungen kommen obendrauf: das ist der einzige Moment, in dem „verlängert die
+           Haltung" etwas bedeuten kann, weil die aktive Haltung ohnehin bis zur Ablösung läuft. */
+        next = { ...next, ring: {
+          ...next.ring,
+          [next.stance]: minDuration(skills, skillTiers) + (next.ext || 0),
+          [wonSuit]: 0, // die neue Haltung ist aktiv; ein Rest-Nachklang von früher wäre nur Ballast
+        } };
         const carried = next.carried.includes(wonSuit) ? next.carried : [...next.carried, wonSuit];
         // Beschleunigung: jeder echte Wechsel senkt die Schwelle, bis auf den Boden der Stufe. Der Boden geht
         // bewusst nicht auf 1 — dort löste jede Farbe mit ihrem ersten Sieg aus (§6.7).
@@ -261,7 +264,7 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
   next = { ...next, ranFor, slid };
   // Verankerung: das Segment merken, in dem Grün ausgelöst hat — sie zahlt, solange die Haltung klingt, und fällt
   // mit ihr. „Erbt einmal" heißt EINE Stufe, nicht einen Stich (Lesart; §8 hält sie als Annahme fest).
-  if (wonSuit === "G" && next.ring.G === minDuration(skills, skillTiers)) next = { ...next, anchorSeg: Math.floor(pos / segmentSize) };
+  if (triggered && wonSuit === "G") next = { ...next, anchorSeg: Math.floor(pos / segmentSize) };
   if (!ringsNow(next, "G")) next = { ...next, anchorSeg: null };
   const ended = before.filter((s) => !ringsNow(next, s));
   return { stance: next, switched, ended };
