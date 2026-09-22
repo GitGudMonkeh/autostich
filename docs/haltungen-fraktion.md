@@ -1,7 +1,7 @@
 # Haltungen — Fraktion 5 (Arbeitsdokument)
 
 > **Status: lebendes Dokument, Designphase.** Der Mechanismus und die vier Passive sind vom Owner
-> gesetzt, vier der fünf Linien sind besetzt. **Keine Zahlen sind tariert, nichts ist gemessen** —
+> gesetzt, alle fünf Linien sind besetzt — 15 Skills. **Keine Zahlen sind tariert, nichts ist gemessen** —
 > alle Werte hier sind Startwerte oder Kopfrechnung und stehen so lange zur Disposition, bis Sim und
 > Playtest etwas dazu sagen.
 >
@@ -120,7 +120,7 @@ tanzen.
 | **Crit** | Grundrauschen · Übertrag · Schwungrad — **voll** |
 | **Überlappung** | Doppelbindung · Übergriff · Verankerung — **voll** |
 | **Ergebnis** | Genugtuung · Rückhalt · Kehrtwende — **voll** |
-| **Rotation** | Anklang · Runde · *(dritter Platz geparkt, bis die Haltungen stehen)* |
+| **Rotation** | Anklang · Runde · Beschleunigung — **voll** |
 
 Dazu kommen **3 Legendäre** (Format der Bestandsfraktionen) — noch nicht angefasst.
 
@@ -175,7 +175,7 @@ sonst crittet man ab dem ersten Crit bis zum Ende der Haltung durch, ohne Abbruc
 
 **Warnung zu Schwungrad** (§6.4).
 
-### 5.3 · Rotation-Linie — zwei von drei
+### 5.3 · Rotation-Linie — voll
 
 Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raster in `skill-rework.md`
 §1 verlangt, dass der erste Skill einer Fraktion sie allein zum Laufen bringt.
@@ -184,7 +184,14 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach. |
 | **Runde** | Hast du alle vier Haltungen einmal getragen, wirft die vollendete Runde etwas ab. |
-| *(offen)* | Geparkt, bis die Haltungen stehen. Kandidaten aus der Diskussion: *Beschleunigung* (jeder Wechsel senkt die Schwelle für den nächsten) und *Trägheit* (je länger eine Haltung hält, desto stärker) — die beiden Motoren für Tanzen und Campen. |
+| **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. |
+
+**Die Linie ist damit durchgehend Tanz-Build.** Alle drei zahlen auf häufiges Wechseln, und sie
+verstärken sich gegenseitig: Beschleunigung erzeugt mehr Wechsel, Anklang lässt sie überlappen, Runde
+zahlt für die vollendete Runde, die durch Beschleunigung viel schneller kommt. Für den Block-Build
+steht in dieser Linie nichts.
+
+**Warnung zu Beschleunigung** (§6.7).
 
 **Warnung:** eine Linie, die immer wirkt, wird auch immer genommen. Bei zwei Türen à drei Skills
 könnte Rotation die vier Haltungslinien systematisch verdrängen. Beim Bau des Angebots mitdenken.
@@ -318,6 +325,25 @@ Die Blitz-Notizen haben für diese Form einen Namen und eine Narbe (`skill-rewor
 „kubischer Weglauf" — dort waren es zwei Achsen an derselben Ressource). **Ergebnis** ist der
 Ausreißer und deshalb wertvoll: sie multipliziert nicht, sie wandelt, und läuft nie weg.
 
+### 6.7 · Beschleunigung braucht einen Boden
+
+Die Schwelle steht bei 5 gewonnenen Stichen. Senkt jeder Wechsel sie, läuft sie ohne Boden dorthin:
+
+> 5 → 4 → 3 → 2 → 1 → 0
+
+**Bei Schwelle 1 löst jede Farbe mit ihrem ersten Sieg aus.** Bei ~60 % Siegquote ist dann rund jeder
+zweite Stich ein Wechsel — und weil eine Haltung mindestens 3 Stiche hält, klingen ab da **permanent
+drei bis vier Haltungen gleichzeitig**. Bei Schwelle 0 gilt das sogar ohne Sieg.
+
+Das ist genau der Zustand aus §6.6, nur dauerhaft statt als Blitz. Ob das das **Ziel** des Skills ist
+— er wäre dann der Schlüssel zum Vierer-Build — oder sein Fehler, ist eine Design-Entscheidung. Die
+Mechanik braucht so oder so **einen Boden**, oder ein Zurücksetzen der Schwelle (je Durchlauf, oder
+mit jeder vollendeten Runde).
+
+Anders als bei den Verlängerern (§6.5) ist das kein Randfall bei extremen Werten: die Leiter läuft
+schon nach vier Wechseln an ihr Ende, und vier Wechsel sind in einem bunten Build ein bis zwei
+Durchläufe.
+
 ---
 
 ## 7 · Verworfen — und warum
@@ -329,6 +355,7 @@ Ausreißer und deshalb wertvoll: sie multipliziert nicht, sie wandelt, und läuf
 | **Pechbremse** (ein Sieg ohne Crit hebt die Chance für den nächsten) | Stirbt am eigenen Erfolg: wer auf Crit baut, verfehlt nie, also greift sie nie. Gehört zur Sorte „immer genommen, nie gespürt" (`skill-rework.md` §8.5). |
 | **Metronom · Takt · Zielschuss** | Hingen alle am gestrichenen Takt-Passiv. |
 | **„Aufteilung"** | Name belegt (Glossar: „Aufteilung deines Scores auf Formationen / Crits / Übrige"), und mechanisch war der Skill identisch zu Mitklang, nur auf der Crit-Achse. |
+| **Trägheit** (je länger eine Haltung hält, desto stärker wird sie) | Owner: zu teuer. Der Skill hätte **jedem der vier Passive eine Dauer-Skala** aufgezwungen — vier Umbauten für einen Skill, und jedes Passiv müsste eine zweite Achse tragen, die es sonst nicht braucht. Campen zahlt stattdessen über *Zinsen* (Score-Linie). |
 | **Zweitstufe · Standhaft · Gnadenfrist** (Ergebnis-Kandidaten) | Nicht gewählt. *Standhaft* wäre der Skill gewesen, der außerhalb der eigenen Haltung wirkt (§4.1). |
 | **Kehrtwende, ursprüngliche Fassung** (ein gerutschter Stich zählt für den Farbzähler seiner Farbe) | Vom Owner umdefiniert auf „verlängert die Haltung um einen Stich". Die alte Fassung hätte in die eigene Maschine zurückgespeist — dieselbe Form wie der nicht gewählte *Taktgeber* der Crit-Linie. |
 | **Gefüge · Weiterreichen · Verkettung** (Überlappungs-Kandidaten) | Nicht gewählt. Gefüge bleibt der stärkste der drei, falls die Linie später aufgemacht wird: es hebt die Reichweite des Passivs von „dichte Stellen" auf das ganze Brett. |
@@ -346,7 +373,9 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 1. **Welche Haltung ein Verlängerer verlängert** — §6.5. Die einzige offene Frage, die eine *Regel*
    braucht und kein Tarieren.
-2. **Übergriff auf bereits offenen Grenzen** — §5.4.
+2. **Der Boden der Beschleunigungs-Schwelle** — §6.7. Ebenfalls eine Regel, kein Tarieren: ohne Boden
+   endet die Leiter nach vier Wechseln bei 0.
+3. **Übergriff auf bereits offenen Grenzen** — §5.4.
 3. **Der dritte Rotations-Skill** — geparkt, bis die Haltungen stehen.
 4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Dabei zu bedenken: Pflanze färbt Karten
    dauerhaft grün, Grün campt also von selbst. Der Owner hat die Kombination Grün + Pflanze
@@ -413,9 +442,9 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 ## 10 · Nächster Schritt
 
-Der dritte Rotations-Platz (§5.3) — er war bewusst geparkt, bis die Haltungen stehen, und das tun sie
-jetzt. Danach die Farbzuordnung, die drei Legendären und zuletzt die Zahlen — in der Reihenfolge, die
-Eis und Pflanze schon gegangen sind.
+**Alle 15 Skills stehen.** Was bleibt, in der Reihenfolge, die Eis und Pflanze schon gegangen sind:
+die Farbzuordnung, die drei Legendären, dann die Zahlen.
 
-Vorher zu klären, weil es eine **Regel** ist und kein Tarieren: welche Haltung ein Verlängerer
-verlängert (§6.5).
+Vorher zu klären sind die beiden Punkte, die eine **Regel** brauchen und kein Tarieren: welche
+Haltung ein Verlängerer verlängert (§6.5), und wo die Beschleunigungs-Schwelle ihren Boden hat
+(§6.7).
