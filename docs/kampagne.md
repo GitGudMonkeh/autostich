@@ -312,56 +312,97 @@ Sonde: `N=24 node sim/probes/kampagne-hebel.mjs` (gepaart, je Variante dieselben
 ## 9. Der Reward-Katalog (Entwurf, Owner 2026-09-22)
 
 **Sechs Achsen, je drei Rewards, dazu fünf Legendäre.** Vom Owner gesetzt ist die Auswahl der
-Achsen; die Namen und die Zuschnitte sind Entwurf. **Alle Zahlen stehen als X** — die Werte und die
-Raritätsstufen sind noch nicht gesetzt.
+Achsen. **Die Werte unten sind ein erster Satz, kein Beschluss** — sie sind da, damit der Owner sie
+überschreiben kann, nicht damit sie stehenbleiben.
 
 Zwei Achsen aus dem ersten Wurf sind **verworfen**: „Angebot und Auswahl" (mehr Skills zur Wahl,
 höherer Raritätsboden) und „Start-Vorbelegung" (Lauf beginnt mit Skill/Gebäude/Serie).
 
+**Die Basiswerte, gegen die alles unten zu lesen ist** (aus dem Code, nicht geschätzt):
+
+| Größe | Wert | Quelle |
+| --- | --- | --- |
+| Basispunkte je gewonnenem Stich | **400** | `SCORE_PER_WIN` |
+| Deck | **40 Karten**, Werte 1–10, Gesamtwert 220 | `RANKS`, `SUIT_ORDER` |
+| Stiche je Durchlauf · Durchläufe je Lauf | **40** · **50** | `TRICKS_PER_CYCLE`, `MAX_CYCLES` |
+| Münzen je Durchlauf | **2** (≈ 100 je Lauf) | `COIN_CYCLE_BASE` |
+| Neuwurf | **3 Münzen** (legendär 15) | `REROLL_BASE` |
+| Formationsenergie je Aufstellphase | **4** | `FORMATION_ENERGY` |
+| Baufeld | **24** von 40 Zellen | `MAX_COVER` |
+
+**Wie belastbar die Werte sind.** Nur die Score-Achse ist an eine Messung geknüpft: aus §8 ist
+bekannt, dass +400 Basispunkte ×1,23 auf den Endscore bringen und dass der Endscore exakt linear in
+den Basispunkten ist — daraus fallen Sold und Feldzeichen direkt. **Alles andere ist Augenmaß**,
+gesetzt gegen die Basiswerte oben und gegen das Budget aus §7 (ein Reward sollte grob ×1,25–1,5
+wert sein, damit die Kette trägt). Der Playtest zieht sie nach.
+
+**Ein „—" heißt: dieses Stück gibt es auf dieser Stufe nicht.** Nicht jeder Reward trägt vier
+Stufen; die Regel-Ausnahmen und die Kampagnen-Stücke sind dafür zu binär (§9 offene Fragen, Punkt 4).
+
 ### 1 · Score-Formel
 
-| Reward | Wirkung | Raritäts-Regler |
-| --- | --- | --- |
-| **Sold** | +X Basispunkte auf jeden gewonnenen Stich | X |
-| **Feldzeichen** | +X % auf **einen** Multiplikator, beim Nehmen festgelegt | X; höhere Stufen evtl. zwei Achsen |
-| **Steigbrief** | +X % auf allen Score, wachsend: je 10 Durchläufe eine Stufe mehr | X je Stufe |
+| Reward | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Sold** · jeder gewonnene Stich bringt mehr Grundpunkte, bevor die Multiplikatoren greifen | +100 | +200 | +350 | +600 |
+| **Feldzeichen** · wähle beim Nehmen eine Achse — Serie, Perks, Formation, Kern, Nachhall, Gebäude, Crit, Feuer oder Pflanze. Sie zahlt dauerhaft mehr | +10 % | +20 % | +35 % | +55 % |
+| **Steigbrief** · dein Score-Bonus wächst alle 10 Durchläufe. Am Ende eines Laufs steht er beim Fünffachen | +3 % / 10 D. (Ende +15 %) | +5 % (Ende +25 %) | +8 % (Ende +40 %) | +12 % (Ende +60 %) |
 
-Sold hilft dem schwachen Lauf (§8), Feldzeichen passt sich dem Bau an, Steigbrief zahlt erst spät.
+Sold hilft dem schwachen Lauf (§8: verdoppelte Basispunkte bringen Feuer +53 %, Eis +7 %),
+Feldzeichen passt sich dem Bau an, Steigbrief zahlt erst spät.
 
 ### 2 · Kampfkraft
 
-| Reward | Wirkung | Raritäts-Regler |
-| --- | --- | --- |
-| **Waffenrecht** | alle eigenen Karten +X Kartenwert, dauerhaft | X |
-| **Wetzstein** | die schwächste Deckkarte bekommt je Durchlauf +X Wert | X |
-| **Zehnt** | das Gegnerdeck verliert X Kartenwert | X |
+| Reward | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Waffenrecht** · jede Karte in deinem Deck ist dauerhaft stärker | +1 | +2 | +3 | +4 |
+| **Wetzstein** · am Ende jedes Durchlaufs bekommt deine schwächste Karte etwas dazu | +1 | +2 | +3 | +4 |
+| **Zehnt** · jede Karte im Gegnerdeck ist dauerhaft schwächer | +1 | +2 | +3 | +4 |
 
 Die einzige Achse, die sich selbst verstärkt: mehr gewonnene Stiche heißt mehr Wertungen **und**
 längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben klemmt.
 
+> **Achtung, hier ist +1 nicht klein.** Beide Decks ziehen Werte 1–10. Ein Punkt auf jede eigene
+> Karte heißt, dass du Gleichstände gewinnst — das sind rund **zehn Prozentpunkte Siegquote**, von
+> gemessenen ~48 % auf ~58 %. Diese Achse braucht den Playtest dringender als jede andere.
+
 ### 3 · Ökonomie
 
-| Reward | Wirkung | Raritäts-Regler |
-| --- | --- | --- |
-| **Pfründe** | +X Münzen je Durchlauf | X |
-| **Handelsbrief** | alle Käufe kosten X % weniger | X |
-| **Mitgift** | der Lauf startet mit X Münzen | X |
+| Reward | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Pfründe** · du bekommst jeden Durchlauf mehr Münzen | +1 | +2 | +3 | +4 |
+| **Handelsbrief** · alles, was du kaufst, kostet weniger | −10 % | −20 % | −30 % | −50 % |
+| **Mitgift** · der Lauf beginnt mit Münzen in der Tasche | 15 | 30 | 50 | 80 |
+
+> **Auch hier ist die kleinste Stufe groß:** der Sockel liegt bei 2 Münzen je Durchlauf, ein
+> Pfründe-Normal ist also schon **+50 % Einkommen** über den ganzen Lauf.
 
 ### 5 · Struktur
 
-| Reward | Wirkung | Raritäts-Regler |
-| --- | --- | --- |
-| **Lehen** | +X Zellen Baufeld | X |
-| **Fahnenrecht** | +X Formationsenergie je Aufstellphase | X |
-| **Ratsbrief** | X zusätzliche Entscheidungsphasen im Lauf | X; welcher Typ |
+| Reward | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Lehen** · dein Baufeld hat mehr Platz (von 24 Zellen) | +2 | +4 | +6 | +10 |
+| **Fahnenrecht** · du hast in jeder Aufstellphase mehr Energie (von 4) | +1 | +2 | +3 | +4 |
+| **Ratsbrief** · du bekommst zusätzliche Entscheidungsphasen im Lauf | +1 | +2 | +3 | +4 |
 
 ### 7 · Regel-Ausnahmen
 
-| Reward | Wirkung | Raritäts-Regler |
-| --- | --- | --- |
-| **Standhaftigkeit** | die Serie überlebt X Niederlagen je Durchlauf | X |
-| **Losentscheid** | Stiche, die du um ≤ X verlierst, zählen als Sieg | X |
-| **Lückenschluss** | X Karten je Formation dürfen falsch sein, die Formation zählt trotzdem als vollständig | X |
+| Reward | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Standhaftigkeit** · deine Serie überlebt Niederlagen, statt abzureißen | 1 je Durchlauf | 2 | 3 | 4 |
+| **Losentscheid** · knapp verlorene Stiche zählen trotzdem als Sieg | Rückstand ≤ 1 | ≤ 2 | ≤ 3 | ≤ 4 |
+| **Lückenschluss** · eine Formation zählt als vollständig, auch wenn Karten nicht passen | 1 falsche Karte, **eine** Formation je Phase | 1 falsche Karte, **alle** Formationen | 2 falsche Karten | 3 falsche Karten |
+
+> *Losentscheid* auf **Selten** ist exakt der bestehende Perk *Patt* (`PATT_MARGIN = 2`). Entweder
+> ist das gewollt — dieselbe Regel, jetzt auch als Kampagnen-Stück — oder die Leiter muss höher
+> ansetzen.
+
+### 8 · Kampagnen-Ebene
+
+| Reward | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Gnadengesuch** · ein verlorener Lauf wirft dich nicht aus der Kampagne | — | 1× je Kampagne | 2× | 3× |
+| **Fürsprache** · die Schwelle des nächsten Laufs sinkt | −10 % | −20 % | −30 % | −50 % |
+| **Doppelwahl** · nach einem erfüllten Auftrag wählst du zwei Beutestücke statt einem | beim nächsten Auftrag | jeden Auftrag **dieses** Laufs | dauerhaft | dauerhaft, und das zweite Stück eine Stufe höher |
 
 ### 8 · Kampagnen-Ebene
 
@@ -379,7 +420,7 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | **Handschlag** | **garantiert legendärer Perk** in der ersten Perk-Phase — nächster Lauf und alle folgenden |
 | **Erleuchtung** | **garantiert legendärer Skill** in der Skill-Phase — nächster Lauf und alle folgenden |
 | **Bauherrschaft** | **garantiert legendäres Gebäude** in der ersten Bauphase — nächster Lauf und alle folgenden |
-| **Adelsbrief** | **Aufträge geben Beute eine Stufe über ihrem Schwierigkeitsgrad** — leicht zahlt wie mittel, mittel wie schwer, schwer darüber hinaus; und **schwer** bekommt eine nochmals höhere Legendär-Chance |
+| **Adelsbrief** | **Aufträge geben Beute eine Stufe über ihrem Schwierigkeitsgrad** — leicht zahlt wie mittel, mittel wie schwer, schwer darüber hinaus; und **schwer** hebt die Legendär-Chance von 30 % auf 50 % |
 
 *Handschlag*, *Erleuchtung* und *Freispruch* stammen vom Owner, *Adelsbrief* ebenfalls.
 *Bauherrschaft* schließt die Reihe Perk / Skill / Gebäude — dasselbe Versprechen auf der dritten
@@ -392,7 +433,10 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
 
 ### Offene Fragen zum Katalog
 
-1. **Werte und Raritätsstufen** — alles steht als X.
+1. **Die Werte selbst.** Ein erster Satz steht oben; nur die Score-Achse ist an eine Messung
+   geknüpft, der Rest ist Augenmaß gegen die Basiswerte. Drei Stellen sind auffällig heiß:
+   *Waffenrecht/Zehnt* (+1 ist schon ~10 Punkte Siegquote), *Pfründe* (+1 ist +50 % Einkommen) und
+   *Gnadengesuch* (schon 1× nimmt der Kampagne ihre Schärfe).
 2. **Drei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Ratsbrief*
    (zusätzliche Entscheidungsphasen — `DECISION_SCHEDULE`/`buildSchedule`), *Bauherrschaft*
    (setzt voraus, dass es legendäre Gebäude als Rarität überhaupt gibt) und *Lückenschluss*
