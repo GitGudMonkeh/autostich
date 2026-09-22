@@ -109,8 +109,11 @@ export const minDuration = (skills, skillTiers) =>
    dem Skill Genugtuung gewesen. */
 export const barLength = (skills, skillTiers) =>
   stanceParam(skills, skillTiers, S.RUNDE, "bar") ?? C.STANCE_BAR;
+/* 0 schaltet den Einklang GANZ ab — samt dem Episch-Extra von Runde, denn „+2 Stiche" auf einen Moment der
+   Länge null ist keine Wirkung, sondern ein Rechenfehler. Der Haken trennt die zwei Hälften der vollen Leiste
+   (Moment gegen dauerhafte Stufe) und erlaubt damit die Ablation in §6.13. */
 export const einklangDuration = (skills, skillTiers) =>
-  C.STANCE_EINKLANG + (stanceParam(skills, skillTiers, S.RUNDE, "einklangPlus") || 0);
+  (C.STANCE_EINKLANG > 0 ? C.STANCE_EINKLANG + (stanceParam(skills, skillTiers, S.RUNDE, "einklangPlus") || 0) : 0);
 // Der Sammler: 1 ohne Stufe, danach linear. Kein Deckel — der Regler ist der Satz je Stufe (skill-rework.md §1).
 export const stanceLevelMult = (st) => (st && st.active ? 1 + (st.level || 0) * C.STANCE_STEP : 1);
 
@@ -267,7 +270,7 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
         if (next.bar >= barLength(skills, skillTiers)) {
           const dur = einklangDuration(skills, skillTiers);
           const rung = { ...next.ring };
-          for (const s of STANCE_SUITS) rung[s] = Math.max(rung[s] || 0, dur);
+          if (dur > 0) for (const s of STANCE_SUITS) rung[s] = Math.max(rung[s] || 0, dur);
           next = { ...next, bar: 0, level: next.level + 1, einklang: next.einklang + 1, ring: rung };
         }
       }

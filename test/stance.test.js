@@ -441,7 +441,9 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
       expect(T.runde[tier].bar, `Stufe ${tier}`).toBeLessThan(C.STANCE_BAR); // jede Stufe ist eine Verbesserung
     }
     expect(einklangDuration([], {})).toBe(C.STANCE_EINKLANG);
-    expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 })).toBe(C.STANCE_EINKLANG + T.runde[3].einklangPlus);
+    // Das Episch-Extra hängt am Moment: ist der abgeschaltet (Ablations-Haken), gibt es nichts zu verlängern.
+    expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 }))
+      .toBe(C.STANCE_EINKLANG > 0 ? C.STANCE_EINKLANG + T.runde[3].einklangPlus : 0);
     // Und sie wirkt: mit dem Skill ist die Leiste nach weniger Wechseln voll.
     const fill = (skills, tiers) => {
       let s = st(), n = 0;
@@ -488,13 +490,17 @@ describe("Haltungen — die Leiste und die Stufe (§3.1)", () => {
       const c = STANCE_SUITS[(i + 1) % 4];
       s = stanceTick({ ...s, counts: { ...s.counts, [c]: s.threshold - 1 } }, [], {}, { wonSuit: c }).stance;
     }
+    // Die Leiste und die Stufe gelten immer — auch wenn der Moment abgeschaltet ist (Ablations-Haken §6.13).
     expect(s.einklang).toBe(1);
     expect(s.level).toBe(1);
     expect(s.bar).toBe(0);                                   // Leiste auf null, von vorn
-    expect(ringCount(s)).toBe(4);                            // alle vier klingen
-    for (const c of STANCE_SUITS) expect(ringsNow(s, c), c).toBe(true);
-    // Der Einklang läuft aus, die Stufe bleibt.
-    for (let i = 0; i < C.STANCE_EINKLANG + 1; i++) s = stanceTick(s, [], {}, {}).stance;
+    if (C.STANCE_EINKLANG > 0) {
+      expect(ringCount(s)).toBe(4);                          // alle vier klingen
+      for (const c of STANCE_SUITS) expect(ringsNow(s, c), c).toBe(true);
+    }
+    // Alles klingt aus, die Stufe bleibt. Lang genug für Einklang UND den gewöhnlichen Nachklang der Wechsel,
+    // damit der Abbau nicht vom Ablations-Haken abhängt.
+    for (let i = 0; i < Math.max(C.STANCE_EINKLANG, C.STANCE_MIN_DURATION) + 1; i++) s = stanceTick(s, [], {}, {}).stance;
     expect(ringCount(s)).toBe(1);
     expect(s.level).toBe(1);
   });
@@ -506,10 +512,10 @@ describe("Haltungen — die Leiste und die Stufe (§3.1)", () => {
     const s = stanceTick(s0, [], {}, { wonSuit: "G" }).stance;
     expect(s.einklang).toBe(1);
     expect(s.stance).toBe("G");
-    expect(s.ring.B).toBe(19);                                     // abgebaut, nicht gekappt
+    expect(s.ring.B).toBe(19);                                     // abgebaut, nicht gekappt — immer
     expect(s.ring.R).toBeGreaterThanOrEqual(einklangDuration([], {}));
-    expect(s.ring.Y).toBe(einklangDuration([], {}));               // hatte nichts, bekommt die Einklang-Dauer
-    expect(ringCount(s)).toBe(4);
+    expect(s.ring.Y).toBe(einklangDuration([], {}));               // hatte nichts: Einklang-Dauer, sonst 0
+    expect(ringCount(s)).toBe(C.STANCE_EINKLANG > 0 ? 4 : 3);      // ohne Moment klingt Gelb nicht mit
   });
   it("die Stufe ist ein glatter Multiplikator auf JEDEN Stich — auch ohne klingendes Gelb", () => {
     expect(stanceLevelMult(st({ level: 0 }))).toBe(1);
@@ -522,6 +528,14 @@ describe("Haltungen — die Leiste und die Stufe (§3.1)", () => {
     // In der Engine landet sie im Stich.
     const s = resolveTrick(run(st({ level: 20 })), noCrit);
     expect(s.lastTrick.breakdown.stanceMult).toBeCloseTo(1 + 20 * C.STANCE_STEP, 9);
+  });
+  it("der Einklang ist abschaltbar, die Stufe bleibt — der Messhaken für die Ablation (§6.13)", () => {
+    // Der Haken hängt an der Konstante; hier wird nur geprüft, dass die Leseregel ihn sauber trennt:
+    // Dauer 0 heißt kein Moment, aber die Leiste läuft und die Stufe steigt weiter.
+    expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 }))
+      .toBe(C.STANCE_EINKLANG > 0 ? C.STANCE_EINKLANG + T.runde[3].einklangPlus : 0);
+    // Und das Episch-Extra hängt mit ab: „+2 Stiche" auf einen Moment der Länge null wäre ein Rechenfehler.
+    if (C.STANCE_EINKLANG === 0) expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 })).toBe(0);
   });
   it("Leiste und Stufe kennen keine Durchlauf-Grenze", () => {
     const s = st({ bar: 3, level: 7 });
