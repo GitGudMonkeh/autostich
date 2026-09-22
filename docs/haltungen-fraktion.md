@@ -61,11 +61,15 @@ Das ist die zweite Dimension auf derselben Entscheidung, die das Spiel ohnehin t
 - **Crit-Chance ist additiv**, kein Mindestwert: Blaus +50 % addieren sich auf, was das Deck schon
   hat. Ein Blitz-Deck bei 80 % steht damit bei 130 % und bekommt aus dem Überschuss über der
   100-%-Klemme +0,3× Crit-Multiplikator.
-- **Nur ein echter Wechsel löst aus.** Erreicht die schon aktive Farbe erneut 5, passiert nichts —
-  sie zählt weiter, aber sie löst sich nicht selbst aus. Für Beschleunigung und Runde zählen
-  ausschließlich echte Wechsel.
-- **Der Lauf startet in Rot.** Fest, nicht gewürfelt. Damit beginnt jeder Lauf mit der nachsichtigsten
-  Haltung, und das trifft genau die Phase, in der das Deck am schwächsten ist (45 % Siegquote roh).
+- **Der Zähler ist bei 5 gedeckelt.** Erreicht die schon aktive Farbe ihre 5, **löst sie aus und
+  setzt zurück** — aber die Haltung bleibt dieselbe, und es zählt **nicht als Haltungswechsel**. Für
+  **Beschleunigung** (Schwelle sinkt) und **Runde** (Farbe getragen) zählen ausschließlich echte
+  Wechsel auf eine *andere* Farbe.
+  Damit steht die aktive Farbe nie auf einem hohen Zählerstand, und das Pendeln zwischen zwei
+  Haltungen ist an der Wurzel ausgeschlossen: wird sie verdrängt, steht sie irgendwo zwischen 0 und 4.
+- **Der Lauf startet in Rot, mit Zähler 0.** Fest, nicht gewürfelt. Damit beginnt jeder Lauf mit der
+  nachsichtigsten Haltung, und das trifft genau die Phase, in der das Deck am schwächsten ist (45 %
+  Siegquote roh).
 
 **Der Mechanismus in einem Satz, für Spielertext später:**
 
@@ -504,35 +508,32 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 ## 8 · Offene Punkte
 
-**Eine Regelfrage bleibt** — sie folgt aus „nur ein echter Wechsel löst aus" und blockiert den Sim-Bau:
+**Keine Regelfrage blockiert den Sim-Bau mehr.** Eine kleine Lesart ist dabei nicht ausdrücklich
+entschieden und hier als Annahme festgehalten, korrigierbar: **ein Selbst-Auslösen frischt die
+Mindestdauer auf.** Die aktive Haltung läuft ohnehin bis zur Ablösung, spürbar wird es also erst
+danach — eine Farbe, die kurz vor ihrer Verdrängung noch einmal ausgelöst hat, klingt drei Stiche
+länger nach. Das ist die Stelle, an der „die Farbe warm halten" überhaupt etwas wert ist.
 
-1. **Was passiert mit dem Zähler der aktiven Farbe, wenn er über 5 läuft?** Rot ist aktiv und steigt
-   auf 12. Blau übernimmt. Rot steht weiter bei 12 und ist jetzt **nicht mehr** die aktive Farbe —
-   löst es damit sofort wieder aus? Dann pendeln Rot und Blau im Takt weniger Stiche, und weil die
-   Mindestdauer 3 beträgt, klingen beide praktisch dauerhaft. Zwei Auswege: der Zähler **setzt beim
-   Verlassen zurück**, oder er ist **bei 5 gedeckelt** und löst erst beim nächsten Sieg aus. Beides
-   verhindert das Pendeln, die zweite Variante belohnt dabei weiterhin, die Farbe warm zu halten.
+**Werte und Design, offen:**
 
-**Werte und Design:**
-
-2. **Was zahlt ein gerutschter Sieg?** Er war ein Gleichstand — zahlt er wie ein echter Sieg (100 %,
+1. **Was zahlt ein gerutschter Sieg?** Er war ein Gleichstand — zahlt er wie ein echter Sieg (100 %,
    am einfachsten und am stärksten) oder einen Anteil? Dazu der Nebeneffekt ohne Zahl: eine zur
    Gleichstand gerutschte Niederlage ist für **alles** keine Niederlage mehr — Niederlagenserie,
    Schwachstellenanalyse, Revanche und Initiative laufen ins Leere.
-3. **Übergriff auf bereits offenen Grenzen** — §5.4.
-4. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
+2. **Übergriff auf bereits offenen Grenzen** — §5.4.
+3. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
    Zuordnung selbst ist gesetzt.
-5. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
+4. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
    `lightYield`, Eis `glacierYield` — jede Fraktion trägt einen eigenen Score-Kanal. Diese hier
    beugt nur Regeln. Ob das ein Mangel ist oder die Pointe, ist offen.
-6. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
+5. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
    und Balancing stehen.
-7. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
+6. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
    wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
    Feld", der Bruch wäre also möglicherweise ein Gewinn.
-8. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
+7. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
     geliefert hat.
-9. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
+8. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)
 
