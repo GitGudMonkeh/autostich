@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice, rerollsLeft, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
+import { rerollsLeft, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
          coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
 import { sellPatch, deckDeltaOf, withDeckDelta } from "./perkSale.js"; // §3.6 Perk-Verkauf: Erlös, Rückbau und das Gedächtnis der Deck-Differenzen
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
@@ -339,10 +339,9 @@ export function menuState() {
    Münzen (der Knopf zeigt den Kauf trotzdem, er lässt sich nur nicht auslösen). Der Zähler `coinRerolls` läuft
    je Phase; den Grundpreis bestimmt die Art des Angebots, nicht die Stelle in der Treppe. */
 const buyReroll = (state, legendary) => {
-  /* Nachlass senkt den Preis, Freilos IV lässt den legendären Neuwurf zum NORMALEN Grundpreis laufen.
-     Beide gehen durch rerollPriceWith, damit sie sich nicht multiplizieren. */
-  const price = CT.rerollPriceWith(state, rerollPrice(state.coinRerolls || 0, legendary), legendary,
-    rerollPrice(state.coinRerolls || 0, false));
+  /* DIESELBE Tür wie der Knopf (CT.rerollOfferWith). Vorher rechnete der Reducer den Preis selbst
+     und der Knopf über coins.rerollOffer — die zwei liefen auseinander, sobald Nachlass im Spiel war. */
+  const price = CT.rerollOfferWith(state, 0, legendary).nextPrice;
   if ((state.coins || 0) < price) return null;
   // `patch` ist genau das, was in den State geht; `legendary` steuert die Garantie und bleibt draußen.
   return { legendary: !!legendary, price, patch: { coins: (state.coins || 0) - price, coinRerolls: (state.coinRerolls || 0) + 1 } };
@@ -485,7 +484,10 @@ export function reducer(state, action) {
       if (!state.contractsEnabled || !c || !(c.offers || []).length) return state;
       const chosen = c.offers.find((o) => o.taskId === action.taskId && o.step === action.step);
       if (!chosen) return state;
-      return { ...state, contracts: { ...c, offers: [],
+      /* JEDE Aufgabe fängt bei null an (Owner-Befund 2026-09-17). Die Strichliste lief vorher über
+         den ganzen Lauf weiter, also startete der Auftrag aus Fenster 2 mit dem Ergebnis von
+         Fenster 1 — Fußvolk stand bei D17 schon auf 113 von 200, ohne einen Stich dafür. */
+      return { ...state, contractTally: CT.emptyTally(), contracts: { ...c, offers: [],
         usedTasks: [...new Set([...(c.usedTasks || []), chosen.taskId])],   // schon beim Auslegen vermerkt
         active: { ...chosen, windowId: c.windowId } } };
     }

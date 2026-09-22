@@ -11,8 +11,9 @@
 import * as C from "./constants.js";
 import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formations.js";
 import { TIER_META } from "./rarity.js";
-import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER } from "./architect.js";
-import { MAX_SKILL_TIER } from "./coins.js";
+import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER,
+         CATEGORIES as ARCH_CATEGORIES } from "./architect.js";
+import { MAX_SKILL_TIER, rerollOffer, rerollPrice } from "./coins.js";
 import { isLegendarySkill } from "./skills.js";
 
 /* ------------------------------------------------------------------------------------------------
@@ -100,14 +101,17 @@ export const TASKS = [
      ten, the combat value they must beat is what rises. `threshold: true` tells the display to read
      the rung as "über X" and the target as TEN. */
   { id: "brecher",      kind: "summe",   rungs: [10, 15, 20], threshold: true, need: 10 },
-  { id: "fussvolk",     kind: "summe",   rungs: [50, 100, 200] },
+  { id: "fussvolk",     kind: "summe",   rungs: [50, 100, 150] },
   /* Aufmarsch hieß „Kampfwert" und maß Kartenwert — Brand auf dem Gegnerdeck, Glühende Klinge und
      Gebäude-Stichwert fielen unter den Tisch (Owner-Befund im Playtest, 2026-09-16). Ein Deck HAT
      keinen Kampfwert, nur eine gespielte Karte hat einen. Gemessen wird deshalb der beste Durchlauf:
      die Summe (pValue − oValue) über seine vierzig Stiche. Damit zählt jede Quelle mit. */
   { id: "aufmarsch",    kind: "spitze",  rungs: [60, 120, 250] },
-  { id: "quartier",     kind: "zustand", rungs: [1, 3, 5], variantKey: "category",
-    variants: [{ id: "score" }, { id: "value" }, { id: "formation" }] },
+  /* Quartier würfelt die Kategorie NICHT mehr (Owner, 2026-09-16). Verlangt ist nur, dass die Reihen
+     dieselbe Kategorie tragen — welche, entscheidet der Spieler mit dem, was er baut. Gemessen wird
+     deshalb die beste der drei. Vorher gab der Wurf sie vor, und zwei der drei Kategorien erreichten
+     gemessen nie mehr als eine volle Reihe. */
+  { id: "quartier",     kind: "zustand", rungs: [1, 3, 5] },
   { id: "saeckel",      kind: "zustand", rungs: [60, 80, 120] },
 ];
 
@@ -266,33 +270,49 @@ export function rollOffers(rng = Math.random, used = [], count = OFFERS_PER_WIND
   return out;
 }
 
-/* One tier out of the step's band: the lower rarity at LOWER_SHARE, the upper at the rest. The hard
-   band splits its upper half once more, and THAT is the only door legendary loot has. */
-export const rollTier = (step, rng = Math.random) => {
+
+/* Die drei Stufen EINER Auslage (Owner, 2026-09-17).
+
+   MINDESTENS EINE trägt die obere Rarität des Bandes. Vorher würfelte jedes Stück für sich 70/30,
+   und in rund einem Drittel der Fälle kam dreimal die untere heraus — eine mittlere Aufgabe zahlte
+   dann dreimal Selten, obwohl ihr Band Selten ODER Sehr selten verspricht. Das Band war damit eine
+   Aussage über die Ziehung, nicht über die Auslage.
+
+   LEGENDÄR bleibt die Ausnahme und ERSETZT einen der unteren Plätze, nie den garantierten oberen.
+   Es gibt also weiterhin höchstens eins, und es kostet die Episch-Garantie nicht. */
+export function rollTiers(step, rng = Math.random, count = LOOT_PER_REWARD) {
   const band = STEP_BAND[step] || STEP_BAND.leicht;
-  if (rng() < LOWER_SHARE) return band[0];
-  if (step === LEGENDARY_STEP && rng() < LEGENDARY_SHARE) return TIER_LEGENDARY;
-  return band[1];
-};
+  const tiers = [band[1]];                                   // Platz 1: die Garantie
+  for (let i = 1; i < count; i++) tiers.push(rng() < LOWER_SHARE ? band[0] : band[1]);
+  if (step === LEGENDARY_STEP && rng() < LEGENDARY_SHARE) {
+    const i = tiers.findIndex((t, k) => k > 0 && t === band[0]);
+    if (i >= 0) tiers[i] = TIER_LEGENDARY;                   // nur ein UNTERER Platz weicht
+  }
+  return shuffled(tiers, rng);                               // die Garantie soll nicht immer oben stehen
+}
 
 /* Three pieces, no category twice. A legendary tier draws from the four singles; every other tier
-   draws a family and takes that family's piece AT that tier. */
+   draws a family and takes that family's piece AT that tier. Findet eine Stufe keine freie Familie
+   mehr, rutscht sie auf die andere des Bandes — lieber eine Rarität daneben als ein leerer Platz. */
 export function rollLoot(rng = Math.random, step = "leicht", count = LOOT_PER_REWARD) {
+  const band = STEP_BAND[step] || STEP_BAND.leicht;
   const out = [];
   const usedCategories = new Set();
   const usedIds = new Set();
-  let guard = 0;
-  while (out.length < count && guard++ < 200) {
-    const tier = rollTier(step, rng);
-    if (tier >= TIER_LEGENDARY) {
+  for (const wunsch of rollTiers(step, rng, count)) {
+    if (wunsch >= TIER_LEGENDARY) {
       const free = LEGENDARIES.filter((l) => !usedIds.has(l.id));
-      if (!free.length) continue;
-      const leg = pick(free, rng);
-      usedIds.add(leg.id);
-      out.push({ kind: "legendary", id: leg.id, tier: TIER_LEGENDARY, effect: leg.effect });
-      continue;
+      if (free.length) {
+        const leg = pick(free, rng);
+        usedIds.add(leg.id);
+        out.push({ kind: "legendary", id: leg.id, tier: TIER_LEGENDARY, effect: leg.effect });
+        continue;
+      }
     }
-    const free = LOOT_FAMILIES.filter((f) => !usedCategories.has(f.category) && !usedIds.has(`${f.id}@${tier}`));
+    const frei = (tier) => LOOT_FAMILIES.filter((f) => !usedCategories.has(f.category) && !usedIds.has(`${f.id}@${tier}`));
+    let tier = wunsch >= TIER_LEGENDARY ? band[1] : wunsch;
+    let free = frei(tier);
+    if (!free.length) { tier = tier === band[0] ? band[1] : band[0]; free = frei(tier); }
     if (!free.length) continue;
     const fam = pick(free, rng);
     usedCategories.add(fam.category);
@@ -378,6 +398,10 @@ function fullSegments(state, category) {
   return n;
 }
 
+/* Die beste der drei Kategorien. Quartier verlangt nur, dass die Reihen DIESELBE Kategorie tragen —
+   welche, sucht sich der Spieler mit seinem Bau aus (Owner, 2026-09-16). */
+const bestCategory = (state) => Math.max(...ARCH_CATEGORIES.map((c) => fullSegments(state, c)));
+
 /* ZWEI Zahlen, nicht eine. Ein Spitzen-Zähler erfüllt sich über den BESTEN Wert des Fensters, aber
    steuern kann der Spieler nur den LAUFENDEN — und bei Sperrfeuer, Durchmarsch und Buntspiel fällt
    der laufende an jeder Durchlaufgrenze auf null zurück. Zeigt die Leiste nur das Maximum, steht dort
@@ -402,7 +426,7 @@ export function readLive(state, contract) {
     case "brecher":      return tally.overThreshold || 0;
     case "fussvolk":     return tally.lowWins || 0;
     case "aufmarsch":    return tally.cycleMargin || 0;
-    case "quartier":     return fullSegments(state, contract.variantId);
+    case "quartier":     return bestCategory(state);
     case "saeckel":      return state.coins || 0;
     default:             return 0;
   }
@@ -748,6 +772,22 @@ export function rerollPriceWith(state, base, legendary = false, normalBase = nul
   return contractRerollPrice(start, b);
 }
 
+/* DAS Neuwurf-Angebot für Knopf UND Reducer — beide müssen durch diese Tür.
+   `rerollOffer` aus coins.js nennt sich selbst „die eine Quelle für Knopf und Reducer", war es aber
+   nicht: der Reducer legte `rerollPriceWith` darüber, der Knopf nicht. Wer Nachlass hielt, sah den
+   vollen Preis und konnte den Wurf nicht auslösen, weil `can` gegen den vollen Preis prüfte — die
+   Beute war damit für ALLE Neuwürfe wirkungslos, nicht nur für legendäre (Owner-Befund 2026-09-17).
+   coins.js kann contracts.js nicht importieren (Zyklus über MAX_SKILL_TIER), also liegt die Tür hier. */
+export function rerollOfferWith(state, freeTokens = 0, legendary = false) {
+  const o = rerollOffer(state, freeTokens, legendary);
+  const b = boonsOf(state);
+  if (!b || o.free || o.capped) return o;      // gratis bleibt gratis, gedeckelt bleibt gedeckelt
+  const normal = rerollPrice(state.coinRerolls || 0, false);
+  const price = rerollPriceWith(state, o.nextPrice, legendary, normal);
+  if (price === o.nextPrice) return o;
+  return { ...o, price, nextPrice: price, can: (state.coins || 0) >= price };
+}
+
 /* Freilos I-IV — a free reroll that does not touch the coin pools. */
 export const freeRerollPhases = (state) => (boonsOf(state) || {}).freeRerollPerPhase || null;
 
@@ -793,16 +833,23 @@ export function skillLegendaryWith(state, base) {
    0-based here (0 Normal … 3 Episch), the same scale skillTiers uses. */
 export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier = 3) {
   const b = boonsOf(state);
-  if (!b || !Array.isArray(tiers)) return tiers;
+  if (!b || !tiers || typeof tiers !== "object") return tiers;
   const byPhase = live(b.offerLift, cycle) ? (b.offerLift.steps || 1) : 0;
   const below = b.offerLiftBelow || 0;          // 3 = alles unter Sehr selten, 4 = alles unter Episch
   if (!byPhase && !below) return tiers;
-  return tiers.map((t) => {
+  const hebe = (t) => {
     if (!Number.isInteger(t)) return t;          // Legendäre tragen keine Stufe
     let out = t + byPhase;
     if (below && t + 1 < below) out = Math.max(out, t + 1);
     return Math.min(maxTier, out);
-  });
+  };
+  /* ZWEI Formen, und das war der Fehler: die Türen halten ihre Stufen als OBJEKT je Skill-id
+     (`rollSkillOfferTiers` gibt `{ SK_… : 0 }` zurück), eine flache Auswahl als Array. Geprüft wurde
+     nur auf Array, also hob Veredelung die Türen nie — alle vier Stufen waren wirkungslos
+     (Owner-Befund 2026-09-17). Die Tests trafen es nicht, weil sie den Helfer mit Arrays fütterten,
+     also mit einer Form, die das Spiel an dieser Stelle gar nicht baut. */
+  if (Array.isArray(tiers)) return tiers.map(hebe);
+  return Object.fromEntries(Object.entries(tiers).map(([id, t]) => [id, hebe(t)]));
 }
 
 /* Die Türen tragen ihre Stufen selbst ([{ skills, tiers }]), also hebt Veredelung sie dort und nicht
@@ -810,11 +857,30 @@ export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier =
 export function liftDoorTiers(state, doors, cycle = state.cycle || 0) {
   const b = boonsOf(state);
   if (!b || !Array.isArray(doors) || (!b.offerLift && !b.offerLiftBelow)) return doors;
-  return doors.map((d) => (Array.isArray(d.tiers) ? { ...d, tiers: liftSkillTiers(state, d.tiers, cycle) } : d));
+  return doors.map((d) => (d && d.tiers ? { ...d, tiers: liftSkillTiers(state, d.tiers, cycle) } : d));
 }
 
 /* Stiftung — every phase begins with coins. */
 export const coinsPerPhase = (state) => (boonsOf(state) || {}).coinsPerPhase || 0;
+
+/* Läuft dieses Stück noch, und wie lange? Vier Wirkungen sind befristet — Münzrecht I und Freizug I
+   über `cycles`, Veredelung I und II über `phases`, Freibrief I und II über eine Zielrunde. Ohne die
+   Zahl kann der Spieler nicht unterscheiden, ob eine Beute abgelaufen ist oder nie gewirkt hat; genau
+   diese Frage stand am Anfang des Beute-Audits (Owner, 2026-09-17).
+   Gibt `null` für alles Dauerhafte, sonst die verbleibenden Durchläufe (0 = abgelaufen). */
+export function lootCyclesLeft(state, piece, cycle = state.cycle || 0) {
+  const b = boonsOf(state);
+  const fam = LOOT_BY_ID[(piece || {}).id];
+  if (!b || !fam) return null;                              // Legendäre laufen alle bis zum Laufende
+  const e = fam.effects[(piece.tier || 1) - 1] || {};
+  let until = null;
+  if (e.cycles && e.income && b.income) until = b.income.until;
+  else if (e.cycles && e.energy && b.energy) until = b.energy.until;
+  else if (e.phases && e.offerLift && b.offerLift) until = b.offerLift.until;
+  else if (e.thirdDoor && e.thirdDoor !== "run" && typeof b.thirdDoor === "number") until = b.thirdDoor;
+  if (until == null) return null;
+  return Math.max(0, until - cycle);
+}
 
 /* Reroll price under Nachlass: rounded DOWN, never below one coin, and free only at scale 0. */
 export function contractRerollPrice(base, boons) {

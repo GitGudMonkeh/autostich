@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout, offerHasLegendary } from "../game/perks.js";
-import { rerollOffer, UPGRADE_FROM, FORFEIT_PERK } from "../game/coins.js";  // Münz-Ökonomie §3.1 Neuwurf · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { UPGRADE_FROM, FORFEIT_PERK } from "../game/coins.js";  // Münz-Ökonomie §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { PerkUpgrade } from "./PerkUpgrade.jsx";               // Aufwertphase für Perks (Zwilling von SkillUpgrade)
 import { PerkSell } from "./PerkSell.jsx";                     // §3.6 Perk-Verkauf (Testfeature) — eine Ebene unter dem Aufwerten
@@ -80,7 +81,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, onUpgradeFamily
   const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
   // Münz-Ökonomie §3.1: leerer Pool → derselbe Knopf ist käuflich. Ein Legendäres im Angebot hebt den
   // Grundpreis und garantiert im neuen Wurf wieder eins (ein anderes als das gerade gezeigte).
-  const rerollBuy = rerollOffer(state, rerollTokens, offerHasLegendary(offer));
+  const rerollBuy = rerollOfferWith(state, rerollTokens, offerHasLegendary(offer));
   const canReroll = !!onReroll;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning } = state;

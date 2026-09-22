@@ -36,10 +36,28 @@ ausdrücklich, weil es die Zusage ist, unter der das Feature überhaupt einziehe
 | Die beiden Overlays und der Stand | `src/ui/ContractPhase.jsx` |
 | Der Einstieg | `src/ui/StartScreen.jsx` · `.as-contract-btn` |
 
-**Die Beute wirkt vollständig** (2026-09-15). Jede Wirkung hat ihre Lesestelle. Die Zugriffe stehen
-gesammelt in `contracts.js` und haben alle dieselbe Form: sie nehmen den Wert, den das Spiel **ohne**
-Aufträge nähme, und geben den zurück, der gilt. Ein normaler Lauf zahlt eine Feldabfrage und bekommt
-seine eigene Zahl unverändert zurück — geprüft, Zugriff für Zugriff.
+**Die Beute wirkt vollständig** (nachgeprüft 2026-09-17). Jede Wirkung hat ihre Lesestelle. Die
+Zugriffe stehen gesammelt in `contracts.js` und haben alle dieselbe Form: sie nehmen den Wert, den das
+Spiel **ohne** Aufträge nähme, und geben den zurück, der gilt. Ein normaler Lauf zahlt eine
+Feldabfrage und bekommt seine eigene Zahl unverändert zurück.
+
+> **Dieser Satz stand seit 2026-09-15 hier und war falsch.** Geprüft war nur, dass der Effekt-
+> Schlüssel *geschrieben* wird — nicht, dass sich dadurch eine Zahl ändert. **Veredelung** schrieb ihn
+> und wirkte auf allen vier Stufen nie: die Türen halten ihre Stufen als **Objekt** je Skill-id
+> (`rollSkillOfferTiers`), der Heber prüfte auf `Array.isArray`. Die alten Tests trafen es nicht, weil
+> sie den Helfer mit Arrays fütterten — also mit einer Form, die das Spiel an dieser Stelle gar nicht
+> baut. Derselbe Fehler in anderer Kleidung wie die Wächter-testet-eine-Kopie-Falle aus
+> `docs/engineering/testing.md`.
+>
+> Seit 2026-09-17 läuft **jedes der 61 Stücke** durch den echten `PICK_LOOT` und wird an seiner
+> Wirkstelle nachgemessen (`test/contracts.test.js`, ein Fall je Stück). Gegengeprüft: mit dem alten
+> Heber fallen genau die vier Veredelungs-Fälle.
+
+**Befristete Beute sagt jetzt, wie lange sie noch wirkt.** Vier Wirkungen laufen ab — Münzrecht I
+(15 Durchläufe), Freizug I (5), Veredelung I und II (1 bzw. 3 Phasen), Freibrief I und II (4 bzw. 12
+Durchläufe). Die Beute-Kachel in der Leiste zeigt bei diesen „noch N Durchläufe" bzw. „abgelaufen".
+Ohne die Zahl ist nicht zu unterscheiden, ob ein Stück abgelaufen ist oder nie gewirkt hat — genau
+die Frage, mit der das Audit begann.
 
 | Familie | Lesestelle |
 | --- | --- |
@@ -257,9 +275,17 @@ und die obere Hälfte des schweren Bandes teilt sich noch einmal 70 zu 30. Je ge
 | Mittel | — | 70 % | 30 % | — | — |
 | Schwer | — | — | 70 % | 21 % | **9 %** |
 
-Da drei Stücke gezogen werden, liegt in rund **jedem vierten** erfüllten schweren Auftrag ein
-Legendäres in der Auslage. Damit bedeutet jede Stufe im Regelfall das, was ihr Name sagt, und
-Legendär bleibt der Ausreißer statt der Erwartung.
+**Mindestens ein Stück der Auslage trägt die OBERE Rarität** (Owner, 2026-09-17). Vorher würfelte
+jedes Stück für sich, und in rund einem Drittel der Fälle kam dreimal die untere heraus — eine
+mittlere Aufgabe zahlte dann dreimal Selten, obwohl ihr Band Selten **oder** Sehr selten verspricht.
+Das Band war damit eine Aussage über die Ziehung, nicht über die Auslage. Jetzt ist ein Platz
+gesetzt, die anderen zwei würfeln 70/30.
+
+**Legendär ersetzt einen UNTEREN Platz**, nie den garantierten oberen — sonst wäre ein Legendäres
+unterm Strich ein Rückschritt, weil es die Episch-Garantie köstete. Gemessen trägt damit **28 %**
+der erfüllten schweren Aufträge ein Legendäres in der Auslage, und **100 %** eine obere Rarität.
+Damit bedeutet jede Stufe im Regelfall das, was ihr Name sagt, und Legendär bleibt der Ausreißer
+statt der Erwartung.
 
 > **Was der Satz für Legendär bedeutet.** Gerechnet, nicht gemessen, und unter zwei Annahmen: die
 > Rarität wird **je Stück** gewürfelt, und der Spieler schafft **beide** Aufgaben auf „Sehr schwer".
@@ -323,9 +349,10 @@ er es aufmacht.
 **Regel 1 und 2 sind gebaut** (2026-09-15), Regel 3 ist gestrichen.
 
 1. **Gewürfelte Parameter statt einer langen Liste** — gebaut. Dasselbe Muster wie `WEEK_MODS`:
-   Reinheit würfelt den Formationstyp (vier Varianten), Quartier die Gebäudekategorie (drei). Am Code
-   nachgezählt ergeben 14 Definitionen **19 unterscheidbare Angebote** und mit den drei Stufen **56**
-   mögliche Karten — nicht 57, weil Langbau nur zwei Stufen anbietet. Bei zwei Aufgaben je Lauf sieht
+   Nur noch Reinheit würfelt einen Parameter: den Formationstyp (vier Varianten). Quartier würfelte
+   bis 2026-09-16 die Gebäudekategorie und lässt sie jetzt den Spieler wählen (§4.0b). Am Code
+   nachgezählt ergeben 14 Definitionen **17 unterscheidbare Angebote** und mit den drei Stufen **50**
+   mögliche Karten — nicht 51, weil Langbau nur zwei Stufen anbietet. Bei zwei Aufgaben je Lauf sieht
    ein Spieler zwei davon. **Farbtreue würfelt keine Farbe** (Owner, 2026-09-14): die Serie zählt,
    egal in welcher sie läuft. Alle Zahlen stehen als Test, nicht als Behauptung.
 2. **Kein Angebot zweimal in einem Lauf** — gebaut, und dabei eine Lücke geschlossen: gesperrt waren
@@ -391,9 +418,9 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | **Farbtreue** Farben mit einer Zehnerserie | Spitze | 1 · 2 · 3 + Zusatz |
 | **Buntspiel** Siege je Grundfarbe in einem Durchlauf | Spitze | 5 · 7 · 8 + Zusatz |
 | **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 15 · 20 |
-| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 50 · 100 · 200 |
+| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 50 · 100 · 150 |
 | **Aufmarsch** Kampfwert-Vorsprung in einem Durchlauf | Spitze | 60 · 120 · 250 |
-| **Quartier** volle Baufeld-Reihen einer Kategorie | Zustand | 1 · 3 · 5 |
+| **Quartier** volle Baufeld-Reihen derselben Kategorie | Zustand | 1 · 3 · 5 |
 | **Säckel** Münzen gehalten | Zustand | 60 · 80 · 120 |
 
 ### 4.0a Die Zusatzbedingung
@@ -417,6 +444,19 @@ den Bestwert ein, sonst wäre er über die Fensterlaufzeit umsonst.
 
 Die Anzeige führt den Zusatz eigens: „Zusatz erfüllt" oder „Zusatz offen" neben dem Zähler. Ohne das
 stünde der Hauptzähler am Ziel und der Auftrag bliebe offen — ein Rätsel ohne Lösung.
+
+### 4.0b Quartier gibt die Kategorie nicht vor
+
+**Gesetzt (Owner, 2026-09-16).** Verlangt ist, dass die vollen Reihen **dieselbe** Kategorie tragen —
+welche, entscheidet der Spieler mit dem, was er ohnehin baut. Gemessen wird die beste der drei.
+
+Vorher würfelte der Aufsteller die Kategorie mit. Das war die einzige Stelle im Katalog, an der ein
+Wurf die Aufgabe **unlösbar** machen konnte: gemessen (2026-09-16, 240 Fenster) erreichten *Wert* und
+*Formation* nie mehr als **eine** volle Reihe, *Punkte* in Fenster 2 immerhin 51 % auf eine und 10 %
+auf zwei. Bei einer Leiter von 1 · 3 · 5 hieß ein Wurf auf Wert oder Formation also: verfallen lassen.
+
+Damit würfelt nur noch **Reinheit** einen Parameter. Der Katalog fällt von 19 auf 17 unterscheidbare
+Angebote und von 56 auf 50 Karten.
 
 **Brecher ist anders gebaut als die übrigen:** die Zahl der Stiche steht fest bei zehn, die Leiter
 läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
@@ -483,7 +523,7 @@ Gedankenstrich, kein Selbstbezug.
 | Brecher | Gewinne zehn Stiche mit einem Kampfwert über X. |
 | Fußvolk | Gewinne X Stiche mit Karten vom Grundwert 4 oder weniger. |
 | Aufmarsch | Gewinne einen Durchlauf mit X Kampfwert Vorsprung insgesamt. |
-| Quartier | Bedecke X volle Reihen des Baufelds mit Gebäuden einer Kategorie. |
+| Quartier | Bedecke X volle Reihen des Baufelds mit Gebäuden derselben Kategorie. |
 | Säckel | Halte X Münzen, bis der Auftrag endet. |
 
 **Sperrfeuer braucht eine genaue Erklärung** (Owner): ein Segment sind die festen Fünferblöcke der
@@ -619,7 +659,7 @@ Die Anzeigeform folgt der Art des Zählers:
 | Brecher | laufende Summe der Siege über der Schwelle, gegen 10 |
 | Fußvolk | laufende Summe |
 | Aufmarsch | Kampfwert-Vorsprung des laufenden Durchlaufs, daneben der beste bisher |
-| Quartier | volle Reihen je Kategorie |
+| Quartier | volle Reihen der besten Kategorie |
 | Säckel | Kontostand gegen das Ziel |
 
 Dazu bei jeder Form die **Restlaufzeit** („noch 6 Durchläufe"): sechs Durchläufe sind sechs Versuche,
@@ -801,6 +841,32 @@ ergibt. (Der damals erwähnte Münz-Deckel ist seit 2026-09-16 gestrichen.)
 > die 45 distinkten Formationen sind aus 160 Paaren — dem vollen Brett — **hochgerechnet**. Beobachtet
 > ist 32. 45 ist also der arithmetische Deckel, nicht ein erreichter Wert, und 35 liegt ebenfalls
 > darüber.
+
+### 4.4a Vier Befunde aus dem Playtest (Owner, 2026-09-17)
+
+**Jede Aufgabe fängt bei null an.** Die Strichliste lief über den ganzen Lauf weiter, also erbte
+Fenster 2 das Ergebnis von Fenster 1 — Fußvolk stand bei D17 schon auf 113 von 200, ohne einen Stich
+dafür. Geleert wird jetzt beim **Annehmen** (`PICK_CONTRACT`), nicht am Fensterrand: so fängt jede
+Aufgabe dort an, wo der Spieler sie annimmt.
+
+**Fußvolk Schwer fällt von 200 auf 150.** Folge des ersten Befunds: 200 war gegen einen mitlaufenden
+Zähler gesetzt, nicht gegen einen bei null startenden.
+
+**Ein erfüllter Auftrag fällt in der Anzeige nicht mehr zurück.** Bei einer Durchlauf-Aufgabe stand im
+nächsten Durchlauf wieder „2/7 best 7“ — die 2 liest sich wie ein Rückschritt, obwohl nichts mehr zu
+tun ist. Jetzt steht 7/7, bis die Beute kommt.
+
+**Die genommene Beute ist im Lauf nachlesbar.** Sie stand nirgends: man sah ein Stück einmal beim
+Nehmen und danach nie wieder, obwohl es weiterwirkt. Jetzt liegt sie in der Leiste bei den
+Multiplikatoren, aufklappbar mit dem vollen Wortlaut jeder Wirkung — wie die gehaltenen Skills.
+
+> **Und der teuerste Befund: Nachlass war für JEDEN Neuwurf wirkungslos**, nicht nur für den
+> legendären. Der Reducer legte `rerollPriceWith` über den Preis, die drei Anzeigestellen riefen
+> `coins.rerollOffer` roh. Der Spieler sah also den vollen Preis **und** konnte den Wurf nicht
+> auslösen, weil `can` gegen den vollen Preis prüfte. Pikant: der Kopf von `rerollOffer` nannte sich
+> selbst „die eine Quelle für Knopf und Reducer“. Beide gehen jetzt durch `CT.rerollOfferWith`, und
+> ein Quelltext-Wächter verbietet den rohen Import in `src/ui/**` — gegengeprüft: mit dem alten
+> Aufruf fällt er.
 
 ### 4.5 Verworfene Aufgaben
 
@@ -1294,7 +1360,7 @@ Die Zähler der vierzehn Aufgaben, alle aus vorhandenem State:
 | Brecher | `lastTrick.pValue` je Sieg gegen die Schwelle |
 | Fußvolk | `lastTrick.pCard.baseRank` je Sieg, der unveränderte Grundwert |
 | Aufmarsch | Summe (`lastTrick.pValue` − `lastTrick.oValue`) über die Stiche des Durchlaufs |
-| Quartier | `BUILD_LINES` (21 Reihen) gegen die bedeckten Zellen plus `familyDef(b.familyId).category` |
+| Quartier | `BUILD_LINES` (21 Reihen) gegen die bedeckten Zellen, Maximum über die drei `CATEGORIES` |
 | Säckel | `state.coins` am Fensterende |
 
 **Drei Zähler brauchen den Stich-Strom**, nicht nur den Rundenendstand: Buntspiel, Brecher und Fußvolk

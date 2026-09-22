@@ -3,11 +3,14 @@ import * as CT from "../src/game/contracts.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import * as C from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
-import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
+import { SKILL_LIST, isLegendarySkill, buildSkillDoors } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
-import { stepColor, tierColor } from "../src/ui/ContractPhase.jsx";
+import { stepColor, tierColor, contractReadout, lootName, lootText } from "../src/ui/ContractPhase.jsx";
+import { rerollOffer, rerollPrice, REROLL_CAP } from "../src/game/coins.js";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { LEGENDARY_GOLD, STEP_BRONZE, STEP_SILVER, STEP_GOLD } from "../src/ui/indicators/vocab.js";
 import de from "../src/i18n/de.js";
 
@@ -193,17 +196,69 @@ describe("Aufträge · Angebot und Beute", () => {
     }
   });
 
-  it("die Legendär-Rate liegt bei 70/30 im oberen Teil des schweren Bandes", () => {
-    /* Gesetzt: 70 % Sehr selten, vom Rest wieder 70/30 → 21 % Episch, 9 % Legendär je Stück
-       (Owner, 2026-09-16). Gemessen über 4000 Ziehungen, Toleranz drei Punkte. */
+  it("JEDE Auslage trägt mindestens ein Stück der oberen Rarität (Owner, 2026-09-17)", () => {
+    /* Vorher würfelte jedes Stück für sich 70/30, und in rund einem Drittel der Fälle kam dreimal
+       die untere heraus — eine mittlere Aufgabe zahlte dann dreimal Selten, obwohl ihr Band Selten
+       ODER Sehr selten verspricht. Das Band war eine Aussage über die Ziehung, nicht über die Auslage. */
+    for (const step of CT.STEPS) {
+      const band = CT.STEP_BAND[step];
+      for (let seed = 1; seed <= 120; seed++) {
+        const loot = CT.rollLoot(seeded(seed * 31), step);
+        expect(loot.length, `${step}/${seed}`).toBe(3);
+        expect(loot.some((p) => p.tier >= band[1]), `${step}/${seed}: keine obere Rarität dabei`).toBe(true);
+      }
+    }
+  });
+
+  it("Legendäres ersetzt einen UNTEREN Platz, nie die Garantie", () => {
+    /* Owner, 2026-09-17: „ersetzt aber eines der niedrigeren Angebote (sehr selten)". Die Episch-
+       Garantie darf es also nicht kosten — sonst wäre ein Legendäres unterm Strich ein Rückschritt. */
+    const band = CT.STEP_BAND.schwer;
+    let mitLeg = 0;
+    for (let seed = 1; seed <= 300; seed++) {
+      const loot = CT.rollLoot(seeded(seed * 13 + 5), "schwer");
+      const legs = loot.filter((p) => p.tier >= CT.TIER_LEGENDARY);
+      expect(legs.length, `seed ${seed}: höchstens ein Legendäres`).toBeLessThanOrEqual(1);
+      if (!legs.length) continue;
+      mitLeg += 1;
+      expect(loot.some((p) => p.tier === band[1]), `seed ${seed}: Garantie überlebt das Legendäre`).toBe(true);
+    }
+    expect(mitLeg, "und es kommt überhaupt vor").toBeGreaterThan(0);
+  });
+
+  it("die Raten JE AUSLAGE — Garantie immer, Legendäres selten", () => {
+    /* Gemessen an `rollTiers`, dem Weg, den `rollLoot` wirklich geht. Die frühere Fassung maß
+       `rollTier` je Stück — eine Funktion, die es seit der Garantie-Regel nicht mehr gibt und die
+       am Ende nur noch sich selbst geprüft hätte. Zwei freie Plätze zu 70/30, dazu die
+       Legendär-Chance auf einen UNTEREN Platz (Owner, 2026-09-15/17). */
     const rng = seeded(4711);
-    const n = { 3: 0, 4: 0, 5: 0 };
-    for (let i = 0; i < 4000; i++) n[CT.rollTier("schwer", rng)] += 1;
-    const pct = (x) => (n[x] / 4000) * 100;
-    expect(pct(3), "Sehr selten").toBeGreaterThan(67);
-    expect(pct(3), "Sehr selten").toBeLessThan(73);
-    expect(pct(5), "Legendär").toBeGreaterThan(6);
-    expect(pct(5), "Legendär").toBeLessThan(12);
+    const N = 4000;
+    let mitOben = 0, mitLeg = 0, unten = 0, plaetze = 0;
+    for (let i = 0; i < N; i++) {
+      const t = CT.rollTiers("schwer", rng);
+      expect(t.length).toBe(3);
+      if (t.includes(4)) mitOben += 1;
+      if (t.includes(CT.TIER_LEGENDARY)) mitLeg += 1;
+      unten += t.filter((x) => x === 3).length;
+      plaetze += 3;
+    }
+    expect(mitOben / N, "die Episch-Garantie hält ausnahmslos").toBe(1);
+    const legPct = (mitLeg / N) * 100;
+    expect(legPct, "Legendär je Auslage").toBeGreaterThan(22);
+    expect(legPct, "Legendär je Auslage").toBeLessThan(34);
+    // Sehr selten bleibt ein guter Teil der beiden freien Plätze, sonst kippte das Band nach oben.
+    expect(unten / plaetze, "Sehr selten je Platz").toBeGreaterThan(0.3);
+  });
+
+  it("die leichten Bänder tragen nie ein Legendäres, auch mit der Garantie nicht", () => {
+    for (const step of ["leicht", "mittel"]) {
+      const rng = seeded(99);
+      for (let i = 0; i < 500; i++) {
+        for (const tier of CT.rollTiers(step, rng)) {
+          expect(tier, `${step} darf nichts Legendäres tragen`).toBeLessThan(CT.TIER_LEGENDARY);
+        }
+      }
+    }
   });
 });
 
@@ -630,14 +685,15 @@ describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () =>
 });
 
 describe("Aufträge · gegen Wiederholung (§3.6)", () => {
-  it("Regel 1: gewürfelte Parameter machen aus 14 Definitionen 19 Angebote und 56 Karten", () => {
+  it("Regel 1: gewürfelte Parameter machen aus 14 Definitionen 17 Angebote und 50 Karten", () => {
     const distinct = CT.TASKS.reduce((n, t) => n + (t.variants ? t.variants.length : 1), 0);
     expect(CT.TASKS.length).toBe(14);
-    expect(distinct, "Reinheit würfelt vier Typen, Quartier drei Kategorien").toBe(19);
-    /* Nicht distinct × Stufen: Langbau bietet nur zwei der drei an, also 18 × 3 + 2. */
+    // Seit 2026-09-16 würfelt nur noch Reinheit einen Parameter — Quartier lässt den Spieler wählen.
+    expect(distinct, "Reinheit würfelt vier Typen, sonst niemand").toBe(17);
+    /* Nicht distinct × Stufen: Langbau bietet nur zwei der drei an, also 16 × 3 + 2. */
     const karten = CT.TASKS.reduce((n, t) =>
       n + (t.variants ? t.variants.length : 1) * CT.stepsOf(t.id).length, 0);
-    expect(karten).toBe(56);
+    expect(karten).toBe(50);
   });
 
   it("Regel 1: Farbtreue würfelt KEINE Farbe — die Serie zählt, egal in welcher", () => {
@@ -785,12 +841,26 @@ describe("Aufträge · die vier neuen Maße (2026-09-16)", () => {
 
     // Eine volle SPALTE zählt jetzt — vorher zählten nur Zeilen.
     const spalte = CT.BUILD_LINES.find((l) => l.length === 8);
-    const bau = (footprint) => ({ architectEnabled: true, formations: [],
-      architect: { buildings: [{ familyId: "A_STUETZE", footprint }] } });
-    const c = { taskId: "quartier", step: "leicht", variantId: "value", rung: 1, target: 1 };
+    const bau = (footprint, familyId = "A_STUETZE") => ({ architectEnabled: true, formations: [],
+      architect: { buildings: [{ familyId, footprint }] } });
+    const c = { taskId: "quartier", step: "leicht", rung: 1, target: 1 };
     expect(CT.readLive(bau(spalte), c), "volle Spalte").toBe(1);
     expect(CT.readLive(bau(spalte.slice(0, 7)), c), "eine Zelle fehlt").toBe(0);
-    expect(CT.readLive({ ...bau(spalte), }, { ...c, variantId: "score" }), "falsche Kategorie").toBe(0);
+  });
+
+  it("Quartier gibt keine Kategorie mehr vor — gezählt wird die beste (Owner, 2026-09-16)", () => {
+    /* Vorher würfelte der Aufsteller die Kategorie, und zwei der drei erreichten gemessen nie mehr
+       als eine volle Reihe. Jetzt zählt, welche Kategorie der Spieler selbst voll bekommt. */
+    expect(CT.TASK_BY_ID.quartier.variants, "kein Wurf mehr").toBeUndefined();
+    expect(CT.TASK_BY_ID.quartier.variantKey).toBeUndefined();
+    const c = { taskId: "quartier", step: "leicht", rung: 1, target: 1 };
+    const zeile = CT.BUILD_LINES[0];
+    // A_STUETZE ist Kategorie „value" — dieselbe Reihe zählt, ohne dass der Auftrag sie nennt.
+    const gebaut = { architectEnabled: true, formations: [],
+      architect: { buildings: [{ familyId: "A_STUETZE", footprint: zeile }] } };
+    expect(CT.readLive(gebaut, c)).toBe(1);
+    // Und der Aufgabentext nennt keinen Parameter mehr.
+    expect(de["contract.task.quartier.text"]).not.toContain("{variant}");
   });
 });
 
@@ -922,6 +992,277 @@ describe("Aufträge · abgerechnet wird erst am Fensterende (§3.7)", () => {
     expect(beuteBei, "genau eine Auszahlung, am Fensterende").toEqual([16]);
     expect(Math.max(...erfuelltOhne), "die Wartezeit reicht bis an die Grenze").toBe(15);
   }, 30_000);
+});
+
+describe("Aufträge · Nachlass wirkt auch am KNOPF, nicht nur im Reducer (2026-09-17)", () => {
+  /* Playtest-Befund: der legendäre Neuwurf stand auf 30, obwohl Nachlass III ihn auf ein Viertel
+     senkt. Ursache war nicht die Beute, sondern zwei Rechenwege: der Reducer legte `rerollPriceWith`
+     über den Preis, der Knopf rief `coins.rerollOffer` roh. Damit sah der Spieler den vollen Preis
+     UND konnte den Wurf nicht auslösen, weil `can` gegen den vollen Preis prüfte — Nachlass war für
+     ALLE Neuwürfe wirkungslos, nicht nur für legendäre. */
+  const mitNachlass = (scale, coins) => ({ contractsEnabled: true, coins, coinRerolls: 0,
+    contractBoons: { rerollScale: scale }, offerRerolls: 0 });
+
+  it("der normale Neuwurf wird billiger — und zwar sichtbar", () => {
+    const roh = rerollOffer({ coins: 100, coinRerolls: 0 }, 0, false);
+    const mit = CT.rerollOfferWith(mitNachlass(0.25, 100), 0, false);
+    expect(mit.nextPrice, "ein Viertel, abgerundet, nie unter 1").toBe(Math.max(1, Math.floor(roh.nextPrice * 0.25)));
+    expect(mit.price).toBe(mit.nextPrice);
+  });
+
+  it("der LEGENDÄRE Neuwurf ebenso — genau der Fall aus dem Playtest", () => {
+    const roh = rerollOffer({ coins: 24, coinRerolls: 1 }, 0, true);
+    expect(roh.nextPrice, "ungesenkt 30, und mit 24 Münzen nicht bezahlbar").toBe(30);
+    expect(roh.can).toBe(false);
+    const mit = CT.rerollOfferWith({ ...mitNachlass(0.25, 24), coinRerolls: 1 }, 0, true);
+    expect(mit.nextPrice).toBe(7);
+    expect(mit.can, "mit 24 Münzen jetzt bezahlbar").toBe(true);
+  });
+
+  it("Knopf und Reducer nehmen denselben Preis", () => {
+    const s = { ...mitNachlass(0.5, 200), coinRerolls: 2 };
+    for (const leg of [false, true]) {
+      const knopf = CT.rerollOfferWith(s, 0, leg).nextPrice;
+      const reducer = CT.rerollPriceWith(s, rerollPrice(s.coinRerolls, leg), leg, rerollPrice(s.coinRerolls, false));
+      expect(knopf, `legendary=${leg}`).toBe(reducer);
+    }
+  });
+
+  it("gratis bleibt gratis, gedeckelt bleibt gedeckelt", () => {
+    expect(CT.rerollOfferWith(mitNachlass(0.25, 100), 2, false).price, "Gratis-Wurf kostet nichts").toBe(0);
+    const voll = { ...mitNachlass(0.25, 100), offerRerolls: REROLL_CAP };
+    expect(CT.rerollOfferWith(voll, 0, false).capped, "der Deckel steht vor dem Preis").toBe(true);
+  });
+
+  it("ohne Auftragslauf ändert sich gar nichts", () => {
+    const s = { coins: 100, coinRerolls: 1, offerRerolls: 0 };
+    expect(CT.rerollOfferWith(s, 0, true)).toEqual(rerollOffer(s, 0, true));
+  });
+
+  it("KEINE Anzeigestelle rechnet den Neuwurf-Preis an der Tür vorbei", () => {
+    /* Der eigentliche Wächter. Die Zahlen oben halten nur, solange die UI durch `rerollOfferWith`
+       geht — der Fehler entstand ja nicht in der Rechnung, sondern daran, dass eine Datei die
+       ungesenkte nahm. Gesucht wird der IMPORT, nicht ein Vorkommen im Text, damit der Wächter
+       nicht auf dem Kommentar anschlägt, der ihn begründet. */
+    const uiDir = fileURLToPath(new URL("../src/ui/", import.meta.url));
+    const walk = (dir) => readdirSync(dir).flatMap((f) => {
+      const p = `${dir}/${f}`;
+      return statSync(p).isDirectory() ? walk(p) : (/\.jsx?$/.test(f) ? [p] : []);
+    });
+    const suender = walk(uiDir).filter((p) => {
+      const src = readFileSync(p, "utf8");
+      return /import\s*\{[^}]*\brerollOffer\b[^}]*\}\s*from\s*["'][^"']*coins\.js["']/.test(src);
+    });
+    expect(suender, `rerollOffer statt rerollOfferWith: ${suender.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("Aufträge · die genommene Beute ist im Lauf nachlesbar (2026-09-17)", () => {
+  /* Man sah ein Stück einmal beim Nehmen und danach nie wieder, obwohl es weiterwirkt. Der Bestand
+     merkt sich nur `{ id, tier }` — Name und Wirkung müssen sich daraus lesen lassen, sonst zeigt
+     die Leiste leere Schlüssel. */
+  it("Name und Wirkung lesen sich aus dem Bestand, auch beim Legendären", () => {
+    for (const fam of CT.LOOT_FAMILIES) {
+      for (let tier = 1; tier <= 4; tier++) {
+        const eintrag = { id: fam.id, tier };            // genau die Form aus contracts.taken
+        expect(lootName(eintrag), `${fam.id}@${tier} Name`).toBeTruthy();
+        expect(lootName(eintrag)).not.toContain("contract.");
+        expect(lootText(eintrag), `${fam.id}@${tier} Text`).toBeTruthy();
+        expect(lootText(eintrag)).not.toContain("contract.");
+      }
+    }
+    for (const leg of CT.LEGENDARIES) {
+      const eintrag = { id: leg.id, tier: CT.TIER_LEGENDARY };
+      expect(lootName(eintrag), `${leg.id} Name`).not.toContain("contract.");
+      expect(lootText(eintrag), `${leg.id} Text`).not.toContain("contract.");
+    }
+  });
+
+  it("PICK_LOOT schreibt genau diese Form in den Bestand", () => {
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(42), architect: true, seed: 7, contracts: true });
+    const stueck = CT.rollLoot(seeded(3), "leicht")[0];
+    const armed = { ...s, contracts: { ...s.contracts, pendingLoot: [stueck] } };
+    const nach = reducer(armed, { type: "PICK_LOOT", lootId: stueck.id, tier: stueck.tier });
+    expect(nach.contracts.taken).toEqual([{ id: stueck.id, tier: stueck.tier }]);
+    expect(lootName(nach.contracts.taken[0])).toBe(lootName(stueck));
+    expect(lootText(nach.contracts.taken[0])).toBe(lootText(stueck));
+  });
+});
+
+describe("Aufträge · jede Aufgabe fängt bei null an (2026-09-17)", () => {
+  /* Playtest-Befund: Fußvolk stand bei D17 schon auf 113 von 200, ohne einen Stich dafür. Die
+     Strichliste lief über den ganzen Lauf weiter, also erbte Fenster 2 das Ergebnis von Fenster 1. */
+  it("PICK_CONTRACT leert die Strichliste", () => {
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(11), architect: true, seed: 3, contracts: true });
+    const voll = { ...s, contractTally: { ...CT.emptyTally(), lowWins: 113, overThreshold: 40, bestSegments: 4 } };
+    const o = voll.contracts.offers[0];
+    const nach = reducer(voll, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step });
+    expect(nach.contractTally).toEqual(CT.emptyTally());
+    expect(CT.readLive(nach, { taskId: "fussvolk", step: "schwer" }), "Fußvolk bei null").toBe(0);
+  });
+});
+
+describe("Aufträge · ein erfüllter Auftrag fällt in der Anzeige nicht zurück (2026-09-17)", () => {
+  /* Buntspiel zeigte im nächsten Durchlauf wieder „2/7 best 7". Die 2 liest sich wie ein Rückschritt,
+     obwohl nichts mehr zu tun ist — bis zur Auszahlung steht jetzt 7/7. */
+  const s = (segments, best) => ({ contractsEnabled: true, formations: [], cycle: 4,
+    contractTally: { ...CT.emptyTally(), segments, bestSegments: best },
+    contracts: { active: { taskId: "sperrfeuer", step: "leicht", rung: 3, target: 3, windowId: 1 } } });
+
+  it("erfüllt zeigt den erfüllenden Wert, nicht den laufenden", () => {
+    const r = contractReadout(s(1, 3));
+    expect(r.done).toBe(true);
+    expect(r.live, "3/3 statt 1/3").toBe(3);
+    expect(r.peak, "und keine zweite Zahl mehr daneben").toBe(false);
+  });
+
+  it("unerfüllt zeigt weiter beide Zahlen", () => {
+    const r = contractReadout(s(1, 2));
+    expect(r.done).toBe(false);
+    expect(r.live).toBe(1);
+    expect(r.peak).toBe(true);
+  });
+});
+
+describe("Aufträge · JEDES der 61 Beutestücke wirkt messbar (Audit 2026-09-17)", () => {
+  /* Der Wächter, den es früher hätte geben müssen. Bis hierher stand im Dokument „die Beute wirkt
+     vollständig, jede Wirkung hat ihre Lesestelle" — geprüft war aber nur, dass der SCHLÜSSEL
+     geschrieben wird. Veredelung schrieb ihn und wirkte trotzdem nie, weil die Türen ihre Stufen als
+     Objekt halten und der Heber auf `Array.isArray` prüfte. Hier läuft jedes Stück durch den echten
+     `PICK_LOOT` und wird an der Stelle nachgemessen, an der es wirken soll. */
+  const doors = [{ skills: ["SK_FIRE_01"], tiers: { SK_FIRE_01: 0 } }];  // die Form, die das Spiel baut
+  const basis = () => {
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(7), architect: true, seed: 3, contracts: true });
+    return { ...s, contractsEnabled: true, contractBoons: {}, coins: 500, cycle: 8,
+      skills: ["SK_FIRE_01"], skillTiers: { SK_FIRE_01: 0 },
+      architectEnabled: true,
+      architect: { ...(s.architect || {}), maxCover: 24,
+        buildings: [{ familyId: "A_STUETZE", tier: 1, footprint: [0, 1] }] },
+      contracts: { ...(s.contracts || {}), pendingLoot: null, pendingSkillPick: null, pendingBorderPick: null, taken: [] } };
+  };
+
+  // Je Effekt-Schlüssel die Messung: [nachher, vorher] — nachher MUSS größer sein.
+  const MESSER = {
+    coins: (a, b) => [b.coins, a.coins],
+    income: (a, b) => [CT.coinsPerCycleWith(b, 5, 8), CT.coinsPerCycleWith(a, 5, 8)],
+    forfeitMult: (a, b) => [CT.forfeitWith(b, 12), CT.forfeitWith(a, 12)],
+    energy: (a, b) => [CT.formationEnergyWith(b, 4, 8), CT.formationEnergyWith(a, 4, 8)],
+    unspentMult: (a, b) => [CT.unspentEnergyWith(b, 3), CT.unspentEnergyWith(a, 3)],
+    openBorders: (a, b) => [(CT.openBordersOf(b) || new Set()).size + (b.contracts?.pendingBorderPick ? 99 : 0),
+                            (CT.openBordersOf(a) || new Set()).size],
+    cover: (a, b) => [b.architect?.maxCover ?? 0, a.architect?.maxCover ?? 0],
+    coverUncapped: (a, b) => [b.architect?.maxCover ?? 0, a.architect?.maxCover ?? 0],
+    upgradeBuildings: (a, b) => [(b.architect?.buildings || []).reduce((n, x) => n + (x.tier || 0), 0),
+                                 (a.architect?.buildings || []).reduce((n, x) => n + (x.tier || 0), 0)],
+    skillUp: (a, b) => [Object.values(b.skillTiers || {}).reduce((n, x) => n + x, 0),
+                        Object.values(a.skillTiers || {}).reduce((n, x) => n + x, 0)],
+    skillToEpic: (a, b) => [b.contracts?.pendingSkillPick ? 1 : 0, a.contracts?.pendingSkillPick ? 1 : 0],
+    thirdDoor: (a, b) => [CT.skillDoorsWith(b, 2, 8), CT.skillDoorsWith(a, 2, 8)],
+    highTierChance: (a, b) => [CT.skillLegendaryWith(b, 0.035), CT.skillLegendaryWith(a, 0.035)],
+    offerLift: (a, b) => [CT.liftDoorTiers(b, doors, 8)[0].tiers.SK_FIRE_01, doors[0].tiers.SK_FIRE_01],
+    offerLiftBelow: (a, b) => [CT.liftDoorTiers(b, doors, 8)[0].tiers.SK_FIRE_01, doors[0].tiers.SK_FIRE_01],
+    perksOffered: (a, b) => [CT.perksOfferedWith(b, 3), CT.perksOfferedWith(a, 3)],
+    perkFloor: (a, b) => [CT.perkFloorWith(b, 1), CT.perkFloorWith(a, 1)],
+    legendaryChance: (a, b) => [CT.perkLegendaryWith(b, 0.07), CT.perkLegendaryWith(a, 0.07)],
+    freeRerolls: (a, b) => [b.rerollsSkill || 0, a.rerollsSkill || 0],
+    freeRerollPerPhase: (a, b) => [(CT.freeRerollPhases(b) || []).length, (CT.freeRerollPhases(a) || []).length],
+    legendaryRerollNormalPrice: (a, b) => [-CT.rerollOfferWith(b, 0, true).nextPrice, -CT.rerollOfferWith(a, 0, true).nextPrice],
+    rerollScale: (a, b) => [-CT.rerollOfferWith(b, 0, false).nextPrice, -CT.rerollOfferWith(a, 0, false).nextPrice],
+    legendaryPerkPick: (a, b) => [CT.legendaryPerkForce(b), CT.legendaryPerkForce(a)],
+    coinsPerPhase: (a, b) => [CT.coinsPerPhase(b), CT.coinsPerPhase(a)],
+    // Parameter, kein eigener Effekt — sie modulieren einen der obigen.
+    steps: null, cycles: null, phases: null, random: null, skillUpRest: null,
+  };
+
+  const alleStuecke = [
+    ...CT.LOOT_FAMILIES.flatMap((f) => [1, 2, 3, 4].map((tier) =>
+      ({ name: `${f.id} ${tier}`, kind: "family", id: f.id, category: f.category, tier, effect: f.effects[tier - 1] }))),
+    ...CT.LEGENDARIES.map((l) => ({ name: l.id, kind: "legendary", id: l.id, tier: CT.TIER_LEGENDARY, effect: l.effect })),
+  ];
+
+  it("der Katalog trägt 61 Stücke", () => {
+    expect(alleStuecke.length).toBe(61);
+  });
+
+  it.each(alleStuecke)("$name wirkt", (st) => {
+    const vor = { ...basis() };
+    vor.contracts = { ...vor.contracts, pendingLoot: [st] };
+    const nach = reducer(vor, { type: "PICK_LOOT", lootId: st.id, tier: st.tier, rng: seeded(3) });
+    expect(nach, "PICK_LOOT wirkungslos").not.toBe(vor);
+    for (const [k, v] of Object.entries(st.effect || {})) {
+      expect(k in MESSER, `unbekannter Effekt-Schlüssel ${k} — Messung fehlt`).toBe(true);
+      if (!MESSER[k]) continue;
+      const [neu, alt] = MESSER[k](vor, nach);
+      expect(neu, `${k} (${JSON.stringify(v)}): ${alt} → ${neu}`).toBeGreaterThan(alt);
+    }
+  });
+});
+
+describe("Aufträge · Veredelung hebt die Stufen der TÜREN (2026-09-17)", () => {
+  /* Der Fehler, den das Audit gefunden hat. Die Türen halten ihre Stufen als Objekt je Skill-id,
+     der Heber prüfte auf `Array.isArray` — Veredelung war auf allen vier Stufen wirkungslos. Die
+     alten Tests trafen ihn nicht, weil sie den Helfer mit ARRAYS fütterten, also mit einer Form,
+     die das Spiel an dieser Stelle gar nicht baut. */
+  const mit = (boons) => ({ contractsEnabled: true, contractBoons: boons, cycle: 4 });
+
+  it("die Objektform der Türen wird gehoben, nicht nur die Arrayform", () => {
+    const doors = [{ skills: ["A", "B"], tiers: { A: 0, B: 2 } }];
+    const s = mit({ offerLift: { steps: 1, until: 12 } });
+    expect(CT.liftDoorTiers(s, doors, 4)[0].tiers).toEqual({ A: 1, B: 3 });
+    // und die flache Arrayform weiter auch
+    expect(CT.liftSkillTiers(s, [0, 2], 4)).toEqual([1, 3]);
+  });
+
+  it("die gewürfelten Türen kommen als Objekt — genau die Form, die der Heber sehen muss", () => {
+    const gebaut = buildSkillDoors(["SK_FIRE_01"], ["fire"], seeded(5), seeded(6), {});
+    expect(gebaut.length, "der Aufbau liefert Türen").toBeGreaterThan(0);
+    for (const d of gebaut) {
+      expect(Array.isArray(d.tiers), "Türen halten ein OBJEKT, kein Array").toBe(false);
+      expect(typeof d.tiers).toBe("object");
+    }
+    const s = mit({ offerLiftBelow: 4 });
+    const gehoben = CT.liftDoorTiers(s, gebaut, 4);
+    const summe = (ds) => ds.reduce((n, d) => n + Object.values(d.tiers).filter(Number.isInteger).reduce((m, t) => m + t, 0), 0);
+    expect(summe(gehoben), "gehoben ist höher als gewürfelt").toBeGreaterThan(summe(gebaut));
+  });
+
+  it("Legendäre in einer Tür tragen keine Stufe und werden nicht gehoben", () => {
+    const doors = [{ skills: ["A", "L"], tiers: { A: 0, L: null } }];
+    const s = mit({ offerLift: { steps: 1, until: 12 } });
+    expect(CT.liftDoorTiers(s, doors, 4)[0].tiers).toEqual({ A: 1, L: null });
+  });
+});
+
+describe("Aufträge · befristete Beute sagt, wie lange sie noch wirkt", () => {
+  /* Freibrief I und II laufen ab, III und IV nicht. Ohne die Zahl kann der Spieler nicht
+     unterscheiden, ob ein Stück abgelaufen ist oder nie gewirkt hat. */
+  const nachNehmen = (id, tier, cycle = 8) => {
+    const s = { contractsEnabled: true, contractBoons: {}, cycle, architect: {}, skillTiers: {}, skills: [] };
+    const fam = CT.LOOT_BY_ID[id];
+    const patch = CT.applyLoot(s, { id, tier, effect: fam.effects[tier - 1] }, seeded(1));
+    return { ...s, ...patch };
+  };
+
+  it("Freibrief I und II sind befristet, III und IV laufen bis zum Laufende", () => {
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 1), { id: "freibrief", tier: 1 }, 8)).toBe(4);
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 2), { id: "freibrief", tier: 2 }, 8)).toBe(12);
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 3), { id: "freibrief", tier: 3 }, 8), "dauerhaft").toBe(null);
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 4), { id: "freibrief", tier: 4 }, 8)).toBe(null);
+  });
+
+  it("abgelaufen heißt 0, und dann zählt die Wirkung auch nicht mehr", () => {
+    const s = nachNehmen("freibrief", 1, 8);           // gültig bis Durchlauf 12
+    expect(CT.lootCyclesLeft(s, { id: "freibrief", tier: 1 }, 20)).toBe(0);
+    expect(CT.skillDoorsWith(s, 2, 10), "innerhalb der Frist").toBe(3);
+    expect(CT.skillDoorsWith(s, 2, 20), "danach").toBe(2);
+  });
+
+  it("Münzrecht I und Freizug I ebenso, ihre höheren Stufen nicht", () => {
+    expect(CT.lootCyclesLeft(nachNehmen("muenzrecht", 1), { id: "muenzrecht", tier: 1 }, 8)).toBe(15);
+    expect(CT.lootCyclesLeft(nachNehmen("muenzrecht", 2), { id: "muenzrecht", tier: 2 }, 8)).toBe(null);
+    expect(CT.lootCyclesLeft(nachNehmen("freizug", 1), { id: "freizug", tier: 1 }, 8)).toBe(5);
+    expect(CT.lootCyclesLeft(nachNehmen("freizug", 2), { id: "freizug", tier: 2 }, 8)).toBe(null);
+  });
 });
 
 describe("Aufträge · eine Grenzwahl ohne Ziel darf nicht stehen bleiben", () => {

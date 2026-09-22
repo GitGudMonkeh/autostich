@@ -143,5 +143,14 @@ export default defineConfig(({ command }) => ({
     // Engine/Reducer sind reine Logik → schnelle Node-Umgebung reicht.
     environment: "node",
     include: ["test/**/*.test.js"],
+    /* Ein Teil der Suite spielt GANZE Läufe durch (50 Durchläufe je Lauf, mehrere Läufe je Test:
+       skill-doors, sim-explore-eval, sim-perk-impact, faction-panels, die Auftrags-Fensterprüfung).
+       Vitests Default von 5 s ist dafür keine Aussage über Korrektheit, sondern über die Tagesform
+       des Runners: lokal braucht der langsamste 2,6 s, auf dem geladenen CI-Runner riss er die
+       Grenze — bei unveränderter Logik und grünem lokalen Lauf (2026-09-18).
+       30 s ist dieselbe Zahl, die `faction-panels.test.js` sich schon einzeln gab; hier steht sie
+       einmal für alle, statt sie bei jedem neuen Sim-Test erneut zu vergessen. Eine echte
+       Endlosschleife fängt weiterhin der `guard`-Zähler in den Treibern ab, nicht die Uhr. */
+    testTimeout: 30_000,
   },
 }));

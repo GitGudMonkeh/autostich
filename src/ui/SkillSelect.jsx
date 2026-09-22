@@ -6,7 +6,8 @@ import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
-import { rerollOffer, FOCUS_PRICE, UPGRADE_FROM, FORFEIT_SKILL } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { FOCUS_PRICE, UPGRADE_FROM, FORFEIT_SKILL } from "../game/coins.js"; // Münz-Ökonomie §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { SkillUpgrade } from "./SkillUpgrade.jsx";                        // §3.5: die Aufwertphase (eigener Bildschirm)
 
@@ -175,7 +176,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   // Owner 2026-09-08: der Neuwurf gilt auch auf der TÜRSTUFE — dieselbe Ressource, dieselbe Treppe, nur
   // würfelt er dort die Türen. Dort nie der Legendär-Preis: was hinter einer Tür liegt, ist verdeckt.
   const rerollTokens = state.rerollsSkill || 0;
-  const rerollBuy = rerollOffer(state, rerollTokens, !atDoors && offerIds.some(isLegendarySkill));
+  const rerollBuy = rerollOfferWith(state, rerollTokens, !atDoors && offerIds.some(isLegendarySkill));
   const canReroll = !!onReroll && (atDoors || !!offer);
   /* exp skill rework: Slots sind standardmäßig unbegrenzt (SKILL_SLOT_LIMIT heißt „kein Limit"); nur eine Dev-Run-
      Regel darunter begrenzt. Unbegrenzt rechnet `slots` als Infinity, damit `full` und das Ersetzen-Fenster
@@ -504,7 +505,6 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
             meisten Symbolen der Tür; ein Tipp öffnet sie (CHOOSE_DOOR), danach steht das Drei-Karten-Angebot unten. */}
         {atDoors && (
           <div className="mt-4">
-            <div className="text-body-5 opacity-65 text-center mb-3 max-w-md mx-auto leading-snug">{t("skill.door.hint")}</div>
             <div className="sk-doors grid sm:grid-cols-2 gap-3 items-stretch">
               {doors.map((d, i) => (d.called ? null : (
                 <DoorCard key={i} door={d} label={t("skill.door.n", { n: i + 1 })} phone={phone} onOpen={() => onChooseDoor?.(i)} />
