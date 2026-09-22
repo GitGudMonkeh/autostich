@@ -514,6 +514,10 @@ Task lifecycle — tiers, contract, evidence, handoff:
   Prefer “run `npm test` for the current result” over hard-coded test counts.
 - **Match surrounding code style.**
   There is currently no formatter enforcing style automatically.
+- **Do not run simulations or measurements unless the owner asks for them.** `sim/` runs, sweeps,
+  ablations and probes are started on request, not on your own initiative — not to check a hunch, not to
+  back up a proposal, not "quickly, while we talk". Where a measurement would settle a question, say so
+  in one line and wait. Design discussion happens on the design, not on numbers nobody asked for.
 - **Report uncertainty honestly.** Distinguish:
   - measured,
   - observed,
