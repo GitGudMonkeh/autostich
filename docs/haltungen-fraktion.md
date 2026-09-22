@@ -333,11 +333,10 @@ Wirkung schon, und Übergriff ist dort ein toter Skill-Platz. **Das gehört in d
 Skill muss erkennbar machen, dass er sich mit jedem Grenzöffner überschneidet, sonst ist es eine
 Falle statt einer Entscheidung.
 
-**Warnung dazu, offen:** Übergriff trifft nicht irgendwelche Grenzen, sondern „die mit den meisten
-Formationen daneben" — und ein Grenzöffner öffnet tendenziell dieselben. Auf der Normal-Stufe (eine
-Grenze) kann der Skill damit **gar nicht** greifen statt nur teilweise. Ob die Auswahl schon offene
-Grenzen überspringt oder stumpf die besten nimmt, ist eine Regelfrage und nicht entschieden; ohne
-Überspringen ist „aufpassen bei der Skillwahl" auf der untersten Stufe ein Totalausfall.
+**Die Auswahl weicht nicht aus:** Übergriff nimmt „die Grenzen mit den meisten Formationen daneben",
+auch wenn die schon offen sind. Auf der Normal-Stufe (eine Grenze) heißt das, dass der Skill neben
+einem Grenzöffner **gar nichts** tun kann, nicht nur weniger. Das ist so gewollt (Owner) — es ist die
+Spitze desselben Preises: wer Spalier oder Durchlass mitführt, wählt Übergriff nicht.
 
 **Nachbarschaft zu Pflanze, zu beachten:** **Verwachsung** (SK_PLANT_14) hebt den Überlappungs-*Wert*,
 **Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier** (SK_PLANT_03) öffnet Segmentgrenzen. Wer
@@ -533,21 +532,19 @@ nicht** (§5.4).
 
 **Werte und Design, offen:**
 
-1. **Übergriffs Zielauswahl** — ob sie schon offene Grenzen überspringt oder stumpf die besten nimmt
-   (§5.4). Kein Blocker, aber auf der Normal-Stufe der Unterschied zwischen schwach und wirkungslos.
-2. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
+1. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
    Zuordnung selbst ist gesetzt.
-3. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
+2. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
    `lightYield`, Eis `glacierYield` — jede Fraktion trägt einen eigenen Score-Kanal. Diese hier
    beugt nur Regeln. Ob das ein Mangel ist oder die Pointe, ist offen.
-4. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
+3. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
    und Balancing stehen.
-5. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
+4. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
    wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
    Feld", der Bruch wäre also möglicherweise ein Gewinn.
-6. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
+5. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
    geliefert hat.
-7. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
+6. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)
 
