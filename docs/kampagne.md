@@ -81,20 +81,46 @@ Läufe reicht, ohne dauerhaft zu sein.
 Der Owner will **das ganze Konstrukt am Stück testen**, Änderungen Stück für Stück danach. Diese
 fünf Punkte blockieren den Bau — alle klein, keiner rät sich von selbst:
 
-1. **Die fünf Boss-Details** (§11): welche sechs Zellen, zufällig oder reihum, stapelt der Konter
-   über Durchlauf-Grenzen, zählt der Wucherer je Kaufart, wie rundet der Schmarotzer.
-2. **Was die Abschaltungen mitnehmen.** Ohne Münzen fallen Neuwurf, Energie-Kauf, Baufeld-Kauf,
-   Fokus **und** die Forfeit-Einnahmen weg. Offen: was passiert mit Perks, Skills und Beute, die
-   Münzen voraussetzen (*Zinseszins*, *Münzrecht*, *Nachlass*, *Freizug*) — aus dem Angebot nehmen
-   oder wirkungslos drin lassen? Dasselbe beim Raritäts-Deckel.
-3. **Zwei Details an der Raritätsformel** (§10): trägt Stufe 3 weiterhin eine Chance auf Legendär,
-   und gilt die Rarität für alle drei ausliegenden Rewards oder nur für das beste Stück?
-4. **Wo der Stand lebt.** Kampagnen-Fortschritt und Freischaltungen müssen über Sitzungen halten
-   (`storage.js`, Profil).
-5. **Ausblenden oder durchstreichen?** Die abgeschalteten Knöpfe sind im Mockup durchgestrichen
-   gezeichnet; ausblenden wäre sauberer.
+1. ~~Die fünf Boss-Details~~ — **entschieden**, ausgeschrieben in §11.
+2. ~~Was die Abschaltungen mitnehmen~~ — **entschieden: aus dem Angebot nehmen**, bis Münzen
+   freigeschaltet sind. *Zinseszins*, *Münzrecht*, *Nachlass*, *Freizug* und alles andere, das
+   Münzen voraussetzt, erscheint gar nicht erst. Ein wirkungsloses Angebot wäre eine Falle für
+   einen neuen Spieler.
+3. **Die Raritäts-Decke der Rewards in Ebene 1.** Der Owner hat den Widerspruch gefunden: Ebene 1
+   kennt **keine Legendären** (§11 Startbedingungen, und die Freischaltungen gehen nur bis „Sehr
+   selten"). Die Raritätsformel (§10) schüttet aber Episch und Legendär aus, und drei der fünf
+   legendären Rewards **versprechen ein legendäres Perk, Skill bzw. Gebäude** — was es in Ebene 1
+   gar nicht gibt. Siehe den Kasten unten.
+4. ~~Wo der Stand lebt~~ — **technische Entscheidung, getroffen**: die **Freischaltungen** gehen ins
+   Profil in `storage.js`, neben die Meta-Progression; sie sind dauerhaft und laufübergreifend. Der
+   **Kampagnen-Stand** (welcher Lauf, gehaltene Rewards, gezogene Bosse, bisherige Endscores)
+   bekommt einen eigenen Slot neben `as_activerun` — er muss einen Tab-Schluss mitten in der
+   Kampagne überleben, endet aber mit ihr. Zwei Lebensdauern, zwei Ablagen.
+5. **Ausblenden oder durchstreichen?** Gemeint sind die Knöpfe der Münz-Ökonomie in der Lauf-Leiste:
+   **Münz-Anzeige · Neuwurf · Energie-Kauf · Baufeld-Kauf · Fokus**. Im Mockup (Board 12) sind sie
+   durchgestrichen und abgeblendet gezeichnet.
 
 **Nicht blockierend:** die Werte im Katalog (§9). Ein erster Satz steht, der Playtest zieht nach.
+
+> ### Der Legendär-Widerspruch
+>
+> **Gesetzt ist:** Ebene 1 startet ohne Legendäre und die fünf Freischaltungen führen nur bis
+> „Sehr selten". Episch und Legendär bleiben in Ebene 1 durchgehend zu.
+>
+> **Dagegen steht:** die Raritätsformel endet auf Stufe 3 = Episch und Stufe 4 = Legendär, und der
+> Katalog hat fünf legendäre Rewards. Drei davon — *Handschlag*, *Erleuchtung*, *Bauherrschaft* —
+> garantieren ein legendäres Perk, Skill oder Gebäude. **Die können in Ebene 1 nicht existieren**,
+> weil es nichts Legendäres zu garantieren gibt.
+>
+> **Zwei Lesarten, der Owner entscheidet:**
+>
+> 1. **Reward-Rarität ist unabhängig vom Skill-/Perk-Deckel.** Ebene 1 gibt Rewards bis **Episch**,
+>    Legendär erst ab Ebene 2. Die Formel bleibt wie sie ist, Stufe 4 zahlt in Ebene 1 Episch aus.
+> 2. **Reward-Rarität folgt demselben Deckel.** Ebene 1 gibt Rewards bis **Sehr selten**; Episch und
+>    Legendär kommen mit den höheren Ebenen. Dann drücken die Stufen 3 und 4 in Ebene 1 ins Leere
+>    und die Formel braucht dort eine eigene Decke.
+>
+> Unabhängig davon: die fünf legendären Rewards sind **Ebene-2-Inhalt**, nicht MVP.
 
 ---
 
@@ -662,13 +688,15 @@ wächst der Pool auf fünf, damit gibt es echte Auswahl statt einer festen Reihe
 Die fünf Mechaniken stehen als Satz da, nicht als Regel. Jede braucht vor dem Bauen eine
 Entscheidung — alle klein, aber keine davon rät sich von selbst:
 
-| Boss | Offen |
+### Die Boss-Regeln, ausgeschrieben (Owner, 2026-09-22)
+
+| Boss | Regel |
 | --- | --- |
-| **Denkmalpfleger** | **Welche** sechs Zellen? Zufällig je Lauf, fest gesetzt, zusammenhängend oder gestreut? Sieht der Spieler sie vor dem ersten Bauen? |
-| **Schließer** | Wird das Segment je Phase **zufällig** gezogen oder geht es reihum? Darf dasselbe zweimal hintereinander kommen? |
-| **Der Konter** | Der Aufschlag trifft **nur die nächste** Gegnerkarte oder alle folgenden? Läuft er über das Durchlauf-Ende weiter, oder setzt jeder neue Durchlauf ihn zurück? |
-| **Wucherer** | „Derselben Art" — zählt jede Kaufart (Neuwurf · Energie · Baufeld · Fokus) ihre **eigene** Leiter, oder alle zusammen? |
-| **Schmarotzer** | Wird bei ungerader Perk-Zahl ab- oder aufgerundet? Und wenn die Münzen nur für einen Teil reichen: anteilig abziehen oder gar nicht? |
+| **Denkmalpfleger** | Die sechs gesperrten Zellen werden **zufällig gezogen**. |
+| **Schließer** | Das festgesetzte Segment wird je Aufstellphase **zufällig gezogen**. |
+| **Der Konter** | Der Aufschlag **läuft über die Durchlauf-Grenze weiter**. Nur eine Niederlage setzt ihn auf null. |
+| **Wucherer** | **Jede Kaufart zählt ihre eigene Leiter** — Neuwurf, Energie, Baufeld und Fokus getrennt. |
+| **Schmarotzer** | Bei ungerader Perk-Zahl wird **zugunsten des Spielers gerundet**: 3 Perks kosten 1 Münze, nicht 2. |
 
 ### Wo der Boss im Interface steht
 
