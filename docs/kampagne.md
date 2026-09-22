@@ -61,7 +61,7 @@ Läufe reicht, ohne dauerhaft zu sein.
 4. **Die Raritätsstufen der Rewards.** Dieselben vier plus Legendär wie sonst im Spiel, oder eigene?
 5. **Wie die zwei Eingänge zur Rarität verrechnet werden.** Addieren sie sich, ist einer ein Deckel,
    gibt es eine Matrix? Und mit welchen Schwellen?
-6. **Der Reward-Katalog.** Umfang, Achsen, Werte.
+6. **Der Reward-Katalog.** Umfang, Achsen, Werte. — **Entwurf steht in §9**; offen sind dort nur noch Werte und Raritätsstufen.
 7. **Der Kollisionsfall aus §5** — gehört er dazu?
 
 ---
@@ -282,7 +282,99 @@ Sonde: `N=24 node sim/probes/kampagne-hebel.mjs` (gepaart, je Variante dieselben
 
 ---
 
-## 9. Der erste Raritäts-Eingang, nachgezählt
+## 9. Der Reward-Katalog (Entwurf, Owner 2026-09-22)
+
+**Sechs Achsen, je drei Rewards, dazu fünf Legendäre.** Vom Owner gesetzt ist die Auswahl der
+Achsen; die Namen und die Zuschnitte sind Entwurf. **Alle Zahlen stehen als X** — die Werte und die
+Raritätsstufen sind noch nicht gesetzt.
+
+Zwei Achsen aus dem ersten Wurf sind **verworfen**: „Angebot und Auswahl" (mehr Skills zur Wahl,
+höherer Raritätsboden) und „Start-Vorbelegung" (Lauf beginnt mit Skill/Gebäude/Serie).
+
+### 1 · Score-Formel
+
+| Reward | Wirkung | Raritäts-Regler |
+| --- | --- | --- |
+| **Sold** | +X Basispunkte auf jeden gewonnenen Stich | X |
+| **Feldzeichen** | +X % auf **einen** Multiplikator, beim Nehmen festgelegt | X; höhere Stufen evtl. zwei Achsen |
+| **Steigbrief** | +X % auf allen Score, wachsend: je 10 Durchläufe eine Stufe mehr | X je Stufe |
+
+Sold hilft dem schwachen Lauf (§8), Feldzeichen passt sich dem Bau an, Steigbrief zahlt erst spät.
+
+### 2 · Kampfkraft
+
+| Reward | Wirkung | Raritäts-Regler |
+| --- | --- | --- |
+| **Waffenrecht** | alle eigenen Karten +X Kartenwert, dauerhaft | X |
+| **Wetzstein** | die schwächste Deckkarte bekommt je Durchlauf +X Wert | X |
+| **Zehnt** | das Gegnerdeck verliert X Kartenwert | X |
+
+Die einzige Achse, die sich selbst verstärkt: mehr gewonnene Stiche heißt mehr Wertungen **und**
+längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben klemmt.
+
+### 3 · Ökonomie
+
+| Reward | Wirkung | Raritäts-Regler |
+| --- | --- | --- |
+| **Pfründe** | +X Münzen je Durchlauf | X |
+| **Handelsbrief** | alle Käufe kosten X % weniger | X |
+| **Mitgift** | der Lauf startet mit X Münzen | X |
+
+### 5 · Struktur
+
+| Reward | Wirkung | Raritäts-Regler |
+| --- | --- | --- |
+| **Lehen** | +X Zellen Baufeld | X |
+| **Fahnenrecht** | +X Formationsenergie je Aufstellphase | X |
+| **Ratsbrief** | X zusätzliche Entscheidungsphasen im Lauf | X; welcher Typ |
+
+### 7 · Regel-Ausnahmen
+
+| Reward | Wirkung | Raritäts-Regler |
+| --- | --- | --- |
+| **Standhaftigkeit** | die Serie überlebt X Niederlagen je Durchlauf | X |
+| **Losentscheid** | Stiche, die du um ≤ X verlierst, zählen als Sieg | X |
+| **Vorrecht** | X Karten je Durchlauf dürfen nach dem Aufdecken des Gegnerdecks umgestellt werden | X |
+
+### 8 · Kampagnen-Ebene
+
+| Reward | Wirkung | Raritäts-Regler |
+| --- | --- | --- |
+| **Gnadengesuch** | ein verlorener Lauf darf einmal je Kampagne wiederholt werden | wie oft |
+| **Fürsprache** | die Schwelle des nächsten Laufs sinkt um X % | X; einmalig oder dauerhaft |
+| **Doppelwahl** | nach einem erfüllten **Auftrag** wählst du **zwei** Beutestücke statt einem | dauerhaft oder X-mal |
+
+### Legendär (fünf)
+
+| Reward | Wirkung |
+| --- | --- |
+| **Freispruch** | der nächste Lauf hat **keine Score-Schwelle** |
+| **Handschlag** | **garantiert legendärer Perk** in der ersten Perk-Phase — nächster Lauf und alle folgenden |
+| **Erleuchtung** | **garantiert legendärer Skill** in der Skill-Phase — nächster Lauf und alle folgenden |
+| **Bauherrschaft** | **garantiert legendäres Gebäude** in der ersten Bauphase — nächster Lauf und alle folgenden |
+| **Vermächtnis** | geht ein Lauf verloren, **behältst du die gewählten Rewards** für den Neustart der Kampagne |
+
+Die ersten drei stammen vom Owner. *Bauherrschaft* schließt die Reihe Perk / Skill / Gebäude —
+dasselbe Versprechen auf der dritten Angebotsart. *Vermächtnis* ist das einzige Stück im Katalog,
+das den Alles-oder-nichts-Charakter der Kampagne direkt entschärft.
+
+### Offene Fragen zum Katalog
+
+1. **Werte und Raritätsstufen** — alles steht als X.
+2. **Zwei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Ratsbrief*
+   (zusätzliche Entscheidungsphasen — `DECISION_SCHEDULE`/`buildSchedule`) und *Bauherrschaft*
+   (setzt voraus, dass es legendäre Gebäude als Rarität überhaupt gibt).
+3. **Losentscheid liegt nah am Perk *Patt*** (Niederlage um ≤ 2 zählt als Sieg). Entweder anders
+   schneiden oder bewusst als stärkere Kampagnen-Variante führen.
+4. **Achsen 7 und 8 tragen Raritätsstufen schlecht** — der Sprung von „gar nicht" auf „einmal" ist
+   größer als jeder Schritt danach.
+5. **Doppelwahl verschärft §5.** Es verdoppelt die Auftrags-Beute und damit auch *Lehrbrief* und
+   *Aufstockung* — genau die beiden Stücke, die schon heute mit „Rewards sind die einzige
+   Power-Achse" kollidieren.
+
+---
+
+## 10. Der erste Raritäts-Eingang, nachgezählt
 
 **Aufträge je Lauf: höchstens zwei.** `contracts.js` hat zwei Fenster (D1–16, D17–32), je einen
 Auftrag. Über eine Kampagne von vier Läufen sind also **höchstens 8** erfüllte Aufträge möglich —
@@ -297,7 +389,7 @@ Lauf nicht; für die Kampagne muss sie beim Laufende eingesammelt werden.
 
 ---
 
-## 10. Nähte im Code
+## 11. Nähte im Code
 
 | Wofür | Wo |
 | --- | --- |
