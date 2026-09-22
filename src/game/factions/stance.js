@@ -225,6 +225,10 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
       next = { ...next, ring: { ...next.ring, [wonSuit]: minDuration(skills, skillTiers) } };
       if (wonSuit !== next.stance) {
         switched = true;
+        // Lesart B (STANCE_AFTERGLOW_ON_SWITCH): der Nachklang der ABGELÖSTEN Haltung beginnt hier, nicht bei
+        // ihrem eigenen Auslösen. Jeder Wechsel erzeugt dann garantiert Überlappung. Default ist Lesart A (§2).
+        if (C.STANCE_AFTERGLOW_ON_SWITCH)
+          next = { ...next, ring: { ...next.ring, [next.stance]: minDuration(skills, skillTiers) } };
         const carried = next.carried.includes(wonSuit) ? next.carried : [...next.carried, wonSuit];
         // Beschleunigung: jeder echte Wechsel senkt die Schwelle, bis auf den Boden der Stufe. Der Boden geht
         // bewusst nicht auf 1 — dort löste jede Farbe mit ihrem ersten Sieg aus (§6.7).

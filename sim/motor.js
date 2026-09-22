@@ -14,8 +14,11 @@ import { execFileSync } from "node:child_process";
 import { runOne } from "./run.js";
 import { factionPolicy } from "./policies/faction.js";
 import { fixedPolicy } from "./policies/fixed.js";
+import { stanceMixFormationStep } from "./formation.js";
+import { SEGMENT_SIZE } from "../src/game/formations.js"; // die Segmentgröße lebt in der Formations-Engine, NICHT in constants.js
 import { F } from "../src/game/factions/fire.js";
 import { L } from "../src/game/factions/lightning.js";
+import { S, STANCE_SUITS, ringsNow as stanceRings } from "../src/game/factions/stance.js";
 import * as C from "../src/game/constants.js";
 
 const quantile = (a, q) => { const s = [...a].sort((x, y) => x - y); if (!s.length) return 0; const i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo); };
@@ -105,6 +108,75 @@ function lightningScoresJson(runs, seed0) {
   process.stdout.write(JSON.stringify(out));
 }
 
+/* ---- Haltungen (docs/haltungen-fraktion.md) ----
+   Die Frage dieser Diagnose ist nicht, was ein Skill wert ist (das ist --mode skills), sondern ob der MECHANISMUS
+   tut, was der Entwurf behauptet: dass die Aufstellung die Rotation steuert. §2.1 sagt, Farbblöcke zögen die
+   Wechsel auseinander (eine lange Haltung, „Campen") und bunte Aufstellung bündele sie (mehrere gleichzeitig,
+   „Tanzen"). Beides hängt an der Aufstellung, nicht an den Skills — deshalb fahren die Builds unten VERSCHIEDENE
+   Aufstell-Strategien und nicht nur verschiedene Skill-Listen.
+   Gemessen wird: Wechsel je Lauf, wie viele Haltungen gleichzeitig klingen, wie lange jede Farbe trägt, wie oft
+   die rote Leiter rutscht, und wie viel vom Score über den gelben Faktor und die eigenen Flats läuft. */
+const CAMP = [S.BEHARRLICHKEIT, S.ANKLANG, S.KEHRTWENDE, S.SCHWUNGRAD, S.GENUGTUUNG, S.GRUNDRAUSCHEN, S.RUECKHALT, S.VERANKERUNG];
+const DANCE = [S.MITKLANG, S.BESCHLEUNIGUNG, S.RUNDE, S.VERANKERUNG, S.UEBERTRAG, S.ANKLANG, S.GRUNDRAUSCHEN, S.GENUGTUUNG];
+const OVER = [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG, S.MITKLANG, S.ANKLANG, S.BEHARRLICHKEIT, S.GRUNDRAUSCHEN, S.GENUGTUUNG];
+export const STANCE_BUILDS = [
+  ["Fraktion (zufällig)", () => factionPolicy("stance")],
+  ["Campen (Blöcke)", () => fixedPolicy(CAMP, fixedOpts)],
+  ["Tanzen (bunt)", () => fixedPolicy(DANCE, { ...fixedOpts, solveFormations: false, formationStep: stanceMixFormationStep })],
+  ["Überlappung", () => fixedPolicy(OVER, fixedOpts)],
+];
+
+export function stanceRun(seed, policy) {
+  const a = { tricks: 0, ringSum: 0, ring: [0, 0, 0, 0, 0], rings: { R: 0, B: 0, G: 0, Y: 0 }, slid: 0, wins: 0,
+    formMultSum: 0, formWins: 0, stanceMultSum: 0, banked: 0, last: null };
+  runOne(seed, policy, null, { onTrick: (s) => {
+    a.last = s;
+    const st = s.stance; if (!st || !st.active) return;
+    a.tricks += 1;
+    let n = 0;
+    for (const c of STANCE_SUITS) if (stanceRings(st, c)) { n += 1; a.rings[c] += 1; }
+    a.ringSum += n; a.ring[Math.min(n, 4)] += 1;
+    const t = s.lastTrick; if (!t) return;
+    if (t.result === "win_tie" || (t.result === "tie" && st.slid)) a.slid += 1;
+    if (t.result === "win" || t.result === "win_tie") {
+      a.wins += 1;
+      const b = t.breakdown;
+      if (b) {
+        a.stanceMultSum += b.stanceMult || 1;
+        a.formMultSum += b.formBase || 1;
+        if ((b.formBase || 1) > 1) a.formWins += 1;
+      }
+    }
+    a.banked = Math.max(a.banked, st.bank || 0);
+  } }, { archetypes: ["stance"] });
+  const s = a.last, st = s.stance || {}, cycles = Math.max(1, a.tricks / TPC);
+  /* Wie SORTIERT liegt das Brett am Ende wirklich? Der Anteil gleichfarbiger Nachbarpaare (auf der Grundfarbe,
+     innerhalb der Segmente) ist das direkte Maß für die Build-Achse aus §2.1 — ohne ihn misst man den Unterschied
+     zwischen „Campen" und „Tanzen", ohne zu wissen, ob die Aufstellung überhaupt einen gemacht hat. Zufall liegt
+     bei rund 1/4, ein sortiertes Brett deutlich darüber, ein verzahntes bei 0. */
+  const order = s.playerOrder || [], dk = s.deck || [];
+  let pairs = 0, same = 0;
+  for (let p = 0; p + 1 < order.length; p++) {
+    if (Math.floor(p / SEGMENT_SIZE) !== Math.floor((p + 1) / SEGMENT_SIZE)) continue;
+    pairs += 1;
+    if (dk[order[p]]?.suit && dk[order[p]].suit === dk[order[p + 1]]?.suit) same += 1;
+  }
+  return {
+    seed, score: s.score, active: a.tricks > 0, tricks: a.tricks, winrate: s.trickNo ? s.wins / s.trickNo : 0,
+    clashShare: pairs ? same / pairs : 0,
+    switches: st.switches || 0, switchesPerCycle: (st.switches || 0) / cycles,
+    tricksPerSwitch: st.switches ? a.tricks / st.switches : Infinity,
+    ringMean: a.tricks ? a.ringSum / a.tricks : 0,
+    ringDist: a.ring.map((n) => (a.tricks ? n / a.tricks : 0)),
+    ringShare: Object.fromEntries(STANCE_SUITS.map((c) => [c, a.tricks ? a.rings[c] / a.tricks : 0])),
+    slidShare: s.trickNo ? a.slid / s.trickNo : 0, critRate: s.wins ? s.crits / s.wins : 0,
+    stanceMultMean: a.wins ? a.stanceMultSum / a.wins : 1,
+    formMultMean: a.wins ? a.formMultSum / a.wins : 1, formWinShare: a.wins ? a.formWins / a.wins : 0,
+    baseShare: s.score ? (s.stanceBase || 0) / s.score : 0, rounds: st.rounds || 0, bankPeak: a.banked,
+    held: s.skills.length,
+  };
+}
+
 export function runMotor({ arg, seed0, write } = {}) {
   const runs = Number((arg && arg("--runs", 100)) || 100);
   if (arg && arg("--part", "") === "lightning-scores") return lightningScoresJson(runs, seed0);
@@ -170,6 +242,33 @@ export function runMotor({ arg, seed0, write } = {}) {
     console.log(`  Lesart: „Stapel-Anteil" = Score-Verlust desselben Laufs ohne jede Stapel-Wirkung (Stapel-Score 0 und Crit-Mult je Stapel 0; gepaart, Median und Ø je Lauf); „Crit-Anteil" = critBonusScore ÷ Score.`);
     console.log(`  „am Deckel" = Anteil der Crits, deren fertiger Crit-Multiplikator am Deckel ${C.CRIT_MULT_CAP}× stand (dort zeigen Gewitterfront und Entladung nichts mehr).`);
     console.log(`  „Siegkarte Ø" = Stapel auf der gespielten Karte bei einem Sieg; „ionisiert" = Anteil der Karten mit ≥ 1 Stapel am Laufende.`);
+  }
+  if (only.includes("stance")) {
+    console.log(`\n=== MOTOR Haltungen — die Rotation im Lauf (${runs} Läufe, Seeds ${seed0}..${seed0 + runs - 1}, Welt nur Prisma) ===`);
+    console.log(`  Mechanismus: ${C.STANCE_THRESHOLD} gewonnene Stiche einer GRUNDFARBE wechseln die Haltung · Mindestdauer ${C.STANCE_MIN_DURATION} Stiche · Rot rutscht die Leiter · Blau +${Math.round(C.STANCE_CRIT * 100)} % Crit · Gelb ×${C.STANCE_SCORE_MULT} · Grün färbt ab`);
+    console.log(`  Build                  Median      Siegq.  Wechsel  Stiche/W.  Ø klingend   1 / 2 / 3 / 4 Haltungen           gerutscht  Crit   ×Gelb  ×Form  Form-Siege  Flat-Anteil  Runden`);
+    payload.stance = {};
+    for (const [name, make] of STANCE_BUILDS) {
+      const rs = Array.from({ length: runs }, (_, i) => stanceRun(seed0 + i, make())).filter((r) => r.active);
+      if (!rs.length) { console.log(`  ${name.padEnd(22)} (kein Lauf mit aktiver Fraktion)`); continue; }
+      const row = {
+        n: rs.length, median: median(rs.map((r) => r.score)), winrate: mean(rs.map((r) => r.winrate)),
+        switches: mean(rs.map((r) => r.switches)), tricksPerSwitch: mean(rs.map((r) => r.tricksPerSwitch)),
+        ringMean: mean(rs.map((r) => r.ringMean)), ringDist: [1, 2, 3, 4].map((k) => mean(rs.map((r) => r.ringDist[k]))),
+        ringShare: Object.fromEntries(STANCE_SUITS.map((c) => [c, mean(rs.map((r) => r.ringShare[c]))])),
+        slidShare: mean(rs.map((r) => r.slidShare)), critRate: mean(rs.map((r) => r.critRate)),
+        stanceMultMean: mean(rs.map((r) => r.stanceMultMean)), formMultMean: mean(rs.map((r) => r.formMultMean)),
+        formWinShare: mean(rs.map((r) => r.formWinShare)), baseShare: mean(rs.map((r) => r.baseShare)),
+        rounds: mean(rs.map((r) => r.rounds)), bankPeak: median(rs.map((r) => r.bankPeak)), held: mean(rs.map((r) => r.held)),
+        clashShare: mean(rs.map((r) => r.clashShare)),
+      };
+      payload.stance[name] = row;
+      console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}  ${pct(row.winrate)}  ${row.switches.toFixed(0).padStart(6)}  ${row.tricksPerSwitch.toFixed(1).padStart(8)}   ${row.ringMean.toFixed(2).padStart(8)}   ${row.ringDist.map((x) => pct(x)).join(" ")}  ${pct(row.slidShare)}  ${pct(row.critRate)}  ${row.stanceMultMean.toFixed(2).padStart(5)}  ${row.formMultMean.toFixed(2).padStart(5)}  ${pct(row.formWinShare)}  ${pct(row.baseShare)}  ${row.rounds.toFixed(1).padStart(5)}`);
+      console.log(`    klingt je Farbe: rot ${pct(row.ringShare.R)} · blau ${pct(row.ringShare.B)} · grün ${pct(row.ringShare.G)} · gelb ${pct(row.ringShare.Y)}   ·  gleichfarbige Nachbarn ${pct(row.clashShare)} (Zufall 25 %)   (Ø ${row.held.toFixed(1)} Skills, Stau-Spitze ${fmt(row.bankPeak)})`);
+    }
+    console.log(`  Lesart: „Ø klingend" = wie viele der vier Haltungen im Mittel gleichzeitig klingen (1 = nie Überlappung, 4 = dauernd alle).`);
+    console.log(`  „gerutscht" = Anteil der Stiche, die die rote Leiter eine Stufe gehoben hat; „×Gelb" = Score-Faktor der gelben Haltung je Sieg; „×Form" = Formations-Faktor je Sieg (die grüne Haltung steckt darin).`);
+    console.log(`  „Flat-Anteil" = Genugtuung + Runde + entladener Stau am Score; „Runden" = vollendete Vier-Farben-Runden je Lauf.`);
   }
   if (write) write(payload);
   return payload;

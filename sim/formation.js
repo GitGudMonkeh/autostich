@@ -67,6 +67,46 @@ export function greedyFormationStep(s) {
   return best ? { type: "SWAP_CARDS", i: best.i, j: best.j } : { type: "CONFIRM_FORMATION" };
 }
 
+/* MISCH-Aufstellung (Haltungen, docs/haltungen-fraktion.md §2.1): der Gegenpol zum Greedy-Solver. Der baut über
+   den Farbblock-Faktor von selbst FARBBLÖCKE — und die sind die eine Hälfte der Build-Achse der Fraktion. Die
+   andere Hälfte ist „bunt", und dafür gab es bisher keine Aufstellung: ohne sie misst die Sim nur das Campen.
+
+   Warum das überhaupt etwas ändert, obwohl jede Farbe zehn Karten mit denselben Werten 1..10 hat und damit je
+   Durchlauf dieselben rund 4,5 Siege holt (§6.1): die Aufstellung entscheidet nicht, WIE VIELE Siege eine Farbe
+   macht, sondern WANN. Liegen die zehn roten Karten am Stück, fallen Rots Siege alle in dieses Fenster, und die
+   vier Haltungen zünden nacheinander, weit auseinander — eine lange Haltung nach der anderen. Sind die Farben
+   verzahnt, steigen alle vier Zähler gemeinsam und reißen die Schwelle fast gleichzeitig: die Wechsel bündeln
+   sich, und genau dann klingen mehrere Haltungen zugleich.
+
+   Zielfunktion: möglichst wenige gleichfarbige Nachbarpaare (auf der GRUNDFARBE — sie steuert die Rotation),
+   bei Gleichstand der Formations-Multiplikator. Der Preis der bunten Aufstellung, den §2.1 nennt, fällt damit
+   von selbst an: ohne Farbblöcke fehlt der Formationstyp. */
+export function stanceMixFormationStep(s) {
+  const n = s.playerOrder.length;
+  const suitAt = (p) => s.deck[s.playerOrder[p]]?.suit ?? null;
+  // Gleichfarbige Nachbarpaare INNERHALB eines Segments — über Segmentgrenzen hinweg liegt keine Formation und
+  // die Zähler kümmert die Grenze ohnehin nicht, aber der Tausch soll das Segment sortieren, nicht das Brett.
+  const clashes = (order) => {
+    let c = 0;
+    for (let p = 0; p + 1 < n; p++) {
+      if (Math.floor(p / SEGMENT_SIZE) !== Math.floor((p + 1) / SEGMENT_SIZE)) continue;
+      const a = s.deck[order[p]]?.suit, b = s.deck[order[p + 1]]?.suit;
+      if (a && a === b) c += 1;
+    }
+    return c;
+  };
+  const cur = clashes(s.playerOrder), curForm = formScore(s);
+  let best = null, bestKey = [0, EPS];
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    if (suitAt(i) === suitAt(j)) continue;                       // gleichfarbiger Tausch ändert nichts an der Mischung
+    const next = reducer(s, { type: "SWAP_CARDS", i, j });
+    if (next === s) continue;                                    // nicht anwendbar (keine Energie / ungültig)
+    const key = [cur - clashes(next.playerOrder), formScore(next) - curForm];
+    if (key[0] > bestKey[0] || (key[0] === bestKey[0] && key[0] > 0 && key[1] > bestKey[1])) { bestKey = key; best = { i, j }; }
+  }
+  return best ? { type: "SWAP_CARDS", i: best.i, j: best.j } : { type: "CONFIRM_FORMATION" };
+}
+
 // FRONT-LOAD-Gegner (Vabanque & künftige Eröffnungs-Perks): arrangiert die stärksten Karten auf die ersten
 // `openTricks` Positionen. Das ist der Missbrauchsfall, den der constants.js-Kommentar seit #203 als Grund für
 // VABANQUE_MAX_PAYOUTS nennt, den die Sim aber nie modelliert hat — `playerOrder` ist PERSISTENT, ein Spieler

@@ -23,7 +23,9 @@ import { VABANQUE_TRICKS } from "../../src/game/constants.js";
 //   ABER für alles Gebäude-Bezogene Pflicht: mit Zufallsbau werden Strukturen kaum geschlossen und der Baufeld-Deckel
 //   nie erreicht → Gebäude-Perks (Richtfest/Bauhütte, Familien mit needsArchitect) messen sich systematisch auf 0.
 // exclude: ids, die NIE gewählt werden (mehrere Ablationen zugleich — z. B. „Feuer ohne jeden Hitze-Verstärker").
-export function fixedPolicy(priority, { drop = null, exclude = [], solveFormations = false, frontLoad = false, gate = null, architectGreedy = false } = {}) {
+// formationStep: eine eigene Aufstell-Strategie statt Greedy/Zufall (Haltungen: stanceMixFormationStep baut bunt
+//   statt in Farbblöcken — ohne sie misst man bei dieser Fraktion nur die eine Hälfte ihrer Build-Achse).
+export function fixedPolicy(priority, { drop = null, exclude = [], solveFormations = false, frontLoad = false, gate = null, architectGreedy = false, formationStep = null } = {}) {
   const base = randomPolicy({ architectGreedy });
   const rank = new Map(priority.map((id, i) => [id, i]));
   const openTricks = typeof frontLoad === "number" ? frontLoad : VABANQUE_TRICKS;
@@ -66,6 +68,7 @@ export function fixedPolicy(priority, { drop = null, exclude = [], solveFormatio
           return { type: "RESOLVE_TRICK", rng };
         }
         case "formation":
+          if (formationStep) return formationStep(s);
           if (frontLoad) return frontLoadFormationStep(s, openTricks);
           return solveFormations ? greedyFormationStep(s) : base.act(s, rng);
         default:

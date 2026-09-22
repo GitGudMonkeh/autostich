@@ -519,6 +519,86 @@ Durchläufe.
 
 ---
 
+### 6.8 · Was die erste Messung sagt — **gemessen**
+
+Der Entwurf ist gebaut und läuft in der Sim (`--mode motor --arch stance`, `--mode skills --arch stance`). Drei
+Befunde, alle drei unbequem.
+
+**A · Die Fraktion liegt weit unter dem Feld.** Mono, gieriger Spieler, dieselben 25 Seeds:
+
+| Fraktion | Median | p90 | p90 ÷ Median |
+| --- | --- | --- | --- |
+| Eis | 155.237.412 | 1.363.871.385 | 8,8 |
+| Blitz | 105.236.611 | 358.536.343 | 3,4 |
+| Pflanze | 43.587.934 | 688.730.160 | 15,8 |
+| Feuer | 17.422.914 | 112.650.960 | 6,5 |
+| **Prisma** | **4.026.085** | **6.632.749** | **1,6** |
+
+Faktor 4,3 unter der schwächsten der vier, Faktor 39 unter der stärksten. Die Spalte rechts sagt, warum:
+**die Fraktion hat keinen Sammler.** Hitze, Wachstum, Stapel und Gletschermasse wachsen über den Lauf; die
+Haltungen setzen ihren Zähler alle fünf Siege auf null. Jeder ihrer vier Werte ist flach, je Stich und
+begrenzt — es gibt nichts, was sich aufbaut, und entsprechend keinen Schwanz nach oben. Das beantwortet §8
+Punkt 2 („eigener Ertrag?") nicht als Geschmacksfrage, sondern als Messung.
+
+**B · Die Build-Achse aus §2.1 existiert, ist aber einseitig.** Drei feste Builds, je 20 Läufe:
+
+| Build | Median | Wechsel | Stiche je Wechsel | Ø klingende Haltungen | ×Form je Sieg | gleichfarbige Nachbarn |
+| --- | --- | --- | --- | --- | --- | --- |
+| Campen (Blöcke) | 4.524.607 | 257 | 8,0 | 1,17 | 2,59 | 33 % |
+| Tanzen (bunt) | 3.463.553 | 351 | 6,0 | 1,23 | 1,96 | 0 % |
+| Überlappung | 4.916.004 | 251 | 8,1 | 1,10 | 3,47 | 32 % |
+
+Bunt bauen erzeugt tatsächlich mehr Wechsel (+37 %) — und kostet dafür ein Viertel des Scores, weil die
+Formationen wegbrechen (×Form 2,59 → 1,96, Formations-Siege 74 % → 54 %). Der Preis aus §2.1 ist also da. Was
+er einkauft, ist fast nichts: **+0,06 gleichzeitig klingende Haltungen.**
+
+**C · Die Überlappungs-Fantasie ist im Regelwerk nicht erreichbar.** In 81–91 % der Stiche klingt genau EINE
+Haltung. Alle vier gleichzeitig: **0,1–0,4 % der Stiche.** Der Grund ist strukturell und steht schon in §2:
+Überlappung entsteht nur, wenn zwei *Wechsel* innerhalb der Mindestdauer fallen — Wechsel kommen aber alle
+6–8 Stiche, die Mindestdauer ist 3. Und die vier Zähler **entsynchronisieren sich von selbst**: wer auslöst,
+fällt auf 0 zurück, während die anderen weiterzählen. Sie pendeln sich auf gleichmäßige Abstände ein, egal wie
+das Brett liegt.
+
+Geprüft, ob ein Regler das hebt (je 10 Läufe, Build „Tanzen"):
+
+| Mindestdauer | 3 | 5 | 8 | 12 |
+| --- | --- | --- | --- | --- |
+| Ø klingend | 1,26 | 1,20 | 1,36 | 1,36 |
+
+| Schwelle | 5 | 4 | 3 | 2 |
+| --- | --- | --- | --- | --- |
+| Ø klingend | 1,26 | 1,20 | 1,21 | 1,17 |
+
+Die Schwelle tut **gar nichts** (sie beschleunigt alle vier Zähler gleichmäßig), die Mindestdauer bringt bis
+1,36 und sättigt dann. Anklang Episch (8) ist also bereits das Ende der Fahnenstange.
+
+#### 6.8.1 · Zwei Lesarten des Nachklangs — die Stelle, an der es sich entscheidet
+
+Im Verlauf stehen zwei verschiedene Formulierungen, und sie ergeben verschiedene Spiele:
+
+- **A** (§2, so gebaut): die Mindestdauer läuft **ab dem Auslösen**. Eine Haltung, die lange aktiv war, hat sie
+  verbraucht und verstummt mit der Ablösung.
+- **B** (die ursprüngliche Ansage des Owners: *„nach wechsel hallt sie 3 stiche lang nach"*): der Nachklang
+  beginnt **am Wechsel**. Jeder Wechsel erzeugt dann garantiert Überlappung.
+
+Gemessen, dieselben 20 Seeds (`SIM_STANCE_AFTERGLOW_ON_SWITCH`):
+
+| Build | A · Median | A · Ø klingend | A · 2 Haltungen | B · Median | B · Ø klingend | B · 2 Haltungen |
+| --- | --- | --- | --- | --- | --- | --- |
+| Campen | 4.524.607 | 1,17 | 13 % | **6.483.143** | **1,56** | **37 %** |
+| Tanzen | 3.463.553 | 1,23 | 15 % | **4.812.090** | **1,69** | **39 %** |
+| Überlappung | 4.916.004 | 1,10 | 8 % | **6.494.397** | **1,50** | **35 %** |
+
+**B hebt die Fraktion um rund 40 % und macht die Überlappung erst zu einer Mechanik** — aus 8–15 % werden
+35–39 % der Stiche mit zwei klingenden Haltungen, und die grüne Geometrie schlägt durch (×Form 2,59 → 5,77 im
+Block-Build). Alle vier gleichzeitig bleiben auch in B die Ausnahme (0,4–1,6 %).
+
+Der Schalter steht auf A (Dokumentenstand). **Welche gilt, ist eine Owner-Entscheidung**, und sie ist die
+größte offene Frage des Entwurfs — an ihr hängt, ob Mitklang, Verankerung und der ganze Tanz-Build überhaupt
+etwas zu tun haben.
+
+---
+
 ## 7 · Verworfen — und warum
 
 | Verworfen | Grund |
