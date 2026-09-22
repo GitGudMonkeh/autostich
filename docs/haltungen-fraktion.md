@@ -691,15 +691,24 @@ Stand gegen das Feld, mono, 30 Seeds:
 
 | Fraktion | Median | p90 ÷ Median |
 | --- | --- | --- |
-| Eis | 133.246.931 | 8,2 |
+| Eis | 133.157.074 | 8,2 |
 | Blitz | 104.205.158 | 3,0 |
-| Pflanze | 43.320.034 | 15,3 |
+| Pflanze | 43.739.781 | 7,5 |
 | Feuer | 19.581.167 | 5,4 |
-| **Prisma** | **10.077.052** | **1,9** |
+| **Prisma** | **10.077.052** | **1,8** |
 
 Der Abstand zu Feuer ist von Faktor 2,0 auf 1,9 geschrumpft — die Lücke ist also **nicht** geschlossen.
 **Der Satz je Stufe (0,02) ist der Haupt-Regler dafür** und bewusst niedrig gewählt; er gehört gemessen, nicht
 geschätzt.
+
+**Zur Herkunft dieser Zahlen:** alle fünf Zeilen sind in derselben Sitzung, mit demselben Skript, denselben
+Seeds (1–30) und derselben Policy gerechnet — keine übernommenen Altwerte. Die vier oberen sind gegen
+`origin/exp` gegengeprüft und dort **bitgleich**; die Fraktion ist also vollständig hinter `activeArchetypes`
+gekapselt. Der Vergleich ist damit intern gültig.
+**Er ist aber nicht mit den Zahlen in `skill-rework.md` §8 vergleichbar**: das sind Duell-Läufe in gemischter
+Welt (einstellige Millionen), diese hier sind Mono-Läufe mit der Fraktion allein im Angebot und 13 gehaltenen
+Skills. Und es ist die ZUFÄLLIGE Fraktions-Policy, nicht der kompetente Spieler — der liegt bei Prisma rund
+7 % darüber (§6.9).
 
 ---
 

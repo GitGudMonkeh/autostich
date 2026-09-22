@@ -544,9 +544,14 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     }
     if (st.anchor) for (const k of anchorPositions(st, n)) extraOverlap[k] += 1;
   }
+  /* Die Basis-Anzahl bleibt bei 4 GEDECKELT, wie seit #95 — es gibt vier Formationstypen, und Wurzelgeflecht
+     kann eine Karte jeder Formation ihres Segments beitreten lassen, also mehr als vier Einträge erzeugen. Nur
+     die Haltungs-Stufen (Abfärben, Doppelbindung, Verankerung) legen darüber hinaus: sie sind laut §5.4 der
+     einzige Weg über die ×3-Decke. Ohne Haltungen ist `extraOverlap` überall 0 und diese Zeile rechnet exakt
+     wie vorher. */
   for (let k = 0; k < n; k++) {
     const p = out[k];
-    const c = p.formations.length + extraOverlap[k];
+    const c = Math.min(p.formations.length, 4) + extraOverlap[k];
     if (c >= 2) p.mult *= overlapFactor(c) + overlapPlus;
   }
 
