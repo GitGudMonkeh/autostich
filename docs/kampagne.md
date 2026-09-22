@@ -49,6 +49,9 @@ Läufe reicht, ohne dauerhaft zu sein.
 - **Die Schwellen-Leiter für Ebene 1: 5 / 10 / 15 / 25 Mio.** Ausdrücklich **Startwerte** — sie
   werden im Playtest außerhalb der Sim nachgezogen, nicht an der Messung festgeschrieben.
 - **Drei Rewards liegen aus, einer wird genommen.** Raritäten: die vier üblichen plus Legendär.
+- **Jeder Reward ist nur einmal wählbar**, unabhängig von der Rarität. Hältst du ihn schon, kann er
+  nur noch als **Upgrade auf eine höhere Stufe** erscheinen — die niedrigere wird dabei ersetzt,
+  nicht gestapelt.
 - **Die Raritätsformel ist eine Stufenleiter** — je Auftrag +1, ab 2× Schwelle +1, ab 3× Schwelle +2.
   Ausgeschrieben in §10.
 
@@ -311,9 +314,12 @@ Sonde: `N=24 node sim/probes/kampagne-hebel.mjs` (gepaart, je Variante dieselben
 
 ## 9. Der Reward-Katalog (Entwurf, Owner 2026-09-22)
 
-**Sechs Achsen, je drei Rewards, dazu fünf Legendäre.** Vom Owner gesetzt ist die Auswahl der
-Achsen. **Die Werte unten sind ein erster Satz, kein Beschluss** — sie sind da, damit der Owner sie
+**Sechs Achsen, 16 Rewards, dazu fünf Legendäre.** Vom Owner gesetzt ist die Auswahl der Achsen.
+**Die Werte unten sind ein erster Satz, kein Beschluss** — sie sind da, damit der Owner sie
 überschreiben kann, nicht damit sie stehenbleiben.
+
+Vier Achsen tragen drei Stücke, **Struktur und Kampagnen-Ebene nur zwei** — *Ratsbrief* und
+*Gnadengesuch* sind gestrichen, die Plätze sind frei.
 
 Zwei Achsen aus dem ersten Wurf sind **verworfen**: „Angebot und Auswahl" (mehr Skills zur Wahl,
 höherer Raritätsboden) und „Start-Vorbelegung" (Lauf beginnt mit Skill/Gebäude/Serie).
@@ -344,7 +350,7 @@ Stufen; die Regel-Ausnahmen und die Kampagnen-Stücke sind dafür zu binär (§9
 | Reward | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Sold** · jeder gewonnene Stich bringt mehr Grundpunkte, bevor die Multiplikatoren greifen | +100 | +200 | +350 | +600 |
-| **Feldzeichen** · wähle beim Nehmen eine Achse — Serie, Perks, Formation, Kern, Nachhall, Gebäude, Crit, Feuer oder Pflanze. Sie zahlt dauerhaft mehr | +10 % | +20 % | +35 % | +55 % |
+| **Feldzeichen** · eine **ausgewürfelte** Achse — Serie, Perks, Formation, Kern, Nachhall, Gebäude, Crit, Feuer oder Pflanze — zahlt dauerhaft mehr. Welche es ist, steht im Angebot | +10 % | +20 % | +35 % | +55 % |
 | **Steigbrief** · dein Score-Bonus wächst alle 10 Durchläufe. Am Ende eines Laufs steht er beim Fünffachen | +3 % / 10 D. (Ende +15 %) | +5 % (Ende +25 %) | +8 % (Ende +40 %) | +12 % (Ende +60 %) |
 
 Sold hilft dem schwachen Lauf (§8: verdoppelte Basispunkte bringen Feuer +53 %, Eis +7 %),
@@ -382,7 +388,9 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | --- | --- | --- | --- | --- |
 | **Lehen** · dein Baufeld hat mehr Platz (von 24 Zellen) | +2 | +4 | +6 | +10 |
 | **Fahnenrecht** · du hast in jeder Aufstellphase mehr Energie (von 4) | +1 | +2 | +3 | +4 |
-| **Ratsbrief** · du bekommst zusätzliche Entscheidungsphasen im Lauf | +1 | +2 | +3 | +4 |
+
+> **Diese Achse hat nur zwei Stücke.** *Ratsbrief* (zusätzliche Entscheidungsphasen) ist am
+> 2026-09-22 gestrichen worden; ein dritter Platz ist frei.
 
 ### 7 · Regel-Ausnahmen
 
@@ -400,9 +408,12 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 
 | Reward | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Gnadengesuch** · ein verlorener Lauf wirft dich nicht aus der Kampagne | — | 1× je Kampagne | 2× | 3× |
 | **Fürsprache** · die Schwelle des nächsten Laufs sinkt | −10 % | −20 % | −30 % | −50 % |
 | **Doppelwahl** · nach einem erfüllten Auftrag wählst du zwei Beutestücke statt einem | beim nächsten Auftrag | jeden Auftrag **dieses** Laufs | dauerhaft | dauerhaft, und das zweite Stück eine Stufe höher |
+
+> **Auch hier nur zwei Stücke.** *Gnadengesuch* (verlorenen Lauf wiederholen) ist am 2026-09-22
+> gestrichen worden; ein dritter Platz ist frei. Damit federt **nichts** im Katalog einen verlorenen
+> Lauf mehr ab — die Kampagne ist wieder kompromisslos Alles-oder-nichts.
 
 ### 8 · Kampagnen-Ebene
 
@@ -437,8 +448,7 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
    geknüpft, der Rest ist Augenmaß gegen die Basiswerte. Drei Stellen sind auffällig heiß:
    *Waffenrecht/Zehnt* (+1 ist schon ~10 Punkte Siegquote), *Pfründe* (+1 ist +50 % Einkommen) und
    *Gnadengesuch* (schon 1× nimmt der Kampagne ihre Schärfe).
-2. **Drei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Ratsbrief*
-   (zusätzliche Entscheidungsphasen — `DECISION_SCHEDULE`/`buildSchedule`), *Bauherrschaft*
+2. **Zwei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Bauherrschaft*
    (setzt voraus, dass es legendäre Gebäude als Rarität überhaupt gibt) und *Lückenschluss*
    (Formationen werden heute als exaktes Muster erkannt — Farbblock, Wiederholung, Treppe,
    Wechsel; eine Toleranz von X falschen Karten muss der Erkenner erst tragen können).
@@ -451,9 +461,10 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
    Stücke, die schon heute mit „Rewards sind die einzige Power-Achse" kollidieren. Zusammen
    genommen ist die Auftrags-Beute damit der zweite große Power-Kanal der Kampagne, ob gewollt
    oder nicht.
-6. **Nichts im Katalog federt einen verlorenen Lauf ab außer *Gnadengesuch*.** Das ist eine
-   bewusste Lage, keine Lücke — nur sollte sie bekannt sein, wenn die Raritätsstufen verteilt
-   werden.
+6. **Nichts im Katalog federt einen verlorenen Lauf mehr ab.** Seit *Gnadengesuch* gestrichen ist,
+   gibt jedes Stück Power und keines Sicherheit. Die Kampagne trägt damit ohne Rewards 14 % Erfolg
+   und bei ×1,25 je Reward 32 % (§7) — ein Lauf zu verlieren kostet immer alles.
+7. **Die zwei freien Plätze** auf Struktur und Kampagnen-Ebene.
 
 ---
 
@@ -522,6 +533,21 @@ Lauf nicht; für die Kampagne muss sie beim Laufende eingesammelt werden.
 **Ungemessen:** wie oft ein Spieler tatsächlich 0, 1 oder 2 Aufträge schafft. Ohne diese Verteilung
 ist nicht sagbar, wie häufig Episch und Legendär wirklich fallen — die Score-Tabelle oben deckt nur
 die eine Achse ab.
+
+### Jeder Reward nur einmal
+
+**Ein Reward, den du hältst, kommt nicht wieder — außer als Upgrade auf eine höhere Stufe**, und
+die ersetzt die niedrigere, statt sich zu stapeln (Owner, 2026-09-22).
+
+Das verhindert genau eine Sache: dreimal dasselbe Stück nehmen und eine einzige Achse ins Extrem
+treiben. Bei **drei Picks je Kampagne** (zu Beginn von Lauf 2, 3 und 4) und 16 Stücken im Katalog
+bindet die Regel sonst kaum — dieselbe Karte zweimal zu sehen ist ohnehin selten.
+
+**Die Folge, die beim Werte-Setzen auffallen wird:** ein Upgrade ist nur die **Differenz** wert. Wer
+*Sold* auf Selten hält (+200) und es auf Episch hebt (+600), gewinnt +400 — ein frisches
+Episch-Stück gäbe seinen vollen Wert. Ein Upgrade ist damit fast immer der schwächere Zug, außer der
+Sprung zwischen den Stufen ist groß. Wenn Upgrades sich attraktiv anfühlen sollen, muss entweder der
+Abstand zwischen den Raritätsstufen wachsen, oder das Upgrade muss addieren statt zu ersetzen.
 
 ### Offen an der Formel
 
