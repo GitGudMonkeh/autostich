@@ -1012,6 +1012,7 @@ export default {
   "app.restart.title": "Wirklich neustarten?",
   "app.restart": "Neustarten",
   "app.restart.help": "Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.",
+  "app.restart.help.campaign": "In der Kampagne wirft ein Neustart die ganze Ebene zurück: Es geht wieder bei Lauf 1 los, deine gehaltenen Rewards sind weg und die Bosse werden neu gezogen. Die Freischaltungen bleiben.",
 
   /* ---- Steuerleiste (Controls) ---- */
   "controls.options": "⚙ Optionen",

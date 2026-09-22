@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import * as CP from "../src/game/campaign.js";
 import { mio } from "../src/ui/campaignText.js";
 import { CampaignTally, CampaignPick, CampaignWon, CampaignLost, CampaignTile, CampaignOverview } from "../src/ui/CampaignScreens.jsx";
+import { RestartConfirm } from "../src/ui/RunConfirm.jsx"; // die Warnung vor dem Kampagnen-Neustart
 
 /* ============================================================================
    Kampagnen-UI — was der Spieler LIEST, nicht welcher Schlüssel gesetzt wurde.
@@ -219,10 +220,25 @@ describe("Kampagne · Verdrahtung", () => {
     expect(zeile).toContain("unlocked");
   });
 
-  it("nimmt die Kette beim Neustart mit", () => {
+  it("wirft beim Neustart die ganze Ebene zurück, statt denselben Lauf zu wiederholen", () => {
+    /* Owner 2026-09-22. Würde der Neustart dieselbe Kette weiterreichen, ließe sich ein Lauf beliebig
+       oft neu beginnen, bis die Schwelle fällt — die Kette hätte keinen Einsatz mehr. */
     const i = app.indexOf("function restartRun()");
-    expect(i).toBeGreaterThan(-1);
-    expect(app.slice(i, app.indexOf("}", app.indexOf("launchRun(", i)))).toContain("campaign:");
+    expect(i, "restartRun nicht gefunden").toBeGreaterThan(-1);
+    const rumpf = app.slice(i, app.indexOf("\n  }", i));
+    expect(rumpf).toContain("CP.startCampaign");
+    expect(rumpf, "die alte Kette darf nicht weitergereicht werden").not.toContain("campaign: state.campaign");
+    expect(rumpf).toContain("campaign: camp");
+  });
+
+  it("warnt vorher, dass die Ebene von vorne beginnt", () => {
+    expect(app).toContain("campaign={!!state.campaign}");
+    const ohne = txt(html(RestartConfirm, { onKeepPlaying: () => {}, onRestart: () => {} }));
+    const mit = txt(html(RestartConfirm, { onKeepPlaying: () => {}, onRestart: () => {}, campaign: true }));
+    expect(mit).toContain("wieder bei Lauf 1");
+    expect(mit).toContain("Freischaltungen bleiben");
+    expect(ohne, "der normale Lauf darf die Kampagnen-Warnung nicht bekommen").not.toContain("wieder bei Lauf 1");
+    expect(ohne).toContain("Der aktuelle Lauf wird verworfen");
   });
 
   it("hängt die Panels an campScreen und nicht an state.phase", () => {

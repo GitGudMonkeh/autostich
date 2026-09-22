@@ -536,6 +536,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "app.keepPlaying.sub","i18n","Zurück ins Spiel, nichts passiert.","回到游戏，什么也不会发生。","Back into the game, nothing happens.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "app.restart","i18n","Neustarten","重新开始","Restart","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "app.restart.help","i18n","Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.","当前这一局会被放弃，新的一局立即开始。此操作无法撤销。","The current run is discarded and a new one starts immediately. This cannot be undone.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"app.restart.help.campaign","i18n","In der Kampagne wirft ein Neustart die ganze Ebene zurück: Es geht wieder bei Lauf 1 los, deine gehaltenen Rewards sind weg und die Bosse werden neu gezogen. Die Freischaltungen bleiben.","","In a campaign a restart throws back the whole tier: you begin at run 1 again, the rewards you hold are gone and the bosses are drawn anew. Your unlocks stay.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "app.restart.title","i18n","Wirklich neustarten?","确定要重新开始吗？","Really restart?","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.after","i18n","Danach:","之后：","After:","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.back","i18n","← Zurück","← 返回","← Back","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

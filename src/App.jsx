@@ -999,10 +999,15 @@ function AutostichGame() {
     // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
     // Zwischenaufgaben: „Neustart" muss den Auftragslauf MITNEHMEN. Ohne das Flag fiel der neue Lauf
     // stumm auf den normalen zurück und das Angebot blieb aus.
-    // Kampagne: „Neustart" nimmt die Kette MIT. Ohne das Feld fiele der neue Lauf still auf einen
-    // normalen zurück — derselbe Fehler, den die Aufträge daneben schon einmal hatten.
+    /* Kampagne: „Neustart" wirft die ganze EBENE zurück, nicht den Lauf (Owner 2026-09-22). Würde er
+       denselben Lauf wiederholen, könnte man ihn beliebig oft neu beginnen, bis die Schwelle fällt —
+       die Kette hätte dann keinen Einsatz mehr. Also eine frische Kette: Lauf 1, neu gezogene Bosse,
+       keine gehaltenen Rewards. Die Freischaltungen bleiben, sie sind die Meta-Progression.
+       RestartConfirm sagt das vorher; hier steht, dass es auch passiert. */
+    const camp = state.campaign ? CP.startCampaign(Math.random, campUnlocked) : null;
+    if (camp) { setCampaign(camp); saveCampaign(camp); setCampOffers([]); setCampUnlock(null); }
     launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled,
-      campaign: state.campaign || null });
+      campaign: camp });
   }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
@@ -1529,7 +1534,7 @@ function AutostichGame() {
 
       {/* Komfort: Neustart-Rückfrage — der laufende Lauf ist noch nicht gewertet; kein Ein-Tap-Verlust bei Fettfingern. */}
       {confirmRestart && (
-        <RestartConfirm onKeepPlaying={() => setConfirmRestart(false)}
+        <RestartConfirm onKeepPlaying={() => setConfirmRestart(false)} campaign={!!state.campaign}
           onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
 

@@ -1017,6 +1017,7 @@ export default {
   "app.restart.title": "Really restart?",
   "app.restart": "Restart",
   "app.restart.help": "The current run is discarded and a new one starts immediately. This cannot be undone.",
+  "app.restart.help.campaign": "In a campaign a restart throws back the whole tier: you begin at run 1 again, the rewards you hold are gone and the bosses are drawn anew. Your unlocks stay.",
   "app.tutrun.title": "Start a tutorial run?",
   "app.tutrun.help": "The current run is discarded. The new run guides you with all tutorial tips again.",
 
