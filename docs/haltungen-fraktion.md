@@ -582,12 +582,49 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 ## 10 · Nächster Schritt
 
-**Alle 15 Skills stehen, mit Startwerten je Stufe, dazu die vier Grundwerte der Passive.** Der Plan
-des Owners von hier aus:
+**Alle 15 Skills stehen, mit Startwerten je Stufe, dazu die vier Grundwerte der Passive.** Keine
+Regelfrage blockiert mehr (§8). Der Plan des Owners von hier aus:
 
-1. **Die drei Regelfragen** aus §8 beantworten — sie blockieren den Sim-Bau.
-2. **Die Sim auf das neue Deck bauen und messen**, gegen die bestehenden vier.
-3. **Erst mit diesen Zahlen die drei Legendären entwerfen** — bewusst danach, damit sie sich an einem
+1. **Die Sim auf das neue Deck bauen und messen**, gegen die bestehenden vier.
+2. **Erst mit diesen Zahlen die drei Legendären entwerfen** — bewusst danach, damit sie sich an einem
    gemessenen Stand messen und nicht an einer Schätzung.
 
 Die Zahlen in §5 sind Startwerte zum Bauen, nicht zum Verteidigen.
+
+### 10.1 · Work-Order für Schritt 1
+
+Für eine frische Session zum Kopieren. Branch und Worktree vergibt der Owner beim Start
+(`AGENTS.md` — *Session placement*). Der Auftrag steht deutsch, weil er auf die deutsche
+Design-Sprache dieses Dokuments zeigt; Code und Commits bleiben englisch.
+
+> **Auftrag.** Die fünfte Fraktion („Haltungen") so weit implementieren, dass die Sim sie messen
+> kann — gegen die bestehenden vier. **Noch keine Legendären**, die kommen nach den ersten Zahlen.
+>
+> **Zuerst lesen:** `AGENTS.md` · dieses Dokument als vollständige Spezifikation ·
+> `docs/skill-rework.md` §1 für das Stufen-Raster, dem die Tabellen in §5 folgen.
+>
+> **Umfang.** Fraktionsmodul nach Vorbild `src/game/factions/*.js` · Stufentabellen in `skills.js`
+> wie BLITZ/FEUER/EIS/PFLANZE · Haltungs-Substate (vier Farbzähler auf der **Grundfarbe**, aktive
+> Haltung, Restdauer je klingender Haltung) · Anbindung der vier Passive in `resolveTrick` ·
+> Sim-Anbindung, mono und gemischt messbar · Tests im Stil der bestehenden Fraktions-Tests.
+>
+> **Code-Identifier:** `stance`. Der spielersichtbare Fraktionsname ist **nicht** entschieden — kein
+> Name in Spielertexte, und „Echo" ist belegt (§8.1).
+>
+> **Ausdrücklich nicht im Umfang.** Die drei Legendären · ein `deckUnlock`-Knoten in
+> `progression.js` (Migrationsfalle, §9 — die Fraktion bleibt vorerst über `unlockedArchetypes`
+> erreichbar, wie Eis es war) · UI-Politur, den Grundfarben-Punkt (§2.2) nur so weit, wie die
+> Messung ihn braucht.
+>
+> **Nähte, die schon da sind:** die Tabelle in §9 — nichts davon neu bauen. Der teure Eingriff ist
+> `computeFormations`, ebenfalls §9; die Sim spielt Millionen Stiche, Performance im Blick behalten.
+>
+> **Hazard:** die Source-Text-Ratchet-Tests aus `AGENTS.md`. Neue Skills und Registry-Einträge lösen
+> dort Guards aus. Guards nicht aufweichen, um grün zu werden.
+>
+> **Gates:** `npm test` · `npm run lint -- --max-warnings=0` · `npm run build` · `npm run gen:db`.
+> Dazu `npm run loc:export`, sobald Spielertexte dazukommen, und der `VITE_PREVIEW`-Build, falls
+> preview-gegateter Code berührt wird.
+>
+> **Ergebnis:** ein Sim-Lauf, der die Fraktion mono und in Paaren gegen die bestehenden vier stellt,
+> im Format von `skill-rework.md` §8, damit die Zahlen vergleichbar sind.
