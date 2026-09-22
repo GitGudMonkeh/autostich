@@ -410,7 +410,7 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | --- | --- | --- |
 | **Durchmarsch** Siege in einem Durchlauf | Spitze | 25 · 35 · **5 Durchläufe in Folge mit allen 40 Stichen** |
 | **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 3 · 6 · 8 + Zusatz |
-| **Gedränge** gebaute Formationen | Spitze | 25 · 30 · 40 + Zusatz |
+| **Gedränge** Formationen je Position, summiert über das Brett | Spitze | 40 · 50 · 70 + Zusatz |
 | **Reinheit** Positionen in einem gewürfelten Typ | Spitze | siehe unten |
 | **Langbau** längste Formation | Spitze | — · 10 · 15 |
 | **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 40 · 40 + Zusatz |
@@ -422,6 +422,43 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | **Aufmarsch** Kampfwert-Vorsprung in einem Durchlauf | Spitze | 60 · 120 · 250 |
 | **Quartier** volle Baufeld-Reihen derselben Kategorie | Zustand | 1 · 3 · 5 |
 | **Säckel** Münzen gehalten | Zustand | 60 · 80 · 120 |
+
+**Gesetzt (Owner, 2026-09-22): Gedränge zählt Formationen JE POSITION, summiert über alle 40** — die
+Paare aus Position × Formation (Münz-Doku §2.5), nicht mehr die distinkten Formationen. Eine Position
+in drei Formationen zählt drei. Grund: offene Segmentgrenzen (E_SEGMENT, Spalier, Pfeiler) verschmelzen
+zwei Läufe zu einem, und ein Bau mit offenen Grenzen hatte auf dem distinkten Maß **weniger**
+Formationen als derselbe Bau mit geschlossenen. Das Paar-Maß ist die Summe der Formationslängen und
+davon unabhängig. Leiter 40 · 50 · 70; die alte 25 · 30 · 40 stand auf dem distinkten Maß und ist
+damit nicht vergleichbar (Faktor rund 3,3, die mittlere Formationslänge).
+
+Nachgemessen (2026-09-22, dieselbe Sonde wie in §4.4: beste Aufstellung je Fenster, 30 Seeds je
+Spielweise, `factionPolicy`; die letzte Spalte ist das alte distinkte Maß zur Kontrolle und trifft
+die Messung von 2026-09-15):
+
+| Spielweise | Fenster | p25 | p50 | p75 | p90 | max | erreicht 40 / 50 / 70 | 70 + Zusatz | distinkt p50 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| naiv (kein Umbau) | F1 | 26 | 34 | 40 | 47 | 75 | 27 % / 7 % / 3 % | 0 % | 11 |
+| naiv (kein Umbau) | F2 | 33 | 49 | 56 | 60 | 74 | 67 % / 47 % / 7 % | 0 % | 14 |
+| Blitz | F1 | 51 | 57 | 59 | 70 | 84 | 100 % / 80 % / 13 % | 0 % | 17 |
+| Blitz | F2 | 58 | 65 | 74 | 88 | 93 | 100 % / 100 % / 33 % | 0 % | 19 |
+| Feuer | F1 | 50 | 57 | 60 | 73 | 85 | 100 % / 87 % / 13 % | 0 % | 17 |
+| Feuer | F2 | 56 | 62 | 73 | 82 | 87 | 100 % / 97 % / 30 % | 0 % | 19 |
+| Eis | F1 | 50 | 57 | 63 | 71 | 74 | 100 % / 80 % / 10 % | 0 % | 17 |
+| Eis | F2 | 57 | 64 | 68 | 83 | 101 | 100 % / 87 % / 23 % | 0 % | 19 |
+| Pflanze | F1 | 55 | 61 | 70 | 82 | 85 | 100 % / 97 % / 27 % | 0 % | 18 |
+| Pflanze | F2 | 86 | 99 | 115 | 131 | 151 | 100 % / 100 % / 100 % | 17 % | 24 |
+
+Zwei Befunde daraus, beide zur Kenntnis, die Leiter ist Owner-Wert:
+
+- **Leicht (40) und Mittel (50) trifft die Sim mit jeder Fraktion fast immer** (p25 liegt bei 50 und
+  darüber); nur der naive Spieler ohne Umbau bleibt in Fenster 1 darunter. Schwer (70) liegt bei 10
+  bis 33 %, bei Pflanze in Fenster 2 (Spalier, Grün) bei 100 %. Derselbe Vorbehalt wie bei allen
+  Messungen dieser Reihe: die Sim spielt auf Score, nicht auf Formationsanzahl.
+- **Offen (Owner): der Zusatz auf Schwer.** „Jede Position in mindestens 2 Formationen" bedeutet auf
+  dem Paar-Maß mindestens **80** Paare — der Zusatz erfüllt damit die Sprosse 70 von selbst, und die
+  Zahl ist auf Schwer tot. Entweder entfällt der Zusatz für Gedränge (das Paar-Maß misst die Dichte
+  schon), oder Schwer steigt über 80, etwa auf 100. Bis zur Entscheidung bleibt der Zusatz stehen,
+  wie er war; die Sim erreicht ihn in einem Fenster von sechzig.
 
 ### 4.0a Die Zusatzbedingung
 
@@ -513,7 +550,7 @@ Gedankenstrich, kein Selbstbezug.
 | --- | --- |
 | Durchmarsch | Gewinne in einem Durchlauf X Stiche. Auf Schwer: X Durchläufe in Folge ohne einen verlorenen Stich. |
 | Sperrfeuer | Gewinne in einem Durchlauf alle fünf Stiche in X Segmenten. |
-| Gedränge | Baue X Formationen in einer Aufstellung. |
+| Gedränge | Bringe alle Positionen zusammen auf X Formationen. (Wortlaut ist Vorschlag, 2026-09-22; das Maß dahinter ist gesetzt.) |
 | Reinheit | Baue X Formationen vom Typ [Typ] in einer Aufstellung. |
 | Langbau | Baue eine Formation aus X Karten. |
 | Vollbrett | Bringe X der 40 Positionen in mindestens eine Formation. |
@@ -649,7 +686,7 @@ Die Anzeigeform folgt der Art des Zählers:
 | --- | --- |
 | Durchmarsch | Siege im laufenden Durchlauf, daneben der beste Durchlauf bisher |
 | Sperrfeuer | volle Segmente im laufenden Durchlauf, daneben der beste bisher |
-| Gedränge | Formationen der aktuellen Aufstellung, daneben die beste bisher |
+| Gedränge | Formationen je Position der aktuellen Aufstellung, summiert, daneben die beste bisher |
 | Reinheit | dieselbe Zahl, auf den gewürfelten Typ gefiltert |
 | Langbau | längste Formation der aktuellen Aufstellung, daneben die beste bisher |
 | Vollbrett | belegte Positionen der aktuellen Aufstellung, daneben die beste bisher |
@@ -793,6 +830,9 @@ ganzen Datensatz kein Lauf.
 Normal (4) gelingt in jedem zweiten Durchlauf von allein, Selten (5) einmal je Fenster, Sehr selten (6)
 nur bei Feuer im p90, Episch (7) in Fenster 1 bei keiner Spielweise. **Pflanze liegt mit
 Grundfarben-Zählung exakt auf dem naiven Spieler**, die Regel aus §4.1 funktioniert also.
+
+> **SUPERSEDED (2026-09-22):** die Messung und die Leiter darunter stehen auf dem **distinkten** Maß.
+> Gedränge zählt seither Paare, Leiter und Messung dazu in §4.
 
 **Gedränge, nachgemessen** (2026-09-15, `countBuiltFormations` an echten Läufen, bester Durchlauf je
 Fenster, 30 Seeds je Spielweise). Die frühere Zahl fiel unter die Sonden-Korrektur in §2.2 und ist
@@ -1309,6 +1349,9 @@ vierte Stufe einer Familie darf über ihr Thema hinausgreifen, und die beiden bl
 weil Veredelung jede Skill-Phase des Laufs anhebt und Freibrief IV nur die Türen zählt, die es
 selbst öffnet.
 
+**Gesetzt (Owner, 2026-09-22): Gedränge zählt Formationen je Position, summiert** — segmentunabhängig,
+Leiter 40 · 50 · 70. Befund, Messung und der offene Punkt zum Zusatz auf Schwer stehen in §4.
+
 ---
 
 ## 11. Nicht in diesem Umfang
@@ -1350,7 +1393,7 @@ Die Zähler der vierzehn Aufgaben, alle aus vorhandenem State:
 | --- | --- |
 | Durchmarsch | Siege je Durchlauf aus dem `wins`-Verlauf |
 | Sperrfeuer | Stichergebnisse je Fünferblock, `SEGMENT_SIZE` in `formations.js` |
-| Gedränge | `countBuiltFormations(state.formations)`, dieselbe Zahl, die die Münz-Einnahme zählt |
+| Gedränge | `formationPairs(state.formations)`: Formationen je Position, summiert — die Paare aus der Münz-Doku §2.5, nicht die distinkte Zahl der Münz-Einnahme |
 | Reinheit | dieselbe Funktion, gefiltert auf einen Typ aus `FORMATION_TYPES` |
 | Langbau | Länge des längsten Laufs, `members.length` in `computeFormations` |
 | Vollbrett | Positionen mit mindestens einem Eintrag in `formations` |

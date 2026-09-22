@@ -1566,7 +1566,8 @@ export default {
   "contract.task.sperrfeuer.name": "Sperrfeuer",
   "contract.task.sperrfeuer.text": "Gewinne in einem Durchlauf alle fünf Stiche in {n} Segmenten.",
   "contract.task.gedraenge.name": "Gedränge",
-  "contract.task.gedraenge.text": "Baue {n} Formationen.",
+  // Formationen je Position, summiert: eine Position in drei Formationen zählt drei (Owner, 2026-09-22).
+  "contract.task.gedraenge.text": "Bringe alle Positionen zusammen auf {n} Formationen.",
   "contract.task.reinheit.name": "Reinheit",
   "contract.task.reinheit.text": "Bringe {n} Positionen in eine Formation vom Typ {variant}.",
   "contract.task.langbau.name": "Langbau",

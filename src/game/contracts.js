@@ -9,7 +9,7 @@
    the engine already keeps, and returns the patch a piece of loot applies. The reducer owns the state. */
 
 import * as C from "./constants.js";
-import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formations.js";
+import { FORMATION_TYPES, SEGMENT_SIZE } from "./formations.js";
 import { TIER_META } from "./rarity.js";
 import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER,
          CATEGORIES as ARCH_CATEGORIES } from "./architect.js";
@@ -73,7 +73,10 @@ export const TASKS = [
     measure: { schwer: "perfectRun" } },
   { id: "sperrfeuer",   kind: "spitze",  rungs: [3, 6, 8],
     extra: { schwer: { positions: 40, min: 2 } } },
-  { id: "gedraenge",    kind: "spitze",  rungs: [25, 30, 40],
+  /* Gedränge zählt seit 2026-09-22 (Owner) Formationen JE POSITION, summiert über das Brett — die
+     Paare aus Position × Formation, nicht mehr die distinkten Formationen. Offene Segmentgrenzen
+     verschmelzen Läufe und drückten die distinkte Zahl; das Paar-Maß ist davon unabhängig. */
+  { id: "gedraenge",    kind: "spitze",  rungs: [40, 50, 70],
     extra: { schwer: { positions: 40, min: 2 } } },
   /* Reinheit zählt KARTEN in einer Formation des gewürfelten Typs, nicht die Formationen selbst
      (Owner, 2026-09-15). Distinkte Läufe eines Typs reichen gemessen von 2 bis 8 — neun mögliche
@@ -353,6 +356,17 @@ function longestFormation(perPosition) {
   return max;
 }
 
+/* Formationen je Position, summiert über das Brett: eine Position in drei Formationen zählt drei.
+   Das ist die Summe der Formationslängen, und sie ändert sich nicht, wenn eine offene Segmentgrenze
+   zwei Läufe zu einem verschmilzt. */
+export function formationPairs(perPosition) {
+  let n = 0;
+  for (const p of perPosition || []) {
+    for (const f of p.formations || []) if (FORMATION_TYPES.includes(f.type)) n += 1;
+  }
+  return n;
+}
+
 /* Positions carrying at least `min` distinct real formations. */
 function positionsWith(perPosition, min) {
   let n = 0;
@@ -416,7 +430,7 @@ export function readLive(state, contract) {
     case "durchmarsch":  return state.cycleWins || 0;
     case "perfectRun":   return tally.perfectRun || 0;
     case "sperrfeuer":   return tally.segments || 0;
-    case "gedraenge":    return countBuiltFormations(forms);
+    case "gedraenge":    return formationPairs(forms);
     case "reinheit":     return cardsInType(forms, contract.variantId);
     case "langbau":      return longestFormation(forms);
     case "vollbrett":    return positionsWith(forms, 1);
@@ -582,7 +596,7 @@ export function tallyCycleEnd(tally, state, contract = null) {
   keep("bestCycleWins", state.cycleWins || 0);
   keep("bestSegments", t.segments || 0);
   keep("bestRainbow", minSuitWins(t.suitWins));
-  keep("bestForms", countBuiltFormations(forms));
+  keep("bestForms", formationPairs(forms));
   keep("bestLong", longestFormation(forms));
   keep("bestCovered", positionsWith(forms, 1));
   keep("bestWoven", positionsWith(forms, 3));
