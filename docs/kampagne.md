@@ -597,8 +597,17 @@ werden.
 4. **Rarität „Sehr selten"**
 5. **Eis-Deck**
 
-> **Wodurch sie ausgelöst werden, ist offen** — XP-System oder „jeder gewonnene Lauf schaltet das
-> nächste frei". Wird gemeinsam entworfen; die Unterfragen stehen in §11 *Offen*.
+**Ausgelöst wird jede Freischaltung durch einen gewonnenen Lauf** — der nächste Eintrag der Liste
+öffnet sich, sobald ein Lauf seine Schwelle gerissen hat (Owner, 2026-09-22).
+
+**Freischaltungen sind permanent. Sie sind die Meta-Progression** und überleben eine verlorene
+Kampagne. Damit startet jeder Versuch stärker als der letzte — nötig, weil die Kette ohne Rewards
+nur 14 % trägt (§7) und ein neuer Spieler die ersten Kampagnen verlieren wird.
+
+Fünf Freischaltungen brauchen fünf gewonnene Läufe, also etwa anderthalb Kampagnen-Versuche. Auch
+ein gescheiterter Versuch bringt also sichtbaren Fortschritt.
+
+> Kein XP-System. Die Auslösestelle gibt es schon: der Lauf endet, die Schwelle ist gerissen.
 
 ### Die Bosse der Ebene 1
 
@@ -636,19 +645,34 @@ wächst der Pool auf fünf, damit gibt es echte Auswahl statt einer festen Reihe
 - **Im Spielpanel**, genau wie die Aufträge: Zwischenboss und Boss stehen dort und lassen sich für
   die Beschreibung anklicken.
 
-### Offen an Ebene 1
+### Die Oberflächen, die Ebene 1 braucht
 
-**Der Auslöser der Freischaltungen** — und damit zusammenhängend, ob Freischaltung und Reward im
-selben Moment kommen. Beides wird gemeinsam entworfen. Die Unterfragen, die jede Variante
-beantworten muss:
+Mockups aller acht: **https://claude.ai/artifact/DxrxDD3fAMUwWx5CsVhupU** (privat, mit der Palette
+aus `rarity.js` und `index.css` gebaut).
 
-1. **Überleben Freischaltungen eine verlorene Kampagne?** Wenn nicht, sieht ein neuer Spieler das
-   Eis-Deck praktisch nie — ohne Rewards trägt die Kette 14 % (§7). Wenn ja, ist es klassische
-   Meta-Progression: jeder Versuch startet stärker als der letzte.
-2. **Überleben sie den Sprung auf Ebene 2?**
-3. **Sieht der Spieler, was als Nächstes kommt?** Eine sichtbare Leiter macht aus fünf
-   Freischaltungen ein Ziel statt einer Überraschung.
-4. **Ein Panel oder zwei?** Reward und Freischaltung sitzen beide zwischen den Läufen.
+| # | Oberfläche | Vom Owner genannt |
+| --- | --- | --- |
+| 1 | **Startscreen** mit Kampagnen-Knopf neben „normaler Lauf" und „mit Aufträgen" | ja |
+| 2 | **Kampagnen-Übersicht** — wo stehe ich in den vier Läufen, welcher Boss kommt, was halte ich | nein |
+| 3 | **Lauf-Start-Panel** — Bossmechanik oben, darunter die Auftragswahl; ohne Aufträge nur der Bossblock | ja |
+| 4 | **Endscreen-Auswertung** — Hochzahl für Score und Aufträge, 2×/3×-Marken, resultierende Rarität | ja |
+| 5 | **Reward-Wahl** — drei liegen aus, einer wird genommen | ja |
+| 6 | **Freischaltung im Goldrahmen** zwischen den Läufen | ja |
+| 7 | **Kampagne verloren** — was bleibt, was weg ist | nein |
+| 8 | **Spielpanel-Leiste** — Boss, Endboss und gehaltene Rewards, je anklickbar | teilweise |
+
+**Zu den dreien, die nicht auf der Liste standen.** Ohne (2) ist der Kampagnen-Knopf ein Sprung ins
+Dunkle, sobald eine Kampagne mittendrin steht. (7) ist der Screen, den ein neuer Spieler **am
+häufigsten sieht** — ohne Rewards trägt die Kette 14 % (§7); er ist zweigeteilt gebaut, links im
+Goldrahmen die dauerhaften Freischaltungen, rechts abgeblendet die verlorenen Rewards, damit die
+Aussage „du bist weiter als vorher" lautet und nicht „alles umsonst". Und (8): der Owner nannte
+Boss und Zwischenboss im Spielpanel — die bis zu drei gehaltenen Rewards laufen aber genauso mit
+und brauchen dieselbe Behandlung wie heute die Beute.
+
+**Zwei Entwurfsentscheidungen im Mockup**, beide umkehrbar: Auswertung (4) und Reward-Wahl (5) sind
+**zwei** Screens, weil sonst Hochzählen und Auslage gleichzeitig in Bewegung wären. Und die
+2×/3×-Marken stehen von Anfang an auf der Score-Leiste, damit beim Hochzählen sichtbar ist, worauf
+es zuläuft.
 
 ---
 
