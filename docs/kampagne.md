@@ -46,6 +46,9 @@ Läufe reicht, ohne dauerhaft zu sein.
   neuen Freischaltungen und höherer Schwierigkeit. **Geplant wird jetzt nur Ebene 1.**
 - **Die Schwellen-Leiter für Ebene 1: 5 / 10 / 15 / 25 Mio.** Ausdrücklich **Startwerte** — sie
   werden im Playtest außerhalb der Sim nachgezogen, nicht an der Messung festgeschrieben.
+- **Drei Rewards liegen aus, einer wird genommen.** Raritäten: die vier üblichen plus Legendär.
+- **Die Raritätsformel ist eine Stufenleiter** — je Auftrag +1, ab 2× Schwelle +1, ab 3× Schwelle +2.
+  Ausgeschrieben in §10.
 
 ---
 
@@ -56,11 +59,12 @@ Läufe reicht, ohne dauerhaft zu sein.
    Bosse sind vom Owner bereits separat entworfen (2026-09-22). Für die Kampagne bleibt davon nur,
    dass der Boss der vierten Runde das Ende ist (§2). Randnotiz für den, der es baut: im heutigen
    Code gibt es noch keinen Boss — `grep -i boss src/` findet nur „Amboss" (Feuer-Schmiede).
-3. **Wie viele Rewards zur Wahl stehen.** Eins wird genommen — aber aus wie vielen? (Die Aufträge
-   legen drei aus; dieselbe Zahl wäre naheliegend, ist aber nicht gesetzt.)
-4. **Die Raritätsstufen der Rewards.** Dieselben vier plus Legendär wie sonst im Spiel, oder eigene?
-5. **Wie die zwei Eingänge zur Rarität verrechnet werden.** Addieren sie sich, ist einer ein Deckel,
-   gibt es eine Matrix? Und mit welchen Schwellen?
+3. ~~**Wie viele Rewards zur Wahl stehen.**~~ — **entschieden: drei liegen aus, einer wird
+   genommen** (§10).
+4. ~~**Die Raritätsstufen der Rewards.**~~ — **entschieden: die vier üblichen plus Legendär** (§10).
+5. ~~**Wie die zwei Eingänge zur Rarität verrechnet werden.**~~ — **entschieden: eine Stufenleiter**,
+   je Auftrag +1, ab 2× Schwelle +1, ab 3× Schwelle +2 (§10). Zwei Detailfragen stehen dort noch
+   offen.
 6. **Der Reward-Katalog.** Umfang, Achsen, Werte. — **Entwurf steht in §9**; offen sind dort nur noch Werte und Raritätsstufen.
 7. **Der Kollisionsfall aus §5** — gehört er dazu?
 
@@ -386,18 +390,80 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
 
 ---
 
-## 10. Der erste Raritäts-Eingang, nachgezählt
+## 10. Die Raritätsformel (Owner, 2026-09-22)
+
+**Drei Rewards liegen aus, einer wird genommen.** Raritäten: die vier üblichen plus Legendär.
+
+Die Rarität entsteht aus **Stufen**, und jeder Erfolg gibt eine Stufe:
+
+| Beitrag | Stufen |
+| --- | --- |
+| je erfüllter Auftrag (höchstens 2 je Lauf) | **+1** |
+| Endscore ≥ **2×** Schwelle | **+1** |
+| Endscore ≥ **3×** Schwelle | **+2** (statt +1, nicht zusätzlich) |
+
+| Summe | Rarität |
+| --- | --- |
+| 0 | Normal |
+| 1 | Selten |
+| 2 | Sehr selten |
+| 3 | Episch + Chance auf Legendär |
+| 4 | Legendär |
+
+Ausgeschrieben ist das eine saubere Diagonale — jeder Schritt auf einer der beiden Achsen ist genau
+eine Rarität:
+
+| | Score < 2× | Score ≥ 2× | Score ≥ 3× |
+| --- | --- | --- | --- |
+| **0 Aufträge** | Normal | Selten | Sehr selten |
+| **1 Auftrag** | Selten | Sehr selten | Episch |
+| **2 Aufträge** | Sehr selten | Episch | **Legendär** |
+
+**Was die Formel dadurch leistet.** Der Score allein kommt nur bis *Sehr selten* — für Episch braucht
+es mindestens einen Auftrag, für Legendär beide Aufträge **und** den dreifachen Score. Damit sind die
+Aufträge nicht mehr wegzudrücken: in einem früheren Zuschnitt (3× gab +3) reichte ein starker Lauf
+allein für die Spitze, und der Auftrags-Eingang schaltete sich bei genau den Spielern ab, die ihn am
+ehesten erfüllen.
+
+### Was der Score-Eingang tatsächlich ausschüttet
+
+Aus den 200 gemessenen Läufen (§6), jeweils **unter der Bedingung, dass die Schwelle gerissen wurde**
+— ohne Kampagnen-Rewards, also die Untergrenze:
+
+| | Schwelle | erreicht 2× | erreicht 3× |
+| --- | --- | --- | --- |
+| Lauf 1 | 5 Mio | 74 % | 60 % |
+| Lauf 2 | 10 Mio | 64 % | 43 % |
+| Lauf 3 | 15 Mio | 53 % | 35 % |
+| Lauf 4 | 25 Mio | 47 % | 29 % |
+
+**Der Score-Eingang ist in Lauf 1 am großzügigsten und in Lauf 4 am knausrigsten**, weil die Leiter
+um Faktor 5 steigt und die Spielerstärke nicht. Seit 3× nur noch +2 gibt, bleibt der Effekt auf die
+unteren Stufen beschränkt: er verschiebt Normal/Selten/Sehr selten, aber die Spitze hängt an den
+Aufträgen und die werden nicht leichter oder schwerer, wenn die Schwelle steigt.
+
+### Der Auftrags-Eingang, nachgezählt
 
 **Aufträge je Lauf: höchstens zwei.** `contracts.js` hat zwei Fenster (D1–16, D17–32), je einen
-Auftrag. Über eine Kampagne von vier Läufen sind also **höchstens 8** erfüllte Aufträge möglich —
-und beim ersten Reward (nach Lauf 1) höchstens **2**.
-
-Daraus folgt eine Kante, die beim Entwurf der Raritätsformel auffallen wird: **der erste Reward kann
-über diesen Eingang nie hoch sein.** Wer will, dass schon der erste Reward legendär werden kann, muss
-das über den zweiten Eingang (Score über Schwelle) erlauben oder die Formel anders bauen.
+Auftrag. Über eine Kampagne von vier Läufen sind also **höchstens 8** erfüllte Aufträge möglich.
+Zwei je Lauf ist genau die Zahl, die die Formel oben als Maximum ansetzt — die Leiter ist also
+ausgereizt, nicht gedeckelt.
 
 Gezählt wird `state.contracts.done` — die Liste der erfüllten Aufgaben-Ids. Sie überlebt heute den
 Lauf nicht; für die Kampagne muss sie beim Laufende eingesammelt werden.
+
+**Ungemessen:** wie oft ein Spieler tatsächlich 0, 1 oder 2 Aufträge schafft. Ohne diese Verteilung
+ist nicht sagbar, wie häufig Episch und Legendär wirklich fallen — die Score-Tabelle oben deckt nur
+die eine Achse ab.
+
+### Offen an der Formel
+
+1. **Trägt Stufe 3 weiterhin eine „Chance auf Legendär"**, jetzt wo Stufe 4 das Legendäre garantiert?
+   Beides nebeneinander ist möglich, aber nicht gesetzt.
+2. **Was bedeutet „Rarität" für die Auslage?** Sind alle drei ausliegenden Rewards von dieser
+   Rarität, oder ist es die Rarität des besten Stücks und die anderen liegen darunter? Die
+   Auftrags-Beute löst dieselbe Frage über eine Bandbreite plus Garantie (`STEP_BAND`); dieselbe
+   Bauform wäre hier möglich, ist aber nicht entschieden.
 
 ---
 
