@@ -148,6 +148,25 @@ describe("Angebot", () => {
     expect(CP.rewardAvailable("sold", [])).toBe(true);
   });
 
+  it("hält zurück, was im Katalog steht, aber noch nicht wirkt", () => {
+    /* Ein gewähltes Stück, das nichts tut, ist schlimmer als eines, das es noch nicht gibt. Die
+       Prüfung läuft über die Flagge am Eintrag, nicht über eine Namensliste im Test: wird sie beim
+       Verdrahten gesetzt gelassen, fällt das hier auf, und wird sie entfernt, verschwindet auch
+       diese Erwartung von selbst mit dem leeren PENDING_REWARDS. */
+    for (const id of CP.PENDING_REWARDS) {
+      expect(CP.REWARD_BY_ID[id], `${id} steht in PENDING_REWARDS, aber nicht im Katalog`).toBeTruthy();
+      expect(CP.REWARD_BY_ID[id].pending, `${id}: Flagge fehlt am Eintrag`).toBe(true);
+    }
+    const offen = CP.REWARDS.filter((r) => r.pending).map((r) => r.id);
+    expect(offen, "eine Flagge ohne Eintrag in PENDING_REWARDS").toEqual(CP.PENDING_REWARDS);
+    for (const id of offen) {
+      expect(CP.rewardAvailable(id, CP.UNLOCK_IDS), `${id} ist noch im Angebot`).toBe(false);
+      expect(CP.canOffer({}, id, 3, CP.UNLOCK_IDS)).toBe(false);
+    }
+    // Der Gegen-Check zum Filter: ein fertiger Reward derselben Achse kommt weiterhin durch.
+    expect(CP.rewardAvailable("losentscheid", [])).toBe(true);
+  });
+
   it("legt ohne jede Freischaltung noch genug für eine volle Auslage aus", () => {
     const frei = CP.REWARDS.filter((r) => CP.rewardAvailable(r.id, []));
     expect(frei.length).toBeGreaterThanOrEqual(CP.OFFERS_PER_PICK);

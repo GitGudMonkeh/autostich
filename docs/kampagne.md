@@ -784,3 +784,62 @@ macht aus jeder Freischaltung ein Ereignis, ist aber die Lesart, die der Owner n
 seine eigene Zahl zurück. Kampagnen-Rewards sollten genauso gebaut werden — und die Lehre aus dem
 Beute-Audit (2026-09-17) gleich mit: **prüfen, dass sich eine ZAHL ändert, nicht dass ein Schlüssel
 geschrieben wird.** Veredelung schrieb ihren Schlüssel und wirkte trotzdem nie.
+
+---
+
+## 13. Stand der Umsetzung (2026-09-22)
+
+Ebene 1 ist gebaut. Was hier steht, ist der Ist-Zustand im Code — die Abschnitte davor bleiben der
+Entwurf, aus dem er hervorging, und werden nicht rückwirkend umgeschrieben.
+
+### Dateien
+
+| Was | Wo |
+| --- | --- |
+| Regeln, Katalog, Türen, Lauf-Konfiguration | `src/game/campaign.js` |
+| Persistenz (`as_campaign`, `profile.campaignRunsWon`) | `src/game/storage.js` |
+| Lauf-Konfiguration, Abrechnung am Laufende, Segment-Sperre | `src/game/reducer.js` |
+| Laufzeit-Effekte (Score, Kartenwerte, Serie, Münzen, Konter) | `src/game/engine.js` |
+| Namen, Wirkungstexte, Raritätsfarben | `src/ui/campaignText.js` |
+| Die sieben Panels + die Lauf-Kachel | `src/ui/CampaignScreens.jsx` |
+| Einstieg im Menü | `src/ui/StartScreen.jsx`, `.as-campaign-btn` in `src/index.css` |
+| Kette zwischen den Läufen | `src/App.jsx` (`campScreen`, `campaign`, `pendingCampaign`) |
+| Tests | `test/campaign.test.js` (Regeln), `test/campaign-ui.test.js` (Panels + Verdrahtung) |
+
+### Wo der Stand lebt
+
+Der **Kampagnen-Stand** (Ebene, Lauf, gezogene Bosse, gehaltene Rewards, Endscores) liegt in
+`App.jsx` und unter `as_campaign` — er überspannt vier Läufe, der Lauf-State endet mit jedem. Was
+der laufende Lauf braucht, reicht `START_RUN` als `campaign` hinein; der Reducer rechnet damit,
+hält ihn aber nicht.
+
+Die **Freischaltungen** sind die Meta-Progression und stehen als ZÄHLER im Profil
+(`campaignRunsWon`), nicht als Liste: `unlocksFor(n)` leitet sie ab. Sie überleben eine verlorene
+Kampagne — das ist ihr Zweck.
+
+### Drei Entscheidungen, die beim Bauen gefallen sind
+
+1. **Der Siegschirm kündigt Ebene 2 nicht an.** Der Entwurf (§11) sieht den Block vor, Ebene 2 ist
+   aber nicht gebaut. Er hängt jetzt an `CP.hasLevel(level + 1)` und erscheint von selbst, sobald
+   `LEVELS` auf 2 geht. Bis dahin führt der Knopf ins Menü und die Kampagne ist abgeschlossen.
+2. **„Neustart" nimmt die Kette mit.** Sonst fiele ein Kampagnen-Lauf still auf einen normalen
+   zurück — derselbe Fehler, den die Aufträge daneben schon einmal hatten. Damit lässt sich ein
+   Lauf allerdings beliebig oft neu beginnen, bis die Schwelle fällt. Ob der Neustart in der
+   Kampagne gesperrt gehört, ist eine Produktfrage und steht offen.
+3. **Zwei Rewards stehen im Katalog, aber nicht im Angebot** (`pending: true` am Eintrag,
+   `CP.PENDING_REWARDS`). Ein gewähltes Stück, das nichts tut, ist schlimmer als eines, das es
+   noch nicht gibt; der Filter sitzt in `rewardAvailable` und ein Wächter hält ihn ehrlich.
+
+   - **Lückenschluss** dreht `gap` in `markRuns` (`formations.js`), und dorthin führt kein Weg,
+     ohne die Signatur von `computeFormations` umzustellen: 54 Aufrufstellen mit heute schon
+     uneinheitlicher Stelligkeit (`reducer.js:97` reicht die Grenzen in den `plant`-Platz — ein
+     bestehender Fehler). Dazu braucht Stufe I den Bereich „one" (nur EINE Formation der Phase),
+     der in `markRuns` keine Entsprechung hat. Tür (`formationGapWith`) und Tests stehen.
+   - **Doppelwahl** braucht zwei Beutewahlen hintereinander (`PICK_LOOT`). Beide Stücke können
+     eine Nachwahl mitbringen (Vollendung, Durchlass), und die zweite überschriebe die erste;
+     Stufe III hält zudem den Bereich „always", der über den Lauf hinaus mitgeführt werden muss.
+
+### Was noch nicht da ist
+
+- Ebene 2 und 3 (Schwellen, Bosse, Rewards ab Episch).
+- Lückenschluss und Doppelwahl (siehe oben) — 14 der 16 Rewards wirken.

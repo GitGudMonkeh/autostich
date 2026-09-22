@@ -174,10 +174,10 @@ export const REWARDS = [
   // 7 · Regel-Ausnahmen
   { id: "standhaftigkeit", axis: "rules", values: [1, 2, 3] },
   { id: "losentscheid", axis: "rules", values: [1, 2, 3] },
-  { id: "lueckenschluss", axis: "rules", values: [1, 1, 2], scopes: ["one", "all", "all"] },
+  { id: "lueckenschluss", axis: "rules", values: [1, 1, 2], scopes: ["one", "all", "all"], pending: true },
   // 8 · Kampagnen-Ebene
   { id: "fuersprache", axis: "campaign", values: [10, 20, 30] },
-  { id: "doppelwahl", axis: "campaign", requires: "contracts", values: [1, 1, 1], scopes: ["next", "run", "always"] },
+  { id: "doppelwahl", axis: "campaign", requires: "contracts", values: [1, 1, 1], scopes: ["next", "run", "always"], pending: true },
 ];
 
 export const REWARD_BY_ID = Object.fromEntries(REWARDS.map((r) => [r.id, r]));
@@ -196,9 +196,26 @@ export const rewardScope = (id, tier) => {
   return r && r.scopes ? r.scopes[Math.max(0, Math.min(r.scopes.length - 1, tier - 1))] : null;
 };
 
+/* `pending: true` heisst: im Katalog beschlossen, in der Engine noch nicht verdrahtet. Ein solcher
+   Reward darf NICHT ins Angebot — ein Stueck, das man waehlt und das dann nichts tut, ist schlimmer
+   als eines, das es noch nicht gibt. Die Flagge steht am Eintrag und nicht als Ausnahme im Filter,
+   damit sie beim Verdrahten genau an einer Stelle faellt.
+
+   Offen sind zwei, beide aus demselben Grund: die Verdrahtung ist eine Aufgabe, keine Zeile.
+
+   Lückenschluss dreht `gap` in markRuns (formations.js), und dorthin fuehrt kein Weg, ohne die
+   Signatur von computeFormations umzustellen — 54 Aufrufstellen mit heute schon uneinheitlicher
+   Stelligkeit (reducer.js:97 reicht die Grenzen in den `plant`-Platz). Tuer und Tests stehen
+   (formationGapWith), der Bereich „one" der Stufe I hat in markRuns noch keine Entsprechung.
+
+   Doppelwahl braucht ZWEI Beutewahlen hintereinander (PICK_LOOT in reducer.js). Beide Stuecke
+   koennen eine Nachwahl mitbringen (Vollendung, Durchlass), und die zweite ueberschriebe die erste;
+   dazu haelt Stufe III den Bereich „always", der ueber den Lauf hinaus mitgefuehrt werden muss. */
+export const PENDING_REWARDS = ["lueckenschluss", "doppelwahl"];
+
 export const rewardAvailable = (id, unlocked = []) => {
   const r = REWARD_BY_ID[id];
-  return !!r && (!r.requires || hasUnlock(unlocked, r.requires));
+  return !!r && !r.pending && (!r.requires || hasUnlock(unlocked, r.requires));
 };
 
 // ---- The offer ---------------------------------------------------------------------------
