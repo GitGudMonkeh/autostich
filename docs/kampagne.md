@@ -389,8 +389,8 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | **Lehen** · dein Baufeld hat mehr Platz (von 24 Zellen) | +2 | +4 | +6 | +10 |
 | **Fahnenrecht** · du hast in jeder Aufstellphase mehr Energie (von 4) | +1 | +2 | +3 | +4 |
 
-> **Diese Achse hat nur zwei Stücke.** *Ratsbrief* (zusätzliche Entscheidungsphasen) ist am
-> 2026-09-22 gestrichen worden; ein dritter Platz ist frei.
+> **Diese Achse hat bewusst nur zwei Stücke.** *Ratsbrief* (zusätzliche Entscheidungsphasen) ist am
+> 2026-09-22 gestrichen; der Owner bleibt bei zwei, kein dritter Platz.
 
 ### 7 · Regel-Ausnahmen
 
@@ -411,9 +411,10 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | **Fürsprache** · die Schwelle des nächsten Laufs sinkt | −10 % | −20 % | −30 % | −50 % |
 | **Doppelwahl** · nach einem erfüllten Auftrag wählst du zwei Beutestücke statt einem | beim nächsten Auftrag | jeden Auftrag **dieses** Laufs | dauerhaft | dauerhaft, und das zweite Stück eine Stufe höher |
 
-> **Auch hier nur zwei Stücke.** *Gnadengesuch* (verlorenen Lauf wiederholen) ist am 2026-09-22
-> gestrichen worden; ein dritter Platz ist frei. Damit federt **nichts** im Katalog einen verlorenen
-> Lauf mehr ab — die Kampagne ist wieder kompromisslos Alles-oder-nichts.
+> **Auch hier bewusst nur zwei Stücke.** *Gnadengesuch* (verlorenen Lauf wiederholen) ist am
+> 2026-09-22 gestrichen; der Owner bleibt bei zwei. Damit federt **nichts** im Katalog einen
+> verlorenen Lauf mehr ab — vom Owner gesehen und **so gewollt**: die Kampagne ist kompromisslos
+> Alles-oder-nichts.
 
 ### 8 · Kampagnen-Ebene
 
@@ -461,10 +462,8 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
    Stücke, die schon heute mit „Rewards sind die einzige Power-Achse" kollidieren. Zusammen
    genommen ist die Auftrags-Beute damit der zweite große Power-Kanal der Kampagne, ob gewollt
    oder nicht.
-6. **Nichts im Katalog federt einen verlorenen Lauf mehr ab.** Seit *Gnadengesuch* gestrichen ist,
-   gibt jedes Stück Power und keines Sicherheit. Die Kampagne trägt damit ohne Rewards 14 % Erfolg
-   und bei ×1,25 je Reward 32 % (§7) — ein Lauf zu verlieren kostet immer alles.
-7. **Die zwei freien Plätze** auf Struktur und Kampagnen-Ebene.
+6. ~~Nichts federt einen verlorenen Lauf ab~~ — **gesehen und so gewollt.** Jedes Stück gibt Power,
+   keines Sicherheit; ein verlorener Lauf kostet immer alles.
 
 ---
 
@@ -543,11 +542,7 @@ Das verhindert genau eine Sache: dreimal dasselbe Stück nehmen und eine einzige
 treiben. Bei **drei Picks je Kampagne** (zu Beginn von Lauf 2, 3 und 4) und 16 Stücken im Katalog
 bindet die Regel sonst kaum — dieselbe Karte zweimal zu sehen ist ohnehin selten.
 
-**Die Folge, die beim Werte-Setzen auffallen wird:** ein Upgrade ist nur die **Differenz** wert. Wer
-*Sold* auf Selten hält (+200) und es auf Episch hebt (+600), gewinnt +400 — ein frisches
-Episch-Stück gäbe seinen vollen Wert. Ein Upgrade ist damit fast immer der schwächere Zug, außer der
-Sprung zwischen den Stufen ist groß. Wenn Upgrades sich attraktiv anfühlen sollen, muss entweder der
-Abstand zwischen den Raritätsstufen wachsen, oder das Upgrade muss addieren statt zu ersetzen.
+Ein Upgrade ist damit nur die **Differenz** wert — vom Owner geprüft und **so gewollt** (2026-09-22).
 
 ### Offen an der Formel
 
@@ -560,7 +555,73 @@ Abstand zwischen den Raritätsstufen wachsen, oder das Upgrade muss addieren sta
 
 ---
 
-## 11. Nähte im Code
+## 11. Ebene 1 — der Einstieg für neue Spieler (Owner, 2026-09-22)
+
+Ebene 1 ist **nicht das heutige Spiel mit einer Schwelle davor**, sondern ein abgespeckter Start,
+der sich Stück für Stück öffnet. Sie bekommt einen **eigenen Kampagnen-Knopf** neben „normaler
+Lauf" und dem Auftrags-Knopf — bewusst getrennt, weil hier viele neue Systeme zugleich getestet
+werden.
+
+### Aufbau
+
+- **3 Ebenen zu je 4 Läufen.** In jedem Lauf ein **Zwischenboss**, in Lauf 4 der **Endboss der
+  Ebene**.
+- **Upgradewahl zwischen den Läufen** — 1/2, 2/3, 3/4. Drei Picks je Kampagne, das sind die Rewards
+  aus §9.
+- **Score-Schwellen steigen bis zum Boss** und eskalieren über die Ebenen hinweg.
+
+### Startbedingungen (ganz am Anfang)
+
+| Aus | |
+| --- | --- |
+| **Münzökonomie** | komplett, samt allem was daran hängt: Neuwurf, Fokus, Energie-Kauf, Baufeld-Kauf, Verkauf |
+| **Aufträge** | keine |
+| **Decks** | nur zwei: **Blitz** und **Feuer** |
+| **Raritäten** | nur Normal und Selten für Skills und Perks, **keine Legendären** |
+
+> Nachgesehen: Münzen zahlen Neuwurf (3), Energie (3, max +2 je Phase), Baufeld-Zellen (20, 2× je
+> Lauf) und Fokus (10) — dazu die Forfeit-Einnahmen fürs Ablehnen. **Der Architekt selbst kostet
+> keine Münzen**, der Gebäudebau überlebt die Abschaltung also unbeschadet.
+
+### Freischaltungen in Ebene 1, in dieser Reihenfolge
+
+1. **Pflanzen-Deck**
+2. **Münzen**, aber reduziert
+3. **Aufträge**
+4. **Rarität „Sehr selten"**
+5. **Eis-Deck**
+
+### Die Bosse der Ebene 1
+
+**Endboss: Der Konter.** Jeder gewonnene Stich macht den nächsten Gegner stärker — die folgende
+Gegnerkarte bekommt +1 Wert, und das stapelt sich über eine Siegesserie weiter auf. Eine Niederlage
+setzt den Aufschlag auf null.
+
+**Zwischenbosse** — zufällig gezogen, **nie derselbe zweimal in einer Kampagne**:
+
+| Zwischenboss | Mechanik |
+| --- | --- |
+| **Wucherer** | Jeder weitere Kauf derselben Art **verdreifacht** den Preis statt ihn zu verdoppeln. Neuwurf: 3 → 9 → 27. |
+| **Denkmalpfleger** | **Sechs Zellen** des Baufelds sind gesperrt, dort baust du nicht. |
+| **Schließer** | Vor jeder Aufstellphase wird ein **anderes Segment** festgesetzt. Seine fünf Karten lassen sich nicht tauschen. |
+| **Bremser** | **Zwei Tauschzüge** je Aufstellphase statt vier. |
+| **Schmarotzer** | Je **zwei gehaltene Perks** kostet dich eine Münze je Durchlauf. Ohne Münzen passiert nichts. |
+
+**Wucherer und Schmarotzer sind erst aktiv, nachdem Münzen freigeschaltet sind.**
+
+**Score-Schwellen für Zwischen- und Hauptboss:** wird ausgetestet, **erstmal ohne**.
+
+### Wo der Boss im Interface steht
+
+- **Am Start eines Laufs, oben im selben Panel, in dem der erste Auftrag gewählt wird:** die
+  Mechanik von Zwischenboss und Boss. Sind Aufträge noch nicht freigeschaltet, zeigt das Panel nur
+  die Bossbeschreibung.
+- **Im Spielpanel**, genau wie die Aufträge: Zwischenboss und Boss stehen dort und lassen sich für
+  die Beschreibung anklicken.
+
+---
+
+## 12. Nähte im Code
 
 | Wofür | Wo |
 | --- | --- |
