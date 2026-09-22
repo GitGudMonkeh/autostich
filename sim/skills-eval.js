@@ -56,7 +56,10 @@ export function flagFor(row) {
   return flags.join(",");
 }
 
-export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, arch = ["fire", "lightning"], ablate = true, c = 1.4, solveFormations = true, policy = "greedy", log = null } = {}) {
+/* `only` (Teilmenge von `arch`): die WELT bleibt breit, der BERICHT wird eng. Ohne das lässt sich ein Skill
+   nicht im Duo oder Trio messen, ohne zugleich alle Skills der Partner zu ablatieren — und das kostet ein
+   Vielfaches an Läufen für Zahlen, die man gar nicht wissen wollte. */
+export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, arch = ["fire", "lightning"], only = null, ablate = true, c = 1.4, solveFormations = true, policy = "greedy", log = null } = {}) {
   const opts = { archetypes: arch };
   const say = (m) => { if (log) log(m); };
   const random = policy === "random";
@@ -80,7 +83,8 @@ export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, a
   }
   say(`  ${random ? "random" : "greedy"} ${runs} Läufe`);
   // 3) Je Skill: Lift je Stufe (Explore), Haltequote (Greedy), Ablation (Greedy, gepaart).
-  const ids = Object.keys(SKILL_DEFS).filter((id) => arch.includes(archetypeOf(id)));
+  const report = only && only.length ? only : arch;
+  const ids = Object.keys(SKILL_DEFS).filter((id) => arch.includes(archetypeOf(id)) && report.includes(archetypeOf(id)));
   const overall = mean(exploreRows.map((r) => r.score));
   const liftOf = (pred) => { const held = exploreRows.filter(pred); return { n: held.length, lift: held.length ? mean(held.map((r) => r.score)) / overall : null }; };
   const skills = ids.map((id, k) => {
@@ -106,7 +110,7 @@ export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, a
     return row;
   });
   skills.sort((a, b) => (b.marginal ? b.marginal.median : b.lift) - (a.marginal ? a.marginal.median : a.lift));
-  return { arch, policy, exploreRuns, runs, evalSeed0, c, exploreScore: stats(exploreRows.map((r) => r.score)),
+  return { arch, only: report, policy, exploreRuns, runs, evalSeed0, c, exploreScore: stats(exploreRows.map((r) => r.score)),
     greedyScore: stats(evalRows.map((r) => r.score)), greedyWinrate: mean(evalRows.map((r) => r.winrate)),
     greedySkillsHeld: mean(evalRows.map((r) => r.skills.length)), skills };
 }
@@ -117,6 +121,7 @@ export function runSkillsEval({ arg, seed0, c, f, write }) {
     exploreRuns: Number(arg("--explore", 1200)),
     runs: Number(arg("--runs", 200)),
     arch: String(arg("--arch", "fire,lightning")).split(",").filter(Boolean),
+    only: String(arg("--only", "")).split(",").filter(Boolean),
     ablate: arg("--ablate", "1") !== "0",
     solveFormations: arg("--formations", "1") !== "0",
     policy: arg("--policy", "greedy") === "random" ? "random" : "greedy",
@@ -129,7 +134,7 @@ export function runSkillsEval({ arg, seed0, c, f, write }) {
   console.log(`  ${res.policy === "random" ? "Random-Score (Lift-Läufe)" : "Explore-Score"}: Median ${f(res.exploreScore.median)}  Mean ${f(res.exploreScore.mean)}  p90 ${f(res.exploreScore.p90)}`);
   console.log(`  ${who}-Score:  Median ${f(res.greedyScore.median)}  Mean ${f(res.greedyScore.mean)}  p90 ${f(res.greedyScore.p90)}  p95 ${f(res.greedyScore.p95)}  Siegquote ${pct(res.greedyWinrate)}  Ø Skills ${res.greedySkillsHeld.toFixed(1)}`);
   const tierTxt = (r) => r.tiers.map((t) => `${t.tier}${t.lift == null ? " —" : ` ${t.lift.toFixed(2)}`}${t.n < 8 ? "?" : ""}`).join(" ");
-  for (const a of res.arch) {
+  for (const a of res.only) {
     console.log(`\n  ${(NAME[a] || a).toUpperCase()} — sortiert nach Median-Δ der Ablation (${who}, gepaart); Lift je Stufe aus den ${res.policy === "random" ? "Zufallsläufen" : "Explore-Läufen"} (? = n<8)`);
     console.log(`    ${"Skill".padEnd(17)} ${"Halte".padStart(5)}  ${"Lift".padStart(5)}  ${"Median-Δ".padStart(11)}  ${"typ.".padStart(6)}  ${"win".padStart(4)}  ${"anw.".padStart(4)}  Stufen (Lift)                          Flag`);
     for (const r of res.skills.filter((s) => s.arch === a)) {
