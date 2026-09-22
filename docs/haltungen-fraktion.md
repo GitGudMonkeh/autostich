@@ -710,6 +710,60 @@ Welt (einstellige Millionen), diese hier sind Mono-Läufe mit der Fraktion allei
 Skills. Und es ist die ZUFÄLLIGE Fraktions-Policy, nicht der kompetente Spieler — der liegt bei Prisma rund
 7 % darüber (§6.9).
 
+### 6.12 · Duos, Trios, Quartette — **gemessen**
+
+Alle 10 Duos, alle 10 Trios und alle 5 Quartette, je 30 Seeds, Fraktions-Policy mit Slot-Split.
+Mono zum Bezug: Eis 133.157.074 · Blitz 104.205.158 · Pflanze 43.739.781 · Feuer 19.581.167 ·
+**Prisma 10.077.052**.
+
+**Die vier stärksten Trios enthalten alle Prisma**, und das beste ohne (Blitz+Pflanze+Feuer, 33.159.776)
+liegt unter der Hälfte des besten mit (Blitz+Pflanze+Prisma, 72.007.741). Bei den Duos stehen zwei
+Prisma-Paare an der Spitze; Blitz+Prisma ist mit 44.999.054 das stärkste Duo im Feld.
+
+Am schärfsten zeigt es der Zuwachs, den Prisma als DRITTE Fraktion zu einem bestehenden Duo bringt:
+
+| Duo | + Prisma | Zuwachs | zum Vergleich: + Feuer |
+| --- | --- | --- | --- |
+| Blitz + Feuer | 65.319.755 | **+159 %** | — |
+| Blitz + Pflanze | 72.007.741 | **+148 %** | +14 % |
+| Pflanze + Feuer | 57.566.341 | **+89 %** | — |
+| Eis + Feuer | 44.190.438 | +63 % | — |
+| Eis + Pflanze | 27.156.204 | +44 % | +18 % |
+| Eis + Blitz | 31.767.033 | +41 % | −3 % |
+
+**Prisma ist als Beimischung zwei- bis fünfmal so viel wert wie jede andere Fraktion.**
+
+Und am Deckel des echten Spiels (`MAX_ARCHETYPES` = 4) ist das Quartett OHNE Prisma das schwächste
+von allen fünf:
+
+| Quartett | Median | Siegquote |
+| --- | --- | --- |
+| ohne Eis | **70.015.649** | 67,6 % |
+| ohne Feuer | 47.209.826 | 65,3 % |
+| ohne Blitz | 43.120.499 | 61,7 % |
+| ohne Pflanze | 36.443.933 | 68,0 % |
+| **ohne Prisma** | **27.849.925** | 65,0 % |
+
+#### Warum — und warum das ein Problem ist
+
+Die Ursache ist eine Regel aus §2, vom Owner gesetzt: **„Alle vier Haltungen laufen ab dem ERSTEN Skill
+der Fraktion. Die vier Grundwerte stehen und skalieren NICHT mit der Zahl gehaltener Skills."**
+
+Prisma ist damit die einzige Fraktion, deren Passive bei **einem** Skill schon auf voller Stärke sind.
+Hitze, Wachstum, Stapel und Gletschermasse brauchen Picks, um etwas zu leisten; Rot, Blau, Grün und Gelb
+nicht. Ein einziger Slot kauft das ganze Passiv-Paket — und genau deshalb kostet die Verdünnung, die jede
+andere Fraktion hart trifft, Prisma fast nichts.
+
+Der Mono-Befund aus §6.11 dreht sich damit um: **schwächster Mono, stärkster Mischer.**
+
+**Das ist die Signatur eines Pflicht-Picks.** Ein Slot, der in jedem Deck +41 bis +159 % bringt, wird immer
+genommen, und dann ist die Wahl keine mehr. **Offene Frage an den Owner** (sie ist größer als ein
+Zahlenregler): soll das Passiv-Paket bei einem Skill voll sein — oder mit der Zahl gehaltener
+Fraktions-Skills wachsen, wie Blitz es tut?
+
+**Einschränkungen:** 30 Seeds, zufällige Policy mit Slot-Split (ein balancierter Mischer, kein echter
+Spieler), schwere Verteilungsschwänze — die Mediane tragen, die p90-Spalte nicht.
+
 ---
 
 ## 7 · Verworfen — und warum
@@ -822,6 +876,9 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 3. **Was wird aus den vier Haltungslinien?** (§6.9) Acht ihrer zwölf Skills maßen null oder negativ, während
    die Rotations-Linie allein +32 % trug. Das ist die Warnung aus §5.3, eingetreten — die Messung stammt
    allerdings noch aus der alten Nachklang-Lesart und gehört wiederholt, bevor daraus etwas folgt.
+4. **Skalieren die Passive mit der Skill-Zahl?** (§6.12) Heute nicht — und deshalb ist Prisma als
+   Beimischung zwei- bis fünfmal so viel wert wie jede andere Fraktion, während das Quartett ohne sie das
+   schwächste von fünf ist. Die größte offene Frage nach der Messung, und eine Regel-, keine Zahlenfrage.
 
 Erst danach **die drei Legendären** — bewusst zuletzt, damit sie sich an einem gemessenen Stand messen.
 
