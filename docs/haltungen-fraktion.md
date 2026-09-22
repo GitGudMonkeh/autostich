@@ -151,6 +151,11 @@ geht nicht** — so heißt die Fraktion. Ob die Haltungen überhaupt eigene Name
 - **Das Überlappungs-Passiv tut auf einer formationslosen Karte nichts.** Der Bonus beginnt erst bei
   zwei Formationen (`2 → ×1,5 · 3 → ×2 · 4 → ×3`); eine Karte von 0 auf 1 gehoben bleibt bei ×1 und
   hat auch keinen eigenen Formationsfaktor.
+- **Ein gerutschter Sieg zahlt voll** — dieselben 400 Basis-Score wie ein erkämpfter (Owner). Rot ist
+  damit nicht nur ein Sicherheitsnetz, sondern selbst eine Score-Quelle, und braucht dafür keine
+  Sonderregel. **Der Nebeneffekt ohne Zahl:** eine zum Gleichstand gerutschte Niederlage ist für
+  **alles** keine Niederlage mehr — Niederlagenserie, Schwachstellenanalyse, Revanche und Initiative
+  laufen in einem roten Deck leer.
 - **Ergebnis** ist als einzige gegen jede Haltungslänge robust: sie wirkt pro Stich und braucht keine
   Dauer. Das war der Prüfstein, an dem das alte Crit-Passiv gescheitert ist (§7).
 - **Die Segmentbindung des Abfärbens ist eine bewusste Einschränkung, keine geerbte.** „Die
@@ -320,11 +325,19 @@ Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** 
 Übergriffs Leiter spiegelt bewusst **Spalier** (`1 / 2 / 3 / alle`) — dasselbe Muster für dieselbe
 Geste spart dem Spieler eine Regel.
 
-**Offen dazu:** was Übergriff auf einer Grenze tut, die ohnehin schon offen ist. Spalier (Pflanze),
-Segmentarbeit (Perk-Familie E) und Durchlass (Auftragsbeute) öffnen Grenzen bereits — dort wäre der
-Skill wirkungslos, solange das Abfärben offenen Grenzen von selbst folgt. Entweder folgt es ihnen
-nicht (dann ist Übergriff auch dort etwas wert), oder der Skill überschneidet sich mit jedem
-Grenzöffner im Spiel.
+**Entschieden** (Owner): **das Abfärben folgt jeder offenen Grenze von selbst — auf einer schon
+offenen Grenze tut Übergriff also nichts.** Es gibt damit nur *eine* Sorte offene Grenze im Spiel,
+der Spieler muss keine zweite Regel lernen. Der Preis ist bewusst in Kauf genommen: wer Spalier
+(Pflanze), Segmentarbeit (Perk-Familie E) oder Durchlass (Auftragsbeute) mitführt, hat Teile der
+Wirkung schon, und Übergriff ist dort ein toter Skill-Platz. **Das gehört in den Spielertext** — der
+Skill muss erkennbar machen, dass er sich mit jedem Grenzöffner überschneidet, sonst ist es eine
+Falle statt einer Entscheidung.
+
+**Warnung dazu, offen:** Übergriff trifft nicht irgendwelche Grenzen, sondern „die mit den meisten
+Formationen daneben" — und ein Grenzöffner öffnet tendenziell dieselben. Auf der Normal-Stufe (eine
+Grenze) kann der Skill damit **gar nicht** greifen statt nur teilweise. Ob die Auswahl schon offene
+Grenzen überspringt oder stumpf die besten nimmt, ist eine Regelfrage und nicht entschieden; ohne
+Überspringen ist „aufpassen bei der Skillwahl" auf der untersten Stufe ein Totalausfall.
 
 **Nachbarschaft zu Pflanze, zu beachten:** **Verwachsung** (SK_PLANT_14) hebt den Überlappungs-*Wert*,
 **Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier** (SK_PLANT_03) öffnet Segmentgrenzen. Wer
@@ -514,26 +527,27 @@ Mindestdauer auf.** Die aktive Haltung läuft ohnehin bis zur Ablösung, spürba
 danach — eine Farbe, die kurz vor ihrer Verdrängung noch einmal ausgelöst hat, klingt drei Stiche
 länger nach. Das ist die Stelle, an der „die Farbe warm halten" überhaupt etwas wert ist.
 
+**Zwei Punkte sind seither entschieden** (Owner) und stehen dort, wo sie beim Bauen gelesen werden:
+ein gerutschter Sieg zahlt **voll** (§3), und **Übergriff wirkt auf einer schon offenen Grenze
+nicht** (§5.4).
+
 **Werte und Design, offen:**
 
-1. **Was zahlt ein gerutschter Sieg?** Er war ein Gleichstand — zahlt er wie ein echter Sieg (100 %,
-   am einfachsten und am stärksten) oder einen Anteil? Dazu der Nebeneffekt ohne Zahl: eine zur
-   Gleichstand gerutschte Niederlage ist für **alles** keine Niederlage mehr — Niederlagenserie,
-   Schwachstellenanalyse, Revanche und Initiative laufen ins Leere.
-2. **Übergriff auf bereits offenen Grenzen** — §5.4.
-3. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
+1. **Übergriffs Zielauswahl** — ob sie schon offene Grenzen überspringt oder stumpf die besten nimmt
+   (§5.4). Kein Blocker, aber auf der Normal-Stufe der Unterschied zwischen schwach und wirkungslos.
+2. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
    Zuordnung selbst ist gesetzt.
-4. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
+3. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
    `lightYield`, Eis `glacierYield` — jede Fraktion trägt einen eigenen Score-Kanal. Diese hier
    beugt nur Regeln. Ob das ein Mangel ist oder die Pointe, ist offen.
-5. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
+4. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
    und Balancing stehen.
-6. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
+5. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
    wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
    Feld", der Bruch wäre also möglicherweise ein Gewinn.
-7. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
-    geliefert hat.
-8. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
+6. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
+   geliefert hat.
+7. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)
 
