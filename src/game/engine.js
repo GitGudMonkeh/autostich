@@ -28,7 +28,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
   genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank,
-  roundScore, stanceCycleEnd } from "./factions/stance.js";
+  stanceCycleEnd } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES, stanceBorders } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
@@ -589,14 +589,13 @@ export function resolveTrick(state, rng) {
       // (§6.26: Lücke ist gestrichen — mit ihr der `gapped`-Weg. Dickicht und Verwachsung fassen kein Wachstum an,
       //  sie heben Faktoren und leben ganz in formations.js.)
     }
-    /* ---- Haltungen (§5.3/§5.5): die beiden Basis-Score-Quellen der Fraktion. Genugtuung liest JEDEN gerutschten
-       Stich — je deutlicher du eigentlich verloren hättest, desto mehr zahlt er; der einzige Griff im Entwurf, der
-       niedrige Karten wertvoll macht. Runde zahlt, was der VORIGE Durchlauf verdient hat: zwischen den Durchläufen
-       liegt die Aufstellungsphase, der Spieler kann also darauf aufstellen. Beides Flats in die multiplizierte
-       Basis, kein Direkt-Score. */
+    /* ---- Haltungen (§5.5): Genugtuung, die einzige Basis-Score-Quelle der Fraktion. Sie liest JEDEN gerutschten
+       Stich — je deutlicher du eigentlich verloren hättest, desto mehr zahlt sie; der einzige Griff im Entwurf, der
+       niedrige Karten wertvoll macht. Flat in die multiplizierte Basis, kein Direkt-Score.
+       (§3.1: Runde zahlt keinen Score mehr, sie verkürzt die Einklang-Leiste.) */
     let stanceFlat = 0;
     if (stanceOn) {
-      stanceFlat = genugtuungScore(skills, skillTiers, stanceDeficit) + roundScore(stance);
+      stanceFlat = genugtuungScore(skills, skillTiers, stanceDeficit);
       stanceBase += stanceFlat;
     }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf

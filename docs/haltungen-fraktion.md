@@ -171,6 +171,42 @@ nachrüstbar, ohne dass eine Regel sich ändert.
   Angenehmer Nebeneffekt: damit zählt die **Lage innerhalb des Segments** — eine Karte am Rand färbt
   nur nach innen, eine in der Mitte nach beiden Seiten.
 
+### 3.1 · Die Leiste und die Stufe — **gesetzt**
+
+Die vier Passive sind flach: sie wirken je Stich, begrenzt, und bauen nichts auf. Genau daran lag die Fraktion
+Faktor 2 bis 14 unter dem Feld (§6.8 A). Der Sammler, der das behebt, steht bewusst **neben** den Haltungen und
+nicht in ihnen:
+
+```
+1.  Jeder ECHTE Haltungswechsel füllt die Leiste um 1.
+    (Ein Selbst-Auslösen nicht — wie bei Beschleunigung auch.)
+
+2.  Voll  →  EINKLANG: alle vier Haltungen klingen gleichzeitig, für 3 Stiche.
+             Leiste auf 0.
+
+3.  Voll  →  und die STUFE steigt um 1. Dauerhaft, für den Rest des Laufs.
+```
+
+| | Grundwert | Regler |
+| --- | --- | --- |
+| Leiste voll bei | 10 Wechseln | **Runde** kürzt auf 8 / 7 / 6 / 4 (§5.3) |
+| Einklang dauert | 3 Stiche | Runde Episch: +2 |
+| Stufe gibt | **×1,02** auf jeden Sieg-Score | der Satz je Stufe ist der Haupt-Regler |
+
+**Der Einklang braucht keine eigene Mechanik.** „Alle vier klingen" heißt, in die vier Nachklang-Zähler zu
+schreiben, die es ohnehin gibt — keine neue Regel, kein neuer Zustand. Er hebt dabei nur an und kürzt nie:
+ein längerer Nachklang, den ein Verlängerer eben gelegt hat, bleibt stehen.
+
+**Die Stufe hat EINE Lesart** (Owner: „das Spiel ist schon kompliziert genug"): ein glatter Multiplikator auf
+jeden Sieg-Score, unabhängig davon, welche Haltung klingt. Die Alternative — jedes der vier Passive liest die
+Stufe auf seine Weise — ist verworfen: bei Rot und Grün skaliert sie holprig, und Rots Lesart („Score je
+gerutschtem Stich") wäre wortgleich mit dem Skill **Genugtuung** gewesen. Das Passiv hätte seinen eigenen
+Skill aufgefressen.
+
+**Offen (Annahme):** der Einklang lässt die Haltungen *klingen*, er *löst sie nicht aus*. **Verankerung**
+hängt am Auslösen und geht im Einklang deshalb leer aus; Grüns Abfärben wirkt dagegen normal, weil es nur am
+Klingen hängt.
+
 ---
 
 ## 4 · Die Linien — **gesetzt** (Schnitt A)
@@ -226,7 +262,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
 | | **Kehrtwende** · Verlängerungen je Haltung | 3× | 4× | 6× | 10× |
 | **Rotation** (alle) | **Anklang** · Mindestdauer statt 3 Stichen | 4 | 5 | 6 | 8 |
-| | **Runde** · Basis-Score je Sieg im nächsten Durchlauf | 60 | 90 | 130 | 200 + *Runden stapeln* |
+| | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2* |
 | | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
 
 **Drei Leitern sind Deckel statt Rampen** — Schwungrad, Kehrtwende und Beschleunigungs Boden. Das ist
@@ -302,7 +338,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Skill | Wirkung |
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach. |
-| **Runde** | Hast du alle vier Haltungen einmal getragen, gibt die vollendete Runde etwas auf den Score — **im nächsten Durchlauf**. |
+| **Runde** | Die Einklang-Leiste ist schon nach weniger Wechseln voll (§3.1) — der Lauf sammelt also schneller Stufen. |
 | **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. Schritt **und Boden** sind Stufenwerte. |
 
 **Startwerte:**
@@ -310,25 +346,21 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Anklang** · Mindestdauer statt 3 Stichen | 4 | 5 | 6 | 8 |
-| **Runde** · Basis-Score je Sieg im nächsten Durchlauf | 60 | 90 | 130 | 200 + *mehrere Runden stapeln* |
+| **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2 Stiche* |
 | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
 
-**Runde stapelt erst auf Episch** — das beantwortet die frühere offene Frage als Stufenwert statt als
-Sonderregel. Und **Beschleunigungs Boden geht nicht auf 1**: bei Schwelle 1 löst jede Farbe mit ihrem
-ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7). Boden 2 macht die Rotation
-sehr schnell, ohne in diesen Zustand zu kippen.
+**Beschleunigungs Boden geht nicht auf 1**: bei Schwelle 1 löst jede Farbe mit ihrem ersten Sieg aus, und
+dann klingen dauerhaft drei bis vier Haltungen (§6.7). Boden 2 macht die Rotation sehr schnell, ohne in
+diesen Zustand zu kippen.
 
-**Runde zahlt verzögert**, und das ist eine Eigenschaft, keine Nebensache: zwischen den Durchläufen
-liegt die Aufstellungsphase. Der Spieler weiß also, dass der Bonus kommt, und kann darauf aufstellen.
+**Runde hat mit §3.1 eine neue Aufgabe bekommen** (Owner). Sie zahlte vorher Basis-Score für die vollendete
+Vier-Farben-Runde und sagte damit fast dasselbe wie die Einklang-Leiste selbst; jetzt **verkürzt sie die
+Leiste**. Die vollendete Runde bleibt als Zähler bestehen, aber nur noch als Telemetrie.
 
-**Offen bei Runde:** ob der Bonus ein Multiplikator auf den Durchlauf ist oder ein Flat je Sieg, und
-vor allem, ob **mehrere Runden stapeln**. Mit Beschleunigung sind zwei bis drei Runden in einem
-Durchlauf erreichbar — stapeln sie, ist diese Kombination der Motor, auf den die ganze Linie zeigt.
-
-**Die Linie ist damit durchgehend Tanz-Build.** Alle drei zahlen auf häufiges Wechseln, und sie
-verstärken sich gegenseitig: Beschleunigung erzeugt mehr Wechsel, Anklang lässt sie überlappen, Runde
-zahlt für die vollendete Runde, die durch Beschleunigung viel schneller kommt. Für den Block-Build
-steht in dieser Linie nichts.
+**Die Linie ist damit durchgehend Tanz-Build.** Alle drei zahlen auf häufiges Wechseln, und sie verstärken
+sich gegenseitig: Beschleunigung erzeugt mehr Wechsel, Anklang lässt sie überlappen, Runde macht aus
+denselben Wechseln mehr Stufen. Für den Block-Build steht in dieser Linie nichts — und gemessen ist das die
+Stelle, an der der Tanz-Build zum ersten Mal etwas zurückbekommt (§6.11).
 
 **Warnung zu Beschleunigung** (§6.7).
 
@@ -635,6 +667,40 @@ Was daraus heraussticht:
   Mittelfeld der Paare, nicht darüber. Der Hebel („das Brett liest sich als ein grüner Farbblock, die
   Grundfarben bleiben bunt") existiert, trägt aber nicht weit genug, um etwas zu sprengen.
 
+### 6.11 · Die Leiste, gemessen — **gemessen**
+
+Dieselben 20 Seeds, feste Builds, vor und nach §3.1:
+
+| Build | vorher | **nachher** | Einklang je Lauf | Stufe am Ende | Ø klingend | alle vier klingen |
+| --- | --- | --- | --- | --- | --- | --- |
+| Campen | 6.878.269 | **13.863.252** | 25,9 | 25,9 → ×1,52 | 1,89 | 6,6 % |
+| Tanzen | 4.992.161 | **9.956.149** | **48,3** | **48,3 → ×1,97** | 1,93 | **10,1 %** |
+| Überlappung | 6.814.465 | **12.081.678** | 25,4 | 25,4 → ×1,51 | 1,61 | 4,6 % |
+
+**Die feste Aufstellung verdoppelt sich durchweg.** Und der Tanz-Build bekommt endlich etwas zurück: 48
+Füllungen gegen 26 sind fast doppelt so viele Stufen, und alle vier Haltungen klingen bei ihm in 10 % der
+Stiche gegen 6,6 % beim Campen. Die §2.1-Achse hat zum ersten Mal zwei Seiten, die beide etwas gewinnen.
+
+**Aber der Zufallsspieler bewegt sich kaum:** mono mit der Fraktions-Policy 9.658.869 → **10.077.052**,
+also +4 %. Der Grund ist der Tausch bei Runde. Die alte Runde zahlte Basis-Score bedingungslos, und davon
+profitierte ein zufälliger Build voll; die neue Stufe muss erspielt werden. Wer auf sie hinspielt, verdoppelt —
+wer sie nur mitnimmt, steht fast auf der Stelle. Das ist die gewollte Richtung, aber es heißt auch: **die
+Fraktion ist jetzt deutlich stärker vom Können abhängig als vorher.**
+
+Stand gegen das Feld, mono, 30 Seeds:
+
+| Fraktion | Median | p90 ÷ Median |
+| --- | --- | --- |
+| Eis | 133.246.931 | 8,2 |
+| Blitz | 104.205.158 | 3,0 |
+| Pflanze | 43.320.034 | 15,3 |
+| Feuer | 19.581.167 | 5,4 |
+| **Prisma** | **10.077.052** | **1,9** |
+
+Der Abstand zu Feuer ist von Faktor 2,0 auf 1,9 geschrumpft — die Lücke ist also **nicht** geschlossen.
+**Der Satz je Stufe (0,02) ist der Haupt-Regler dafür** und bewusst niedrig gewählt; er gehört gemessen, nicht
+geschätzt.
+
 ---
 
 ## 7 · Verworfen — und warum
@@ -741,10 +807,9 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 1. ~~Welche Lesart des Nachklangs gilt?~~ **Entschieden: ab dem Wechsel** (§6.8.1). Sie hat die Fraktion mono
    verdoppelt und die Überlappung erst zu einer Mechanik gemacht.
-2. **Bekommt die Fraktion einen Sammler?** (§6.8 A) Auch nach der Entscheidung liegt sie mit 9,7 Mio um Faktor
-   2 unter Feuer und Faktor 14 unter Eis, und ihr p90 steht bei 1,9 ihres Medians — sie hat kaum Spitze, weil
-   sich nichts aufbaut. In den Paaren zeigt sich dasselbe: Prisma gewinnt von jedem Partner mehr, als es gibt
-   (§6.10).
+2. ~~Bekommt die Fraktion einen Sammler?~~ **Entschieden: die Einklang-Leiste** (§3.1). Die festen Builds haben
+   sich verdoppelt; der Abstand zu Feuer ist aber nur von Faktor 2,0 auf 1,9 gefallen (§6.11). Offen bleibt
+   daher der **Satz je Stufe** — er ist der Haupt-Regler und gehört gemessen.
 3. **Was wird aus den vier Haltungslinien?** (§6.9) Acht ihrer zwölf Skills maßen null oder negativ, während
    die Rotations-Linie allein +32 % trug. Das ist die Warnung aus §5.3, eingetreten — die Messung stammt
    allerdings noch aus der alten Nachklang-Lesart und gehört wiederholt, bevor daraus etwas folgt.

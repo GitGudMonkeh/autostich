@@ -3,8 +3,8 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
-  carryArmed, armCarry, spendCarry, banksNow, dischargeBank, roundScore, stanceCycleEnd,
-  stanceTick, stanceOverlapOpts, stanceFormKeyOf } from "../src/game/factions/stance.js";
+  carryArmed, armCarry, spendCarry, banksNow, dischargeBank, stanceCycleEnd,
+  stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult } from "../src/game/factions/stance.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, overlapFactor, stanceBorders, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -86,7 +86,7 @@ describe("Haltungen — der Mechanismus (§2)", () => {
     expect(stanceLift(off)).toBe(0);
     expect(stanceCrit(off, [S.GRUNDRAUSCHEN], {})).toBe(0);
     expect(stanceScoreMult(off, [], {})).toBe(1);
-    expect(roundScore(off)).toBe(0);
+    expect(stanceLevelMult(off)).toBe(1);
   });
   it("der Lauf startet in Rot mit Zähler 0; die aktive Haltung klingt immer, die anderen nicht", () => {
     const s = st();
@@ -434,20 +434,26 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     expect(ringsNow(s, "B")).toBe(true);
     expect(ringCount(s)).toBe(3);                              // Rot klingt dank der längeren Dauer noch mit
   });
-  it("SK_STANCE_14 Runde: alle vier getragen → Basis-Score je Sieg im NÄCHSTEN Durchlauf; Stapeln erst Episch", () => {
-    const skills = [S.RUNDE];
-    let s = st();
-    // Rot ist schon getragen (Startfarbe) — drei Wechsel vollenden die Runde.
-    for (const c of ["B", "G", "Y"]) s = stanceTick({ ...s, counts: { ...s.counts, [c]: C.STANCE_THRESHOLD - 1 } }, [], {}, { wonSuit: c }).stance;
-    expect(s.roundsPending).toBe(1);
-    expect(s.rounds).toBe(1);
-    expect(roundScore(s)).toBe(0);                             // im laufenden Durchlauf zahlt sie noch nichts
-    const end = stanceCycleEnd(s, skills, {}).stance;
-    expect(roundScore(end)).toBe(T.runde[0].score);            // ab dem nächsten Durchlauf
-    // Mehrere Runden stapeln erst auf Episch.
-    const two = st({ roundsPending: 2 });
-    expect(roundScore(stanceCycleEnd(two, skills, {}).stance)).toBe(T.runde[0].score);
-    expect(roundScore(stanceCycleEnd(two, skills, { [S.RUNDE]: 3 }).stance)).toBe(2 * T.runde[3].score);
+  it("SK_STANCE_14 Runde verkürzt die Leiste — und Episch verlängert den Einklang", () => {
+    expect(barLength([], {})).toBe(C.STANCE_BAR);                     // ohne den Skill die volle Länge
+    for (let tier = 0; tier < 4; tier++) {
+      expect(barLength([S.RUNDE], { [S.RUNDE]: tier }), `Stufe ${tier}`).toBe(T.runde[tier].bar);
+      expect(T.runde[tier].bar, `Stufe ${tier}`).toBeLessThan(C.STANCE_BAR); // jede Stufe ist eine Verbesserung
+    }
+    expect(einklangDuration([], {})).toBe(C.STANCE_EINKLANG);
+    expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 })).toBe(C.STANCE_EINKLANG + T.runde[3].einklangPlus);
+    // Und sie wirkt: mit dem Skill ist die Leiste nach weniger Wechseln voll.
+    const fill = (skills, tiers) => {
+      let s = st(), n = 0;
+      while (s.einklang === 0 && n < 100) {
+        const c = STANCE_SUITS[(n + 1) % 4];
+        s = stanceTick({ ...s, counts: { ...s.counts, [c]: s.threshold - 1 } }, skills, tiers, { wonSuit: c }).stance;
+        n += 1;
+      }
+      return n;
+    };
+    expect(fill([], {})).toBe(C.STANCE_BAR);
+    expect(fill([S.RUNDE], { [S.RUNDE]: 3 })).toBe(T.runde[3].bar);
   });
   it("SK_STANCE_15 Beschleunigung: jeder Wechsel senkt die Schwelle, bis auf den Boden — und der ist nie 1 (§6.7)", () => {
     const skills = [S.BESCHLEUNIGUNG];
@@ -463,6 +469,65 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     // Ein Selbst-Auslösen senkt NICHTS — nur echte Wechsel zählen (Owner).
     const self = stanceTick({ ...st(), counts: { R: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "R" }).stance;
     expect(self.threshold).toBe(C.STANCE_THRESHOLD);
+  });
+});
+
+describe("Haltungen — die Leiste und die Stufe (§3.1)", () => {
+  it("jeder ECHTE Wechsel füllt die Leiste, ein Selbst-Auslösen nicht", () => {
+    let s = st({ counts: { B: C.STANCE_THRESHOLD - 1 } });
+    s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;
+    expect(s.bar).toBe(1);
+    // Selbst-Auslösen: Zähler fällt, Leiste nicht.
+    s = stanceTick({ ...s, counts: { ...s.counts, B: C.STANCE_THRESHOLD - 1 } }, [], {}, { wonSuit: "B" }).stance;
+    expect(s.bar).toBe(1);
+    expect(s.switches).toBe(1);
+  });
+  it("volle Leiste: EINKLANG — alle vier klingen gleichzeitig — und die Stufe steigt dauerhaft", () => {
+    let s = st();
+    for (let i = 0; i < C.STANCE_BAR; i++) {
+      const c = STANCE_SUITS[(i + 1) % 4];
+      s = stanceTick({ ...s, counts: { ...s.counts, [c]: s.threshold - 1 } }, [], {}, { wonSuit: c }).stance;
+    }
+    expect(s.einklang).toBe(1);
+    expect(s.level).toBe(1);
+    expect(s.bar).toBe(0);                                   // Leiste auf null, von vorn
+    expect(ringCount(s)).toBe(4);                            // alle vier klingen
+    for (const c of STANCE_SUITS) expect(ringsNow(s, c), c).toBe(true);
+    // Der Einklang läuft aus, die Stufe bleibt.
+    for (let i = 0; i < C.STANCE_EINKLANG + 1; i++) s = stanceTick(s, [], {}, {}).stance;
+    expect(ringCount(s)).toBe(1);
+    expect(s.level).toBe(1);
+  });
+  it("der Einklang verkürzt keinen längeren Nachklang — er hebt nur an", () => {
+    // Blau klingt noch 20 Stiche (ein Verlängerer hat zugelegt). Die Leiste steht kurz vor voll; der nächste
+    // Wechsel geht auf Grün, löst den Einklang aus — und Blau behält seine 19, statt auf die Einklang-Dauer
+    // gekürzt zu werden. Rot dagegen, das gerade abgelöst wird, steht danach mindestens auf der Einklang-Dauer.
+    const s0 = st({ ring: { B: 20 }, bar: C.STANCE_BAR - 1, counts: { G: C.STANCE_THRESHOLD - 1 } });
+    const s = stanceTick(s0, [], {}, { wonSuit: "G" }).stance;
+    expect(s.einklang).toBe(1);
+    expect(s.stance).toBe("G");
+    expect(s.ring.B).toBe(19);                                     // abgebaut, nicht gekappt
+    expect(s.ring.R).toBeGreaterThanOrEqual(einklangDuration([], {}));
+    expect(s.ring.Y).toBe(einklangDuration([], {}));               // hatte nichts, bekommt die Einklang-Dauer
+    expect(ringCount(s)).toBe(4);
+  });
+  it("die Stufe ist ein glatter Multiplikator auf JEDEN Stich — auch ohne klingendes Gelb", () => {
+    expect(stanceLevelMult(st({ level: 0 }))).toBe(1);
+    expect(stanceLevelMult(st({ level: 10 }))).toBeCloseTo(1 + 10 * C.STANCE_STEP, 9);
+    // Rot klingt, Gelb nicht — die Stufe zahlt trotzdem.
+    expect(stanceScoreMult(st({ level: 10 }), [], {})).toBeCloseTo(1 + 10 * C.STANCE_STEP, 9);
+    // Mit klingendem Gelb multipliziert sie auf dessen Faktor.
+    expect(stanceScoreMult(st({ stance: "Y", level: 10 }), [], {}))
+      .toBeCloseTo(C.STANCE_SCORE_MULT * (1 + 10 * C.STANCE_STEP), 9);
+    // In der Engine landet sie im Stich.
+    const s = resolveTrick(run(st({ level: 20 })), noCrit);
+    expect(s.lastTrick.breakdown.stanceMult).toBeCloseTo(1 + 20 * C.STANCE_STEP, 9);
+  });
+  it("Leiste und Stufe kennen keine Durchlauf-Grenze", () => {
+    const s = st({ bar: 3, level: 7 });
+    const end = stanceCycleEnd(s, [], {}).stance;
+    expect(end.bar).toBe(3);
+    expect(end.level).toBe(7);
   });
 });
 

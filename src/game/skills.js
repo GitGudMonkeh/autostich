@@ -209,7 +209,10 @@ const HALTUNG = {
   // Rotation — wirkt über alle Haltungen. Beschleunigungs Boden geht NICHT auf 1: bei Schwelle 1 löst jede Farbe
   // mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7).
   anklang:        [{ duration: 4 }, { duration: 5 }, { duration: 6 }, { duration: 8 }],
-  runde:          [{ score: 60 }, { score: 90 }, { score: 130 }, { score: 200, stack: true }],
+  // §3.1: Runde ist der LEISTEN-VERKÜRZER geworden (Owner). Der alte Inhalt („alle vier getragen → Basis-Score im
+  // nächsten Durchlauf") sagte fast dasselbe wie die Einklang-Leiste selbst; so hat der Skill eine eigene Aufgabe.
+  // Ohne ihn ist die Leiste STANCE_BAR lang, jede Stufe kürzt sie — Episch zusätzlich längerer Einklang.
+  runde:          [{ bar: 8 }, { bar: 7 }, { bar: 6 }, { bar: 4, einklangPlus: 2 }],
   beschleunigung: [{ step: 1, floor: 4 }, { step: 1, floor: 3 }, { step: 1, floor: 2 }, { step: 2, floor: 2 }],
 };
 export const HALTUNG_TIERS = HALTUNG;
@@ -519,7 +522,7 @@ export const SKILL_DEFS = {
   SK_STANCE_13: { id: "SK_STANCE_13", name: "Anklang", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.anklang,
     ...tiered(HALTUNG.anklang, (r) => `Eine Haltung klingt ${r.duration} Stiche statt ${C.STANCE_MIN_DURATION}.`) },
   SK_STANCE_14: { id: "SK_STANCE_14", name: "Runde", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.runde,
-    ...tiered(HALTUNG.runde, (r) => `Hast du alle vier Haltungen getragen, gibt jeder Sieg des nächsten Durchlaufs +${r.score} Basis-Score.${r.stack ? " Mehrere Runden stapeln." : ""}`) },
+    ...tiered(HALTUNG.runde, (r) => `Die Leiste ist schon nach ${r.bar} Haltungswechseln voll statt nach ${C.STANCE_BAR}.${r.einklangPlus ? ` Der Einklang hält ${r.einklangPlus} Stiche länger.` : ""}`) },
   SK_STANCE_15: { id: "SK_STANCE_15", name: "Beschleunigung", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.beschleunigung,
     ...tiered(HALTUNG.beschleunigung, (r) => `Jeder Haltungswechsel senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.`) },
 
