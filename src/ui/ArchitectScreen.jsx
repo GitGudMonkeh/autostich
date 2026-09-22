@@ -8,6 +8,7 @@ import {
 } from "../game/architect.js";
 import { archFamily as familyDef } from "../i18n/labels.js"; // #sprache: Gebäudenamen zur Anzeigezeit (i18n) — archFamily ist der ARCHITEKT-Resolver (labels.familyDef löst Perk-Familien → null für Gebäude → leeres Angebot, #regression 1fa6778)
 import { openBordersOf } from "../game/contracts.js"; // Durchlass: offene Segmentgrenzen aus der Auftrags-Beute
+import { formationGapOf } from "../game/campaign.js"; // Lückenschluss: dieselbe Erkennung wie im Motor, sonst zeigt die Vorschau anderes
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { fundamentBonus } from "../game/perks.js"; // v0.3 „Fundament": Strukturfaktor-Bonus des Builds
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
@@ -173,13 +174,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const structBonusPct = useMemo(() => Math.round(structF.reduce((t, f) => t + (f - 1), 0) * 100), [structF]);
   const formations = useMemo(() => {
     if (!cards.length) return [];
-    return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, effArch, null, openBordersOf(state));
+    return computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, effArch, null, openBordersOf(state), formationGapOf(state));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [effArch, order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   const formCount = useMemo(() => summarizeFormations(formations).count, [formations]);
   // #UI: Formationen OHNE Architekt — Referenz, um die NEU durch Gebäude gegründeten Formationen zu isolieren.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  const formationsNoArch = useMemo(() => (cards.length ? computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, null, null, openBordersOf(state)) : []), [order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
+  const formationsNoArch = useMemo(() => (cards.length ? computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, null, null, openBordersOf(state), formationGapOf(state)) : []), [order, deck, state.roles, state.perks, state.skills, state.familyTiers]);
   // #UI: Gebäude-Score-Boost in % — was die Platzierung dem Score bringt: Struktur-Kombis (Σ structF−1) PLUS die neu
   // durch Gebäude gegründeten Formationen (Formations-Stärke mit − ohne Architekt). Live beim Bauen/Verschieben.
   const archBoostPct = useMemo(() => {
@@ -565,7 +566,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const previewArch = { ...architect, buildings: previewBuildings };
     const p2 = precomputeArchitect(previewArch, order, deck, fundBonus);
     const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c, alliance) || 0), 0);
-    const previewForms = computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch, null, openBordersOf(state));
+    const previewForms = computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch, null, openBordersOf(state), formationGapOf(state));
     const form2 = summarizeFormations(previewForms).count;
     // #UI: Boost-Vorschau — dieselbe Formel wie archBoostPct (Struktur-Kombis Σ(f−1) + neu gegründete Formationen), aber
     // mit den Vorschau-Gebäuden. dBoost = Vorschau − aktuell → Live-Differenz des Gebäude-Boosts im Brett-Kopf.

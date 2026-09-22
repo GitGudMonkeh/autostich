@@ -20,7 +20,7 @@ import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus 
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { ContractOffer, ContractLoot, ContractSkillPick, ContractBorderPick } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
-import { upgradableSkills, borderPickState } from "./game/contracts.js"; // Vollendung: Legendäre tragen keine Stufe · Durchlass: welche Grenzen schon offen sind
+import { upgradableSkills, borderPickState, openBordersOf } from "./game/contracts.js"; // Vollendung: Legendäre tragen keine Stufe · Durchlass: welche Grenzen schon offen sind · offene Grenzen für den Chronik-Schnappschuss
 import { openBorderInfo } from "./game/formations.js"; // ALLE offenen Grenzen, egal aus welcher Quelle
 import { useIsWide, DESKTOP_MIN, PHONE_MAX } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug) · #mobil-emblem: dieselben zwei Schwellen für den Emblem-Vorlader
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
@@ -664,7 +664,13 @@ function AutostichGame() {
       .map((b) => ({ id: b.id, familyId: b.familyId, tier: b.tier, footprint: b.footprint }));
     const deckSnapshot = {
       cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green }; }),
-      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}),
+      /* Der Schnappschuss stand auf sieben Argumenten und liess Architekt, Pflanze und die offenen
+         Grenzen weg — die Chronik zeigte damit ANDERE Formationen als der Lauf gewertet hatte.
+         Beim Lueckenschluss faellt das auf: wer ihn haelt, saehe seine ueberbrueckten Formationen
+         hinterher nicht. Also die volle Liste, wie ueberall sonst. */
+      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [],
+        state.shop?.anchors || [], state.familyTiers || {}, state.architectEnabled ? state.architect : null,
+        { skillTiers: state.skillTiers || {}, growth: state.growth || {} }, openBordersOf(state), CP.formationGapOf(state)),
       architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
       buildings: archBuildingsSnap,
       challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren

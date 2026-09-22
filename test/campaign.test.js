@@ -611,6 +611,32 @@ describe("Schließer und Lauf-Ende im Reducer", () => {
     expect(reducer(s, { type: "SWAP_CARDS", i: frei, j: raus })).not.toBe(s); // außerhalb geht
   });
 
+  it("Lückenschluss wirkt im echten Lauf, nicht nur in computeFormations", () => {
+    /* Gemessen, nicht behauptet: derselbe Seed zweimal bis zur ersten Aufstellphase, einmal mit
+       und einmal ohne den Reward. Die Kontrolle steht daneben — beide Läufe müssen DIESELBE
+       Auslage haben, sonst misst der Vergleich zwei verschiedene Bretter statt der Erkennung.
+       Der Reward greift nur, wo ein Lauf wirklich von einer fremden Karte gebrochen wird; deshalb
+       fordert der Test „nie schlechter" auf jedem Seed und „irgendwo besser" über die Reihe.
+
+       GEGENGEPRÜFT, und die Grenze gehört dazu: dieser Test wird rot, wenn engine.js den Regler
+       nicht mehr durchreicht — nicht, wenn reducer.js ihn verliert. Die Aufstellphasen eines
+       laufenden Laufs kommen aus dem Motor; der Reducer-Pfad (erster Entscheidungspunkt) wird hier
+       gar nicht erreicht. Für ALLE Aufrufstellen zählt der Wächter in test/formations-gap.test.js
+       die Argumente. Zwei verschiedene Fragen, zwei Tests. */
+    const bosses = ["bremser", "x", "y"];
+    const gesamt = (s) => (s.formations || []).reduce((a, f) => a + (f.mult || 1), 0);
+    const bis = (x) => x.phase === "formation";
+    let besser = 0;
+    for (const seed of [11, 23, 42, 77, 91, 108]) {
+      const ohne = play(start({ ...CP.emptyCampaign(), bosses }, [], seed), seed, bis);
+      const mit = play(start({ ...CP.emptyCampaign(), bosses, held: { lueckenschluss: 3 } }, [], seed), seed, bis);
+      expect(mit.playerOrder, `Seed ${seed}: verschiedene Auslagen, der Vergleich misst nichts`).toEqual(ohne.playerOrder);
+      expect(gesamt(mit), `Seed ${seed}`).toBeGreaterThanOrEqual(gesamt(ohne));
+      if (gesamt(mit) > gesamt(ohne)) besser++;
+    }
+    expect(besser, "der Reward hat auf keinem Seed etwas geändert — dann ist er nicht verdrahtet").toBeGreaterThan(0);
+  });
+
   it("rechnet das Laufende ab: Schwelle gerissen heißt Auslage, verfehlt heißt verloren", () => {
     const stark = play(start({ ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] }));
     expect(stark.phase).toBe("gameover");

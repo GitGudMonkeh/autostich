@@ -9,6 +9,7 @@ import { MODAL_CARD, MENU_PANEL, TopHairline, STICKY_HEAD_BG } from "./modalStyl
 import { glacierGridProps } from "./glacierBoard.js";
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { openBordersOf } from "../game/contracts.js"; // Durchlass: offene Segmentgrenzen aus der Auftrags-Beute
+import { formationGapOf } from "../game/campaign.js"; // Lückenschluss: dieselbe Erkennung wie im Motor, sonst zeigt die Vorschau anderes
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen auch im Victory-Screen (wie Chronik)
@@ -110,7 +111,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const finalOrder = state.playerOrder || [];
   const finalCards = finalOrder.map((di) => state.deck[di]);
   const finalForms = finalOrder.length
-    ? computeFormations(finalOrder, state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}, null, null, openBordersOf(state))
+    ? computeFormations(finalOrder, state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}, null, null, openBordersOf(state), formationGapOf(state))
     : [];
 
   // Delta zum vorherigen Rekord — recordTraj ist der Ghost VOR dem saveRun-Überschreiben (letzter Wert ≈ alter Rekord).

@@ -826,20 +826,34 @@ Kampagne — das ist ihr Zweck.
    zurück — derselbe Fehler, den die Aufträge daneben schon einmal hatten. Damit lässt sich ein
    Lauf allerdings beliebig oft neu beginnen, bis die Schwelle fällt. Ob der Neustart in der
    Kampagne gesperrt gehört, ist eine Produktfrage und steht offen.
-3. **Zwei Rewards stehen im Katalog, aber nicht im Angebot** (`pending: true` am Eintrag,
+3. **Ein Reward steht im Katalog, aber nicht im Angebot** (`pending: true` am Eintrag,
    `CP.PENDING_REWARDS`). Ein gewähltes Stück, das nichts tut, ist schlimmer als eines, das es
    noch nicht gibt; der Filter sitzt in `rewardAvailable` und ein Wächter hält ihn ehrlich.
+   Offen ist die **Doppelwahl**: sie braucht zwei Beutewahlen hintereinander (`PICK_LOOT`), beide
+   Stücke können eine Nachwahl mitbringen (Vollendung, Durchlass) und die zweite überschriebe die
+   erste; Stufe III hält zudem den Bereich „always", der über den Lauf hinaus mitgeführt werden muss.
 
-   - **Lückenschluss** dreht `gap` in `markRuns` (`formations.js`), und dorthin führt kein Weg,
-     ohne die Signatur von `computeFormations` umzustellen: 54 Aufrufstellen mit heute schon
-     uneinheitlicher Stelligkeit (`reducer.js:97` reicht die Grenzen in den `plant`-Platz — ein
-     bestehender Fehler). Dazu braucht Stufe I den Bereich „one" (nur EINE Formation der Phase),
-     der in `markRuns` keine Entsprechung hat. Tür (`formationGapWith`) und Tests stehen.
-   - **Doppelwahl** braucht zwei Beutewahlen hintereinander (`PICK_LOOT`). Beide Stücke können
-     eine Nachwahl mitbringen (Vollendung, Durchlass), und die zweite überschriebe die erste;
-     Stufe III hält zudem den Bereich „always", der über den Lauf hinaus mitgeführt werden muss.
+### Der Lückenschluss und die elfte Stelle
+
+`computeFormations` hat seit dem Lückenschluss elf Parameter; der letzte ist `{ n, scope }` aus
+`CP.formationGapOf(state)`. Er dreht keinen neuen Regler, sondern hebt `gap` in `markRuns` —
+denselben, den E_PACE (Wiederholung) und E_COLORBRIDGE (Farbblock) schon drehen. `scope: "all"`
+hebt jeden Lauf, `"one"` gibt der ganzen Phase EIN Budget, das der erste Lauf verbraucht, der eine
+Lücke wirklich nimmt.
+
+**Jede Aufrufstelle in `src/` muss elf Argumente übergeben.** Eine mit zehn verliert den Reward
+still, und der Spieler sähe an dieser Stelle andere Formationen als im selben Lauf anderswo. Genau
+das war vorher schon passiert: `reducer.js` gab an einer Stelle neun und schob die offenen Grenzen
+in den `plant`-Platz; `App.jsx` gab sieben und ließ Architekt, Pflanze und Grenzen ganz weg, sodass
+die Chronik andere Formationen zeigte als der Lauf gewertet hatte. Beides ist mit dem Lückenschluss
+behoben. `test/formations-gap.test.js` zählt die Argumente und prüft, dass im elften wirklich
+`formationGapOf(` steht.
+
+Die Wirkung selbst prüfen zwei verschiedene Tests, weil es zwei verschiedene Fragen sind: die
+Erkennung in `test/formations-gap.test.js`, den Motor im Lauf in `test/campaign.test.js`
+(derselbe Seed mit und ohne Reward, Kontrolle auf gleiche Auslage).
 
 ### Was noch nicht da ist
 
 - Ebene 2 und 3 (Schwellen, Bosse, Rewards ab Episch).
-- Lückenschluss und Doppelwahl (siehe oben) — 14 der 16 Rewards wirken.
+- Die Doppelwahl (siehe oben) — 15 der 16 Rewards wirken.

@@ -174,7 +174,7 @@ export const REWARDS = [
   // 7 · Regel-Ausnahmen
   { id: "standhaftigkeit", axis: "rules", values: [1, 2, 3] },
   { id: "losentscheid", axis: "rules", values: [1, 2, 3] },
-  { id: "lueckenschluss", axis: "rules", values: [1, 1, 2], scopes: ["one", "all", "all"], pending: true },
+  { id: "lueckenschluss", axis: "rules", values: [1, 1, 2], scopes: ["one", "all", "all"] },
   // 8 · Kampagnen-Ebene
   { id: "fuersprache", axis: "campaign", values: [10, 20, 30] },
   { id: "doppelwahl", axis: "campaign", requires: "contracts", values: [1, 1, 1], scopes: ["next", "run", "always"], pending: true },
@@ -211,7 +211,7 @@ export const rewardScope = (id, tier) => {
    Doppelwahl braucht ZWEI Beutewahlen hintereinander (PICK_LOOT in reducer.js). Beide Stuecke
    koennen eine Nachwahl mitbringen (Vollendung, Durchlass), und die zweite ueberschriebe die erste;
    dazu haelt Stufe III den Bereich „always", der ueber den Lauf hinaus mitgefuehrt werden muss. */
-export const PENDING_REWARDS = ["lueckenschluss", "doppelwahl"];
+export const PENDING_REWARDS = ["doppelwahl"];
 
 export const rewardAvailable = (id, unlocked = []) => {
   const r = REWARD_BY_ID[id];
@@ -381,10 +381,17 @@ export const streakSurvivesWith = (state, lossesThisCycle = 0) => {
 /* Lückenschluss: how many foreign cards a formation run may skip. It feeds `gap` in
    `markRuns` (formations.js) — the very regler E_PACE and E_COLORBRIDGE already turn, so this is
    an existing dial, not a new mechanic. `scope` decides whether it applies per run or per phase. */
-export function formationGapWith(state, base = 0) {
+export function formationGapOf(state) {
   const held = heldOf(state);
-  if (!held || !held.lueckenschluss) return base;
-  return base + rewardValue("lueckenschluss", held.lueckenschluss);
+  const tier = held && held.lueckenschluss;
+  if (!tier) return null;
+  return { n: rewardValue("lueckenschluss", tier), scope: rewardScope("lueckenschluss", tier) };
+}
+/* Dieselbe Zahl als Regler-Aufschlag. Sie DELEGIERT bewusst: zwei Stellen, die aus `held` dieselbe
+   Zahl ziehen, laufen auseinander, sobald eine von beiden gepflegt wird. */
+export function formationGapWith(state, base = 0) {
+  const g = formationGapOf(state);
+  return g ? base + g.n : base;
 }
 
 /* Wucherer triples instead of doubling; Handelsbrief takes a percentage off. Both land on the one
