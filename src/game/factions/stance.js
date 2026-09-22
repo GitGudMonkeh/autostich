@@ -144,13 +144,20 @@ export const rueckhaltValue = (skills, skillTiers) =>
 
 /* Schwungrad (Crit) und Kehrtwende (Ergebnis) verlängern die AKTUELL aktive Haltung um einen Stich (§2), je mit
    einem eigenen Budget pro Haltung. Der Deckel IST der Stufenwert (§5.2/§5.5) — damit ist die Weglauf-Rechnung
-   aus §6.4/§6.5 in der Tabelle erledigt statt als Sonderregel. `ext` fällt bei jedem echten Wechsel auf 0. */
+   aus §6.4/§6.5 in der Tabelle erledigt statt als Sonderregel.
+
+   Die Verlängerung wird GESAMMELT und erst bei der Ablösung eingelöst, nicht sofort auf den Nachklang gelegt.
+   Das ist die einzige Lesart, die etwas tut: die aktive Haltung läuft ohnehin bis zur Ablösung, und ein Stich,
+   der währenddessen auf `ring` gelegt wird, zählt im nächsten Takt wieder herunter — er ist verpufft, bevor er
+   je gebraucht wird. Gemessen war genau das der Grund, aus dem beide Verlängerer schädlich maßen (Schwungrad
+   −5 %, Kehrtwende −12 %): sie kosteten einen Platz und taten nichts. „Verlängert die Haltung" kann nur heißen,
+   dass sie LÄNGER NACHKLINGT — und das entscheidet sich beim Wechsel. `ext` fällt dort auf 0. */
 export function extendStance(st, skills, skillTiers, source) {
   if (!st || !st.active) return st;
   const id = source === "crit" ? S.SCHWUNGRAD : S.KEHRTWENDE;
   const budget = stanceParam(skills, skillTiers, id, "max");
   if (!budget || st.ext >= budget) return st;
-  return { ...st, ext: st.ext + 1, ring: { ...st.ring, [st.stance]: (st.ring[st.stance] || 0) + 1 } };
+  return { ...st, ext: st.ext + 1 };
 }
 
 /* ---- Übertrag (Crit-Linie) ----
@@ -225,10 +232,13 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
       next = { ...next, ring: { ...next.ring, [wonSuit]: minDuration(skills, skillTiers) } };
       if (wonSuit !== next.stance) {
         switched = true;
-        // Lesart B (STANCE_AFTERGLOW_ON_SWITCH): der Nachklang der ABGELÖSTEN Haltung beginnt hier, nicht bei
-        // ihrem eigenen Auslösen. Jeder Wechsel erzeugt dann garantiert Überlappung. Default ist Lesart A (§2).
-        if (C.STANCE_AFTERGLOW_ON_SWITCH)
-          next = { ...next, ring: { ...next.ring, [next.stance]: minDuration(skills, skillTiers) } };
+        /* Hier wird der Nachklang der ABGELÖSTEN Haltung festgelegt — und nur hier. Lesart B
+           (STANCE_AFTERGLOW_ON_SWITCH) setzt ihn frisch auf die Mindestdauer, Lesart A (Default, §2) lässt
+           stehen, was von ihrer eigenen Mindestdauer noch übrig ist. In beiden Fällen kommen die gesammelten
+           Verlängerungen obendrauf: das ist der Moment, in dem „verlängert die Haltung" überhaupt etwas
+           bedeuten kann. */
+        const base = C.STANCE_AFTERGLOW_ON_SWITCH ? minDuration(skills, skillTiers) : (next.ring[next.stance] || 0);
+        next = { ...next, ring: { ...next.ring, [next.stance]: base + (next.ext || 0) } };
         const carried = next.carried.includes(wonSuit) ? next.carried : [...next.carried, wonSuit];
         // Beschleunigung: jeder echte Wechsel senkt die Schwelle, bis auf den Boden der Stufe. Der Boden geht
         // bewusst nicht auf 1 — dort löste jede Farbe mit ihrem ersten Sieg aus (§6.7).

@@ -302,10 +302,17 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     const max = T.schwungrad[0].max;
     for (let i = 0; i < max + 3; i++) s = extendStance(s, skills, {}, "crit");
     expect(s.ext).toBe(max);                                   // das Budget deckelt, keine Sonderregel
-    expect(s.ring.B).toBe(max);
-    // Ein echter Wechsel setzt das Budget zurück.
+    expect(s.ring.B).toBe(0);                                  // noch nichts auf dem Nachklang — er wird erst beim Wechsel gelegt
+    // Die Verlängerung wird bei der ABLÖSUNG eingelöst: die alte Haltung klingt entsprechend länger nach.
     const after = stanceTick({ ...s, counts: { ...s.counts, G: C.STANCE_THRESHOLD - 1 } }, [], {}, { wonSuit: "G" }).stance;
-    expect(after.ext).toBe(0);
+    expect(after.stance).toBe("G");
+    // Der Nachklang wird NACH dem Abbau dieses Takts gelegt — wie beim Auslösen auch, sonst verlöre jede Haltung
+    // ihren ersten Stich. Die abgelöste Haltung klingt also genau `max` Stiche nach.
+    expect(after.ring.B).toBe(max);
+    expect(ringsNow(after, "B")).toBe(true);
+    expect(after.ext).toBe(0);                                 // Budget für die neue Haltung frisch
+    // Ohne den Skill verpufft nichts, weil nichts gesammelt wird.
+    expect(extendStance(st({ stance: "B" }), [], {}, "crit").ext).toBe(0);
   });
 });
 
@@ -387,10 +394,14 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
     expect(max).toBeGreaterThan(T.schwungrad[0].max);          // niedrigere Rate → größerer Deckel (§6.5)
     for (let i = 0; i < max + 3; i++) s = extendStance(s, skills, {}, "slid");
     expect(s.ext).toBe(max);
-    // In der Engine verlängert der gerutschte Stich die laufende Haltung.
+    // In der Engine sammelt der gerutschte Stich die Verlängerung; eingelöst wird sie bei der Ablösung.
     const one = resolveTrick(run(st(), { deck: constDeck(0), oppDeck: constDeck(12), skills }), noCrit);
     expect(one.lastTrick.result).toBe("tie");
     expect(one.stance.ext).toBe(1);
+    const handover = stanceTick({ ...one.stance, counts: { ...one.stance.counts, Y: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "Y" }).stance;
+    expect(handover.stance).toBe("Y");
+    expect(handover.ring.R).toBe(1);                           // die eine gesammelte Verlängerung, eingelöst
+    expect(ringsNow(handover, "R")).toBe(true);                // Rot klingt nach, obwohl seine Mindestdauer längst weg war
   });
 });
 
