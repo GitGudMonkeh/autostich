@@ -78,7 +78,7 @@ und zusammen decken sie die Score-Pipeline ab.
 
 | Haltung | Greift an | Was sie tut |
 | --- | --- | --- |
-| **Überlappung** | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte erbt eine Stufe. |
+| **Überlappung** | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. |
 | **Crit** | die Spitze | Durchgehend 50 % Crit-Chance, solange sie klingt. |
 | **Ergebnis** | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. |
 | **Score** | den Basis-Score | Glatter Multiplikator. |
@@ -98,6 +98,12 @@ und zusammen decken sie die Score-Pipeline ab.
   hat auch keinen eigenen Formationsfaktor.
 - **Ergebnis** ist als einzige gegen jede Haltungslänge robust: sie wirkt pro Stich und braucht keine
   Dauer. Das war der Prüfstein, an dem das alte Crit-Passiv gescheitert ist (§7).
+- **Die Segmentbindung des Abfärbens ist eine bewusste Einschränkung, keine geerbte.** „Die
+  Nachbarkarte erbt" ist von sich aus positionsbezogen, und Positionen kennen keine Segmente — ohne
+  die ausdrückliche Klausel liefe das Abfärben über jede Grenze und der Skill *Übergriff* (§5.4)
+  hätte nichts zu tun. Sie muss deshalb im Spielertext des Passivs stehen, nicht nur hier (Owner).
+  Angenehmer Nebeneffekt: damit zählt die **Lage innerhalb des Segments** — eine Karte am Rand färbt
+  nur nach innen, eine in der Mitte nach beiden Seiten.
 
 ---
 
@@ -112,8 +118,8 @@ tanzen.
 | --- | --- |
 | **Score** | Stauung · Zinsen · Mitklang — **voll** |
 | **Crit** | Grundrauschen · Übertrag · Schwungrad — **voll** |
+| **Überlappung** | Doppelbindung · Übergriff · Verankerung — **voll** |
 | **Rotation** | Anklang · Runde · *(dritter Platz geparkt, bis die Haltungen stehen)* |
-| **Überlappung** | offen |
 | **Ergebnis** | offen |
 
 Dazu kommen **3 Legendäre** (Format der Bestandsfraktionen) — noch nicht angefasst.
@@ -180,20 +186,21 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 **Warnung:** eine Linie, die immer wirkt, wird auch immer genommen. Bei zwei Türen à drei Skills
 könnte Rotation die vier Haltungslinien systematisch verdrängen. Beim Bau des Angebots mitdenken.
 
-### 5.4 · Überlappungs-Linie — offen
+### 5.4 · Überlappungs-Linie — voll
 
-Passiv: die Überlappung färbt ab, die Nachbarkarte erbt eine Stufe.
+Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** erbt eine Stufe.
 
-Kandidaten aus der Diskussion, Namen auf Kollision geprüft:
-
-| Kandidat | Wirkung |
+| Skill | Wirkung |
 | --- | --- |
-| **Gefüge** | Eine Karte ohne Formation zählt als eine. Hebt die Reichweite des Passivs von „dichte Stellen" auf das ganze Brett. |
-| **Doppelbindung** | Eine Karte darf in zwei Formationen desselben Typs liegen. Der einzige Weg über die ×3-Decke, weil es sonst nur vier Typen gibt. |
-| **Weiterreichen** | Das Abfärben läuft eine Karte weiter statt nur zum direkten Nachbarn. |
-| **Verkettung** | Eine Karte, die von beiden Seiten erbt, zählt beide Stufen. |
+| **Doppelbindung** | Eine Karte darf in zwei Formationen desselben Typs liegen. Der einzige Weg über die ×3-Decke, weil es sonst nur vier Typen gibt — hebt die *Anzahl*, nicht den *Wert*. |
 | **Übergriff** | Das Abfärben springt über die Segmentgrenze. |
-| **Verankerung** | Beim Auslösen der Haltung erbt jede Karte des aktuellen Segments einmal. Zündet auch in einer Haltung, die nur einen Stich lebt. |
+| **Verankerung** | Beim Auslösen der Haltung erbt jede Karte des aktuellen Segments einmal. Zündet auch in einer Haltung, die nur einen Stich lebt — also der für den Tanz-Build. |
+
+**Offen dazu:** was Übergriff auf einer Grenze tut, die ohnehin schon offen ist. Spalier (Pflanze),
+Segmentarbeit (Perk-Familie E) und Durchlass (Auftragsbeute) öffnen Grenzen bereits — dort wäre der
+Skill wirkungslos, solange das Abfärben offenen Grenzen von selbst folgt. Entweder folgt es ihnen
+nicht (dann ist Übergriff auch dort etwas wert), oder der Skill überschneidet sich mit jedem
+Grenzöffner im Spiel.
 
 **Nachbarschaft zu Pflanze, zu beachten:** **Verwachsung** (SK_PLANT_14) hebt den Überlappungs-*Wert*,
 **Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier** (SK_PLANT_03) öffnet Segmentgrenzen. Wer
@@ -283,6 +290,7 @@ Ausreißer und deshalb wertvoll: sie multipliziert nicht, sie wandelt, und läuf
 | **Pechbremse** (ein Sieg ohne Crit hebt die Chance für den nächsten) | Stirbt am eigenen Erfolg: wer auf Crit baut, verfehlt nie, also greift sie nie. Gehört zur Sorte „immer genommen, nie gespürt" (`skill-rework.md` §8.5). |
 | **Metronom · Takt · Zielschuss** | Hingen alle am gestrichenen Takt-Passiv. |
 | **„Aufteilung"** | Name belegt (Glossar: „Aufteilung deines Scores auf Formationen / Crits / Übrige"), und mechanisch war der Skill identisch zu Mitklang, nur auf der Crit-Achse. |
+| **Gefüge · Weiterreichen · Verkettung** (Überlappungs-Kandidaten) | Nicht gewählt. Gefüge bleibt der stärkste der drei, falls die Linie später aufgemacht wird: es hebt die Reichweite des Passivs von „dichte Stellen" auf das ganze Brett. |
 | **Linien-Schnitt B** (Tanzen · Campen · Steuern · Ertrag) | Die vier Haltungen hätten keine Heimat gehabt. |
 | **Linien-Schnitt C** (Partitur · Takt · Ausklang · Haltungen · Ertrag) | Am leichtesten zu tarieren, aber liest sich wie eine Bauteilliste. |
 | **Feste Kreis-Reihenfolge** (Haltungen klingen nur mit ihren Nachbarn zusammen) | Der Owner bestimmt den Kreis über die Farbblöcke in der Aufstellung — eine vom Design gesetzte Reihenfolge nähme ihm genau das. |
@@ -295,8 +303,8 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 ## 8 · Offene Punkte
 
-1. **Die Überlappungs-Linie** — drei aus sechs Kandidaten (§5.4).
-2. **Die Ergebnis-Linie** — noch keine Kandidaten.
+1. **Die Ergebnis-Linie** — noch keine Kandidaten.
+2. **Übergriff auf bereits offenen Grenzen** — §5.4.
 3. **Der dritte Rotations-Skill** — geparkt, bis die Haltungen stehen.
 4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Dabei zu bedenken: Pflanze färbt Karten
    dauerhaft grün, Grün campt also von selbst. Der Owner hat die Kombination Grün + Pflanze
@@ -363,5 +371,5 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 ## 10 · Nächster Schritt
 
-Die Überlappungs-Linie (§5.4), dann die Ergebnis-Linie. Danach die Farbzuordnung, die Legendären und
-zuletzt die Zahlen — in der Reihenfolge, die Eis und Pflanze schon gegangen sind.
+Die Ergebnis-Linie (§5.5), dann der dritte Rotations-Platz. Danach die Farbzuordnung, die Legendären
+und zuletzt die Zahlen — in der Reihenfolge, die Eis und Pflanze schon gegangen sind.
