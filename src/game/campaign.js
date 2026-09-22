@@ -342,6 +342,12 @@ export function enemyValueWith(state, base = 0, counterStack = 0) {
   return Math.max(0, out);
 }
 
+/* Derselbe Aufschlag als reine Anzeige-Zahl: was der nächste Gegner GERADE an Konter-Bonus
+   mitbringt. Eine Quelle mit enemyValueWith — die Leiste darf keine zweite Rechnung führen, sonst
+   steht dort irgendwann eine andere Zahl als auf dem Brett. */
+export const counterBonus = (state) =>
+  (bossEffect(state).counterPerWin || 0) * Math.max(0, (state && state.counterStack) || 0);
+
 /* Losentscheid converts a near loss into a win, exactly like the perk Patt — so it reads as the
    same margin and the wider of the two wins. */
 export function pattMarginWith(state, base = 0) {
@@ -399,6 +405,16 @@ export const segmentLocked = (state, i) => {
   const seg = state && state.lockedSegment;
   return seg != null && seg >= 0 && Math.floor(i / SEGMENT_SIZE) === seg;
 };
+/* Dieselbe Sperre als Positionsliste — die Aufstellung zeichnet sie mit dem Mittel, das sie für
+   gesperrte Zellen schon hat (#301 C3), statt ein zweites Sperr-Bild zu erfinden. Eine Quelle für
+   beides: was der Reducer beim Tausch ablehnt, ist genau das, was hier grau wird. */
+export function lockedPositions(state, positions = 40) {
+  const seg = state && state.lockedSegment;
+  if (seg == null || seg < 0) return [];
+  const out = [];
+  for (let i = seg * SEGMENT_SIZE; i < Math.min(positions, (seg + 1) * SEGMENT_SIZE); i++) out.push(i);
+  return out;
+}
 
 // ---- What a campaign run starts with -----------------------------------------------------
 

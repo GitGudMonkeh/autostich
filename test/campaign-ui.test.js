@@ -151,6 +151,41 @@ describe("Kampagne · die Kachel im Lauf", () => {
     expect(h).toContain("8,2 Mio");
     expect(h).toContain("von 10 Mio nötig");
   });
+
+  it("zeigt den Konter-Aufschlag mit der Zahl, die auch auf dem Brett wirkt", () => {
+    const state = { score: 1e6, counterStack: 4, campaign: camp({ run: 4 }) };
+    const zu = CP.enemyValueWith(state, 5, state.counterStack) - 5;   // dieselbe Rechnung wie die Engine
+    expect(zu).toBe(4);
+    expect(txt(html(CampaignTile, { state }))).toContain(`Nächster Gegner +${zu}`);
+  });
+
+  it("schweigt über den Aufschlag, solange der Konter nicht dran ist", () => {
+    const h = txt(html(CampaignTile, { state: { score: 1e6, counterStack: 4, campaign: camp({ run: 1 }) } }));
+    expect(CP.counterBonus({ counterStack: 4, campaign: camp({ run: 1 }) })).toBe(0);
+    expect(h).not.toContain("Nächster Gegner");
+  });
+});
+
+describe("Kampagne · Schließer sperrt sichtbar, nicht nur wirksam", () => {
+  /* Die Sperre ist an zwei Stellen dieselbe: der Reducer lehnt den Tausch ab, die Aufstellung malt
+     die Zelle grau. Geprüft wird die POSITIONSLISTE, die beide lesen — und dass die Aufstellung sie
+     mit dem vorhandenen Sperr-Mittel (#301 C3) zusammenlegt statt ein zweites zu erfinden. */
+  it("liefert genau die fünf Positionen des gezogenen Segments", () => {
+    expect(CP.lockedPositions({ lockedSegment: 3 })).toEqual([15, 16, 17, 18, 19]);
+    expect(CP.lockedPositions({ lockedSegment: null })).toEqual([]);
+    for (const i of CP.lockedPositions({ lockedSegment: 3 })) {
+      expect(CP.segmentLocked({ lockedSegment: 3 }, i)).toBe(true);
+    }
+    expect(CP.segmentLocked({ lockedSegment: 3 }, 14)).toBe(false);
+  });
+
+  it("legt sie in der Aufstellung mit den gesperrten Zellen zusammen", () => {
+    const fp = src("ui/FormationPhase.jsx");
+    const zeile = fp.split("\n").find((l) => l.includes("const chLockForm ="));
+    expect(zeile, "chLockForm nicht gefunden").toBeTruthy();
+    expect(zeile).toContain("challengeBlockForm");
+    expect(zeile).toContain("CP.lockedPositions");
+  });
 });
 
 /* ---- Die Verdrahtung in App.jsx. Textprüfung, weil die Naht dort keine Zahl ist, sondern ein

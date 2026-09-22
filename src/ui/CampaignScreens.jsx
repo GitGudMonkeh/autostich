@@ -70,6 +70,7 @@ export function CampaignTile({ state }) {
   const reached = score >= threshold;
   const held = Object.entries(c.held || {});
   const col = isEndBoss(boss) ? VIOLET : RED;
+  const counter = CP.counterBonus(state);   // Konter: was der nächste Gegner gerade obendrauf hat
   return (
     <div className="rounded-lg min-w-0" style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
       <button type="button" onClick={() => setOpen((v) => !v)} data-sfx="none"
@@ -84,6 +85,13 @@ export function CampaignTile({ state }) {
           {t("campaign.threshold", { n: mio(score) })}
           <span className="text-micro opacity-45 ml-1">{t("campaign.over.need", { n: mio(threshold) })}</span>
         </div>
+        {/* Der Konter-Aufschlag steht zugeklappt da: er ändert sich mit JEDEM Stich, und wer ihn erst
+            nach dem Aufklappen sieht, sieht ihn nie zur richtigen Zeit. */}
+        {counter > 0 && (
+          <div className="ty-num-sm text-micro mt-0.5" style={{ color: VIOLET }}>
+            {t("campaign.rail.counter", { n: counter })}
+          </div>
+        )}
       </button>
       {open && (
         <div className="px-2.5 pb-2 pt-1 border-t" style={{ borderColor: DECK_BORDER }}>

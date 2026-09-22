@@ -957,6 +957,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "campaign.pick.take","i18n","Nehmen","","Take","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.pick.title","i18n","Reward für Lauf {n}","","Reward for run {n}","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.pick.upgrade","i18n","Upgrade, ersetzt die niedrigere Stufe","","Upgrade, replaces the lower step","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"campaign.rail.counter","i18n","Nächster Gegner +{n}","","Next opponent +{n}","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.rail.label","i18n","Kampagne · Lauf {n}/{runs}","","Campaign · Run {n}/{runs}","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.reached","i18n","{n} Mio erreicht","","{n}M reached","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.reward.doppelwahl","i18n","Doppelwahl","","Double Choice","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""

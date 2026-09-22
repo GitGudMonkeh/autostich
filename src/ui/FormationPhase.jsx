@@ -3,6 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, countBuiltFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
 import { openBordersOf } from "../game/contracts.js"; // Durchlass: die aus der Beute geöffneten Grenzen
+import * as CP from "../game/campaign.js"; // Kampagne/Schließer: das festgesetzte Aufstellsegment
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -80,7 +81,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
   const glacierPos = useMemo(() => { const s = new Set(); glacierLocked.forEach((v, i) => { if (v) s.add(i); }); return s; }, [glacierLocked]);
   // #301 C3: gesperrte Aufstell-Zellen — fixiert (nicht tauschbar). disabledPos greift Klick + Ausgrauen; die Karte zählt
   // aber normal für Formationen (Scoring unverändert). Als Array für stabile Memo-Dep.
-  const chLockForm = state.challengeBlockForm || [];
+  // Kampagne/Schließer: das festgesetzte Segment wird MIT demselben Mittel gezeichnet — der
+  // Reducer lehnt den Tausch dort ohnehin ab, und ohne die graue Zelle sähe der Spieler nur, dass
+  // sein Klick nichts tut. Wechselt je Aufstellphase, deshalb im selben Memo.
+  const chLockForm = [...(state.challengeBlockForm || []), ...CP.lockedPositions(state, (state.playerOrder || []).length || 40)];
   const chLockFormSet = useMemo(() => new Set(chLockForm), [chLockForm.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   // Architekt-Gebäude-Overlay (#202): zeigt in der Aufstellung, welche Positionen von welchem Gebäude gebufft werden —
   // die andere Seite der „platzieren (Architekt) → routen (Aufstellung)"-Schleife. Toggle-bar, Default an. Der Wert-Boost
