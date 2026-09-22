@@ -10,6 +10,7 @@ import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETY
 import { iceRoleTiers } from "./factions/ice.js"; // §5.3: Stufe je Gletscher-Rolle (die Zahlen der Eis-Skills) // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
 import { initLightning, maxChargeFor } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
+import { initStance } from "./factions/stance.js"; // Haltungen: Substate (vier Farbzähler, aktive Haltung, Nachklang)
 import { applyGrowth, greenSuitGains } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Fraktions-Kaltstart auf die grüne Farbe)
 // Pflanze-Bündel für die Formations-Engine (§6.7): Stufe je Skill + Wachstum je Karte — die vier Hebel und zwei
 // Legendären brauchen beides, um die Erkennung zu biegen.
@@ -173,6 +174,7 @@ export function initialState(rng = Math.random, seed = null) {
     skillDoors: null, // exp skill rework: die zwei Türen einer Skill-Phase [{ skills, tiers }] — offen, solange noch keine gewählt ist (dann skillOffer)
     skillOfferArchs: null, // exp skill rework: die Fraktionssymbole der geöffneten Tür je Platz — der Neuwurf würfelt die Skills dazu neu
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
+    stance: initStance(), // Haltungen: inert, bis der erste Fraktions-Skill `active` setzt (wie die Ladungsleiste)
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
     brandPending: {}, brandActive: {}, forged: {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
@@ -912,6 +914,7 @@ export function reducer(state, action) {
       let activeArchetypes = state.activeArchetypes || [];
       let lightning = state.lightning;
       let heat = state.heat;
+      let stance = state.stance || initStance();
       let deck = state.deck;
       // Feuer: Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
       let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
@@ -921,6 +924,9 @@ export function reducer(state, action) {
       let growth = state.growth || {}; // Pflanze (§6.2): Wachstum je Karte
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills, skillTiers) }; // exp: Leiste 10, Reststrom Episch 9 (§7.22)
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
+      // Haltungen: alle vier laufen ab dem ERSTEN Skill der Fraktion (Owner) — kein Aufbau, keine Skalierung mit der
+      // Skill-Zahl. Der Lauf steht dann in Rot mit Zähler 0, wie er es von Anfang an getan hätte.
+      if (arch === "stance" && !stance.active) stance = { ...initStance(), active: true };
       heat = syncHeatMax(heat, skills); // exp: Weißglut gewählt oder ersetzt → Leiste 200 bzw. 100 (Hitze geklemmt)
       // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
       // (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).
@@ -941,6 +947,7 @@ export function reducer(state, action) {
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
       if (!stillActive.has("fire")) { heat = null; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Brand/Schmiede-Zähler weg (geschmiedete Dauerwerte bleiben gebacken)
       if (!stillActive.has("plant")) tendrils = {}; // §6.26: ohne Pflanzen-Skill verschwinden die Ranken auf dem Gegnerdeck
+      if (!stillActive.has("stance")) stance = initStance();                       // Haltungen weg: Zähler, Nachklang und Stau fallen mit ihnen
       if (!stillActive.has("ice")) iceTemp = {};                                     // Blitzfänger-Temp beim Eis-Deaktivieren leeren (Alt-Verhalten)
       // Pflanze weg (letzter Pflanzen-Skill ersetzt): Wachstum und beide Zustände fallen mit ihr.
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
@@ -960,7 +967,7 @@ export function reducer(state, action) {
       const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick, schild) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth }, bordersOf(state));
-      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, tendrils, formations,
+      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, stance, deck, iceTemp, growth, brandPending, brandActive, forged, tendrils, formations,
                /* §3.6: kam dieser Skill aus dem Meisterhand-Bonus, merkt sich der Lauf, welcher es war —
                   der Verkauf des Perks nimmt ihn mit, und ohne Gedächtnis wäre er nicht wiederzufinden.
                   Wird er später ERSETZT, folgt die Marke dem Nachfolger: der Slot ist der von Meisterhand,

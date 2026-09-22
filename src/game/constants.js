@@ -453,6 +453,28 @@ export const EWIGER_FRUEHLING_GREEN_FRAC = envNum("SIM_EWIGER_FRUEHLING_GREEN_FR
 export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 6);
 export const EWIGER_FRUEHLING_FORM_MULT   = envNum("SIM_EWIGER_FRUEHLING_FORM_MULT", 0.15);  // Ewiger Frühling (L, §6.15, Owner): ein Sieg mit einer blühenden Karte zählt +so viel je aktiver Formation an ihrer Position. Der EINZIGE Multiplikator der Fraktion — der Wert-Bonus allein sättigte bei +73 % (§6.14) // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
 
+/* ============================================================
+   HALTUNGEN — Fraktion 5, Arbeitstitel „Prisma" (docs/haltungen-fraktion.md). Hier stehen NUR die Passiv-Größen
+   und die Sim-Regler; die Zahlen der 15 SKILLS stehen in der Stufentabelle HALTUNG in skills.js.
+
+   Vier Haltungen, eine je Farbe. Ein Zähler je GRUNDFARBE (§2.2: nie die effektive — Pflanzen-Grün würde die
+   Rotation sonst ab D15 abwürgen) zählt die gewonnenen Stiche; bei STANCE_THRESHOLD wechselt die Haltung auf
+   diese Farbe und der Zähler fällt auf 0. Eine Haltung klingt ab dem Auslösen STANCE_MIN_DURATION Stiche und
+   darüber hinaus, solange sie aktiv ist. Überlappung entsteht genau dann, wenn zwei Wechsel innerhalb der
+   Mindestdauer fallen.
+   ============================================================ */
+export const STANCE_THRESHOLD    = envNum("SIM_STANCE_THRESHOLD", 5);    // gewonnene Stiche einer Grundfarbe bis zum Wechsel (Owner)
+export const STANCE_MIN_DURATION = envNum("SIM_STANCE_MIN_DURATION", 3); // Stiche, die eine Haltung ab dem Auslösen mindestens klingt (Owner: „mal mit 3 starten")
+export const STANCE_START        = "R";                                  // der Lauf startet in Rot, Zähler 0 (Owner) — fest, nicht gewürfelt
+// Grundwerte der vier Passive (§3, Owner). Sie stehen und skalieren NICHT mit der Zahl gehaltener Skills.
+export const STANCE_CRIT         = envNum("SIM_STANCE_CRIT", 0.5);       // Blau: Crit-Chance, solange sie klingt — additiv, kein Mindestwert
+export const STANCE_SCORE_MULT   = envNum("SIM_STANCE_SCORE_MULT", 1.4); // Gelb: glatter Multiplikator auf den Sieg-Score
+export const STANCE_BLEED        = envNum("SIM_STANCE_BLEED", 1);        // Grün: Überlappungs-Stufen, die die Nachbarkarte im Segment erbt
+/* Überlappungsleiter über der bestehenden Decke (OVERLAP_BONUS endet bei 4 → ×3). Doppelbindung ist laut §5.4 „der
+   einzige Weg über die ×3-Decke"; wohin die Leiter dort läuft, steht nirgends. Lineare Fortsetzung (+1 je Stufe)
+   als STARTWERT — die Alternative (+1,5 wie der Schritt 3→4) läuft geometrisch weg. NICHT vom Owner entschieden. */
+export const STANCE_OVERLAP_OVER = envNum("SIM_STANCE_OVERLAP_OVER", 1); // Zuwachs je Überlappungs-Stufe über 4
+
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
 

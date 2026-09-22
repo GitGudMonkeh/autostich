@@ -23,7 +23,13 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult, beetGains, applyGrowth,
   bloomAllIfFullGreen } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
-import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+// Haltungen (docs/haltungen-fraktion.md): vier Haltungen, eine je Farbe, gesteuert von den gewonnenen Stichen der
+// GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
+// Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
+import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
+  genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank,
+  roundScore, stanceCycleEnd } from "./factions/stance.js";
+import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES, stanceBorders } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
@@ -153,6 +159,7 @@ export function resolveTrick(state, rng) {
     brandPending = {}, brandActive = {}, forged = {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
     tendrils = {}, // Pflanze (§6.26 Ranken): berankte Gegnerkarten je oppCard.id — ein grüner Sieg rankt, ein Sieg darauf erntet
     growth = {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
+    stance = null, stanceBase = 0, stanceFormKey = null, // Haltungen: Substate · Eigen-Score-Kanal · Geometrie-Schlüssel der zwischengespeicherten Formationen
 
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
@@ -213,8 +220,32 @@ export function resolveTrick(state, rng) {
   const archState = architectEnabled ? architect : null; // Architekt nur aktiv, wenn das Flag gesetzt ist (im Spiel default an)
   // Architekt-Precompute je Durchlauf (stabil): value-/score-Effekte + Struktur-Faktor je Position (target einmal bestimmt).
   let archPreNow = architectPre;
+  /* Haltungen, grün (§3/§9): die einzige Fraktions-Mechanik, die die Formations-GEOMETRIE ändert statt einer Zahl.
+     `computeFormations` läuft sonst einmal je Durchlauf und hält — hier hängt das Brett aber an der klingenden
+     Haltung, die mitten im Durchlauf wechselt. `stanceFormKey` fasst alles zusammen, was die Geometrie verändert:
+     ändert er sich, wird neu gelesen, sonst nicht. Ein Wechsel, der Grün gar nicht berührt, kostet damit nichts.
+     Übergriff braucht zwei Durchgänge, weil „die Grenzen mit den meisten Formationen daneben" erst nach der
+     Erkennung feststehen — nur solange der Skill liegt. */
+  const stanceOn = !!(stance && stance.active && (activeArchetypes || []).includes("stance"));
+  const stanceOpts = stanceOn ? stanceOverlapOpts(stance, skills, skillTiers) : null;
+  const stanceKey = stanceFormKeyOf(stanceOpts);
+  let newStanceFormKey = stanceFormKey;
+  /* EIN Weg, das Brett zu lesen — beide Aufrufstellen (Durchlauf-Beginn hier, Formationsphase am Ende) gehen
+     hierdurch. `o.borders` kommt als ANZAHL herein und geht als AUSWAHL hinaus: der erste Durchgang liefert die
+     Formationen, an denen sich „die Grenzen mit den meisten daneben" überhaupt erst bestimmen lassen. Ohne
+     Übergriff bleibt es bei einem Durchgang. `deck`/`growthArg` werden bewusst spät gelesen — am Durchlauf-Ende
+     steht der Pflanzen-Stand dieses Stichs schon drin. */
+  const readBoard = (o, growthArg) => {
+    const call = (opts) => computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: growthArg }, CT.openBordersOf(state), opts);
+    if (!o) return call(null);
+    const first = call({ ...o, borders: null });
+    if (!o.borders) return first;
+    return call({ ...o, borders: stanceBorders(first, o.borders) });
+  };
+  if (stanceOn && pos !== 0 && stanceKey !== stanceFormKey) { formations = readBoard(stanceOpts, growth); newStanceFormKey = stanceKey; }
   if (pos === 0) {
-    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth }, CT.openBordersOf(state));
+    formations = readBoard(stanceOpts, growth);
+    newStanceFormKey = stanceKey;
     // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
     // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
     // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
@@ -321,7 +352,12 @@ export function resolveTrick(state, rng) {
   }
   // Henker (#203): im letzten Segment (Pos 36–40 / Index ≥ HENKER_ZONE_START) ist jeder Sieg garantiert ein Crit
   // (der ×-Bonus läuft unten im Score-Stack). Ersetzt die alte L10-Kettenreaktion (chainArmed) als forceCrit-Quelle.
-  const forceCrit = ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START;
+  /* Haltungen, Übertrag (§5.2): ein Crit springt über — die armierten Stiche critten zwangsweise, wie beim Henker.
+     `wasCarried` trennt den übergesprungenen Crit vom eigenen: nur ein EIGENER armiert neu, sonst crittete man ab
+     dem ersten Crit bis zum Ende der Haltung durch. Die Reichweite zählt STICHE, nicht Siege — ein verlorener
+     Stich verbraucht sie also mit. */
+  const wasCarried = stanceOn && carryArmed(stance);
+  const forceCrit = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) || wasCarried;
   // C2 Triumph: die Armierung dieser Karte wird durch das Spielen verbraucht (Neu-Armierung nur bei Sieg).
   if (triumphActive) triumphArmed = triumphArmed.filter((id) => id !== pCard.id);
   const ctx = {
@@ -385,8 +421,11 @@ export function resolveTrick(state, rng) {
   const wmCardBonus = weekModMag(state.weekMods, "cardValue");
   // Pflanze (§6.13, Ewiger Frühling): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion.
   const plantValue = plantValueBonus(skills, pCard);
+  // Haltungen, Rückhalt (§5.5): nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. `slid` trägt
+  // den Stand des VORIGEN Stichs — der Skill ist die Antwort der roten Linie auf die eigene Rutsche.
+  const stanceValue = (stanceOn && stance.slid) ? rueckhaltValue(skills, skillTiers) : 0;
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + glacierBuff + glacierTongue + wmCardBonus + plantValue;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + glacierBuff + glacierTongue + wmCardBonus + plantValue + stanceValue;
   // Verdichtung (§5.18): Kampfwert ÜBER dem Grundwert wird zusätzlich Masse. Sie unterdrückt nichts mehr — der Wert wird
   // normal ausgespielt, und es zählt jede Quelle (Gebäude, Perks, Familien, Frostbund), nicht nur der Architekt. Der
   // Zungen-Bonus ist ausgenommen: sonst schlösse sich Masse → Wert → Masse zu einem Kreis, der geometrisch wegläuft.
@@ -415,6 +454,7 @@ export function resolveTrick(state, rng) {
   // Pflanze (§6.2): Wachstum je Karte, immutabel fortgeschrieben. Die Zustände grün/blühend liegen als Flag auf der
   // Karte (card.green / card.bloom) und werden vom Modul mitgezogen.
   let newGrowth = growth;
+  let newStance = stance; // Haltungen: Arbeitskopie (nur im stanceOn-Zweig ersetzt → Nicht-Prisma-Läufe byte-identisch)
   let architectBump = null; // Architekt Meilenstein (#202): Gebäude-id, dessen Sieg-Zähler nach diesem Stich hochzählt
 
   let won = false, lost = false, tieConverted = false;
@@ -429,6 +469,18 @@ export function resolveTrick(state, rng) {
   // Patt (#203): eine Niederlage um höchstens PATT_MARGIN Wert zählt stattdessen als Sieg (Winrate-Hebel; harte Bedingung
   // = knapp verloren). Marge = oValue − pValue (≥1 bei Niederlage); der Sieg-Zweig läuft danach normal (Marge dann −PATT..0).
   if (lost && ownsFlag(perks, "patt") && (oValue - pValue) <= C.PATT_MARGIN) { lost = false; won = true; }
+  /* Haltungen, rot (§3): die Ergebnisleiter rutscht eine Stufe — Niederlage → Gleichstand, Gleichstand → Sieg.
+     NACH Patt, damit Patt weiter als erstes an die knappe Niederlage darf (dort wird sie ein ganzer Sieg statt
+     eines Gleichstands). Als einziges der vier Passive wirkt sie PRO STICH und ist damit robust gegen jede
+     Haltungslänge — der Prüfstein, an dem das alte Crit-Passiv gescheitert ist (§7).
+     `stanceSlid` merkt sich den Rutsch für Genugtuung (Basis-Score je Punkt Rückstand), Kehrtwende (Verlängerung)
+     und Rückhalt (Wert der nächsten Karte). Ein zum Gleichstand gerutschter Stich ist für ALLES keine Niederlage
+     mehr — Niederlagenserie, Schwachstellenanalyse, Revanche und Initiative laufen in einem roten Deck leer. */
+  let stanceSlid = false, stanceDeficit = 0, stanceSlidWin = false;
+  if (stanceOn && stanceLift(stance)) {
+    if (lost) { stanceDeficit = oValue - pValue; lost = false; stanceSlid = true; }
+    else if (!won) { won = true; stanceSlid = true; stanceSlidWin = true; }
+  }
 
   // Sieg-Kontext VOR der Verzweigung — mit den Werten, die ein Sieg hätte (Serie +1, Siege +1). Der Sieg-Zweig
   // übernimmt ihn unverändert.
@@ -458,6 +510,7 @@ export function resolveTrick(state, rng) {
   const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx)
                   + lightningCritChance(lightning, skills, skillTiers, winStreak + 1, pCardR, activeFormationCount(posForm)) // exp: Passiv je Blitz-Skill + Rampen + Lichtbogen (§7.28: je Stapel der gespielten Karte, pCardR = mit Resonanz-Summe) + Spannungsfeld (§7.58: je ZAHLENDER Formation dieser Position — dieselbe Zahl, die Brennpunkt und Feuerlinie lesen und die der Stich anzeigt)
                   + glacierCrit                                                              // §5.18 Sprödbruch: je Punkt Masse
+                  + (stanceOn ? stanceCrit(stance, skills, skillTiers) : 0) // Haltungen, blau (§3): durchgehende Crit-Chance, solange sie klingt — additiv, kein Mindestwert; klingt Blau nicht, zahlt Grundrauschen
                   + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
   // (§7.25: Durchschlag — der Crit auf einer Niederlage — ist gestrichen; auf dem Platz steht Resonanz, oben bei pCardR.)
 
@@ -536,6 +589,16 @@ export function resolveTrick(state, rng) {
       // (§6.26: Lücke ist gestrichen — mit ihr der `gapped`-Weg. Dickicht und Verwachsung fassen kein Wachstum an,
       //  sie heben Faktoren und leben ganz in formations.js.)
     }
+    /* ---- Haltungen (§5.3/§5.5): die beiden Basis-Score-Quellen der Fraktion. Genugtuung liest JEDEN gerutschten
+       Stich — je deutlicher du eigentlich verloren hättest, desto mehr zahlt er; der einzige Griff im Entwurf, der
+       niedrige Karten wertvoll macht. Runde zahlt, was der VORIGE Durchlauf verdient hat: zwischen den Durchläufen
+       liegt die Aufstellungsphase, der Spieler kann also darauf aufstellen. Beides Flats in die multiplizierte
+       Basis, kein Direkt-Score. */
+    let stanceFlat = 0;
+    if (stanceOn) {
+      stanceFlat = genugtuungScore(skills, skillTiers, stanceDeficit) + roundScore(stance);
+      stanceBase += stanceFlat;
+    }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf
     // verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift). rawCrit steht oben
     // (vor der Verzweigung) — Perk-Basis + Präzision + Blitz-Passiv/Rampen + Kritanker, ungeklemmt.
@@ -555,6 +618,12 @@ export function resolveTrick(state, rng) {
     // wandelte, ist gestrichen; was über dem Deckel liegt, verfällt wieder.)
     critMultiplier = C.softCritMult(critMultiplier);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
+    // Haltungen: der eigene Crit armiert den Übertrag und dreht das Schwungrad (§5.2). Beide hängen an der
+    // klingenden blauen Haltung — das Armieren prüft das im Modul, der Verlängerer trifft die AKTIVE Haltung.
+    if (stanceOn && isCrit) {
+      if (!wasCarried) newStance = armCarry(newStance, skills, skillTiers);
+      newStance = extendStance(newStance, skills, skillTiers, "crit");
+    }
     // Sprödbruch Episch (§5.18): ein Crit mit einer Gletscherkarte friert wieder an. Der Kreis Masse → Crit → Masse ist
     // gedämpft (bei Masse 12 und 1,5 % je Punkt kommen ~0,5 Masse je Durchlauf zurück), nicht selbsttragend.
     if (isCrit && glacierActive && ice.sproedbruchCritMass && glacierLocked[actualPos])
@@ -591,7 +660,7 @@ export function resolveTrick(state, rng) {
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
                       + lightIonScore(pCardR, skills, skillTiers) + ((lightning && lightning.stackBank) || 0)
                       + entladungScoreFor(lightning, skills, skillTiers, isCrit) // §7.42: Entladungs Rampe zahlt Basis-Score je Sieg
-                      + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten; §7.25 Resonanz: pCardR trägt die Stapel der Formation)
+                      + fireFlat + plantFlat + stanceFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten; §7.25 Resonanz: pCardR trägt die Stapel der Formation)
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
@@ -656,6 +725,11 @@ export function resolveTrick(state, rng) {
     // Pflanze (§6.15, Ewiger Frühling): gewinnt eine blühende Karte, zählt der Stich +Satz je aktiver Formation an
     // ihrer Position — der einzige Multiplikator der Fraktion, ein eigener Faktor wie der Feuer-Stack.
     const plantMult = plantFormMult(skills, pCard, posForm);
+    /* Haltungen, gelb (§3): glatter Multiplikator auf den Sieg-Score, solange Gelb klingt — dazu Beharrlichkeit
+       (je Stich Laufzeit) und Mitklang (je zusätzlich klingender Haltung). Ein eigener Faktor wie der Feuer-Stack,
+       KEINE zweite Achse auf einer fremden Ressource (§7.51: zwei Achsen an derselben Ressource ergaben den
+       kubischen Weglauf). Grün wirkt nicht hier, sondern über die Geometrie in formMult; Blau über den Crit. */
+    const stanceMult = stanceOn ? stanceScoreMult(stance, skills, skillTiers) : 1;
     /* §7.51 (Owner): Blitz hat KEINEN eigenen Faktor im Produkt. Der Crit-Multiplikator ist die Multiplikator-Achse
        der Fraktion — jeder Stapel zahlt über ION_CRIT_MULT_PER_STACK dorthin. §7.43 hatte daneben `lightMult`
        gestellt, in der falschen Annahme, Blitz habe keinen; zwei Achsen an derselben Ressource ergaben das
@@ -666,14 +740,14 @@ export function resolveTrick(state, rng) {
     // Serien-Flat (Reihenhaus) wird NEBEN der serien-multiplizierten Basis addiert → er bekommt Perk/Formation/Crit,
     // aber NICHT den globalen Serien-Mult (kein Doppel-Dip). Rest des Stacks unverändert.
     const streakMuldBase = Math.max(0, scoreBase) * streakMult;
-    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * architectMult;
+    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * stanceMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // Doppelentladung (Blitz-Legendär, §3.7): Crit mit einer ionisierten Karte — der Blitz schlägt zweimal ein, der ganze
     // gewertete Stich (Basis mal Multiplikatoren) zählt DOPPELENTLADUNG_STRIKE-fach. Kein Kreislauf: speist keine Leiste.
     const strikeMult = (isCrit && (pCardR.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1; // pCardR: mit Resonanz zählt die Formation (§7.25)
     gained *= strikeMult;
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
-    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * architectMult * (isCrit ? critMultiplier : 1);
+    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * stanceMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im
@@ -736,6 +810,15 @@ export function resolveTrick(state, rng) {
       perkDirect = cycleOpenScore * C.VABANQUE_MULT; vabanquePaid += 1; // vabanquePaid nur noch Telemetrie (kein Gate)
     }
     gained = gainedPreBet + perkDirect;
+    /* Haltungen, Stauung (§5.1): solange Gelb klingt, zahlt der Sieg NICHT — er sammelt an und entlädt sich mit
+       Zuschlag, wenn die Haltung endet. Die Linie hat damit ihre Spannung in sich: das Passiv belohnt, drin zu
+       sein, dieser Skill belohnt, dass es endet. Und er beißt sich mit den Verlängerern — in einem Build mit
+       Schwungrad oder Kehrtwende endet die Haltung nicht, und der Score verschwindet in einem Stau, der nie
+       aufgeht. Auf den unteren Stufen ist die Falle Absicht; Episch entlädt zwangsweise am Durchlauf-Ende. */
+    if (stanceOn && banksNow(newStance, skills, skillTiers)) {
+      newStance = { ...newStance, bank: (newStance.bank || 0) + gained };
+      gained = 0;
+    }
     score += gained;
     // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu).
     // Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht; Blitz und Feuer haben keinen Direkt-Anteil.
@@ -743,7 +826,7 @@ export function resolveTrick(state, rng) {
     // streakFlat/fireMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
     // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Feuer×Architekt) × (Form×Nachhall×Kern) × Crit
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, plantMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, plantMult, stanceMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
     // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter (§7.18: auch je Sieg
     // ohne Crit auf Episch), Überspannung (§7.24: der Überschuss über dem Crit-Deckel und über 100 % Chance), Ladungsserie
     // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte). Die volle
@@ -870,6 +953,26 @@ export function resolveTrick(state, rng) {
     // Serie & Initiative unverändert
   }
 
+  /* ---- Haltungen: der Takt (§2) ----
+     Der Stand VOR dem Stich hat ihn regiert; der Wechsel greift ab dem nächsten. Gezählt wird die GRUNDFARBE der
+     Siegkarte (`pCard.suit`), nie die effektive — über die effektive Farbe könnte die Rotation neben der Pflanze
+     ab D15 nie wieder auslösen (§2.2). Kehrtwende verlängert vor dem Takt, damit ihr Stich noch zählt; der
+     Übertrag verbraucht seine Reichweite pro Stich, gewonnen oder nicht. Endet Gelb mit diesem Stich, entlädt
+     sich der Stau. */
+  if (stanceOn) {
+    if (stanceSlid) newStance = extendStance(newStance, skills, skillTiers, "slid");
+    if (wasCarried) newStance = spendCarry(newStance);
+    const tick = stanceTick(newStance, skills, skillTiers, {
+      wonSuit: won ? pCard.suit : null, pos: actualPos, slid: stanceSlid, segmentSize: SEGMENT_SIZE,
+    });
+    newStance = tick.stance;
+    if (tick.ended.includes("Y")) {
+      const d = dischargeBank(newStance, skills, skillTiers);
+      newStance = d.stance;
+      if (d.payout) { score += d.payout; gained += d.payout; stanceBase += d.payout; }
+    }
+  }
+
   // Blitz (exp skill rework, §3.2): volle Leiste → +1 Leiste, die NÄCHSTE Karte in der Reihenfolge wird ionisiert
   // (Kettenblitz §7.18: die tiefste Karte dazu), Gewitterfront/Entladung rampen, Ionenfeld lädt das Feld, die Ladung fällt
   // auf den Reststrom-Boden. Höchstens einmal je Stich, nach Sieg UND Niederlage (Ladung über der Leiste, die ein Stich
@@ -945,7 +1048,7 @@ export function resolveTrick(state, rng) {
     : [];
   const lastTrick = {
     pCard, oCard, pValue, oValue,
-    result: tieConverted ? "win_tie" : won ? "win" : lost ? "loss" : "tie",
+    result: (tieConverted || stanceSlidWin) ? "win_tie" : won ? "win" : lost ? "loss" : "tie", // ein von der roten Haltung gerutschter Gleichstand liest sich wie der der Initiative
     gained, trickNo, hitTypes,
     isCrit, critChance, critMultiplier, scoreBeforeCrit, scoreGain: gained, critBonus,
     // Formations-Multiplikator dieses Stichs (§22.7) + die beteiligten Formationen der Position (Anzeige/Float).
@@ -1080,6 +1183,15 @@ export function resolveTrick(state, rng) {
         newGrowth = r.growth; deck = bloomAllIfFullGreen(skills, r.deck); growthTotal += r.total;
       }
     }
+    /* Haltungen (§5.1/§5.3): der Durchlaufende-Haken der Fraktion. Runde verrechnet die vollendeten Runden dieses
+       Durchlaufs zum Basis-Score-Bonus des NÄCHSTEN — dazwischen liegt die Aufstellungsphase, der Spieler kann
+       also darauf aufstellen. Stauung Episch entlädt hier zwangsweise, damit der Stau in einer nie endenden
+       Haltung nicht versickert. Die Auszahlung läuft wie Zinseszins/Echo in `cycleEndScore`. */
+    if (stanceOn) {
+      const r = stanceCycleEnd(newStance, skills, skillTiers);
+      newStance = r.stance;
+      if (r.payout) { score += r.payout; stanceBase += r.payout; if (lastTrick) { lastTrick.gained += r.payout; lastTrick.scoreGain += r.payout; } }
+    }
 
     // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
     // Dev-Run (Test-Layout): state.maxCycles setzt die Rundenzahl eines einzelnen Laufs frei (20..100); null → Bestand.
@@ -1175,7 +1287,11 @@ export function resolveTrick(state, rng) {
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: newGrowth }, CT.openBordersOf(state));
+        // Haltungen: die Formationsphase zeigt das Brett, auf dem der nächste Durchlauf beginnt — also mit der
+        // Geometrie der dann klingenden Haltung, sonst driftet Anzeige gegen Motor.
+        const stOptsNext = stanceOn ? stanceOverlapOpts(newStance, skills, skillTiers) : null;
+        formations = readBoard(stOptsNext, newGrowth);
+        newStanceFormKey = stanceFormKeyOf(stOptsNext);
       }
     }
   }
@@ -1227,6 +1343,7 @@ export function resolveTrick(state, rng) {
     brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte
     tendrils: newTendrils, // Pflanze (§6.26): die berankten Gegnerkarten
     growth: newGrowth, // Pflanze (§6.2): Wachstum je Karte (grün/blühend liegen als Flag auf der Karte)
+    stance: newStance, stanceBase, stanceFormKey: newStanceFormKey, // Haltungen: Substate · Eigen-Score-Kanal · Geometrie-Schlüssel der Formationen
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
   };

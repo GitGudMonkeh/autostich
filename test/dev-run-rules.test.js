@@ -66,7 +66,11 @@ describe("skills.js — offer builder takes the caps as parameters", () => {
     expect(archsOf(small).size).toBe(2);
     const wide = buildSkillOffer([], [], makeRng(5), 20, 0, false, null, 4, 5);
     expect(wide).toHaveLength(20);
-    for (const a of ALL4) expect(wide.filter((id) => archetypeOf(id) === a)).toHaveLength(5);
+    // WELCHE vier Fraktionen der Wurf zieht, ist offen (die Registry trägt mehr als vier) — dass es vier sind
+    // und jede genau 5 Plätze bekommt, ist die Aussage.
+    const archs = [...archsOf(wide)];
+    expect(archs).toHaveLength(4);
+    for (const a of archs) expect(wide.filter((id) => archetypeOf(id) === a)).toHaveLength(5);
   });
 });
 

@@ -179,6 +179,40 @@ const PFLANZE = {
   bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
 };
 export const PFLANZE_TIERS = PFLANZE;
+/* Stufentabellen der 15 Haltungs-Skills (docs/haltungen-fraktion.md §5) — dieselbe Form. Eine Linie je Haltung,
+   dazu die Rotation, die über alle wirkt. Das Modul factions/stance.js liest sie über `stanceParam`; Legendäre
+   gibt es noch keine (Owner-Plan: erst messen, dann entwerfen).
+   STARTWERTE, NICHT gemessen — sie folgen dem Raster aus §1 (≈ 0,85 / 1,05 / 1,35 / 1,8, keine zwei Stufen gleich).
+   Drei Leitern sind bewusst DECKEL statt Rampen (Schwungrad, Kehrtwende, Beschleunigungs Boden): damit sind die
+   drei Weglauf-Rechnungen aus §6 in der Tabelle erledigt statt als Sonderregel. */
+const HALTUNG = {
+  // Score-Linie (gelb) — das Passiv ist der glatte Multiplikator; die Linie hat ihre Spannung in sich: das Passiv
+  // belohnt, DRIN zu sein, Stauung belohnt, dass es ENDET.
+  stauung:        [{ factor: 1.25 }, { factor: 1.4 }, { factor: 1.6 }, { factor: 2.0, cycleEnd: true }],
+  beharrlichkeit: [{ perTrick: 0.02 }, { perTrick: 0.03 }, { perTrick: 0.04 }, { perTrick: 0.06 }],
+  mitklang:       [{ perStance: 0.15 }, { perStance: 0.25 }, { perStance: 0.35 }, { perStance: 0.5 }],
+  // Crit-Linie (blau). Übertrag ist über die REICHWEITE gestaffelt, nicht über eine Sprungchance: mit einer Chance
+  // von 50 → 100 % bewegte sich die Critrate nur von 60 auf 67 %, das wäre eine Leiter, die nichts tut (§5.2).
+  grundrauschen:  [{ crit: 0.08 }, { crit: 0.12 }, { crit: 0.17 }, { crit: 0.25 }],
+  uebertrag:      [{ range: 1 }, { range: 2 }, { range: 3 }, { range: 4 }],
+  schwungrad:     [{ max: 2 }, { max: 3 }, { max: 5 }, { max: 8 }],
+  // Überlappungs-Linie (grün). Übergriffs Leiter spiegelt bewusst Spalier (1 / 2 / 3 / alle) — dasselbe Muster für
+  // dieselbe Geste spart dem Spieler eine Regel.
+  doppelbindung:  [{ types: 1 }, { types: 2 }, { types: 3 }, { types: 4 }],
+  uebergriff:     [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
+  verankerung:    [{ segments: 1 }, { segments: 2 }, { segments: 3 }, { segments: 8 }],
+  // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
+  // und sie strukturell nicht weglaufen kann (§6.5).
+  genugtuung:     [{ score: 25 }, { score: 40 }, { score: 55 }, { score: 80 }],
+  rueckhalt:      [{ value: 3 }, { value: 4 }, { value: 6 }, { value: 8 }],
+  kehrtwende:     [{ max: 3 }, { max: 4 }, { max: 6 }, { max: 10 }],
+  // Rotation — wirkt über alle Haltungen. Beschleunigungs Boden geht NICHT auf 1: bei Schwelle 1 löst jede Farbe
+  // mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7).
+  anklang:        [{ duration: 4 }, { duration: 5 }, { duration: 6 }, { duration: 8 }],
+  runde:          [{ score: 60 }, { score: 90 }, { score: 130 }, { score: 200, stack: true }],
+  beschleunigung: [{ step: 1, floor: 4 }, { step: 1, floor: 3 }, { step: 1, floor: 2 }, { step: 2, floor: 2 }],
+};
+export const HALTUNG_TIERS = HALTUNG;
 /* Stufentabellen der 15 Eis-Skills (§5.3) — dieselbe Form. Eis ist die letzte Fraktion, die Stufen bekommt; bis dahin
    las die Mechanik globale Konstanten über die Rolle `G_…`, und eine gewürfelte Stufe änderte nichts. Diese Tabelle ist
    ab jetzt die EINZIGE Quelle der Zahlen: glacier.js hält nur noch, was ohne Skill gilt (Schwellen, Kaskade, Passiv).
@@ -450,6 +484,45 @@ export const SKILL_DEFS = {
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
     desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert, und ihr Sieg zählt +${pct(C.EWIGER_FRUEHLING_FORM_MULT)} % je Formation an ihrer Position. Ist dein ganzes Deck grün, sind alle deine Karten blühend.` },
 
+  /* ---- HALTUNGEN (Arbeitstitel „Prisma", docs/haltungen-fraktion.md §5) ----
+     Die Haltungen tragen keine eigenen Namen (Owner) — die Texte sprechen sie über ihre Farbe an. Noch keine
+     Legendären: die werden nach der ersten Messung entworfen. Alle Zahlen sind STARTWERTE. */
+  // Score-Linie (gelb)
+  SK_STANCE_01: { id: "SK_STANCE_01", name: "Stauung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.stauung,
+    ...tiered(HALTUNG.stauung, (r) => `Solange die gelbe Haltung klingt, zahlen Siege nicht, sondern sammeln an. Endet sie, entlädt sich der Stau ×${de(r.factor)}.${r.cycleEnd ? " Am Ende eines Durchlaufs entlädt er sich ebenfalls." : ""}`) },
+  SK_STANCE_02: { id: "SK_STANCE_02", name: "Beharrlichkeit", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.beharrlichkeit,
+    ...tiered(HALTUNG.beharrlichkeit, (r) => `Die gelbe Haltung zählt +${de(r.perTrick)} Score-Multiplikator je Stich, den sie schon klingt.`) },
+  SK_STANCE_03: { id: "SK_STANCE_03", name: "Mitklang", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.mitklang,
+    ...tiered(HALTUNG.mitklang, (r) => `Die gelbe Haltung zählt +${de(r.perStance)} Score-Multiplikator je zusätzlich klingender Haltung.`) },
+  // Crit-Linie (blau)
+  SK_STANCE_04: { id: "SK_STANCE_04", name: "Grundrauschen", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.grundrauschen,
+    ...tiered(HALTUNG.grundrauschen, (r) => `Klingt die blaue Haltung nicht, hast du trotzdem +${pct(r.crit)} % Crit-Chance.`) },
+  SK_STANCE_05: { id: "SK_STANCE_05", name: "Übertrag", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.uebertrag,
+    ...tiered(HALTUNG.uebertrag, (r) => `Ein Crit der blauen Haltung springt über: ${de1(r.range)} ${r.range === 1 ? "weiterer Stich" : "weitere Stiche"} ${r.range === 1 ? "ist" : "sind"} ebenfalls Crits. Ein übergesprungener Crit springt nicht weiter.`) },
+  SK_STANCE_06: { id: "SK_STANCE_06", name: "Schwungrad", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.schwungrad,
+    ...tiered(HALTUNG.schwungrad, (r) => `Jeder Crit verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
+  // Überlappungs-Linie (grün)
+  SK_STANCE_07: { id: "SK_STANCE_07", name: "Doppelbindung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.doppelbindung,
+    ...tiered(HALTUNG.doppelbindung, (r) => `Eine Karte zählt für die Überlappung in ${r.types === 4 ? "jedem" : `bis zu ${de1(r.types)}`} Formationstyp${r.types === 4 || r.types === 1 ? "" : "en"} doppelt.`) },
+  SK_STANCE_08: { id: "SK_STANCE_08", name: "Übergriff", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.uebergriff,
+    ...tiered(HALTUNG.uebergriff, (r) => `Das Abfärben der grünen Haltung springt über ${r.borders >= 7 ? "jede Segmentgrenze" : `${de1(r.borders)} Segmentgrenze${r.borders === 1 ? "" : "n"}`}. Eine Grenze, die ohnehin offen ist, gewinnt dadurch nichts.`) },
+  SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.verankerung,
+    ...tiered(HALTUNG.verankerung, (r) => `Löst die grüne Haltung aus, erbt jede Karte ${r.segments >= 8 ? "aller Segmente" : r.segments === 1 ? "des aktuellen Segments" : `von ${de1(r.segments)} Segmenten`} einmal eine Überlappungs-Stufe.`) },
+  // Ergebnis-Linie (rot)
+  SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
+    ...tiered(HALTUNG.genugtuung, (r) => `Ein von der roten Haltung gerutschter Stich gibt +${r.score} Basis-Score je Punkt Rückstand, den er gedreht hat.`) },
+  SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
+    ...tiered(HALTUNG.rueckhalt, (r) => `Nach einem gerutschten Stich kämpft die nächste Karte mit +${r.value} Wert.`) },
+  SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,
+    ...tiered(HALTUNG.kehrtwende, (r) => `Ein gerutschter Stich verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
+  // Rotation — wirkt über alle Haltungen
+  SK_STANCE_13: { id: "SK_STANCE_13", name: "Anklang", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.anklang,
+    ...tiered(HALTUNG.anklang, (r) => `Eine Haltung klingt ${r.duration} Stiche statt ${C.STANCE_MIN_DURATION}.`) },
+  SK_STANCE_14: { id: "SK_STANCE_14", name: "Runde", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.runde,
+    ...tiered(HALTUNG.runde, (r) => `Hast du alle vier Haltungen getragen, gibt jeder Sieg des nächsten Durchlaufs +${r.score} Basis-Score.${r.stack ? " Mehrere Runden stapeln." : ""}`) },
+  SK_STANCE_15: { id: "SK_STANCE_15", name: "Beschleunigung", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.beschleunigung,
+    ...tiered(HALTUNG.beschleunigung, (r) => `Jeder Haltungswechsel senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.`) },
+
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
@@ -465,8 +538,9 @@ export const ARCHETYPE_META = {
   fire:      { key: "fire",      label: "Feuer",  color: "#e0714a" }, // warm/orange-rot
   ice:       { key: "ice",       label: "Eis",    color: "#5ec8f0" }, // eis-blau
   plant:     { key: "plant",     label: "Pflanze", color: "#5ab87a" }, // grün/wachsend (v0)
+  stance:    { key: "stance",    label: "Prisma", color: "#c07ad0" }, // Arbeitstitel (docs/haltungen-fraktion.md) — der Name ist NICHT entschieden
 };
-export const ARCHETYPE_ORDER = ["lightning", "fire", "ice", "plant"];
+export const ARCHETYPE_ORDER = ["lightning", "fire", "ice", "plant", "stance"];
 
 // Archetyp-Kodierung EINES Eintrags pro gehaltenem Skill ("fire,fire,ice", Reihenfolge egal) →
 // bekannte Keys MIT Wiederholung (ein Icon je Skill, #139) in fester Anzeige-Reihenfolge

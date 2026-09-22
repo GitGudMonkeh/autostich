@@ -34,6 +34,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { cornerArtIdFromFile, cornerArt, cornerOpacity, cornerBalance, isFiligree,
          CORNER_OPACITY, CORNER_GAIN, CORNER_PERK } from "../src/ui/cornerArt.js";
 import { ARCHETYPE_ORDER } from "../src/game/skills.js";
+import { SKILL_OFFER_ARCHETYPES } from "../src/game/constants.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const css = src("index.css");
@@ -45,7 +46,13 @@ const buildPy = readFileSync(new URL("../scripts/skill-art-build.py", import.met
 
 const FILES = readdirSync(new URL("../src/assets/corners", import.meta.url));
 const MASTERS = readdirSync(new URL("../docs/art/corners", import.meta.url)).filter((f) => f.endsWith(".webp"));
-const KEYS = [...ARCHETYPE_ORDER, CORNER_PERK];
+/* Ornaments belong to the factions a PLAYER can meet — that is the skill-offer pool, not the registry. A faction
+   that exists only in the registry and in the sim (docs/haltungen-fraktion.md, working title „Prisma": deliberately
+   NOT in SKILL_OFFER_ARCHETYPES until it is measured) has no offer screen to decorate, and inventing art for it
+   would be a new glyph nobody asked for. Both sets are pinned below, so the day such a faction is shipped to
+   players the gap fails HERE and not in a playtest. */
+const SHIPPED = ARCHETYPE_ORDER.filter((a) => SKILL_OFFER_ARCHETYPES.includes(a));
+const KEYS = [...SHIPPED, CORNER_PERK];
 
 /* A rule body, isolated. Every CSS assertion reads THIS and not the whole stylesheet — a match
    anywhere in a 5000-line file would also match a comment that merely mentions the property, which
@@ -105,8 +112,11 @@ describe("#cornerart — mapping through the filename", () => {
 
 describe("#cornerart — completeness of the lot", () => {
   it("knows archetypes at all (otherwise the suite would be silently green)", () => {
-    expect(ARCHETYPE_ORDER.length).toBe(4);
+    expect(SHIPPED.length).toBe(4);
     expect(KEYS.length).toBe(5);
+    // The registry may carry more than the pool. Those are sim-only and artless ON PURPOSE — name them, so
+    // adding one is a deliberate edit here and shipping one without art cannot pass.
+    expect(ARCHETYPE_ORDER.filter((a) => !SHIPPED.includes(a))).toEqual(["stance"]);
   });
 
   it("every archetype and the perk panel has an ornament", () => {

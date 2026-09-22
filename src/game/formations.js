@@ -19,7 +19,7 @@
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
 import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP,
-  BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE } from "./constants.js";
+  BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE, STANCE_OVERLAP_OVER } from "./constants.js";
 import { P, plantParam, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
@@ -111,6 +111,49 @@ function escalatingFactor(ordinal, base) {
 }
 // Überlappungsbonus je Anzahl Formationen auf einer Karte (#95): 2→×1,5, 3→×2, 4→×3.
 export const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
+/* Die Leiter endete bei 4, weil es nur vier Formationstypen gibt. Die Haltungen heben die ANZAHL über diese Decke
+   (Abfärben, Doppelbindung, Verankerung — docs/haltungen-fraktion.md §5.4), also braucht sie eine Fortsetzung.
+   Linear (+STANCE_OVERLAP_OVER je Stufe) als STARTWERT; die Alternative, den Schritt 3→4 (+1,5) fortzuschreiben,
+   läuft geometrisch weg. NICHT vom Owner entschieden — die erste Stelle, an der beim Tarieren zu drehen ist. */
+export function overlapFactor(count) {
+  const c = Math.max(0, Math.floor(count));
+  if (c < 2) return 1;
+  if (c <= 4) return OVERLAP_BONUS[c];
+  return OVERLAP_BONUS[4] + (c - 4) * STANCE_OVERLAP_OVER;
+}
+/* Übergriff (§5.4): die `count` Segmentgrenzen mit den MEISTEN Formationen daneben. Braucht einen ersten
+   Durchgang, weil die Formationen erst nach der Erkennung feststehen — die Engine rechnet deshalb zweimal, wenn
+   der Skill liegt. Er weicht schon offenen Grenzen NICHT aus (Owner): steht eine der besten Grenzen ohnehin
+   offen, verfällt dort seine Wirkung. Stabile Sortierung über den Grenz-Index, damit die Auswahl deterministisch
+   bleibt. */
+export function stanceBorders(formations = [], count = 0) {
+  const n = formations.length;
+  const nBorder = Math.max(0, Math.ceil(n / SEGMENT_SIZE) - 1);
+  if (!count || !nBorder) return new Set();
+  const weight = (b) => {
+    const left = (b + 1) * SEGMENT_SIZE - 1, right = left + 1;
+    return ((formations[left]?.formations || []).length) + ((formations[right]?.formations || []).length);
+  };
+  const ranked = Array.from({ length: nBorder }, (_, b) => b).sort((a, b) => weight(b) - weight(a) || a - b);
+  return new Set(ranked.slice(0, count));
+}
+/* Verankerung (§5.4): die Positionen, die beim Auslösen der grünen Haltung eine Stufe erben. Reichweite je Stufe —
+   das Segment, in dem ausgelöst wurde, dazu das folgende, die drei darum, oder alle acht. */
+export function anchorPositions(st, n) {
+  const segs = Math.ceil(n / SEGMENT_SIZE);
+  const base = Math.min(Math.max(0, st.anchorSeg || 0), Math.max(0, segs - 1));
+  let list;
+  if (st.anchor >= segs) list = Array.from({ length: segs }, (_, i) => i);
+  else if (st.anchor === 1) list = [base];
+  else if (st.anchor === 2) list = [base, base + 1];
+  else list = [base - 1, base, base + 1];
+  const out = [];
+  for (const s of list) {
+    if (s < 0 || s >= segs) continue;
+    for (let p = s * SEGMENT_SIZE; p < Math.min(n, (s + 1) * SEGMENT_SIZE); p++) out.push(p);
+  }
+  return out;
+}
 export const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40; // [#Pass4: Farbblock 1,30→1,35] [#161 FB-5: Treppe/Wechsel 1,25→1,35/1,40 — schwerer zu bauen, daher stärker belohnt (≥ Farbblock)]
 
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
@@ -251,9 +294,16 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null) {
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null, stanceOpts = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
+  /* Haltungen (docs/haltungen-fraktion.md §3/§5.4): die grüne Haltung ändert als einzige Fraktions-Mechanik die
+     Formations-GEOMETRIE statt einer Zahl. `stanceOpts` = { bleed, borders, doubleBind, anchor, anchorSeg } und ist
+     null, sobald Grün nicht klingt — dann rechnet unten alles wie vorher. Übergriffs Grenzen kommen als `borders`
+     schon ausgewählt herein (stanceBorders, zwei Durchgänge) und laufen über dieselbe `lootBorders`-Naht wie
+     Durchlass und Spalier: damit folgt das Abfärben JEDER offenen Grenze von selbst, und auf einer ohnehin offenen
+     Grenze tut Übergriff nichts (Owner). */
+  const st = stanceOpts && stanceOpts.bleed ? stanceOpts : null;
   // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
   // Stufe je Skill und das Wachstum je Karte (Wildwuchs braucht die Rangfolge). Ohne das Bündel
   // (Aufrufer ohne Pflanze, Tests) rechnet alles wie vorher.
@@ -317,7 +367,12 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
   const segInfo = openSegmentInfo(familyTiers);
   const spalierBorders = spalierOpenBorders(cards, skills, pTiers);
-  const lootBorders = openBorders instanceof Set ? openBorders : new Set(openBorders || []);
+  const lootBorders = openBorders instanceof Set ? new Set(openBorders) : new Set(openBorders || []);
+  // Übergriff: dieselbe Naht wie Durchlass. `borders` ist hier die AUSWAHL (Set/Array), nicht die Anzahl — die
+  // wählt der Aufrufer im ersten Durchgang (stanceBorders). Eine durchgereichte Zahl wäre ein Aufrufer-Fehler
+  // und würde hier still zur Wirkungslosigkeit; deshalb der ausdrückliche Typtest statt `for…of` auf Verdacht.
+  const stBorders = st && (st.borders instanceof Set || Array.isArray(st.borders)) ? st.borders : [];
+  for (const b of stBorders) lootBorders.add(b);
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
     || spalierBorders.has((k + 1) / SEGMENT_SIZE - 1) // Pflanze Spalier: grün gesäumte Grenze offen
     || lootBorders.has((k + 1) / SEGMENT_SIZE - 1)    // Durchlass (Auftrags-Beute): gewählte Grenze offen
@@ -469,9 +524,30 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // gewinnt damit relativ am meisten (×1,5 → ×1,75 sind +17 %, ×3 → ×3,25 nur +8 %), und dort liegen 38 % der Siege.
   // Prozentual würde die Spitze aufgeblasen, in der die Konzentration der Fraktion ohnehin sitzt (§6.22 C).
   const overlapPlus = plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0;
-  for (const p of out) {
-    const c = Math.min(p.formations.length, 4);
-    if (c >= 2) p.mult *= OVERLAP_BONUS[c] + overlapPlus;
+  /* Haltungen, grün (§3): das Abfärben. Eine Karte, die in mindestens einer Formation liegt, gibt ihrer
+     NACHBARKARTE eine Überlappungs-Stufe — innerhalb des Segments, es sei denn, die Grenze dazwischen ist offen
+     (`canExtendSeg`, dieselbe Frage, die auch ein Lauf stellt). Die Segmentbindung ist eine ausdrückliche Klausel,
+     keine geerbte: „die Nachbarkarte erbt" ist von sich aus positionsbezogen, und Positionen kennen keine
+     Segmente. Nebeneffekt, gewollt: die LAGE im Segment zählt — eine Karte am Rand färbt nur nach innen.
+     Dazu die beiden Skills, die die ANZAHL heben statt den Wert: Doppelbindung (eine Karte zählt in bis zu
+     `doubleBind` Typen doppelt) und Verankerung (jede Karte der Reichweite erbt beim Auslösen einmal). */
+  const extraOverlap = new Array(n).fill(0);
+  if (st) {
+    for (let k = 0; k < n; k++) {
+      if (!out[k].formations.length) continue;
+      if (k + 1 < n && canExtendSeg(k)) extraOverlap[k + 1] += st.bleed;
+      if (k - 1 >= 0 && canExtendSeg(k - 1)) extraOverlap[k - 1] += st.bleed;
+    }
+    if (st.doubleBind) for (let k = 0; k < n; k++) {
+      const types = [...new Set(out[k].formations.map((f) => f.type))];
+      extraOverlap[k] += Math.min(types.length, st.doubleBind);
+    }
+    if (st.anchor) for (const k of anchorPositions(st, n)) extraOverlap[k] += 1;
+  }
+  for (let k = 0; k < n; k++) {
+    const p = out[k];
+    const c = p.formations.length + extraOverlap[k];
+    if (c >= 2) p.mult *= overlapFactor(c) + overlapPlus;
   }
 
   // #179 E_SEGMENT IV Grenz-Bonus: Karten, die zu ≥1 segmentüberschreitenden Formation gehören, erhalten zusätzlich

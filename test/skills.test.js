@@ -10,11 +10,14 @@ import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
   rollTier, rollSkillOfferTiers, tierOf, SKILL_TIER_COUNT, TIER_NORMAL, TIER_EPIC,
   isLegendarySkill, archetypeOf,
-  offerArchetypes, archetypesWithSkills, decodeArchetypes } from "../src/game/skills.js";
+  offerArchetypes, archetypesWithSkills, decodeArchetypes, ARCHETYPE_ORDER } from "../src/game/skills.js";
 import { MAX_ARCHETYPES, SKILL_TIER_WEIGHTS, SKILL_LEGENDARY_PER_SLOT } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
+// Fraktionen, die überhaupt Legendäre tragen — abgeleitet, nicht abgeschrieben, damit eine neue Fraktion hier
+// nicht still durchfällt.
+const WITH_LEGENDARIES = ARCHETYPE_ORDER.filter((a) => ALL.some((id) => isLegendarySkill(id) && archetypeOf(id) === a));
 // Anteil → Prozenttext, wie `pctS` in skills.js (0,06 → „6", 0,045 → „4,5").
 const pctText = (x) => String(Math.round(x * 10000) / 100).replace(".", ",");
 
@@ -113,7 +116,8 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
 describe("archetypesWithSkills / offerArchetypes (4 Archetypen, Cap = MAX_ARCHETYPES)", () => {
   const ALL4 = ["lightning", "fire", "ice", "plant"];
   it("F3: alle vier Fraktionen haben Skills; alles owned → keiner", () => {
-    expect(archetypesWithSkills([])).toEqual(ALL4); // Reihenfolge = ARCHETYPE_ORDER (4. Fraktion Pflanze)
+    expect(archetypesWithSkills([])).toEqual(ARCHETYPE_ORDER); // Reihenfolge = ARCHETYPE_ORDER; die Registry traegt seit „Prisma" mehr als die vier spielbaren
+    expect(ALL4.every((a) => ARCHETYPE_ORDER.includes(a))).toBe(true);
     expect(archetypesWithSkills(ALL)).toEqual([]);
   });
   it("0 aktiv → ALLE verfügbaren Archetypen (bis MAX_ARCHETYPES = 4)", () => {
@@ -148,8 +152,9 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
     expect(new Set(off).size).toBe(6);
     expect(off.every((id) => SKILL_DEFS[id])).toBe(true);
     const archs = new Set(off.map(archetypeOf));
-    expect(archs.size).toBe(4); // MAX_ARCHETYPES = 4 → alle 4 Archetypen vertreten (count 6 / 4 = je 1 + 2 Fill)
-    for (const a of archs) expect(["lightning", "fire", "ice", "plant"]).toContain(a);
+    expect(archs.size).toBe(4); // MAX_ARCHETYPES = 4 → vier Archetypen vertreten (count 6 / 4 = je 1 + 2 Fill)
+    // WELCHE vier, entscheidet der Wurf: die Registry traegt fuenf Fraktionen, der Deckel laesst vier zu.
+    for (const a of archs) expect(ARCHETYPE_ORDER).toContain(a);
     // #156: verschiedene Seeds → (meist) verschiedenes Angebot — der Seed treibt die Auswahl wirklich.
     const offers = Array.from({ length: 8 }, (_, s) => buildSkillOffer([], [], makeRng(s + 1), 6).join(","));
     expect(new Set(offers).size).toBeGreaterThan(1);
@@ -239,13 +244,23 @@ describe("Stufenwurf — rollTier / rollSkillOfferTiers / tierOf (exp skill rewo
     expect(new Set(rolls).size).toBeGreaterThan(1);
   });
   it("Chance 1: jeder Platz wird ein ungehaltener Legendär DERSELBEN Fraktion, keine Duplikate, keine Stufe", () => {
-    const off = buildSkillOffer([], [], makeRng(2), 12); // 3+3+3+3 → je Fraktion 3 der 4 Legendären
+    // Nur Fraktionen MIT Legendären — „Prisma" hat noch keine (die werden erst nach der ersten Messung entworfen),
+    // und ein Platz ohne Legendären im Pool bleibt normal (der Fall darunter).
+    const off = buildSkillOffer([], [], makeRng(2), 12, 0, false, WITH_LEGENDARIES); // 3+3+3+3 → je Fraktion 3 der 4 Legendären
     const r = rollSkillOfferTiers(off, [], makeRng(5), 1);
     expect(r.offer).toHaveLength(12);
     expect(new Set(r.offer).size).toBe(12);
     expect(r.offer.every(isLegendarySkill)).toBe(true);
     for (let i = 0; i < off.length; i++) expect(archetypeOf(r.offer[i])).toBe(archetypeOf(off[i]));
     expect(r.tiers).toEqual({});
+  });
+  it("Fraktion ohne Legendäre: der Platz bleibt normal und bekommt eine Stufe, auch bei Chance 1", () => {
+    const stance = ALL.filter((id) => archetypeOf(id) === "stance").slice(0, 3);
+    expect(stance).toHaveLength(3);
+    const r = rollSkillOfferTiers(stance, [], makeRng(7), 1);
+    expect(r.offer).toEqual(stance);                       // nichts zu ersetzen
+    expect(r.offer.some(isLegendarySkill)).toBe(false);
+    for (const id of stance) expect(r.tiers[id]).toBeGreaterThanOrEqual(0);
   });
   it("Legendär-Pool erschöpft (gehaltene + schon im Angebot) → der Platz bleibt normal und bekommt eine Stufe", () => {
     const five = ["SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
