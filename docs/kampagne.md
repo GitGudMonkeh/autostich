@@ -86,41 +86,43 @@ fünf Punkte blockieren den Bau — alle klein, keiner rät sich von selbst:
    freigeschaltet sind. *Zinseszins*, *Münzrecht*, *Nachlass*, *Freizug* und alles andere, das
    Münzen voraussetzt, erscheint gar nicht erst. Ein wirkungsloses Angebot wäre eine Falle für
    einen neuen Spieler.
-3. **Die Raritäts-Decke der Rewards in Ebene 1.** Der Owner hat den Widerspruch gefunden: Ebene 1
-   kennt **keine Legendären** (§11 Startbedingungen, und die Freischaltungen gehen nur bis „Sehr
-   selten"). Die Raritätsformel (§10) schüttet aber Episch und Legendär aus, und drei der fünf
-   legendären Rewards **versprechen ein legendäres Perk, Skill bzw. Gebäude** — was es in Ebene 1
-   gar nicht gibt. Siehe den Kasten unten.
+3. ~~Die Raritäts-Decke der Rewards in Ebene 1~~ — **entschieden: Lesart B.** Die Reward-Rarität
+   folgt demselben Deckel wie Skills und Perks. **In Ebene 1 gehen Rewards nur bis „Sehr selten".**
+   Episch und Legendär kommen mit den höheren Ebenen, und die fünf legendären Rewards sind damit
+   **Ebene-2-Inhalt, nicht MVP**. Siehe den Kasten unten.
 4. ~~Wo der Stand lebt~~ — **technische Entscheidung, getroffen**: die **Freischaltungen** gehen ins
    Profil in `storage.js`, neben die Meta-Progression; sie sind dauerhaft und laufübergreifend. Der
    **Kampagnen-Stand** (welcher Lauf, gehaltene Rewards, gezogene Bosse, bisherige Endscores)
    bekommt einen eigenen Slot neben `as_activerun` — er muss einen Tab-Schluss mitten in der
    Kampagne überleben, endet aber mit ihr. Zwei Lebensdauern, zwei Ablagen.
-5. **Ausblenden oder durchstreichen?** Gemeint sind die Knöpfe der Münz-Ökonomie in der Lauf-Leiste:
-   **Münz-Anzeige · Neuwurf · Energie-Kauf · Baufeld-Kauf · Fokus**. Im Mockup (Board 12) sind sie
-   durchgestrichen und abgeblendet gezeichnet.
+5. ~~Ausblenden oder durchstreichen?~~ — **entschieden: ausblenden.** Münz-Anzeige, Neuwurf,
+   Energie-Kauf, Baufeld-Kauf und Fokus sind in Ebene 1 **gar nicht da**, bis die Freischaltung
+   kommt. Dasselbe Prinzip wie bei den Perks (Punkt 2): nichts zeigen, was nicht geht.
 
 **Nicht blockierend:** die Werte im Katalog (§9). Ein erster Satz steht, der Playtest zieht nach.
 
-> ### Der Legendär-Widerspruch
+> ### Der Raritäts-Deckel in Ebene 1 (Owner, 2026-09-22)
 >
-> **Gesetzt ist:** Ebene 1 startet ohne Legendäre und die fünf Freischaltungen führen nur bis
-> „Sehr selten". Episch und Legendär bleiben in Ebene 1 durchgehend zu.
+> Ebene 1 startet ohne Legendäre, und die fünf Freischaltungen führen nur bis „Sehr selten". Der
+> Owner zieht die **Reward-Rarität auf denselben Deckel**: in Ebene 1 gibt es Rewards von Normal
+> bis **Sehr selten**, nicht darüber.
 >
-> **Dagegen steht:** die Raritätsformel endet auf Stufe 3 = Episch und Stufe 4 = Legendär, und der
-> Katalog hat fünf legendäre Rewards. Drei davon — *Handschlag*, *Erleuchtung*, *Bauherrschaft* —
-> garantieren ein legendäres Perk, Skill oder Gebäude. **Die können in Ebene 1 nicht existieren**,
-> weil es nichts Legendäres zu garantieren gibt.
+> **Was das mitnimmt.** Die fünf legendären Rewards fallen aus dem MVP — drei davon
+> (*Handschlag*, *Erleuchtung*, *Bauherrschaft*) könnten in Ebene 1 ohnehin nicht wirken, weil sie
+> etwas Legendäres garantieren, das es dort nicht gibt. Und *Episch* im Katalog (§9) ist damit
+> ebenfalls Ebene-2-Inhalt: **in Ebene 1 werden nur die Spalten Normal, Selten und Sehr selten
+> gebaut.**
 >
-> **Zwei Lesarten, der Owner entscheidet:**
+> **Was daraus folgt und noch offen ist.** Die Stufenleiter aus §10 hat fünf Sprossen, Ebene 1 hat
+> nur drei Ränge. Wörtlich gelesen zahlen die Summen 2, 3 und 4 alle dasselbe — „Sehr selten" —
+> und damit ist der Reward schon mit **zwei erfüllten Aufträgen allein** am Anschlag. Gemessen
+> (§10) reißen 60 % der bestandenen ersten Läufe die 3×-Marke, der Deckel greift in Ebene 1 also
+> sehr oft. Zwei Wege:
 >
-> 1. **Reward-Rarität ist unabhängig vom Skill-/Perk-Deckel.** Ebene 1 gibt Rewards bis **Episch**,
->    Legendär erst ab Ebene 2. Die Formel bleibt wie sie ist, Stufe 4 zahlt in Ebene 1 Episch aus.
-> 2. **Reward-Rarität folgt demselben Deckel.** Ebene 1 gibt Rewards bis **Sehr selten**; Episch und
->    Legendär kommen mit den höheren Ebenen. Dann drücken die Stufen 3 und 4 in Ebene 1 ins Leere
->    und die Formel braucht dort eine eigene Decke.
->
-> Unabhängig davon: die fünf legendären Rewards sind **Ebene-2-Inhalt**, nicht MVP.
+> 1. **So lassen.** Die Leiter ist in Ebene 1 kurz und öffnet sich mit den Ebenen. Einfach, und für
+>    einen Einstieg vielleicht genau richtig.
+> 2. **Für Ebene 1 umlegen**, damit jeder Schritt wieder zählt — etwa 0–1 → Normal, 2 → Selten,
+>    3 → Sehr selten, 4 → Sehr selten.
 
 ---
 
