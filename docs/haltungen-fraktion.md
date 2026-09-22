@@ -1,9 +1,10 @@
 # Haltungen — Fraktion 5 (Arbeitsdokument)
 
-> **Status: lebendes Dokument, Designphase.** Der Mechanismus und die vier Passive sind vom Owner
-> gesetzt, alle fünf Linien sind besetzt — 15 Skills. **Keine Zahlen sind tariert, nichts ist gemessen** —
-> alle Werte hier sind Startwerte oder Kopfrechnung und stehen so lange zur Disposition, bis Sim und
-> Playtest etwas dazu sagen.
+> **Status: lebendes Dokument, gebaut und erstmals gemessen.** Der Mechanismus und die vier Passive sind vom
+> Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der Sim
+> (`--mode motor --arch stance`, `--mode skills --arch stance`); die Zahlen stehen in **§6.8** (der Mechanismus
+> im Lauf) und **§6.9** (die 15 Skills). **Nichts ist tariert** — alle Werte in §3 und §5 sind unverändert
+> Startwerte, und die Messung sagt, an welchen drei Stellen zuerst zu drehen ist (§10).
 >
 > Stand: 2026-09-22 · Basis: `origin/exp` · Vorgänger: `docs/fraktion-5-brainstorm.md` (die sechs
 > Richtungen und die Landkarte des freien Designraums; diese Fraktion ist keine davon, sondern ein
@@ -11,10 +12,11 @@
 >
 > **Gesetzt** = Owner-Entscheidung. **Vorschlag** = Diskussionsstand. **Offen** = noch niemand.
 >
-> **Arbeitstitel:** noch keiner. Der Owner schlug „Echo" vor — belegt, gleich doppelt: `L_ECHO` ist ein
-> legendäres Perk, und im englischen Katalog ist „Echo" die Übersetzung von **Nachhall**, also
-> ausgerechnet des Begriffs für den Kernmechanismus dieser Fraktion. Freie Vorschläge: **Reigen**
-> (ein Rundtanz, in dem mehrere sich im Kreis abwechseln) oder **Zirkel**.
+> **Arbeitstitel: „Prisma"** (Owner) — im Code `stance`. Der endgültige Name ist NICHT entschieden, und Prisma
+> ist im Spiel bereits zweimal belegt: als Gottgleich-Prunk „Prisma-Kaskade" (`PrismaKaskadePixi.jsx`) und als
+> kosmetisches Deck „Prisma (Element-Bund)". Für einen Arbeitstitel reicht das, für den Spielertext nicht.
+> „Echo" ging aus demselben Grund nicht: `L_ECHO` ist ein legendäres Perk, und im englischen Katalog ist „Echo"
+> die Übersetzung von **Nachhall** — ausgerechnet der Begriff für den Kernmechanismus dieser Fraktion.
 >
 > Sprache Deutsch, wie `skill-rework.md`, `stein-fraktion.md` und `muenz-oekonomie.md` — Fraktions-,
 > Haltungs- und Skillnamen sind Produktsprache und der Owner schreibt hier mit. Bewusste Abweichung
@@ -524,7 +526,8 @@ Durchläufe.
 Der Entwurf ist gebaut und läuft in der Sim (`--mode motor --arch stance`, `--mode skills --arch stance`). Drei
 Befunde, alle drei unbequem.
 
-**A · Die Fraktion liegt weit unter dem Feld.** Mono, gieriger Spieler, dieselben 25 Seeds:
+**A · Die Fraktion liegt weit unter dem Feld.** Mono, gieriger Spieler, dieselben 25 Seeds (Stand VOR dem
+Verlängerer-Fix aus §6.9; danach steht Prisma bei 4.743.795, der Abstand bleibt):
 
 | Fraktion | Median | p90 | p90 ÷ Median |
 | --- | --- | --- | --- |
@@ -596,6 +599,59 @@ Block-Build). Alle vier gleichzeitig bleiben auch in B die Ausnahme (0,4–1,6 %
 Der Schalter steht auf A (Dokumentenstand). **Welche gilt, ist eine Owner-Entscheidung**, und sie ist die
 größte offene Frage des Entwurfs — an ihr hängt, ob Mitklang, Verankerung und der ganze Tanz-Build überhaupt
 etwas zu tun haben.
+
+### 6.9 · Die 15 Skills, gemessen — **gemessen**
+
+`--mode skills --arch stance`, Explore 900 / Greedy 150, gepaarte Ablation. Sortiert nach Median-Δ: was der
+gierige Spieler verliert, wenn er genau diesen Skill nie nimmt.
+
+| Skill | Linie | Halte | Wirkung | Sieg-Quote der Ablation |
+| --- | --- | --- | --- | --- |
+| **Beschleunigung** | Rotation | 79 % | **+18 %** | 65 % |
+| **Anklang** | Rotation | 86 % | **+14 %** | 64 % |
+| **Runde** | Rotation | 58 % | +6 % | 70 % |
+| Doppelbindung | Überlappung | 88 % | +5 % | 67 % |
+| Übertrag | Crit | 49 % | +3 % | 61 % |
+| Schwungrad | Crit | 99 % | +3 % | 52 % |
+| Stauung | Score | 91 % | +2 % | 61 % |
+| Übergriff | Überlappung | 58 % | 0 % | 52 % |
+| Grundrauschen | Crit | 93 % | −0 % | 50 % |
+| Kehrtwende | Ergebnis | 97 % | −2 % | 46 % |
+| Rückhalt | Ergebnis | 85 % | −3 % | 41 % |
+| Verankerung | Überlappung | 97 % | −4 % | 45 % |
+| Mitklang | Score | 97 % | −5 % | 40 % |
+| Beharrlichkeit | Score | 100 % | −8 % | 37 % |
+| Genugtuung | Ergebnis | 100 % | −10 % | 43 % |
+
+**Belastbar sind die beiden oberen und die beiden unteren Zeilen** — dazwischen liegt alles im Rauschen einer
+Ablation, deren Pfade auseinanderlaufen (Sieg-Quoten um 50 %). Die Stufen-Lifts sind noch dünner besetzt und
+hier bewusst nicht wiedergegeben.
+
+**Die Rotations-Linie IST die Fraktion.** Beschleunigung und Anklang tragen zusammen +32 %; alle drei
+Rotations-Skills stehen oben. Damit ist die Warnung aus §5.3 gemessen: *„eine Linie, die immer wirkt, wird auch
+immer genommen"* — und die vier Haltungslinien werden von ihr verdrängt.
+
+**Die vier Haltungslinien tragen nichts.** Acht ihrer zwölf Skills messen null oder negativ. Das ist dieselbe
+Ursache wie in §6.8: eine Linie, deren Haltung in 81–91 % der Stiche nicht klingt, kann strukturell nichts
+beitragen, egal wie ihre Zahlen stehen. Mitklang (−5 %) und Verankerung (−4 %) sind die klarsten Fälle — beide
+zahlen ausschließlich auf Überlappung, die es kaum gibt.
+
+**Korrektur, die diese Messung ausgelöst hat:** in der ersten Runde maßen Schwungrad (−5 %) und Kehrtwende
+(−12 %) schädlich. Die Ursache lag im Code, nicht im Entwurf: die Verlängerung wurde sofort auf den
+Nachklang-Zähler der aktiven Haltung gelegt und zählte dort jeden Takt wieder herunter — sie war verpufft,
+bevor sie jemand brauchen konnte. Verlängerungen werden jetzt gesammelt und bei der ABLÖSUNG eingelöst, dem
+einzigen Moment, in dem „verlängert die Haltung" etwas bedeuten kann. Campen stieg dadurch um 17 %
+(4.524.607 → 5.300.774), und der gierige Spieler hält seither 12,8 statt 5,8 Skills.
+
+Der Stand danach, mono gegen die anderen vier (dieselben 25 Seeds, Fraktions-Policy):
+
+| Fraktion | Median | p90 ÷ Median |
+| --- | --- | --- |
+| Eis | 155.237.412 | 8,8 |
+| Blitz | 105.236.611 | 3,4 |
+| Pflanze | 43.587.934 | 15,8 |
+| Feuer | 17.422.914 | 6,5 |
+| **Prisma** | **4.743.795** | **1,5** |
 
 ---
 
@@ -697,12 +753,18 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 ## 10 · Nächster Schritt
 
-**Alle 15 Skills stehen, mit Startwerten je Stufe, dazu die vier Grundwerte der Passive.** Keine
-Regelfrage blockiert mehr (§8). Der Plan des Owners von hier aus:
+**Gebaut und gemessen.** Die Fraktion läuft in der Sim (`--mode motor --arch stance`,
+`--mode skills --arch stance`), die Zahlen stehen in §6.8 und §6.9. Damit ist Schritt 1 des Owner-Plans erledigt
+— und er hat drei Fragen aufgeworfen, die vor dem Entwurf der Legendären beantwortet gehören:
 
-1. **Die Sim auf das neue Deck bauen und messen**, gegen die bestehenden vier.
-2. **Erst mit diesen Zahlen die drei Legendären entwerfen** — bewusst danach, damit sie sich an einem
-   gemessenen Stand messen und nicht an einer Schätzung.
+1. **Welche Lesart des Nachklangs gilt?** (§6.8.1) Sie entscheidet, ob Überlappung eine Mechanik ist oder eine
+   Randnotiz, und damit, ob vier der fünfzehn Skills etwas zu tun haben. Größte offene Frage des Entwurfs.
+2. **Bekommt die Fraktion einen Sammler?** (§6.8 A) Ohne einen liegt sie um Faktor 3,7 unter der schwächsten
+   der anderen vier, und ihr p90 steht bei 1,5 ihres Medians — sie hat keine Spitze, weil sich nichts aufbaut.
+3. **Was wird aus den vier Haltungslinien?** (§6.9) Acht ihrer zwölf Skills messen null oder negativ, während
+   die Rotations-Linie allein +32 % trägt. Das ist die Warnung aus §5.3, eingetreten.
+
+Erst danach **die drei Legendären** — bewusst zuletzt, damit sie sich an einem gemessenen Stand messen.
 
 Die Zahlen in §5 sind Startwerte zum Bauen, nicht zum Verteidigen.
 
