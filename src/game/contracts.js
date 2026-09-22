@@ -75,9 +75,9 @@ export const TASKS = [
     extra: { schwer: { positions: 40, min: 2 } } },
   /* Gedränge zählt seit 2026-09-22 (Owner) Formationen JE POSITION, summiert über das Brett — die
      Paare aus Position × Formation, nicht mehr die distinkten Formationen. Offene Segmentgrenzen
-     verschmelzen Läufe und drückten die distinkte Zahl; das Paar-Maß ist davon unabhängig. */
-  { id: "gedraenge",    kind: "spitze",  rungs: [40, 50, 70],
-    extra: { schwer: { positions: 40, min: 2 } } },
+     verschmelzen Läufe und drückten die distinkte Zahl; das Paar-Maß ist davon unabhängig. Ohne
+     Zusatz auf Schwer: das Maß misst die Dichte selbst, jede Position doppelt wären schon 80. */
+  { id: "gedraenge",    kind: "spitze",  rungs: [40, 50, 70] },
   /* Reinheit zählt KARTEN in einer Formation des gewürfelten Typs, nicht die Formationen selbst
      (Owner, 2026-09-15). Distinkte Läufe eines Typs reichen gemessen von 2 bis 8 — neun mögliche
      Werte für vier Stufen, jede Stufe ein Sprung. Karten reichen von 6 bis 40 und lassen sich

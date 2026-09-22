@@ -891,8 +891,10 @@ describe("Aufträge · Gedränge zählt Formationen je Position (Owner, 2026-09-
   }));
   const c = { taskId: "gedraenge", step: "leicht", rung: 40, target: 40, extra: null };
 
-  it("die Leiter ist 40 · 50 · 70 auf dem Paar-Maß", () => {
+  it("die Leiter ist 40 · 50 · 70 auf dem Paar-Maß, ohne Zusatz auf Schwer", () => {
     expect(CT.TASK_BY_ID.gedraenge.rungs).toEqual([40, 50, 70]);
+    // Das Paar-Maß misst die Dichte selbst: jede Position in zwei Formationen wären schon 80 Paare.
+    for (const step of CT.STEPS) expect(CT.extraFor("gedraenge", step), step).toBe(null);
   });
 
   it("eine Position in drei Formationen zählt drei; Kerne, Anker und Architekt zählen nicht", () => {
@@ -934,8 +936,8 @@ describe("Aufträge · die Zusatzbedingung der schweren Stufe", () => {
   }));
 
   it("ein Durchlauf ohne die Zusatzbedingung zählt nicht, auch wenn der Hauptzähler steht", () => {
-    const c = { taskId: "gedraenge", step: "schwer", rung: 70, target: 70,
-      extra: CT.extraFor("gedraenge", "schwer") };
+    const c = { taskId: "reinheit", variantId: "farbblock", step: "schwer", rung: 40, target: 40,
+      extra: CT.extraFor("reinheit", "schwer", "farbblock") };
     expect(c.extra).toEqual({ positions: 40, min: 2 });
     // Alle 40 Positionen, aber nur EINE Formation je Position → Zusatz hält nicht.
     const duenn = { contractsEnabled: true, formations: formen(40, 1), contractTally: CT.emptyTally() };

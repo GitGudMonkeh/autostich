@@ -410,7 +410,7 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | --- | --- | --- |
 | **Durchmarsch** Siege in einem Durchlauf | Spitze | 25 · 35 · **5 Durchläufe in Folge mit allen 40 Stichen** |
 | **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 3 · 6 · 8 + Zusatz |
-| **Gedränge** Formationen je Position, summiert über das Brett | Spitze | 40 · 50 · 70 + Zusatz |
+| **Gedränge** Formationen je Position, summiert über das Brett | Spitze | 40 · 50 · 70 |
 | **Reinheit** Positionen in einem gewürfelten Typ | Spitze | siehe unten |
 | **Langbau** längste Formation | Spitze | — · 10 · 15 |
 | **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 40 · 40 + Zusatz |
@@ -431,17 +431,19 @@ Formationen als derselbe Bau mit geschlossenen. Das Paar-Maß ist die Summe der 
 davon unabhängig. Leiter 40 · 50 · 70; die alte 25 · 30 · 40 stand auf dem distinkten Maß und ist
 damit nicht vergleichbar.
 
-Der Zusatz auf Schwer bleibt, wie er war; auf dem Paar-Maß bedeutet er mindestens 80 Paare.
+**Der Zusatz auf Schwer entfällt** (Owner, 2026-09-22): jede Position in mindestens zwei Formationen
+wären auf dem Paar-Maß schon 80, das Maß misst die Dichte selbst.
 
 ### 4.0a Die Zusatzbedingung
 
-**Sieben schwere Stufen tragen eine zweite Bedingung** (Owner, 2026-09-16). Sie steht neben dem
+**Sechs schwere Stufen tragen eine zweite Bedingung** (Owner, 2026-09-16; Gedränge seit 2026-09-22
+ohne, §4). Sie steht neben dem
 Hauptzähler, nicht an seiner Stelle: erfüllt ist ein Durchlauf erst, wenn **beide** in ihm standen.
-Sechs verlangen eine Brettform, eine verbietet etwas — die einzige Verbotsbedingung des Katalogs.
+Fünf verlangen eine Brettform, eine verbietet etwas — die einzige Verbotsbedingung des Katalogs.
 
 | Bedingung | trägt |
 | --- | --- |
-| jede Position in mindestens 2 Formationen | Sperrfeuer · Gedränge · Reinheit/Farbblock · Farbtreue |
+| jede Position in mindestens 2 Formationen | Sperrfeuer · Reinheit/Farbblock · Farbtreue |
 | 20 Positionen in mindestens 3 Formationen | Vollbrett |
 | mindestens 5 Positionen in 4 Formationen | Verflechtung |
 | **keine** Farbserie länger als 3 Stiche | Buntspiel |
@@ -1323,7 +1325,7 @@ weil Veredelung jede Skill-Phase des Laufs anhebt und Freibrief IV nur die Türe
 selbst öffnet.
 
 **Gesetzt (Owner, 2026-09-22): Gedränge zählt Formationen je Position, summiert** — segmentunabhängig,
-Leiter 40 · 50 · 70. Begründung in §4.
+Leiter 40 · 50 · 70, ohne Zusatz auf Schwer. Begründung in §4.
 
 ---
 
