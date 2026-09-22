@@ -1914,6 +1914,7 @@ export default {
 
   "campaign.title": "Tier {level}",
   "campaign.run": "Run {n}",
+  "campaign.rail.label": "Campaign · Run {n}/{runs}",
   "campaign.threshold": "{n}M",
   "campaign.reached": "{n}M reached",
   "campaign.now": "NOW",

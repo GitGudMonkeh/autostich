@@ -21,6 +21,13 @@ import { TIER_META } from "./rarity.js";
 
 export const RUNS_PER_LEVEL = 4;
 
+/* Wie viele Ebenen es GIBT, nicht wie viele geplant sind. Ebene 2 und 3 stehen in
+   docs/kampagne.md §1, gebaut ist Ebene 1 — und der Siegschirm darf nichts ankuendigen, was der
+   Spieler danach nicht vorfindet. Eine Zahl hier statt einer Bedingung im Panel: wenn Ebene 2
+   kommt, ist das eine 2. */
+export const LEVELS = 1;
+export const hasLevel = (level) => level >= 1 && level <= LEVELS;
+
 /* Owner 2026-09-22, explicitly START values: they are pulled in playtest, not derived from the
    measurement. docs/kampagne.md §6 measures a FULL game (architect, all four factions, coins,
    every rarity) — level 1 plays a stripped-down version and will score well below that. */

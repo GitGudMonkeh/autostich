@@ -3,6 +3,7 @@ import { RankIcon } from "./RankIcon.jsx"; // #pokal-eins: Ranglisten-Zeichen, g
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer für den Ranglisten-Knopf
+import { RUNS_PER_LEVEL } from "../game/campaign.js"; // Kampagne: „Lauf 2 von 4" in der Unterzeile des Einstiegs
 import { GlossaryPanel } from "./Glossary.jsx";
 import { battlefieldVeil, battlefieldDim } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder; #bf-desktop: Bild-Daempfung ab 1280 px
 import { deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
@@ -116,7 +117,7 @@ function TileGlyph({ kind }) {
   );
 }
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onDevRun = null, onContracts = null, onFeedback = null, onPrivacy = null, muted, onToggleMute, username = "", onEditName,
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onDevRun = null, onContracts = null, onCampaign = null, campaign = null, onFeedback = null, onPrivacy = null, muted, onToggleMute, username = "", onEditName,
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1280 px;
   // darunter bleiben die Props ungenutzt.
   deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
@@ -408,6 +409,20 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             className="as-contract-btn relative w-full px-5 py-2.5 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex flex-col items-center justify-center gap-0.5">
             <span>{t("start.contracts")}</span>
             <span className="text-meta-1 font-normal opacity-70 normal-case tracking-normal">{t("start.contracts.hint")}</span>
+          </button>
+        )}
+        {/* Kampagne (docs/kampagne.md §11): eigener Einstieg wie die Aufträge, nicht ein Schalter im
+            normalen Lauf. Die Unterzeile sagt, ob eine Kette offen ist — ein gespeicherter Stand,
+            den man nicht sieht, wird beim nächsten Klick zur Überraschung. */}
+        {onCampaign && (
+          <button onClick={onCampaign}
+            className="as-campaign-btn relative w-full px-5 py-2.5 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex flex-col items-center justify-center gap-0.5">
+            <span>{t("start.campaign")}</span>
+            <span className="text-meta-1 font-normal opacity-70 normal-case tracking-normal">
+              {campaign
+                ? t("start.campaign.state", { level: campaign.level || 1, run: campaign.run || 1, runs: RUNS_PER_LEVEL })
+                : t("start.campaign.fresh", { level: 1 })}
+            </span>
           </button>
         )}
         {/* #382 Seed-Zeile dauerhaft unter „Lauf beginnen": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad

@@ -1701,6 +1701,7 @@ export default {
 
   "campaign.title": "Ebene {level}",
   "campaign.run": "Lauf {n}",
+  "campaign.rail.label": "Kampagne · Lauf {n}/{runs}",
   "campaign.threshold": "{n} Mio",
   "campaign.reached": "{n} Mio erreicht",
   "campaign.now": "JETZT",

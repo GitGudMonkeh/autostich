@@ -14,8 +14,9 @@
    Hausregel des Owners (2026-09-22): keine Mini-Beschreibungen, keine Gedankenstriche in
    Spielertexten. Was die Regel erklärt, steht im Dokument. */
 
+import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx";
-import { PHASE_ACCENTS, phaseCard, ActionButton } from "./modalStyle.jsx";
+import { PHASE_ACCENTS, phaseCard, ActionButton, DECK_BORDER } from "./modalStyle.jsx";
 import { t } from "../i18n/index.js";
 import * as CP from "../game/campaign.js";
 import { bossName, bossText, isEndBoss, unlockName, unlockText, axisName, rewardName, rewardText, tierColor, tierLabel, mio } from "./campaignText.js";
@@ -54,6 +55,49 @@ export const RewardChip = ({ id, tier, axis = null, onClick = null }) => {
     </Tag>
   );
 };
+
+/* ---- Die Leisten-Kachel IM Lauf. Bewusst dieselbe Form wie die Auftrags-Kachel daneben
+   (ContractPhase.jsx): zugeklappt Boss und Schwelle, aufgeklappt die Mechanik und was man hält.
+   Sie rendert sich selbst weg, wenn der Lauf keine Kampagne trägt. ---- */
+export function CampaignTile({ state }) {
+  const [open, setOpen] = useState(false);
+  const c = state && state.campaign;
+  if (!c) return null;
+  const run = c.run || 1;
+  const boss = CP.bossFor(c, run);
+  const threshold = CP.thresholdWith(c, run);
+  const score = state.score || 0;
+  const reached = score >= threshold;
+  const held = Object.entries(c.held || {});
+  const col = isEndBoss(boss) ? VIOLET : RED;
+  return (
+    <div className="rounded-lg min-w-0" style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} data-sfx="none"
+        className="w-full text-left px-2.5 py-1.5 min-w-0" style={{ background: "transparent" }}
+        aria-expanded={open} title={bossText(boss)}>
+        <div className="text-micro uppercase tracking-wide opacity-50 truncate flex items-center gap-1">
+          <span className="inline-block w-2 text-center" aria-hidden="true">{open ? "▾" : "▸"}</span>
+          {t("campaign.rail.label", { n: run, runs: CP.RUNS_PER_LEVEL })} · {bossName(boss)}
+        </div>
+        <div className="ty-num font-bold text-body-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
+             style={{ color: reached ? GREEN : col }}>
+          {t("campaign.threshold", { n: mio(score) })}
+          <span className="text-micro opacity-45 ml-1">{t("campaign.over.need", { n: mio(threshold) })}</span>
+        </div>
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2 pt-1 border-t" style={{ borderColor: DECK_BORDER }}>
+          <div className="text-body opacity-80 leading-snug">{bossText(boss)}</div>
+          {held.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {held.map(([id, tier]) => <RewardChip key={id} id={id} tier={tier} axis={(c.axes || {})[id]} />)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ---- Übersicht: der Einstieg in eine laufende oder frische Kampagne ---- */
 export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp }) {
@@ -205,7 +249,10 @@ export function CampaignTally({ campaign, score = 0, onPick }) {
             <div key={m} className="ty-num-sm absolute -top-7 text-micro whitespace-nowrap"
                  style={{ left: `${(m / 3) * 100}%`, transform: m === 3 ? "translateX(-88%)" : "translateX(-50%)",
                           color: m === 1 ? GREEN : m <= mult ? "#5a8ade" : MUTED }}>
-              {m === 1 ? t("campaign.over.mark", { n: mio(threshold) }) : `${m}× ${mio(threshold * m)}`}
+              {/* Alle drei Marken tragen die Einheit. Ohne sie stand da „Schwelle 10 · 2× 20 · 3× 30",
+                  und eine nackte 20 neben einem Endscore in Millionen liest sich als gar nichts. */}
+              {m === 1 ? t("campaign.over.mark", { n: t("campaign.threshold", { n: mio(threshold) }) })
+                       : `${m}× ${t("campaign.threshold", { n: mio(threshold * m) })}`}
             </div>
           ))}
         </div>
@@ -368,10 +415,14 @@ export function CampaignLost({ campaign, score = 0, unlocked = [], onAgain, onMe
   );
 }
 
-/* ---- Sieg: der einzige Ort, an dem die nächste Ebene auftaucht ---- */
+/* ---- Sieg: der einzige Ort, an dem die nächste Ebene auftaucht ----
+   Der Block „Ebene N+1 freigeschaltet" hängt an CP.hasLevel und nicht am Entwurf: Ebene 2 ist
+   geplant, aber nicht gebaut, und ein Siegschirm, der sie ankündigt, verspricht dem Spieler einen
+   Bildschirm, den es nicht gibt. Sobald LEVELS auf 2 geht, erscheint er von selbst. */
 export function CampaignWon({ campaign, unlocked = [], onNext }) {
   const c = campaign || CP.emptyCampaign();
-  const level = c.level || 1;
+  const level = c.level ?? 1;   // `?? `, nicht `|| `: 0 ist eine Ebene, kein fehlender Wert
+  const next = CP.hasLevel(level + 1);
   return (
     <Shell accent="gold">
       <div className="text-center mb-5">
@@ -391,24 +442,28 @@ export function CampaignWon({ campaign, unlocked = [], onNext }) {
         ))}
       </div>
 
-      <div className="rounded-xl p-4 mb-4" style={{ border: `3px solid ${GOLD}`, background: "rgba(212,166,58,0.06)" }}>
-        <div className="flex items-center gap-3">
-          <span className="h-px flex-1" style={{ background: `linear-gradient(90deg,transparent,${GOLD})` }} />
-          <span className="ty-screen-title text-micro" style={{ color: GOLD }}>{t("campaign.won.next", { level: level + 1 })}</span>
-          <span className="h-px flex-1" style={{ background: `linear-gradient(90deg,${GOLD},transparent)` }} />
+      {next && (
+        <div className="rounded-xl p-4 mb-4" style={{ border: `3px solid ${GOLD}`, background: "rgba(212,166,58,0.06)" }}>
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1" style={{ background: `linear-gradient(90deg,transparent,${GOLD})` }} />
+            <span className="ty-screen-title text-micro" style={{ color: GOLD }}>{t("campaign.won.next", { level: level + 1 })}</span>
+            <span className="h-px flex-1" style={{ background: `linear-gradient(90deg,${GOLD},transparent)` }} />
+          </div>
+          <div className="flex gap-2.5 mt-3 flex-wrap">
+            {[t("campaign.won.harder"), t("campaign.won.newUnlocks"), t("campaign.won.newBosses")].map((s) => (
+              <div key={s} className="flex-1 min-w-[7rem] rounded-lg p-2.5 text-center text-body"
+                   style={{ background: "rgba(212,166,58,0.08)", color: "#e0d4b4" }}>{s}</div>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2.5 mt-3 flex-wrap">
-          {[t("campaign.won.harder"), t("campaign.won.newUnlocks"), t("campaign.won.newBosses")].map((s) => (
-            <div key={s} className="flex-1 min-w-[7rem] rounded-lg p-2.5 text-center text-body"
-                 style={{ background: "rgba(212,166,58,0.08)", color: "#e0d4b4" }}>{s}</div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <UnlockLadder unlocked={unlocked} />
 
       <div className="flex justify-end mt-5">
-        <ActionButton kind="primary" onClick={onNext}>{t("campaign.won.begin", { level: level + 1 })}</ActionButton>
+        <ActionButton kind="primary" onClick={onNext}>
+          {next ? t("campaign.won.begin", { level: level + 1 }) : t("campaign.lost.menu")}
+        </ActionButton>
       </div>
     </Shell>
   );
