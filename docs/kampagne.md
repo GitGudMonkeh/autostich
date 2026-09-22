@@ -334,7 +334,7 @@ längere Serien. Zehnt wirkt auch dann noch, wenn der eigene Kartenwert oben kle
 | --- | --- | --- |
 | **Standhaftigkeit** | die Serie überlebt X Niederlagen je Durchlauf | X |
 | **Losentscheid** | Stiche, die du um ≤ X verlierst, zählen als Sieg | X |
-| **Vorhand** | die ersten X Stiche jedes Durchlaufs gewinnst du automatisch | X |
+| **Lückenschluss** | X Karten je Formation dürfen falsch sein, die Formation zählt trotzdem als vollständig | X |
 
 ### 8 · Kampagnen-Ebene
 
@@ -366,9 +366,11 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
 ### Offene Fragen zum Katalog
 
 1. **Werte und Raritätsstufen** — alles steht als X.
-2. **Zwei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Ratsbrief*
-   (zusätzliche Entscheidungsphasen — `DECISION_SCHEDULE`/`buildSchedule`) und *Bauherrschaft*
-   (setzt voraus, dass es legendäre Gebäude als Rarität überhaupt gibt).
+2. **Drei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Ratsbrief*
+   (zusätzliche Entscheidungsphasen — `DECISION_SCHEDULE`/`buildSchedule`), *Bauherrschaft*
+   (setzt voraus, dass es legendäre Gebäude als Rarität überhaupt gibt) und *Lückenschluss*
+   (Formationen werden heute als exaktes Muster erkannt — Farbblock, Wiederholung, Treppe,
+   Wechsel; eine Toleranz von X falschen Karten muss der Erkenner erst tragen können).
 3. **Losentscheid liegt nah am Perk *Patt*** (Niederlage um ≤ 2 zählt als Sieg). Entweder anders
    schneiden oder bewusst als stärkere Kampagnen-Variante führen.
 4. **Achsen 7 und 8 tragen Raritätsstufen schlecht** — der Sprung von „gar nicht" auf „einmal" ist
