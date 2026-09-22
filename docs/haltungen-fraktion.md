@@ -764,6 +764,39 @@ Fraktions-Skills wachsen, wie Blitz es tut?
 **Einschränkungen:** 30 Seeds, zufällige Policy mit Slot-Split (ein balancierter Mischer, kein echter
 Spieler), schwere Verteilungsschwänze — die Mediane tragen, die p90-Spalte nicht.
 
+### 6.13 · Was der Einklang allein wert ist — **gemessen**
+
+Ablation über `SIM_STANCE_EINKLANG=0`: die Leiste füllt sich weiter und die Stufe steigt weiter, nur der
+Moment — alle vier Haltungen klingen gleichzeitig — fällt weg. Kontrolle Eis+Blitz in beiden Läufen
+**22.466.244**, bitgleich: der Haken trifft ausschließlich Prisma.
+
+**Feste Builds** (30 Seeds, keine Policy-Divergenz — der sauberste Vergleich):
+
+| Build | mit Einklang | ohne | Wert des Moments |
+| --- | --- | --- | --- |
+| Campen | 13.376.551 | 9.470.600 | **+41 %** |
+| Tanzen | 10.444.790 | 6.930.441 | **+51 %** |
+| Überlappung | 13.618.725 | 9.823.748 | **+39 %** |
+
+**Gemischte Builds** (frischer Seed-Satz 1001–1060, N = 60):
+
+| Kombination | mit | ohne | Wert des Moments |
+| --- | --- | --- | --- |
+| Prisma mono | 13.225.635 | 11.071.804 | +19 % |
+| Blitz+Pflanze+Prisma | 55.709.218 | 40.812.541 | +37 % |
+| Eis+Blitz+Feuer+Prisma | 50.615.496 | 35.502.577 | +43 % |
+
+**Der Einklang trägt rund 40 % der Fraktion** — und im Tanz-Build am meisten (+51 %), weil dort die
+Leiste am häufigsten voll wird. Ø klingende Haltungen fallen ohne ihn von 1,86 auf 1,75 (Campen) und von
+1,89 auf 1,71 (Tanzen); „alle vier" von 9,5 % auf 2,1 % der Stiche.
+
+**Ein Messfehler, offen benannt.** Der erste Durchgang lief über dieselben 30 Seeds wie §6.12 und gab
+Unterschiede von **−38 % bis +57 %**, mono sogar +29 % OHNE den Einklang. Das war Stichprobenrauschen,
+nicht Mechanik: bei p90/Median bis 15 tragen 30 Seeds einen Median, aber keine Differenz zweier Mediane.
+Die Zahlen oben stammen deshalb aus festen Builds und einem doppelt so großen, frischen Seed-Satz. **Die
+30-Seed-Vergleiche in §6.10 und §6.12 sind aus demselben Grund mit Vorsicht zu lesen** — die Rangfolge
+dort ist robust (die Abstände sind groß), einzelne Prozentangaben sind es nicht.
+
 ---
 
 ## 7 · Verworfen — und warum
