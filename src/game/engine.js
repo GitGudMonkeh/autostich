@@ -8,6 +8,7 @@ import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfok
 import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
 import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Einnahme je Durchlauf aus der Aufstellung
 import * as CT from "./contracts.js"; // Zwischenaufgaben: die Beute-Segen. Ohne Auftragslauf geben alle Zugriffe ihren Eingabewert zurück.
+import * as CP from "./campaign.js"; // Kampagne: dieselbe Bauform — ohne Kampagnenlauf gibt jede Tür ihren Eingabewert zurück.
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, potenzialValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
@@ -1051,7 +1052,10 @@ export function resolveTrick(state, rng) {
     // Score noch Siegzahl. `formations` ist der Stand DIESES Durchlaufs (in der Aufstellphase gerechnet, bei Wachstum
     // nachgezogen); countBuiltFormations filtert Architektur/Anker heraus. lastCycle* trägt nur die Anzeige (§4).
     lastCycleForms = countBuiltFormations(formations);
-    lastCycleCoins = CT.coinsPerCycleWith(state, coinsForFormations(lastCycleForms), cycle); // Münzrecht
+    // Münzrecht (Auftrags-Beute), dann die Kampagne: ohne freigeschaltete Ökonomie gibt es gar
+    // keine Einnahme, mit Pfründe eine höhere. Beide Türen haben dieselbe Form (Basis rein, eigene
+    // Zahl raus), und ein Lauf ohne das jeweilige System zahlt nur eine Feldabfrage.
+    lastCycleCoins = CP.campaignCoinsWith(state, CT.coinsPerCycleWith(state, coinsForFormations(lastCycleForms), cycle));
     coins += lastCycleCoins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // §7.68 Lichtbogen Episch: „bis zum ersten Crit eines Durchlaufs" — die Marke gehört zum Durchlauf, nicht zum Lauf.

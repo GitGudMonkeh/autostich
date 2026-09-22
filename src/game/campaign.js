@@ -261,6 +261,61 @@ export function settleRun(campaign, { score = 0, contracts = 0 } = {}) {
   };
 }
 
+// ---- Doors: base value in, campaign value out --------------------------------------------
+
+/* Same shape as the contract boons (`xWith(state, base)`): a run without a campaign pays one
+   field lookup and gets its own number back. The lesson from the loot audit applies — these
+   change a NUMBER, so a test must assert the number, never that a key was written.
+
+   The coin income carries BOTH the shutdown and Pfründe, because they sit on the same seam: with
+   the economy locked there is no income at all, and with it unlocked Pfründe adds per cycle. */
+export function campaignCoinsWith(state, base = 0) {
+  if (!state || !state.campaign) return base;
+  if (state.coinsEnabled === false) return 0;
+  const tier = (state.campaign.held || {}).pfruende;
+  return tier ? base + rewardValue("pfruende", tier) : base;
+}
+
+// ---- What a campaign run starts with -----------------------------------------------------
+
+/* Everything the campaign decides BEFORE the first trick, in one place: which decks are in the
+   pool, how high the offers may roll, whether coins and contracts exist at all, and the two
+   board-level effects that a boss or a reward shifts (formation energy, build field).
+
+   Deliberately pure and free of the reducer: it takes the base values the caller already has and
+   hands back overrides. A run without a campaign never calls it. Effects that only bite DURING a
+   run — Schließer's locked segment, Schmarotzer's upkeep, Der Konter's surcharge, and the
+   score-formula rewards — are not here; they hook into the engine. */
+export function runSetup(campaign, unlocked = [], { energy = 4, cover = 24, coins = 3, positions = 40, rng = Math.random } = {}) {
+  const c = campaign || emptyCampaign();
+  const held = c.held || {};
+  const eff = (BOSS_BY_ID[bossFor(c, c.run)] || {}).effect || {};
+
+  const withCoins = coinsEnabled(unlocked);
+  const out = {
+    archetypes: decksFor(unlocked),
+    rareCap: maxTierFor(unlocked),
+    contracts: contractsEnabled(unlocked),
+    coinsEnabled: withCoins,
+    /* Ohne Münzen gibt es auch kein Startkapital — sonst stünde eine Zahl da, die nichts kauft. */
+    coins: withCoins ? coins + (held.mitgift ? rewardValue("mitgift", held.mitgift) : 0) : 0,
+    energy: Math.max(0, energy - (eff.energyMinus || 0) + (held.fahnenrecht ? rewardValue("fahnenrecht", held.fahnenrecht) : 0)),
+    cover: Math.min(positions, cover + (held.lehen ? rewardValue("lehen", held.lehen) : 0)),
+    blockCells: [],
+    threshold: thresholdWith(c),
+  };
+
+  /* Denkmalpfleger zieht seine sechs Zellen ZUFÄLLIG (Owner 2026-09-22) und legt sie auf dieselbe
+     Naht, die die Wochen-Modifikatoren schon benutzen. */
+  if (eff.blockCells) {
+    const free = Array.from({ length: positions }, (_, i) => i);
+    for (let n = 0; n < eff.blockCells && free.length; n++) {
+      out.blockCells.push(free.splice(Math.floor(rng() * free.length) % free.length, 1)[0]);
+    }
+  }
+  return out;
+}
+
 export function takeReward(campaign, offer) {
   if (!campaign || !offer) return campaign;
   const held = { ...(campaign.held || {}), [offer.id]: offer.tier };

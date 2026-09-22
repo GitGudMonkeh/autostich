@@ -76,6 +76,11 @@ export const unspentEnergyCoins = (left = 0, bought = 0) =>
    Leiste nicht stumm bleibt. Betrag ≤ 0 → null, der Aufrufer schreibt dann nichts. */
 export function coinGrant(state = {}, n = 0, source = "") {
   if (!(n > 0)) return null;
+  /* Kampagne, Ebene 1 (docs/kampagne.md §11): ohne freigeschaltete Ökonomie gibt es keine Münzen —
+     auch keine aus dem Verzicht. Die Sperre sitzt hier und nicht an den vier Aufrufern, weil dies
+     der einzige Weg ist, auf dem eine Münze entsteht; eine vergessene Stelle wäre sonst ein
+     stiller Kanal. Ein Lauf ohne Kampagne trägt das Feld nicht und zahlt eine Abfrage. */
+  if (state.coinsEnabled === false) return null;
   return { coins: (state.coins || 0) + n, coinGain: { n, source, seq: ((state.coinGain && state.coinGain.seq) || 0) + 1 } };
 }
 

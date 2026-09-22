@@ -19,6 +19,7 @@ import { computeFormations, formationPotential, openBorderInfo, FORMATION_TYPES 
 import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js";
 import * as CT from "./contracts.js"; // Zwischenaufgaben — nur aktiv, wenn der Lauf über „Aufträge" gestartet wurde
+import * as CP from "./campaign.js"; // Kampagne (docs/kampagne.md §11): Lauf-Konfiguration und Verlauf
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
@@ -449,17 +450,30 @@ export function reducer(state, action) {
       // exp skill rework (Sim): `action.archetypes` narrows the offer pool to the named archetypes for this run — the
       // tuning of Feuer and Blitz measures in a world without Eis and Pflanze until those are reworked. null = open pool.
       const archPool = Array.isArray(action.archetypes) && action.archetypes.length ? [...action.archetypes] : null;
-      const sBase = { ...s, architect: { ...s.architect, maxCover: effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
+      /* Kampagne (docs/kampagne.md §11). Sie legt sich ÜBER die eben berechneten Werte, weil sie
+         dieselben Nähte benutzt, die die Wochen-Modifikatoren schon kennen: Archetyp-Pool,
+         Raritäts-Deckel, Aufstell-Energie, Baufeld und die gesperrten Bauzellen. Ohne
+         `action.campaign` bleibt der Lauf-Start unverändert — kein Zweig, keine Zahl. */
+      const camp = action.campaign && typeof action.campaign === "object" ? action.campaign : null;
+      const cUnlocked = Array.isArray(action.unlocked) ? action.unlocked : [];
+      const cSetup = camp ? CP.runSetup(camp, cUnlocked,
+        { energy: effEnergy, cover: effCover, coins: s.coins, positions: N_POS, rng: action.rng || Math.random }) : null;
+      const sBase = { ...s, architect: { ...s.architect, maxCover: cSetup ? cSetup.cover : effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
         rerollsPerk2: 0,
-        formationEnergyBase: effEnergy, unlockedArchetypes: archPool, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        formationEnergyBase: cSetup ? cSetup.energy : effEnergy,
+        unlockedArchetypes: cSetup ? cSetup.archetypes : archPool,
+        rareCap: cSetup ? cSetup.rareCap : effRareCap,
+        rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins } : {}),
         weekMods: weekModsState,
-        challengeBlockArch: [...new Set(wmBlockArch)],
+        challengeBlockArch: [...new Set([...wmBlockArch, ...(cSetup ? cSetup.blockCells : [])])],
         challengeBlockForm: [...new Set(wmBlockForm)] };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       /* Zwischenaufgaben: nur über den „Aufträge"-Knopf. Das erste Angebot liegt sofort aus — gewählt
          wird laut docs/zwischenaufgaben.md §3.1 nach der ersten Skill-Wahl, und genau dann ist der
          Start-Patch durch und der Spieler sieht den Aufsteller. */
-      const contractsOn = !!action.contracts;
+      // Im Kampagnenlauf entscheidet die Freischaltung, nicht der Knopf.
+      const contractsOn = cSetup ? cSetup.contracts : !!action.contracts;
       /* „Kein Angebot zweimal in einem Lauf" (§3.6) meint ALLE drei Aufsteller, nicht nur den
          angenommenen — sonst kann Fenster 2 genau die zwei zeigen, die man eben hat verfallen lassen.
          Deshalb wandern sie beim AUSLEGEN in `usedTasks`, nicht beim Annehmen. */

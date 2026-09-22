@@ -268,3 +268,155 @@ describe("Wächter: was die Spec festnagelt", () => {
     expect([...alle].sort()).toEqual([1, 2, 3]);
   });
 });
+
+describe("Lauf-Konfiguration aus der Kampagne", () => {
+  const base = { energy: 4, cover: 24, coins: 3, positions: 40, rng: seq(0.1, 0.3, 0.5, 0.7, 0.9, 0.2) };
+  const setup = (campaign, unlocked = [], over = {}) => CP.runSetup(campaign, unlocked, { ...base, ...over });
+
+  it("startet mit zwei Decks und hebt sie mit den Freischaltungen", () => {
+    expect(setup(CP.emptyCampaign(), []).archetypes).toEqual(["lightning", "fire"]);
+    expect(setup(CP.emptyCampaign(), CP.UNLOCK_IDS).archetypes).toHaveLength(4);
+  });
+
+  it("schaltet Münzen und Aufträge erst mit ihrer Freischaltung an", () => {
+    const aus = setup(CP.emptyCampaign(), []);
+    expect(aus.coinsEnabled).toBe(false);
+    expect(aus.contracts).toBe(false);
+    expect(aus.coins).toBe(0);            // kein Startkapital ohne Ökonomie
+    const an = setup(CP.emptyCampaign(), CP.unlocksFor(3));
+    expect(an.coinsEnabled).toBe(true);
+    expect(an.contracts).toBe(true);
+    expect(an.coins).toBe(3);
+  });
+
+  it("legt Mitgift auf das Startkapital, aber nur wenn Münzen laufen", () => {
+    const c = { ...CP.emptyCampaign(), held: { mitgift: 2 } };
+    expect(setup(c, []).coins).toBe(0);
+    expect(setup(c, CP.unlocksFor(2)).coins).toBe(3 + CP.rewardValue("mitgift", 2));
+  });
+
+  it("nimmt dem Bremser zwei Energie und gibt sie Fahnenrecht zurück", () => {
+    const bremser = { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] };
+    expect(setup(bremser, []).energy).toBe(2);
+    expect(setup({ ...bremser, held: { fahnenrecht: 3 } }, []).energy).toBe(2 + CP.rewardValue("fahnenrecht", 3));
+  });
+
+  it("lässt die Energie nicht unter null fallen", () => {
+    const bremser = { ...CP.emptyCampaign(), bosses: ["bremser"] };
+    expect(setup(bremser, [], { energy: 1 }).energy).toBe(0);
+  });
+
+  it("sperrt für den Denkmalpfleger sechs verschiedene Zellen", () => {
+    const c = { ...CP.emptyCampaign(), bosses: ["denkmalpfleger", "x", "y"] };
+    const { blockCells } = setup(c, []);
+    expect(blockCells).toHaveLength(6);
+    expect(new Set(blockCells).size).toBe(6);
+    for (const i of blockCells) expect(i).toBeGreaterThanOrEqual(0), expect(i).toBeLessThan(40);
+  });
+
+  it("sperrt ohne Denkmalpfleger gar nichts", () => {
+    const c = { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] };
+    expect(setup(c, []).blockCells).toEqual([]);
+  });
+
+  it("hebt das Baufeld mit Lehen, aber nie über das Brett hinaus", () => {
+    expect(setup(CP.emptyCampaign(), []).cover).toBe(24);
+    expect(setup({ ...CP.emptyCampaign(), held: { lehen: 3 } }, []).cover).toBe(24 + CP.rewardValue("lehen", 3));
+    expect(setup({ ...CP.emptyCampaign(), held: { lehen: 3 } }, [], { cover: 38 }).cover).toBe(40);
+  });
+
+  it("reicht die Schwelle des aktuellen Laufs durch, samt Fürsprache", () => {
+    expect(setup(CP.emptyCampaign(), []).threshold).toBe(CP.THRESHOLDS_L1[0]);
+    const c = { ...CP.emptyCampaign(), run: 3, held: { fuersprache: 1 } };
+    expect(setup(c, []).threshold).toBe(Math.round(CP.THRESHOLDS_L1[2] * 0.9));
+  });
+
+  it("deckelt die Rarität, bis die vierte Freischaltung fällt", () => {
+    expect(setup(CP.emptyCampaign(), []).rareCap).toBe(CP.START_MAX_TIER);
+    expect(setup(CP.emptyCampaign(), CP.unlocksFor(4)).rareCap).toBe(CP.MAX_TIER_L1);
+  });
+
+  it("gibt Lauf 4 den Endboss und damit keine Zellsperre des Denkmalpflegers", () => {
+    const c = { ...CP.emptyCampaign(), run: 4, bosses: ["denkmalpfleger", "x", "y"] };
+    expect(setup(c, []).blockCells).toEqual([]);
+    expect(setup(c, []).energy).toBe(4);
+  });
+});
+
+import { reducer } from "../src/game/reducer.js";
+import { makeRng } from "../src/game/deck.js";
+import { randomPolicy } from "../sim/policies/random.js";
+
+/* Verdrahtung: nicht der geschriebene Schlüssel zählt, sondern die Zahl im Lauf-State. Die Lehre
+   aus dem Beute-Audit (Veredelung schrieb ihren Schlüssel und wirkte trotzdem nie). */
+describe("Kampagne im Reducer", () => {
+  const start = (campaign, unlocked = [], seed = 7) =>
+    reducer(null, { type: "START_RUN", rng: makeRng(seed), seed, architect: true, campaign, unlocked });
+
+  it("lässt einen Lauf OHNE Kampagne unverändert", () => {
+    const s = reducer(null, { type: "START_RUN", rng: makeRng(7), seed: 7, architect: true });
+    expect(s.campaign).toBeUndefined();
+    expect(s.coinsEnabled).toBeUndefined();
+    expect(s.rareCap).toBe(4);
+  });
+
+  it("nimmt dem Ebene-1-Start Münzen, Aufträge und zwei Decks", () => {
+    const s = start(CP.emptyCampaign(), []);
+    expect(s.campaign).toBeTruthy();
+    expect(s.coins).toBe(0);
+    expect(s.coinsEnabled).toBe(false);
+    expect(s.contractsEnabled).toBeFalsy();
+    expect(s.unlockedArchetypes).toEqual(["lightning", "fire"]);
+    expect(s.rareCap).toBe(CP.START_MAX_TIER);
+  });
+
+  it("öffnet mit den Freischaltungen Münzen, Aufträge und den Raritäts-Deckel", () => {
+    const s = start(CP.emptyCampaign(), CP.unlocksFor(4));
+    expect(s.coinsEnabled).toBe(true);
+    expect(s.coins).toBeGreaterThan(0);
+    expect(s.contractsEnabled).toBe(true);
+    expect(s.rareCap).toBe(CP.MAX_TIER_L1);
+    expect(s.unlockedArchetypes).toContain("plant");
+  });
+
+  it("sperrt dem Denkmalpfleger sechs Bauzellen auf der bestehenden Naht", () => {
+    const c = { ...CP.emptyCampaign(), bosses: ["denkmalpfleger", "x", "y"] };
+    expect(start(c, []).challengeBlockArch).toHaveLength(6);
+    expect(start({ ...c, bosses: ["bremser", "x", "y"] }, []).challengeBlockArch).toHaveLength(0);
+  });
+
+  it("nimmt dem Bremser zwei Aufstell-Energie im echten State", () => {
+    const ohne = start({ ...CP.emptyCampaign(), bosses: ["schliesser", "x", "y"] }, []);
+    const mit = start({ ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] }, []);
+    expect(mit.formationEnergyBase).toBe(ohne.formationEnergyBase - 2);
+  });
+
+  it("hebt das Baufeld mit Lehen im echten State", () => {
+    const ohne = start(CP.emptyCampaign(), []);
+    const mit = start({ ...CP.emptyCampaign(), held: { lehen: 2 } }, []);
+    expect(mit.architect.maxCover).toBe(ohne.architect.maxCover + CP.rewardValue("lehen", 2));
+  });
+
+  it("lässt über einen ganzen Lauf keine einzige Münze zulaufen, solange die Ökonomie zu ist", () => {
+    // Der eigentliche Beweis: nicht die Flagge, sondern der Kontostand nach 50 Durchläufen.
+    const rng = makeRng(3);
+    let s = start(CP.emptyCampaign(), [], 3);
+    const pol = randomPolicy({ architectGreedy: true });
+    let guard = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("stuck");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    expect(s.coins).toBe(0);
+    expect(s.score).toBeGreaterThan(0);   // der Lauf hat wirklich gespielt
+  });
+
+  it("zahlt Pfründe je Durchlauf obendrauf, sobald Münzen laufen", () => {
+    const basis = { campaign: { ...CP.emptyCampaign(), held: {} }, coinsEnabled: true };
+    const mit = { campaign: { ...CP.emptyCampaign(), held: { pfruende: 2 } }, coinsEnabled: true };
+    expect(CP.campaignCoinsWith(basis, 5)).toBe(5);
+    expect(CP.campaignCoinsWith(mit, 5)).toBe(5 + CP.rewardValue("pfruende", 2));
+    expect(CP.campaignCoinsWith({}, 5)).toBe(5);                                  // Lauf ohne Kampagne
+    expect(CP.campaignCoinsWith({ campaign: CP.emptyCampaign(), coinsEnabled: false }, 5)).toBe(0);
+  });
+});

@@ -151,7 +151,14 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
   // (z. B. "sunset:deck", "lofi:frameGlow"). Rein additiv, sticky (einmal gekauft → bleibt).
-  ownedCosmetics: {} };
+  ownedCosmetics: {},
+  /* Kampagne (docs/kampagne.md §11): Zahl der GEWONNENEN Kampagnen-Läufe über alle Versuche
+     hinweg. Sie treibt die Freischaltungen — je gewonnener Lauf öffnet sich der nächste Eintrag,
+     und weil der Zähler im Profil liegt, überlebt er eine verlorene Kampagne. Genau das macht ihn
+     zur Meta-Progression.
+     Bewusst ein ZÄHLER und keine Liste: `campaign.unlocksFor(n)` leitet die Liste daraus ab, und
+     zwei Quellen für dieselbe Wahrheit driften auseinander. Additiv, kein Schema-Sprung nötig. */
+  campaignRunsWon: 0 };
 
 /* #229 T11: reiner, stufenweiser Migrations-Switch für den Profil-Blob (kein localStorage → unit-testbar).
    Migriert von der gespeicherten Version hoch bis zur aktuellen; jeder Block transformiert v → v+1 und ist
@@ -318,7 +325,7 @@ export function saveProfile(profile) {
    aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
    weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
    direkt wieder wählen. */
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_username", "as_feedback_draft", "as_feedback_sent"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_campaign", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -871,6 +878,40 @@ export function loadActiveRun() {
 }
 export function clearActiveRun() {
   try { localStorage.removeItem(k("as_activerun")); } catch (e) {}
+}
+
+/* ============================================================
+   KAMPAGNE (docs/kampagne.md §11) — die zweite Ablage
+
+   Zwei Lebensdauern, zwei Schlüssel. Die FREISCHALTUNGEN sind dauerhaft und liegen als Zähler
+   im Profil (`campaignRunsWon`); sie überleben eine verlorene Kampagne, das ist ihr Zweck. Der
+   KAMPAGNEN-STAND hier — welcher Lauf, gehaltene Rewards, gezogene Bosse, bisherige Endscores —
+   muss einen Tab-Schluss mitten in der Kette überleben, endet aber mit ihr.
+
+   Bewusst NICHT in `as_activerun`: der Lauf-Snapshot wird bei jedem Laufende verworfen, die
+   Kampagne läuft über vier davon hinweg.
+   ============================================================ */
+export const CAMPAIGN_SCHEMA = 1;
+export function saveCampaign(campaign) {
+  try {
+    if (!campaign || typeof campaign !== "object") return;
+    localStorage.setItem(k("as_campaign"), JSON.stringify({ schema: CAMPAIGN_SCHEMA, campaign }));
+  } catch (e) { if (isQuotaError(e)) signalQuota("Kampagne"); }
+}
+export function loadCampaign() {
+  try {
+    const raw = localStorage.getItem(k("as_campaign"));
+    if (raw) {
+      const b = JSON.parse(raw);
+      // Ein Stand aus einem älteren Schema wird verworfen statt geraten — eine halb verstandene
+      // Kampagne ist schlimmer als eine neue (dieselbe Regel wie beim Ranked-Snapshot oben).
+      if (b && b.schema === CAMPAIGN_SCHEMA && b.campaign && typeof b.campaign === "object") return b.campaign;
+    }
+  } catch (e) {}
+  return null;
+}
+export function clearCampaign() {
+  try { localStorage.removeItem(k("as_campaign")); } catch (e) {}
 }
 
 /* ============================================================
