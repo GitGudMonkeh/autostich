@@ -16,6 +16,7 @@
 
 import { TIER_META } from "./rarity.js";
 
+
 // ---- Level 1 -----------------------------------------------------------------------------
 
 export const RUNS_PER_LEVEL = 4;
@@ -276,6 +277,109 @@ export function campaignCoinsWith(state, base = 0) {
   return tier ? base + rewardValue("pfruende", tier) : base;
 }
 
+const heldOf = (state) => (state && state.campaign && state.campaign.held) || null;
+
+/* Sold: more base points on every won trick, before the multipliers. It lands in the breakdown's
+   `flats`, which is where it belongs — it IS an addend in scoreBase (engine.js:587), the same
+   place SCORE_PER_WIN sits. §8 measured that seam: the end score is exactly linear in it. */
+export function soldWith(state, base = 0) {
+  const held = heldOf(state);
+  return held && held.sold ? base + rewardValue("sold", held.sold) : base;
+}
+
+/* Feldzeichen raises ONE rolled axis. It lifts the axis's BONUS, not its value:
+   `1 + (factor - 1) * (1 + x)`. Multiplying the factor itself would hand a non-crit trick a +35 %
+   crit bonus out of nowhere, because an inactive axis sits at exactly 1. */
+export function axisMultWith(state, axis, factor = 1) {
+  const held = heldOf(state);
+  if (!held || !held.feldzeichen || factor <= 1) return factor;
+  if (((state.campaign.axes || {}).feldzeichen) !== axis) return factor;
+  return 1 + (factor - 1) * (1 + rewardValue("feldzeichen", held.feldzeichen) / 100);
+}
+
+/* Steigbrief grows with the run: one step per ten cycles, so a full run of 50 ends at five steps.
+   It multiplies the finished trick, deliberately late — it is a bonus on everything, not an axis. */
+export function steigbriefWith(state, cycle = 0, base = 1) {
+  const held = heldOf(state);
+  if (!held || !held.steigbrief) return base;
+  return base * (1 + Math.floor(Math.max(0, cycle) / 10) * rewardValue("steigbrief", held.steigbrief) / 100);
+}
+
+const bossEffect = (state) => {
+  const c = state && state.campaign;
+  return c ? ((BOSS_BY_ID[bossFor(c, c.run)] || {}).effect || {}) : {};
+};
+
+/* Waffenrecht lifts every own card, Zehnt lowers every enemy card. Same difference on paper, but
+   Zehnt still bites when the own values are already capped — which is why both exist. */
+export function cardValueWith(state, base = 0) {
+  const held = heldOf(state);
+  return held && held.waffenrecht ? base + rewardValue("waffenrecht", held.waffenrecht) : base;
+}
+
+/* Wetzstein raises the weakest deck card at the end of every cycle — the same shape as the perk
+   Schmiede, which is why it sits next to it in the engine. */
+export function wetzsteinWith(state, base = 0) {
+  const held = heldOf(state);
+  return held && held.wetzstein ? base + rewardValue("wetzstein", held.wetzstein) : base;
+}
+
+/* Der Konter: every won trick makes the NEXT enemy card stronger, and it stacks over a winning
+   streak; a loss puts the surcharge back to zero. It rides its own counter rather than the win
+   streak, because Standhaftigkeit keeps the STREAK alive through a loss — the surcharge must not
+   inherit that, or the player's own reward would arm the boss. */
+export function enemyValueWith(state, base = 0, counterStack = 0) {
+  const held = heldOf(state);
+  const per = bossEffect(state).counterPerWin || 0;
+  const out = base + per * Math.max(0, counterStack) - (held && held.zehnt ? rewardValue("zehnt", held.zehnt) : 0);
+  return Math.max(0, out);
+}
+
+/* Losentscheid converts a near loss into a win, exactly like the perk Patt — so it reads as the
+   same margin and the wider of the two wins. */
+export function pattMarginWith(state, base = 0) {
+  const held = heldOf(state);
+  return held && held.losentscheid ? Math.max(base, rewardValue("losentscheid", held.losentscheid)) : base;
+}
+
+/* Standhaftigkeit: the streak survives this many losses per cycle before it breaks. */
+export const streakSurvivesWith = (state, lossesThisCycle = 0) => {
+  const held = heldOf(state);
+  return !!(held && held.standhaftigkeit && lossesThisCycle <= rewardValue("standhaftigkeit", held.standhaftigkeit));
+};
+
+/* Lückenschluss: how many foreign cards a formation run may skip. It feeds `gap` in
+   `markRuns` (formations.js) — the very regler E_PACE and E_COLORBRIDGE already turn, so this is
+   an existing dial, not a new mechanic. `scope` decides whether it applies per run or per phase. */
+export function formationGapWith(state, base = 0) {
+  const held = heldOf(state);
+  if (!held || !held.lueckenschluss) return base;
+  return base + rewardValue("lueckenschluss", held.lueckenschluss);
+}
+
+/* Wucherer triples instead of doubling; Handelsbrief takes a percentage off. Both land on the one
+   price helper, so every purchase reads the same number. */
+export const priceLadderWith = (state, base = 2) => bossEffect(state).priceLadder || base;
+
+/* Handelsbrief nimmt Prozente vom fertigen Preis. Der Wucherer sitzt NICHT hier, sondern an der
+   Treppe selbst (coins.js `rerollPrice`) — aus einem fertigen Preis liesse sich die Stufenzahl nicht
+   zurueckrechnen, und der legendaere Neuwurf hat eine eigene Basis. */
+export function discountWith(state, base = 0) {
+  const held = heldOf(state);
+  if (!held || !held.handelsbrief || !(base > 0)) return base;
+  return Math.max(1, Math.round(base * (1 - rewardValue("handelsbrief", held.handelsbrief) / 100)));
+}
+
+/* Schmarotzer: every two held perks cost a coin per cycle, ROUNDED IN THE PLAYER'S FAVOUR
+   (owner 2026-09-22) — three perks cost one coin, not two. It never takes more than is on the
+   account, and without coins nothing happens at all, which is why the boss only enters the pool
+   after that unlock. */
+export function upkeepWith(state, perkCount = 0) {
+  const per = bossEffect(state).perkUpkeep || 0;
+  if (!per || !state || state.coinsEnabled === false) return 0;
+  return Math.min(state.coins || 0, Math.floor(Math.max(0, perkCount) / per));
+}
+
 // ---- What a campaign run starts with -----------------------------------------------------
 
 /* Everything the campaign decides BEFORE the first trick, in one place: which decks are in the
@@ -302,6 +406,7 @@ export function runSetup(campaign, unlocked = [], { energy = 4, cover = 24, coin
     energy: Math.max(0, energy - (eff.energyMinus || 0) + (held.fahnenrecht ? rewardValue("fahnenrecht", held.fahnenrecht) : 0)),
     cover: Math.min(positions, cover + (held.lehen ? rewardValue("lehen", held.lehen) : 0)),
     blockCells: [],
+    priceLadder: eff.priceLadder || null,   // Wucherer; null = die normale Treppe
     threshold: thresholdWith(c),
   };
 

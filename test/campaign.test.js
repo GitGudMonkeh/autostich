@@ -346,6 +346,7 @@ describe("Lauf-Konfiguration aus der Kampagne", () => {
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
+import { rerollPrice, energyPrice, coverPrice, energyBuy, coverBuy } from "../src/game/coins.js";
 
 /* Verdrahtung: nicht der geschriebene Schlüssel zählt, sondern die Zahl im Lauf-State. Die Lehre
    aus dem Beute-Audit (Veredelung schrieb ihren Schlüssel und wirkte trotzdem nie). */
@@ -418,5 +419,133 @@ describe("Kampagne im Reducer", () => {
     expect(CP.campaignCoinsWith(mit, 5)).toBe(5 + CP.rewardValue("pfruende", 2));
     expect(CP.campaignCoinsWith({}, 5)).toBe(5);                                  // Lauf ohne Kampagne
     expect(CP.campaignCoinsWith({ campaign: CP.emptyCampaign(), coinsEnabled: false }, 5)).toBe(0);
+  });
+});
+
+/* Die Laufzeit-Türen. Jede prüft eine ZAHL, und jede prüft zusätzlich, dass ein Lauf ohne
+   Kampagne seinen Eingabewert unverändert zurückbekommt — das ist der Vertrag der Bauform. */
+describe("Türen im Stich", () => {
+  const camp = (held = {}, over = {}) => ({ campaign: { ...CP.emptyCampaign(), held, ...over } });
+
+  it("Sold hebt die Basispunkte, sonst nichts", () => {
+    expect(CP.soldWith({}, 400)).toBe(400);
+    expect(CP.soldWith(camp({}), 400)).toBe(400);
+    expect(CP.soldWith(camp({ sold: 3 }), 400)).toBe(400 + CP.rewardValue("sold", 3));
+  });
+
+  it("Feldzeichen hebt den BONUS einer Achse, nicht ihren Wert", () => {
+    // Der Kern: eine inaktive Achse steht auf 1 und muss auf 1 bleiben — sonst bekäme ein
+    // Nicht-Crit-Stich plötzlich den Crit-Bonus geschenkt.
+    const s = camp({ feldzeichen: 3 }, { axes: { feldzeichen: "crit" } });
+    expect(CP.axisMultWith(s, "crit", 1)).toBe(1);
+    expect(CP.axisMultWith(s, "crit", 3)).toBeCloseTo(1 + 2 * 1.35, 6);
+    expect(CP.axisMultWith(s, "perk", 3)).toBe(3);      // die andere Achse bleibt unberührt
+    expect(CP.axisMultWith({}, "crit", 3)).toBe(3);     // Lauf ohne Kampagne
+  });
+
+  it("Steigbrief wächst je zehn Durchläufe und steht am Laufende beim Fünffachen", () => {
+    const s = camp({ steigbrief: 2 });
+    const pro = CP.rewardValue("steigbrief", 2) / 100;
+    expect(CP.steigbriefWith(s, 0, 1)).toBe(1);
+    expect(CP.steigbriefWith(s, 9, 1)).toBe(1);
+    expect(CP.steigbriefWith(s, 10, 1)).toBeCloseTo(1 + pro, 6);
+    expect(CP.steigbriefWith(s, 50, 1)).toBeCloseTo(1 + 5 * pro, 6);
+    expect(CP.steigbriefWith({}, 50, 1)).toBe(1);
+  });
+
+  it("Waffenrecht hebt den eigenen Kampfwert", () => {
+    expect(CP.cardValueWith({}, 7)).toBe(7);
+    expect(CP.cardValueWith(camp({ waffenrecht: 2 }), 7)).toBe(7 + CP.rewardValue("waffenrecht", 2));
+  });
+
+  it("Zehnt senkt den Gegnerwert, nie unter null", () => {
+    expect(CP.enemyValueWith({}, 7)).toBe(7);
+    expect(CP.enemyValueWith(camp({ zehnt: 3 }), 7)).toBe(7 - CP.rewardValue("zehnt", 3));
+    expect(CP.enemyValueWith(camp({ zehnt: 3 }), 1)).toBe(0);
+  });
+
+  it("Der Konter legt je gewonnenem Stich auf die nächste Gegnerkarte nach", () => {
+    const konter = camp({}, { run: 4 });
+    expect(CP.enemyValueWith(konter, 6, 0)).toBe(6);
+    expect(CP.enemyValueWith(konter, 6, 5)).toBe(11);
+    // In den Läufen 1–3 steht der Endboss nicht auf dem Feld.
+    expect(CP.enemyValueWith(camp({}, { run: 1, bosses: ["bremser", "x", "y"] }), 6, 5)).toBe(6);
+  });
+
+  it("Losentscheid liest dieselbe Marge wie Patt, die weitere gilt", () => {
+    expect(CP.pattMarginWith({}, 2)).toBe(2);
+    expect(CP.pattMarginWith(camp({ losentscheid: 1 }), 2)).toBe(2);   // Patt ist weiter
+    expect(CP.pattMarginWith(camp({ losentscheid: 3 }), 2)).toBe(3);
+    expect(CP.pattMarginWith(camp({ losentscheid: 3 }), 0)).toBe(3);   // ohne Patt zählt es allein
+  });
+
+  it("Standhaftigkeit lässt die Serie so viele Niederlagen überleben, wie die Stufe sagt", () => {
+    expect(CP.streakSurvivesWith({}, 1)).toBe(false);
+    const s = camp({ standhaftigkeit: 2 });
+    expect(CP.streakSurvivesWith(s, 1)).toBe(true);
+    expect(CP.streakSurvivesWith(s, 2)).toBe(true);
+    expect(CP.streakSurvivesWith(s, 3)).toBe(false);
+  });
+
+  it("Lückenschluss hebt denselben Regler, den E_PACE schon dreht", () => {
+    expect(CP.formationGapWith({}, 0)).toBe(0);
+    expect(CP.formationGapWith(camp({ lueckenschluss: 3 }), 0)).toBe(CP.rewardValue("lueckenschluss", 3));
+    expect(CP.formationGapWith(camp({ lueckenschluss: 1 }), 1)).toBe(1 + CP.rewardValue("lueckenschluss", 1));
+  });
+
+  it("Wucherer verdreifacht die Preistreppe — an der Treppe, nicht am fertigen Preis", () => {
+    // Die Leiter liegt als schlichte Zahl auf dem State; coins.js kennt die Kampagne nicht.
+    expect(rerollPrice(0, false)).toBe(3);
+    expect(rerollPrice(1, false)).toBe(6);
+    expect(rerollPrice(2, false)).toBe(12);
+    expect(rerollPrice(0, false, 3)).toBe(3);
+    expect(rerollPrice(1, false, 3)).toBe(9);
+    expect(rerollPrice(2, false, 3)).toBe(27);   // genau die Leiter des Owners
+    // Der legendäre Neuwurf hat eine EIGENE Basis — daran wäre eine Nachrechnung am fertigen
+    // Preis gescheitert (aus 15 ließe sich die Stufenzahl nicht zurückrechnen).
+    expect(rerollPrice(0, true, 3)).toBe(15);
+    expect(rerollPrice(1, true, 3)).toBe(45);
+  });
+
+  it("gibt Wucherer als Leiter aus der Lauf-Konfiguration weiter", () => {
+    const w = { ...CP.emptyCampaign(), bosses: ["wucherer", "x", "y"] };
+    const opts = { energy: 4, cover: 24, coins: 3, positions: 40, rng: () => 0.5 };
+    expect(CP.runSetup(w, CP.unlocksFor(2), opts).priceLadder).toBe(3);
+    expect(CP.runSetup(CP.emptyCampaign(), [], opts).priceLadder).toBe(null);
+  });
+
+  it("Handelsbrief nimmt Prozente vom fertigen Preis", () => {
+    expect(CP.discountWith({}, 100)).toBe(100);
+    expect(CP.discountWith(camp({ handelsbrief: 3 }), 100)).toBe(100 - CP.rewardValue("handelsbrief", 3));
+    expect(CP.discountWith(camp({ handelsbrief: 3 }), 1)).toBe(1);   // nie unter einer Münze
+  });
+
+  it("Schmarotzer rundet zugunsten des Spielers und nimmt nie mehr, als da ist", () => {
+    const s = { ...camp({}, { bosses: ["schmarotzer", "x", "y"] }), coinsEnabled: true, coins: 99 };
+    expect(CP.upkeepWith(s, 0)).toBe(0);
+    expect(CP.upkeepWith(s, 2)).toBe(1);
+    expect(CP.upkeepWith(s, 3)).toBe(1);   // drei Perks kosten EINE Münze, nicht zwei
+    expect(CP.upkeepWith(s, 4)).toBe(2);
+    expect(CP.upkeepWith({ ...s, coins: 1 }, 6)).toBe(1);
+    expect(CP.upkeepWith({ ...s, coinsEnabled: false }, 6)).toBe(0);
+    expect(CP.upkeepWith({ campaign: CP.emptyCampaign() }, 6)).toBe(0);       // ohne den Boss
+  });
+});
+
+describe("Wucherer auf den anderen Kaufflächen", () => {
+  it("verdreifacht auch Energie und Baufeld, jede mit eigenem Zähler", () => {
+    const w = { coins: 999, priceLadder: 3 };
+    expect(energyBuy({ coins: 999, coinEnergy: 0 }).price).toBe(3);
+    expect(energyBuy({ coins: 999, coinEnergy: 1 }).price).toBe(6);
+    expect(energyBuy({ ...w, coinEnergy: 1 }).price).toBe(9);
+    expect(coverBuy({ coins: 999, coverBuys: 1 }).price).toBe(40);
+    expect(coverBuy({ ...w, coverBuys: 1 }).price).toBe(60);
+  });
+
+  it("bleibt map-sicher: die Preisfunktionen nehmen weiter nur ein Argument", () => {
+    // `[0,1].map(energyPrice)` schiebt den INDEX nach. Mit einem zweiten Parameter wäre daraus
+    // still „Leiter 0" und „Leiter 1" geworden — der Grund, warum die Leiter über priceStep läuft.
+    expect([0, 1].map(energyPrice)).toEqual([3, 6]);
+    expect([0, 1].map(coverPrice)).toEqual([20, 40]);
   });
 });

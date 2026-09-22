@@ -95,9 +95,22 @@ export const REROLL_LEG_BASE = envNum("SIM_COIN_REROLL_LEG", 15);
 /* Alle drei Treppen verdoppeln — Neuwurf 3→6→12, Energie 3→6, Baufeld 20→40. EIN Faktor, damit „jeder
    weitere teurer" überall dasselbe heißt und ein Tuning-Schritt nicht drei Zahlen anfassen muss. */
 export const PRICE_LADDER = envNum("SIM_COIN_LADDER", 2);
-const step = (base, bought) => Math.round(base * PRICE_LADDER ** Math.max(0, bought || 0));
+/* EXPORTIERT, damit die Kaufflächen unten die Treppe mit einem anderen Faktor rechnen können, ohne
+   dass `energyPrice`/`coverPrice` einen zweiten Parameter bekommen. Genau der wäre eine Falle: beide
+   werden idiomatisch an `.map()` gereicht, und `.map` schiebt den INDEX als zweites Argument nach —
+   aus `[0,1].map(energyPrice)` würde dann still „Leiter 0" und „Leiter 1". */
+export const priceStep = (base, bought, ladder = PRICE_LADDER) => Math.round(base * ladder ** Math.max(0, bought || 0));
+const step = priceStep;
 
-export const rerollPrice = (bought = 0, legendary = false) => step(legendary ? REROLL_LEG_BASE : REROLL_BASE, bought);
+/* Der Kampagnen-Boss Wucherer verdreifacht die Treppe, statt sie zu verdoppeln (3 → 9 → 27): der
+   Grundpreis bleibt, nur jede weitere Stufe wird teurer. Er kommt als schlichte Zahl auf dem State
+   (`state.priceLadder`, vom Lauf-Start gesetzt) — coins.js soll die Kampagne nicht kennen müssen,
+   und es ist dasselbe Muster wie `coinsEnabled`.
+   Bewusst an der TREPPE und nicht als Nachrechnung am fertigen Preis: der legendäre Neuwurf hat eine
+   eigene Basis (15), aus dem Preis allein ließe sich die Stufenzahl nicht zurückrechnen. */
+export const ladderOf = (state = {}) => state.priceLadder || PRICE_LADDER;
+export const rerollPrice = (bought = 0, legendary = false, ladder = PRICE_LADDER) =>
+  step(legendary ? REROLL_LEG_BASE : REROLL_BASE, bought, ladder);
 
 /* DECKEL je Phase (Owner 2026-09-15). Bis hierher war der Preis der einzige Regler: „beliebig oft je
    Phase, jeder weitere teurer", und beim legendären Neuwurf ausdrücklich „kein Deckel". Das hielt,
@@ -122,7 +135,7 @@ export const rerollsLeft = (state = {}) => Math.max(0, REROLL_CAP - (state.offer
    `legendary` bleibt währenddessen falsch: die Legendär-GARANTIE hängt am Kauf, nicht am Angebot (§3.1) —
    ein Gratis-Wurf verspricht kein Legendäres und trägt deshalb auch nicht den goldenen Rahmen. */
 export function rerollOffer(state = {}, freeTokens = 0, legendary = false) {
-  const nextPrice = rerollPrice(state.coinRerolls || 0, legendary);
+  const nextPrice = rerollPrice(state.coinRerolls || 0, legendary, ladderOf(state));
   const left = rerollsLeft(state);
   // Der Deckel steht VOR dem Preis: ist er erreicht, ist auch ein Gratis-Wurf keiner mehr.
   if (left <= 0) return { free: false, tokens: freeTokens, price: nextPrice, nextPrice, legendary: false, can: false, left: 0, capped: true };
@@ -151,10 +164,12 @@ export function stepBuy(state = {}, bought = 0, max = 0, price = 0) {
   const left = Math.max(0, max - (bought || 0));
   return { left, max, price, soldOut: left <= 0, can: left > 0 && (state.coins || 0) >= price };
 }
+/* Wucherer gilt fuer JEDE Kaufart, jede mit ihrem eigenen Zaehler (Owner 2026-09-22) — deshalb
+   reicht jede Kaufflaeche die Leiter des Laufs durch. */
 export const energyBuy = (state = {}) =>
-  stepBuy(state, state.coinEnergy || 0, ENERGY_MAX_BUYS, energyPrice(state.coinEnergy || 0));
+  stepBuy(state, state.coinEnergy || 0, ENERGY_MAX_BUYS, priceStep(ENERGY_BASE, state.coinEnergy || 0, ladderOf(state)));
 export const coverBuy = (state = {}) =>
-  stepBuy(state, state.coverBuys || 0, COVER_MAX_BUYS, coverPrice(state.coverBuys || 0));
+  stepBuy(state, state.coverBuys || 0, COVER_MAX_BUYS, priceStep(COVER_BASE, state.coverBuys || 0, ladderOf(state)));
 
 /* ---- Fokus rufen (§3.3) --------------------------------------------------------------------------- */
 // Fester Preis, einmal je Skill-Phase: der Ruf ist gekaufte AUSWAHL, keine Vormerkung — nichts wird

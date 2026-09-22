@@ -464,7 +464,7 @@ export function reducer(state, action) {
         unlockedArchetypes: cSetup ? cSetup.archetypes : archPool,
         rareCap: cSetup ? cSetup.rareCap : effRareCap,
         rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
-        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins } : {}),
+        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder } : {}),
         weekMods: weekModsState,
         challengeBlockArch: [...new Set([...wmBlockArch, ...(cSetup ? cSetup.blockCells : [])])],
         challengeBlockForm: [...new Set(wmBlockForm)] };
