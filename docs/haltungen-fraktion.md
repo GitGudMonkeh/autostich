@@ -47,6 +47,8 @@ Das ist die zweite Dimension auf derselben Entscheidung, die das Spiel ohnehin t
 - Wechsel passieren **mitten im Durchlauf**, nicht an einer Grenze.
 - Das Brett **darf mitten im Durchlauf neu gelesen und gerechnet werden**, wo aktuelle Werte das
   nötig machen.
+- **Für den Haltungswechsel zählt immer die GRUNDFARBE der Karte**, nie die effektive. Pflanzen-Grün
+  färbt nicht mit, eine Farballianz fasst nichts zusammen (§2.2).
 
 **Der Mechanismus in einem Satz, für Spielertext später:**
 
@@ -68,6 +70,27 @@ Stapel gegen Multiplikator, ohne Sonderregel.
 **Offen (bewusst):** wie viele Haltungen gleichzeitig klingen dürfen. Der Mechanismus erlaubt bis zu
 vier; ob es dabei bleibt oder auf Paare gedeckelt wird, ist eine Balancing-Frage und wird nicht vorab
 entschieden (Owner).
+
+### 2.2 · Die Grundfarbe zählt — und was Pflanze damit macht
+
+**Gesetzt (Owner):** der Haltungswechsel liest die **Grundfarbe**, wie **Buntspiel** es schon tut
+(`zwischenaufgaben.md`). Sind Pflanze und diese Fraktion zusammen aktiv, bekommt die Karte einen
+Punkt in ihrer Grundfarbe — dieselbe Lösung wie dort der Ring um das Blatt, und wie dort nur, solange
+die Information gebraucht wird.
+
+**Die Regel ist erzwungen, nicht gewählt**, und die Messung dafür liegt schon vor: Pflanze färbt bis
+D15 im Median 17,5 von 40 Karten grün und bis D30 deren 36 — und schon bei D15 hat **mindestens eine
+Farbe keine ungefärbte Karte mehr**. Über die effektive Farbe gezählt könnte diese Haltung ab da nie
+wieder auslösen, ab D30 wäre die Rotation grün-only. Über die Grundfarbe läuft sie unverändert weiter.
+
+**Damit ist Grün für das Haltungssystem nicht mehr besonders** — die Farbzuordnung (§8) ist reine
+Gefühlssache, keine mechanische Entscheidung mehr.
+
+**Aber: die Pflanze-Mischung hebelt den Preis aus §2.1 aus.** Dort kostet bunt bauen den Farbblock.
+Mit Pflanze nicht: die Karten werden grün, das Brett liest sich als **ein großer Farbblock** — und
+ihre Grundfarben bleiben 10/10/10/10, die Rotation läuft also schnell weiter. Formation *und* Stapel,
+ohne den Handel dazwischen. Das ist nach heutigem Stand die stärkste Paarung im Entwurf und die
+erste Stelle, an der ich beim Tarieren nachsehen würde.
 
 ---
 
@@ -385,10 +408,10 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 2. **Stapeln mehrere Runden?** — §5.3. Mit Beschleunigung sind zwei bis drei Runden je Durchlauf
    erreichbar; ob ihre Boni sich addieren, entscheidet, wie stark die Rotationslinie insgesamt ist.
 3. **Übergriff auf bereits offenen Grenzen** — §5.4.
-3. **Der dritte Rotations-Skill** — geparkt, bis die Haltungen stehen.
-4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Dabei zu bedenken: Pflanze färbt Karten
-   dauerhaft grün, Grün campt also von selbst. Der Owner hat die Kombination Grün + Pflanze
-   ausdrücklich als **Camping-Ehe** akzeptiert, nicht als Unfall.
+4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Seit §2.2 (Grundfarbe zählt) ist das
+   **reine Gefühlssache**: Grün ist für das Haltungssystem nicht mehr besonders.
+   *(Überholt: die frühere Notiz, Grün + Pflanze sei eine „Camping-Ehe". Sie galt, solange der
+   Wechsel die effektive Farbe las. Über die Grundfarbe gelesen ist es das Gegenteil — §2.2.)*
 5. **Bekommt Campen etwas Eigenes?** Zinsen zahlt dafür, aber als Linie, nicht als Fundament.
 6. **Womit startet der Lauf** — welche Haltung ist zu Beginn aktiv, und wird sie gewürfelt oder
    gewählt? Hängt mit dem geparkten „Fokus am Start" aus `skill-rework.md` §1 zusammen.
