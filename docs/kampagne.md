@@ -113,16 +113,8 @@ fünf Punkte blockieren den Bau — alle klein, keiner rät sich von selbst:
 > ebenfalls Ebene-2-Inhalt: **in Ebene 1 werden nur die Spalten Normal, Selten und Sehr selten
 > gebaut.**
 >
-> **Was daraus folgt und noch offen ist.** Die Stufenleiter aus §10 hat fünf Sprossen, Ebene 1 hat
-> nur drei Ränge. Wörtlich gelesen zahlen die Summen 2, 3 und 4 alle dasselbe — „Sehr selten" —
-> und damit ist der Reward schon mit **zwei erfüllten Aufträgen allein** am Anschlag. Gemessen
-> (§10) reißen 60 % der bestandenen ersten Läufe die 3×-Marke, der Deckel greift in Ebene 1 also
-> sehr oft. Zwei Wege:
->
-> 1. **So lassen.** Die Leiter ist in Ebene 1 kurz und öffnet sich mit den Ebenen. Einfach, und für
->    einen Einstieg vielleicht genau richtig.
-> 2. **Für Ebene 1 umlegen**, damit jeder Schritt wieder zählt — etwa 0–1 → Normal, 2 → Selten,
->    3 → Sehr selten, 4 → Sehr selten.
+> **Und die Stufenleiter wird für Ebene 1 umgelegt** (Owner, 2026-09-22), statt sie oben
+> abzuschneiden. Die Zuordnung steht in §10.
 
 ---
 
@@ -543,6 +535,28 @@ eine Rarität:
 | **0 Aufträge** | Normal | Selten | Sehr selten |
 | **1 Auftrag** | Selten | Sehr selten | Episch |
 | **2 Aufträge** | Sehr selten | Episch | **Legendär** |
+
+### Ebene 1 legt die Leiter um
+
+Ebene 1 kennt nur drei Ränge (§11): Episch und Legendär sind dort zu. Die Leiter wird deshalb
+**gestaucht statt oben abgeschnitten** (Owner, 2026-09-22) — sonst wäre der Reward mit zwei
+erfüllten Aufträgen allein am Anschlag und der Score-Eingang zählte gar nicht mehr.
+
+| Stufensumme | 0 | 1 | 2 | 3 | 4 |
+| --- | --- | --- | --- | --- | --- |
+| **ab Ebene 2** | Normal | Selten | Sehr selten | Episch | Legendär |
+| **Ebene 1** | Normal | Normal | Selten | **Sehr selten** | Sehr selten |
+
+Ausgeschrieben bleibt die Diagonale erhalten, nur eine Stufe tiefer:
+
+| | Score < 2× | Score ≥ 2× | Score ≥ 3× |
+| --- | --- | --- | --- |
+| **0 Aufträge** | Normal | Normal | Selten |
+| **1 Auftrag** | Normal | Selten | **Sehr selten** |
+| **2 Aufträge** | Selten | **Sehr selten** | Sehr selten |
+
+Für „Sehr selten" braucht es damit **beide Eingänge**: zwei Aufträge und den doppelten Score, oder
+einen Auftrag und den dreifachen. Nur die Ecke rechts unten (Summe 4) bleibt redundant.
 
 **Was die Formel dadurch leistet.** Der Score allein kommt nur bis *Sehr selten* — für Episch braucht
 es mindestens einen Auftrag, für Legendär beide Aufträge **und** den dreifachen Score. Damit sind die
