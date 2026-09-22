@@ -1,7 +1,7 @@
 # Haltungen — Fraktion 5 (Arbeitsdokument)
 
 > **Status: lebendes Dokument, Designphase.** Der Mechanismus und die vier Passive sind vom Owner
-> gesetzt, zwei der fünf Linien sind besetzt. **Keine Zahlen sind tariert, nichts ist gemessen** —
+> gesetzt, vier der fünf Linien sind besetzt. **Keine Zahlen sind tariert, nichts ist gemessen** —
 > alle Werte hier sind Startwerte oder Kopfrechnung und stehen so lange zur Disposition, bis Sim und
 > Playtest etwas dazu sagen.
 >
@@ -119,8 +119,8 @@ tanzen.
 | **Score** | Stauung · Zinsen · Mitklang — **voll** |
 | **Crit** | Grundrauschen · Übertrag · Schwungrad — **voll** |
 | **Überlappung** | Doppelbindung · Übergriff · Verankerung — **voll** |
+| **Ergebnis** | Genugtuung · Rückhalt · Kehrtwende — **voll** |
 | **Rotation** | Anklang · Runde · *(dritter Platz geparkt, bis die Haltungen stehen)* |
-| **Ergebnis** | offen |
 
 Dazu kommen **3 Legendäre** (Format der Bestandsfraktionen) — noch nicht angefasst.
 
@@ -130,8 +130,11 @@ Ein Haltungs-Skill liegt still, solange seine Haltung nicht klingt. Bei vier Hal
 strukturell die meiste Zeit — dieselbe Form, an der Eis krankt (`skill-rework.md` §8.3: Eis kostet
 den Partner die Hälfte, weil der Spieler es fallen lässt).
 
-**Gegenmittel im Entwurf:** jede Linie trägt mindestens einen Skill, der **außerhalb** seiner eigenen
-Haltung wirkt — in der Crit-Linie ist das *Grundrauschen*.
+**Stand dazu, ungeschönt:** nur die **Crit-Linie** trägt einen Skill, der außerhalb seiner Haltung
+wirkt (*Grundrauschen*). Score, Überlappung und Ergebnis haben keinen — die Kandidaten, die es
+gewesen wären (*Grundlast*, *Gefüge*, *Standhaft*), sind jeweils nicht gewählt worden. Ob das ein
+Problem ist, entscheidet sich daran, wie lang eine Haltung im typischen Lauf tatsächlich klingt; die
+drei Linien liegen sonst strukturell den größten Teil der Zeit still.
 
 ---
 
@@ -206,9 +209,22 @@ Grenzöffner im Spiel.
 **Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier** (SK_PLANT_03) öffnet Segmentgrenzen. Wer
 hier baut, sollte einen dritten Griff nehmen.
 
-### 5.5 · Ergebnis-Linie — offen
+### 5.5 · Ergebnis-Linie — voll
 
-Passiv: Niederlage → Gleichstand, Gleichstand → Sieg. Noch keine Kandidaten.
+Passiv: Niederlage → Gleichstand, Gleichstand → Sieg.
+
+**Was das Passiv schon allein tut:** ein Gleichstand bricht die Serie heute nicht, eine Niederlage
+schon. „Niederlage → Gleichstand" heißt damit, dass die Serie überlebt, solange die Haltung klingt —
+das Passiv ist bereits ein Serienschutz. Und „Gleichstand → Sieg" hebt rund 10 % aller Stiche von tot
+auf voll, mit Score, Serie und Farbzähler.
+
+| Skill | Wirkung |
+| --- | --- |
+| **Genugtuung** | Ein gerutschter Sieg zahlt Basis-Score je Punkt Rückstand, den er gedreht hat. Je deutlicher du eigentlich verloren hättest, desto mehr zahlt er — der einzige Griff im Entwurf, der niedrige Karten wertvoll macht. |
+| **Rückhalt** | Nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. |
+| **Kehrtwende** | Ein gerutschter Stich verlängert die Haltung um einen Stich. |
+
+**Warnung zu Kehrtwende** (§6.5).
 
 ---
 
@@ -269,7 +285,30 @@ Das ist keine theoretische Ecke — die Crit-Chance kann 100 % erreichen, die Sy
 Überschuss existiert genau deswegen. Ein Deckel auf die Verlängerung oder ein Verfall würde es
 auffangen; das ist Tarieren und steht hier nur, damit es beim Sim-Lauf nicht überrascht.
 
-### 6.5 · Der Stapel
+### 6.5 · Zwei Verlängerer — und die Frage, die sie aufwerfen
+
+**Schwungrad** (Crit-Linie) und **Kehrtwende** (Ergebnis-Linie) haben dieselbe Form: sie verlängern
+die Haltung je Auslöser um einen Stich. Ihre Vorzeichen sind aber entgegengesetzt.
+
+Ein „gerutschter" Stich ist alles, was kein echter Sieg bleibt — die Rutschquote ist damit
+**1 − Siegquote**, und Kehrtwende wird **schwächer, je besser der Lauf läuft**:
+
+| Siegquote | Dauer mit Kehrtwende |
+| --- | --- |
+| 45 % (Laufbeginn) | ~6,7 Stiche |
+| 55 % | ~5,5 Stiche |
+| 77 % (bestes gemessenes Build, §6.1) | ~3,9 Stiche |
+
+Schwungrad läuft bei 100 % Crit ins Unendliche, Kehrtwende kann das strukturell nicht. Gutes
+Gegengewicht — solange die beiden nicht zusammenwirken.
+
+**Offen und wichtig:** klingen zwei Haltungen gleichzeitig und beide tragen einen Verlängerer —
+**welche wird verlängert?** Gilt ein Verlängerer nur für die **eigene** Haltung, ist alles gut. Gilt
+er für die **laufende**, addieren sich die Raten: 0,67 aus Schwungrad plus rund 0,45 aus Kehrtwende
+liegen **über 1**, und dann endet die Haltung nicht mehr. Die Antwort gehört in die Regel, nicht ins
+Tarieren.
+
+### 6.6 · Der Stapel
 
 Überlappung, Crit und Score multiplizieren **denselben Stich**: das Abfärben hebt den
 Formations-Multiplikator, der Score-Multiplikator liegt darauf, und der Crit multipliziert den
@@ -290,6 +329,8 @@ Ausreißer und deshalb wertvoll: sie multipliziert nicht, sie wandelt, und läuf
 | **Pechbremse** (ein Sieg ohne Crit hebt die Chance für den nächsten) | Stirbt am eigenen Erfolg: wer auf Crit baut, verfehlt nie, also greift sie nie. Gehört zur Sorte „immer genommen, nie gespürt" (`skill-rework.md` §8.5). |
 | **Metronom · Takt · Zielschuss** | Hingen alle am gestrichenen Takt-Passiv. |
 | **„Aufteilung"** | Name belegt (Glossar: „Aufteilung deines Scores auf Formationen / Crits / Übrige"), und mechanisch war der Skill identisch zu Mitklang, nur auf der Crit-Achse. |
+| **Zweitstufe · Standhaft · Gnadenfrist** (Ergebnis-Kandidaten) | Nicht gewählt. *Standhaft* wäre der Skill gewesen, der außerhalb der eigenen Haltung wirkt (§4.1). |
+| **Kehrtwende, ursprüngliche Fassung** (ein gerutschter Stich zählt für den Farbzähler seiner Farbe) | Vom Owner umdefiniert auf „verlängert die Haltung um einen Stich". Die alte Fassung hätte in die eigene Maschine zurückgespeist — dieselbe Form wie der nicht gewählte *Taktgeber* der Crit-Linie. |
 | **Gefüge · Weiterreichen · Verkettung** (Überlappungs-Kandidaten) | Nicht gewählt. Gefüge bleibt der stärkste der drei, falls die Linie später aufgemacht wird: es hebt die Reichweite des Passivs von „dichte Stellen" auf das ganze Brett. |
 | **Linien-Schnitt B** (Tanzen · Campen · Steuern · Ertrag) | Die vier Haltungen hätten keine Heimat gehabt. |
 | **Linien-Schnitt C** (Partitur · Takt · Ausklang · Haltungen · Ertrag) | Am leichtesten zu tarieren, aber liest sich wie eine Bauteilliste. |
@@ -303,7 +344,8 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 ## 8 · Offene Punkte
 
-1. **Die Ergebnis-Linie** — noch keine Kandidaten.
+1. **Welche Haltung ein Verlängerer verlängert** — §6.5. Die einzige offene Frage, die eine *Regel*
+   braucht und kein Tarieren.
 2. **Übergriff auf bereits offenen Grenzen** — §5.4.
 3. **Der dritte Rotations-Skill** — geparkt, bis die Haltungen stehen.
 4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Dabei zu bedenken: Pflanze färbt Karten
@@ -371,5 +413,9 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 ## 10 · Nächster Schritt
 
-Die Ergebnis-Linie (§5.5), dann der dritte Rotations-Platz. Danach die Farbzuordnung, die Legendären
-und zuletzt die Zahlen — in der Reihenfolge, die Eis und Pflanze schon gegangen sind.
+Der dritte Rotations-Platz (§5.3) — er war bewusst geparkt, bis die Haltungen stehen, und das tun sie
+jetzt. Danach die Farbzuordnung, die drei Legendären und zuletzt die Zahlen — in der Reihenfolge, die
+Eis und Pflanze schon gegangen sind.
+
+Vorher zu klären, weil es eine **Regel** ist und kein Tarieren: welche Haltung ein Verlängerer
+verlängert (§6.5).
