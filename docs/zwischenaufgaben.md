@@ -410,7 +410,7 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | --- | --- | --- |
 | **Durchmarsch** Siege in einem Durchlauf | Spitze | 25 · 35 · **5 Durchläufe in Folge mit allen 40 Stichen** |
 | **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 3 · 6 · 8 + Zusatz |
-| **Gedränge** gebaute Formationen | Spitze | 25 · 30 · 40 + Zusatz |
+| **Gedränge** Formationen je Position, summiert über das Brett | Spitze | 40 · 50 · 70 |
 | **Reinheit** Positionen in einem gewürfelten Typ | Spitze | siehe unten |
 | **Langbau** längste Formation | Spitze | — · 10 · 15 |
 | **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 40 · 40 + Zusatz |
@@ -423,15 +423,27 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | **Quartier** volle Baufeld-Reihen derselben Kategorie | Zustand | 1 · 3 · 5 |
 | **Säckel** Münzen gehalten | Zustand | 60 · 80 · 120 |
 
+**Gesetzt (Owner, 2026-09-22): Gedränge zählt Formationen JE POSITION, summiert über alle 40** — die
+Paare aus Position × Formation (Münz-Doku §2.5), nicht mehr die distinkten Formationen. Eine Position
+in drei Formationen zählt drei. Grund: offene Segmentgrenzen (E_SEGMENT, Spalier, Pfeiler) verschmelzen
+zwei Läufe zu einem, und ein Bau mit offenen Grenzen hatte auf dem distinkten Maß **weniger**
+Formationen als derselbe Bau mit geschlossenen. Das Paar-Maß ist die Summe der Formationslängen und
+davon unabhängig. Leiter 40 · 50 · 70; die alte 25 · 30 · 40 stand auf dem distinkten Maß und ist
+damit nicht vergleichbar.
+
+**Der Zusatz auf Schwer entfällt** (Owner, 2026-09-22): jede Position in mindestens zwei Formationen
+wären auf dem Paar-Maß schon 80, das Maß misst die Dichte selbst.
+
 ### 4.0a Die Zusatzbedingung
 
-**Sieben schwere Stufen tragen eine zweite Bedingung** (Owner, 2026-09-16). Sie steht neben dem
+**Sechs schwere Stufen tragen eine zweite Bedingung** (Owner, 2026-09-16; Gedränge seit 2026-09-22
+ohne, §4). Sie steht neben dem
 Hauptzähler, nicht an seiner Stelle: erfüllt ist ein Durchlauf erst, wenn **beide** in ihm standen.
-Sechs verlangen eine Brettform, eine verbietet etwas — die einzige Verbotsbedingung des Katalogs.
+Fünf verlangen eine Brettform, eine verbietet etwas — die einzige Verbotsbedingung des Katalogs.
 
 | Bedingung | trägt |
 | --- | --- |
-| jede Position in mindestens 2 Formationen | Sperrfeuer · Gedränge · Reinheit/Farbblock · Farbtreue |
+| jede Position in mindestens 2 Formationen | Sperrfeuer · Reinheit/Farbblock · Farbtreue |
 | 20 Positionen in mindestens 3 Formationen | Vollbrett |
 | mindestens 5 Positionen in 4 Formationen | Verflechtung |
 | **keine** Farbserie länger als 3 Stiche | Buntspiel |
@@ -513,7 +525,7 @@ Gedankenstrich, kein Selbstbezug.
 | --- | --- |
 | Durchmarsch | Gewinne in einem Durchlauf X Stiche. Auf Schwer: X Durchläufe in Folge ohne einen verlorenen Stich. |
 | Sperrfeuer | Gewinne in einem Durchlauf alle fünf Stiche in X Segmenten. |
-| Gedränge | Baue X Formationen in einer Aufstellung. |
+| Gedränge | Bringe alle Positionen zusammen auf X Formationen. (Wortlaut ist Vorschlag, 2026-09-22; das Maß dahinter ist gesetzt.) |
 | Reinheit | Baue X Formationen vom Typ [Typ] in einer Aufstellung. |
 | Langbau | Baue eine Formation aus X Karten. |
 | Vollbrett | Bringe X der 40 Positionen in mindestens eine Formation. |
@@ -649,7 +661,7 @@ Die Anzeigeform folgt der Art des Zählers:
 | --- | --- |
 | Durchmarsch | Siege im laufenden Durchlauf, daneben der beste Durchlauf bisher |
 | Sperrfeuer | volle Segmente im laufenden Durchlauf, daneben der beste bisher |
-| Gedränge | Formationen der aktuellen Aufstellung, daneben die beste bisher |
+| Gedränge | Formationen je Position der aktuellen Aufstellung, summiert, daneben die beste bisher |
 | Reinheit | dieselbe Zahl, auf den gewürfelten Typ gefiltert |
 | Langbau | längste Formation der aktuellen Aufstellung, daneben die beste bisher |
 | Vollbrett | belegte Positionen der aktuellen Aufstellung, daneben die beste bisher |
@@ -793,6 +805,9 @@ ganzen Datensatz kein Lauf.
 Normal (4) gelingt in jedem zweiten Durchlauf von allein, Selten (5) einmal je Fenster, Sehr selten (6)
 nur bei Feuer im p90, Episch (7) in Fenster 1 bei keiner Spielweise. **Pflanze liegt mit
 Grundfarben-Zählung exakt auf dem naiven Spieler**, die Regel aus §4.1 funktioniert also.
+
+> **SUPERSEDED (2026-09-22):** die Messung und die Leiter darunter stehen auf dem **distinkten** Maß.
+> Gedränge zählt seither Paare, Leiter dazu in §4.
 
 **Gedränge, nachgemessen** (2026-09-15, `countBuiltFormations` an echten Läufen, bester Durchlauf je
 Fenster, 30 Seeds je Spielweise). Die frühere Zahl fiel unter die Sonden-Korrektur in §2.2 und ist
@@ -1309,6 +1324,9 @@ vierte Stufe einer Familie darf über ihr Thema hinausgreifen, und die beiden bl
 weil Veredelung jede Skill-Phase des Laufs anhebt und Freibrief IV nur die Türen zählt, die es
 selbst öffnet.
 
+**Gesetzt (Owner, 2026-09-22): Gedränge zählt Formationen je Position, summiert** — segmentunabhängig,
+Leiter 40 · 50 · 70, ohne Zusatz auf Schwer. Begründung in §4.
+
 ---
 
 ## 11. Nicht in diesem Umfang
@@ -1350,7 +1368,7 @@ Die Zähler der vierzehn Aufgaben, alle aus vorhandenem State:
 | --- | --- |
 | Durchmarsch | Siege je Durchlauf aus dem `wins`-Verlauf |
 | Sperrfeuer | Stichergebnisse je Fünferblock, `SEGMENT_SIZE` in `formations.js` |
-| Gedränge | `countBuiltFormations(state.formations)`, dieselbe Zahl, die die Münz-Einnahme zählt |
+| Gedränge | `formationPairs(state.formations)`: Formationen je Position, summiert — die Paare aus der Münz-Doku §2.5, nicht die distinkte Zahl der Münz-Einnahme |
 | Reinheit | dieselbe Funktion, gefiltert auf einen Typ aus `FORMATION_TYPES` |
 | Langbau | Länge des längsten Laufs, `members.length` in `computeFormations` |
 | Vollbrett | Positionen mit mindestens einem Eintrag in `formations` |

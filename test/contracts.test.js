@@ -4,7 +4,7 @@ import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import * as C from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
 import { SKILL_LIST, isLegendarySkill, buildSkillDoors } from "../src/game/skills.js";
-import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
+import { computeFormations, openBorderInfo, FORMATION_TYPES, countBuiltFormations } from "../src/game/formations.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
 import { stepColor, tierColor, contractReadout, lootName, lootText } from "../src/ui/ContractPhase.jsx";
@@ -885,14 +885,59 @@ describe("Aufträge · die Stufenfarben sind Bronze, Silber, Gold (2026-09-16)",
   });
 });
 
+describe("Aufträge · Gedränge zählt Formationen je Position (Owner, 2026-09-22)", () => {
+  const brett = (belegung) => Array.from({ length: C.BOARD_POSITIONS }, (_, i) => ({
+    formations: (belegung[i] || []).map((type, k) => ({ type, ordinal: k + 1 })),
+  }));
+  const c = { taskId: "gedraenge", step: "leicht", rung: 40, target: 40, extra: null };
+
+  it("die Leiter ist 40 · 50 · 70 auf dem Paar-Maß, ohne Zusatz auf Schwer", () => {
+    expect(CT.TASK_BY_ID.gedraenge.rungs).toEqual([40, 50, 70]);
+    // Das Paar-Maß misst die Dichte selbst: jede Position in zwei Formationen wären schon 80 Paare.
+    for (const step of CT.STEPS) expect(CT.extraFor("gedraenge", step), step).toBe(null);
+  });
+
+  it("eine Position in drei Formationen zählt drei; Kerne, Anker und Architekt zählen nicht", () => {
+    const forms = brett({ 0: ["farbblock", "treppe", "wechsel"], 1: ["farbblock"], 2: ["formationskern", "architekt"] });
+    expect(CT.formationPairs(forms)).toBe(4);
+    expect(CT.readLive({ contractsEnabled: true, formations: forms, contractTally: CT.emptyTally() }, c)).toBe(4);
+    expect(CT.formationPairs([])).toBe(0);
+    expect(CT.formationPairs(null)).toBe(0);
+  });
+
+  it("segmentunabhängig: ein Lauf über die Grenze zählt so viel wie die zwei, die er verschmilzt", () => {
+    /* Zehn Positionen in EINEM Farbblock (Grenze offen) gegen zweimal fünf (Grenze zu). Distinkt
+       ist das 1 gegen 2 — genau der Nachteil, den offene Grenzen dem alten Maß eintrugen. Paare
+       sind es 10 gegen 10. */
+    const lang = Array.from({ length: C.BOARD_POSITIONS }, (_, i) => ({
+      formations: i < 10 ? [{ type: "farbblock", ordinal: i + 1 }] : [] }));
+    const kurz = Array.from({ length: C.BOARD_POSITIONS }, (_, i) => ({
+      formations: i < 10 ? [{ type: "farbblock", ordinal: (i % 5) + 1 }] : [] }));
+    expect(countBuiltFormations(lang)).toBe(1);
+    expect(countBuiltFormations(kurz)).toBe(2);
+    expect(CT.formationPairs(lang)).toBe(10);
+    expect(CT.formationPairs(kurz)).toBe(10);
+  });
+
+  it("die Spitze friert die Paare am Durchlaufende ein", () => {
+    const forms = brett(Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i, ["farbblock", "treppe"]])));
+    const state = { contractsEnabled: true, formations: forms, contractTally: CT.emptyTally() };
+    expect(CT.readLive(state, c)).toBe(40);
+    const t = CT.tallyCycleEnd(state.contractTally, state, c);
+    expect(t.bestForms).toBe(40);
+    // Die nächste Aufstellung ist leer, der Bestwert bleibt und erfüllt Leicht.
+    expect(CT.readBest({ ...state, formations: [], contractTally: t }, c)).toBe(40);
+  });
+});
+
 describe("Aufträge · die Zusatzbedingung der schweren Stufe", () => {
   const formen = (n, tiefe) => Array.from({ length: C.BOARD_POSITIONS }, (_, i) => ({
     formations: i < n ? Array.from({ length: tiefe }, (_, k) => ({ type: "farbblock", ordinal: k + 1 })) : [],
   }));
 
   it("ein Durchlauf ohne die Zusatzbedingung zählt nicht, auch wenn der Hauptzähler steht", () => {
-    const c = { taskId: "gedraenge", step: "schwer", rung: 40, target: 40,
-      extra: CT.extraFor("gedraenge", "schwer") };
+    const c = { taskId: "reinheit", variantId: "farbblock", step: "schwer", rung: 40, target: 40,
+      extra: CT.extraFor("reinheit", "schwer", "farbblock") };
     expect(c.extra).toEqual({ positions: 40, min: 2 });
     // Alle 40 Positionen, aber nur EINE Formation je Position → Zusatz hält nicht.
     const duenn = { contractsEnabled: true, formations: formen(40, 1), contractTally: CT.emptyTally() };
