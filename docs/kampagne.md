@@ -564,11 +564,17 @@ werden.
 
 ### Aufbau
 
-- **3 Ebenen zu je 4 Läufen.** In jedem Lauf ein **Zwischenboss**, in Lauf 4 der **Endboss der
-  Ebene**.
+- **3 Ebenen zu je 4 Läufen.** **Läufe 1–3 haben je einen Zwischenboss, Lauf 4 nur den Endboss** der
+  Ebene — keinen Zwischenboss dazu.
 - **Upgradewahl zwischen den Läufen** — 1/2, 2/3, 3/4. Drei Picks je Kampagne, das sind die Rewards
   aus §9.
-- **Score-Schwellen steigen bis zum Boss** und eskalieren über die Ebenen hinweg.
+- **Eine Schwelle je Lauf, vier insgesamt** (5 / 10 / 15 / 25 Mio, §2). **Keine Schwellen innerhalb
+  eines Laufs.** Sie eskalieren über die Ebenen hinweg.
+
+> **Die Leiter bleibt vorerst bei 5 / 10 / 15 / 25**, obwohl die Messung dahinter (§6) ein volles
+> Spiel voraussetzt: Architekt, alle vier Fraktionen, Münzen, volle Raritäten. Ebene 1 startet mit
+> zwei Decks, ohne Münzen und ohne Legendäre — die Scores werden dort deutlich niedriger liegen, um
+> wieviel ist ungemessen. Owner-Entscheid: erstmal so lassen, der Playtest zieht nach.
 
 ### Startbedingungen (ganz am Anfang)
 
@@ -591,6 +597,9 @@ werden.
 4. **Rarität „Sehr selten"**
 5. **Eis-Deck**
 
+> **Wodurch sie ausgelöst werden, ist offen** — XP-System oder „jeder gewonnene Lauf schaltet das
+> nächste frei". Wird gemeinsam entworfen; die Unterfragen stehen in §11 *Offen*.
+
 ### Die Bosse der Ebene 1
 
 **Endboss: Der Konter.** Jeder gewonnene Stich macht den nächsten Gegner stärker — die folgende
@@ -603,11 +612,19 @@ setzt den Aufschlag auf null.
 | --- | --- |
 | **Wucherer** | Jeder weitere Kauf derselben Art **verdreifacht** den Preis statt ihn zu verdoppeln. Neuwurf: 3 → 9 → 27. |
 | **Denkmalpfleger** | **Sechs Zellen** des Baufelds sind gesperrt, dort baust du nicht. |
-| **Schließer** | Vor jeder Aufstellphase wird ein **anderes Segment** festgesetzt. Seine fünf Karten lassen sich nicht tauschen. |
-| **Bremser** | **Zwei Tauschzüge** je Aufstellphase statt vier. |
+| **Schließer** | Vor jeder Aufstellphase wird eines der **acht Aufstellsegmente** festgesetzt, jedes Mal ein anderes. Die **fünf Karten darin lassen sich nicht verschieben**. |
+| **Bremser** | **Zwei Tauschzüge** je Aufstellphase statt vier — gemeint ist die **Formationsenergie** (`FORMATION_ENERGY = 4`). |
 | **Schmarotzer** | Je **zwei gehaltene Perks** kostet dich eine Münze je Durchlauf. Ohne Münzen passiert nichts. |
 
 **Wucherer und Schmarotzer sind erst aktiv, nachdem Münzen freigeschaltet sind.**
+
+**Die Rechnung geht genau auf:** gebraucht werden drei Zwischenbosse je Kampagne (Läufe 1–3), und
+ohne Münzen sind genau drei aktiv — Denkmalpfleger, Schließer, Bremser. Nach der Münz-Freischaltung
+wächst der Pool auf fünf, damit gibt es echte Auswahl statt einer festen Reihenfolge.
+
+> **Bremser ist mechanisch der bestehende Perk *Ballast*** (`BALLAST_ENERGY = 2`, −2 Energie je
+> Aufstellphase). Dieselbe Mechanik in zwei Rollen — als Nachteil, den der Spieler freiwillig für
+> einen Formations-Multiplikator nimmt, und als Boss, der ihn aufzwingt. Kein Fehler, nur zu wissen.
 
 **Score-Schwellen für Zwischen- und Hauptboss:** wird ausgetestet, **erstmal ohne**.
 
@@ -618,6 +635,20 @@ setzt den Aufschlag auf null.
   die Bossbeschreibung.
 - **Im Spielpanel**, genau wie die Aufträge: Zwischenboss und Boss stehen dort und lassen sich für
   die Beschreibung anklicken.
+
+### Offen an Ebene 1
+
+**Der Auslöser der Freischaltungen** — und damit zusammenhängend, ob Freischaltung und Reward im
+selben Moment kommen. Beides wird gemeinsam entworfen. Die Unterfragen, die jede Variante
+beantworten muss:
+
+1. **Überleben Freischaltungen eine verlorene Kampagne?** Wenn nicht, sieht ein neuer Spieler das
+   Eis-Deck praktisch nie — ohne Rewards trägt die Kette 14 % (§7). Wenn ja, ist es klassische
+   Meta-Progression: jeder Versuch startet stärker als der letzte.
+2. **Überleben sie den Sprung auf Ebene 2?**
+3. **Sieht der Spieler, was als Nächstes kommt?** Eine sichtbare Leiter macht aus fünf
+   Freischaltungen ein Ziel statt einer Überraschung.
+4. **Ein Panel oder zwei?** Reward und Freischaltung sitzen beide zwischen den Läufen.
 
 ---
 
