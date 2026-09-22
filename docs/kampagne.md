@@ -44,13 +44,14 @@ Läufe reicht, ohne dauerhaft zu sein.
   2. wie weit der Endscore **über** der Schwelle lag.
 - **Später drei Ebenen**, jede aus vier Läufen; eine bestandene Ebene schaltet die nächste frei, mit
   neuen Freischaltungen und höherer Schwierigkeit. **Geplant wird jetzt nur Ebene 1.**
+- **Die Schwellen-Leiter für Ebene 1: 5 / 10 / 15 / 25 Mio.** Ausdrücklich **Startwerte** — sie
+  werden im Playtest außerhalb der Sim nachgezogen, nicht an der Messung festgeschrieben.
 
 ---
 
 ## 3. Offen — das muss vom Owner kommen, bevor gebaut wird
 
-1. **Die Schwellen-Leiter selbst.** Vier Zahlen für Ebene 1. Siehe die Messung in §6 — die Streuung
-   der Endscores ist der Kern des Problems.
+1. ~~**Die Schwellen-Leiter selbst.**~~ — **entschieden: 5 / 10 / 15 / 25 Mio als Startwerte** (§2).
 2. **Was „Boss" über die Schwelle hinaus bedeutet.** Ist die vierte Runde nur eine höhere Zahl, oder
    trägt sie eine eigene Regel (Modifikator, Handicap, Sonderbedingung)? — **Nachgesehen: im Code
    gibt es heute keinen Boss.** `grep -i boss src/` findet nur „Amboss" (Feuer-Schmiede). Ein Boss
@@ -174,7 +175,89 @@ fragt eine andere Leiter daraus ab, ohne 200 Läufe neu zu spielen.
 
 ---
 
-## 7. Der erste Raritäts-Eingang, nachgezählt
+## 7. Das Power-Budget: wie stark ein Reward sein muss
+
+Die Leiter sagt das selbst. Lauf *n* wird mit *n−1* Rewards gespielt, also legt sie fest, wieviel ein
+Reward tragen muss, damit die Kette hält. Ausgerechnet auf denselben 200 gemessenen Läufen: ein
+Reward ist einen Faktor K auf den Endscore wert, Rewards stapeln multiplikativ, und der Anteil der
+Läufe, die Schwelle T mit n Rewards reißt, ist damit exakt `Anteil(score ≥ T / Kⁿ)` — eine Abfrage
+auf der Verteilung, kein neuer Lauf.
+
+| K je Reward | L1 (5) | L2 (10) | L3 (15) | L4 (25) | **Kampagne** | Versuche je Sieg |
+| --- | --- | --- | --- | --- | --- | --- |
+| **×1 (ohne)** | 95 % | 70 % | 57 % | 38 % | **14,1 %** | 7,1 |
+| ×1,1 | 95 % | 73 % | 62 % | 47 % | **20,0 %** | 5,0 |
+| ×1,25 | 95 % | 80 % | 71 % | 60 % | **32,4 %** | 3,1 |
+| ×1,5 | 95 % | 89 % | 89 % | 85 % | **62,9 %** | 1,6 |
+| ×2 | 95 % | 95 % | 100 % | 100 % | **89,8 %** | 1,1 |
+| ×3 | 95 % | 100 % | 100 % | 100 % | **95,0 %** | 1,1 |
+
+Je Spielweise, Kampagnen-Erfolgsquote in %:
+
+| K | naiv | Blitz | Feuer | Eis | Pflanze |
+| --- | --- | --- | --- | --- | --- |
+| ×1 | 9,0 | 14,2 | **2,2** | **42,7** | 21,1 |
+| ×1,25 | 28,4 | 36,1 | 8,4 | 64,4 | 46,1 |
+| ×1,5 | 52,8 | 73,0 | 30,4 | 100 | 75,1 |
+| ×2 | 95,1 | 95,1 | 68,1 | 100 | 92,7 |
+
+**Zwei Dinge, die daraus abzulesen sind.** Sprosse 1 ist mit 95 % praktisch geschenkt — die ganze
+Schwierigkeit der Leiter sitzt in L3 und L4. Und die Spreizung zwischen den Spielweisen überlebt jede
+Reward-Stärke: bei ×1,5 steht Eis auf 100 %, Feuer auf 30 %.
+
+**Modellgrenze, ausdrücklich.** K ist als Faktor auf den *Endscore* definiert, nicht als Faktor auf
+eine einzelne Achse. Für einen multiplikativen Reward ist beides dasselbe; für einen flachen nicht —
+siehe §8. Die Tabelle taugt als Budget („wieviel Endscore muss ein Reward bringen"), nicht als
+Bauanleitung.
+
+Sonde: `node sim/probes/kampagne-budget.mjs`, `LADDER=…` und `K=…` setzen andere Leitern/Faktoren.
+
+---
+
+## 8. Welcher Hebel etwas bringt — und drei, die es nicht gibt
+
+### Flach oder multiplikativ: zwei Bauformen mit gegensätzlicher Wirkung
+
+Gemessen: der Endscore ist **exakt linear** in den Basispunkten je Sieg. Der Grund steht in
+`engine.js:587` — `scoreBase = SCORE_PER_WIN + flats`, und die Multiplikatoren greifen auf die
+**Summe**. Die Basispunkte sind also ein Summand neben den Flats (Ionisations-Stapel, Feuer- und
+Perk-Flats), kein Vorfaktor. Über die Gerade lässt sich exakt ablesen, welchen Anteil sie tragen:
+
+| Lauf | Endscore | Anteil der Basispunkte |
+| --- | --- | --- |
+| Eis, Seed 3 | 72,8 Mio | **2,6 %** |
+| naiv, Seed 1 | 55,0 Mio | 7,5 % |
+| Eis, Seed 1 | 25,4 Mio | 6,5 % |
+| naiv, Seed 2 | 16,9 Mio | 21,1 % |
+| Eis, Seed 2 | 12,6 Mio | **32,4 %** |
+
+**Je stärker der Lauf, desto weniger trägt die Basis.** Daraus folgt für den Katalog:
+
+- Ein **flacher** Reward („+X Basispunkte je Sieg") wirkt stark im schwachen Lauf und fast nicht im
+  starken → **staucht die Streuung**, ist Aufholhilfe.
+- Ein **multiplikativer** Reward („+X % auf Achse Y") wirkt überall denselben Prozentsatz →
+  **verbreitert die Streuung**, verstärkt den starken Bau.
+
+Bei der Faktor-100-Streuung aus §6 ist das keine Feinheit, sondern die Grundentscheidung des Katalogs.
+
+### Drei naheliegende Hebel gibt es nicht
+
+Alle drei ließen den Endscore **byte-identisch** — die Gründe sind aber verschieden, und einer davon
+ist kein Befund über das Spiel:
+
+| Hebel | Warum nichts passiert |
+| --- | --- |
+| **+1 Skill-Slot** | In exp sind Slots unbegrenzt: `reducer.js:901` fällt auf `SKILL_SLOT_LIMIT` (99) zurück. Es gibt keinen Deckel zu heben. |
+| **Breiteres Skill-Angebot** | 12 Skills auf 4 Fraktionen sitzt schon **auf** dem Deckel `SKILL_OFFER_PER_ARCH_CAP = 3` (`skills.js:537`). |
+| **Gratis-Neuwürfe** | Erreicht den State (`reducer.js:198`), aber die **Sim-Politiken würfeln nie neu**. Das ist eine Lücke der Sim, keine Aussage über das Spiel. |
+
+Die ersten beiden sind echte Nicht-Hebel. Der dritte ist ungemessen, nicht wirkungslos.
+
+Sonde: `N=24 node sim/probes/kampagne-hebel.mjs` (gepaart, je Variante dieselben Seeds).
+
+---
+
+## 9. Der erste Raritäts-Eingang, nachgezählt
 
 **Aufträge je Lauf: höchstens zwei.** `contracts.js` hat zwei Fenster (D1–16, D17–32), je einen
 Auftrag. Über eine Kampagne von vier Läufen sind also **höchstens 8** erfüllte Aufträge möglich —
@@ -189,7 +272,7 @@ Lauf nicht; für die Kampagne muss sie beim Laufende eingesammelt werden.
 
 ---
 
-## 8. Nähte im Code
+## 10. Nähte im Code
 
 | Wofür | Wo |
 | --- | --- |
