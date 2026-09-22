@@ -11,6 +11,11 @@
 >
 > **Gesetzt** = Owner-Entscheidung. **Vorschlag** = Diskussionsstand. **Offen** = noch niemand.
 >
+> **Arbeitstitel:** noch keiner. Der Owner schlug „Echo" vor — belegt, gleich doppelt: `L_ECHO` ist ein
+> legendäres Perk, und im englischen Katalog ist „Echo" die Übersetzung von **Nachhall**, also
+> ausgerechnet des Begriffs für den Kernmechanismus dieser Fraktion. Freie Vorschläge: **Reigen**
+> (ein Rundtanz, in dem mehrere sich im Kreis abwechseln) oder **Zirkel**.
+>
 > Sprache Deutsch, wie `skill-rework.md`, `stein-fraktion.md` und `muenz-oekonomie.md` — Fraktions-,
 > Haltungs- und Skillnamen sind Produktsprache und der Owner schreibt hier mit. Bewusste Abweichung
 > von der Engineering-Sprache in `AGENTS.md`, nur für dieses Dokument.
@@ -49,6 +54,11 @@ Das ist die zweite Dimension auf derselben Entscheidung, die das Spiel ohnehin t
   nötig machen.
 - **Für den Haltungswechsel zählt immer die GRUNDFARBE der Karte**, nie die effektive. Pflanzen-Grün
   färbt nicht mit, eine Farballianz fasst nichts zusammen (§2.2).
+- **Alle vier Haltungen laufen ab dem ersten Skill der Fraktion.** Kein Aufbau, keine Skalierung mit
+  der Skill-Zahl — die vier Grundwerte in §3 gelten sofort und unverändert (anders als Blitz, dessen
+  Passiv je gehaltenem Skill wächst).
+- **Der Lauf startet in Rot.** Fest, nicht gewürfelt. Damit beginnt jeder Lauf mit der nachsichtigsten
+  Haltung, und das trifft genau die Phase, in der das Deck am schwächsten ist (45 % Siegquote roh).
 
 **Der Mechanismus in einem Satz, für Spielertext später:**
 
@@ -99,12 +109,16 @@ erste Stelle, an der ich beim Tarieren nachsehen würde.
 Jede beugt **eine Regel**, die es schon gibt, statt eine Zahl zu addieren. Keine doppelt eine andere,
 und zusammen decken sie die Score-Pipeline ab.
 
-| Farbe | Haltung | Greift an | Was sie tut |
-| --- | --- | --- | --- |
-| **Rot** | **Anheben** (Ergebnis) | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. |
-| **Blau** | Crit | die Spitze | Durchgehend 50 % Crit-Chance, solange sie klingt. |
-| **Grün** | Überlappung | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. |
-| **Gelb** | Score | den Basis-Score | Glatter Multiplikator. |
+| Farbe | Haltung | Greift an | Was sie tut | Grundwert |
+| --- | --- | --- | --- | --- |
+| **Rot** | **Anheben** (Ergebnis) | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. | eine Stufe |
+| **Blau** | Crit | die Spitze | Durchgehend Crit-Chance, solange sie klingt. | **+50 %** |
+| **Grün** | Überlappung | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. | +1 Stufe |
+| **Gelb** | Score | den Basis-Score | Glatter Multiplikator. | **×1,4** |
+
+Die vier Grundwerte **stehen und skalieren nicht** mit der Zahl gehaltener Skills (Owner). Gelbs ×1,4
+wirkt nur, solange die Haltung klingt — bei gleichmäßiger Rotation rund ein Viertel der Stiche, also
+grob +10 % über den Lauf; Feuers Hitze-Multiplikator liegt zum Vergleich bei ×1,2 *dauerhaft*.
 
 **Farbzuordnung gesetzt** (Owner). Sie ist seit §2.2 reine Gefühlssache — die Grundfarbe entscheidet
 nur, *wann* eine Haltung zündet, nicht *was* sie tut. Das Farbregister liest sich stimmig: Rot dreht
@@ -179,16 +193,30 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 | Skill | Wirkung |
 | --- | --- |
 | **Stauung** | Solange sie klingt, zahlen Siege nicht, sondern sammeln an; endet die Haltung, entlädt sich der Stau mit Zuschlag. |
-| **Zinsen** | Je Stich, den die Haltung schon läuft, steigt der Multiplikator. Campen zahlt. |
+| **Beharrlichkeit** | Je Stich, den die Haltung schon läuft, steigt der Multiplikator. Campen zahlt. |
 | **Mitklang** | Der Multiplikator zählt je gleichzeitig klingender Haltung. Tanzen zahlt. |
 
+**Startwerte:**
+
+| Kennwert | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Stauung** · Zuschlag auf den Stau | ×1,25 | ×1,4 | ×1,6 | ×2,0 + *der Stau entlädt sich auch am Durchlauf-Ende* |
+| **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,02 | +0,03 | +0,04 | +0,06 |
+| **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
+
+**Stauung und die Verlängerer beißen sich.** Stauung zahlt erst, wenn die Haltung *endet* — Schwungrad
+(§5.2) und Kehrtwende (§5.5) sorgen dafür, dass sie es nicht tut. In einem Build mit beidem
+verschwindet der Score in einem Stau, der nie aufgeht. Das Episch-Extra entlädt ihn deshalb zwangsweise
+am Durchlauf-Ende; auf den unteren Stufen bleibt die Falle bestehen und ist Absicht.
+
 **Die Linie hat ihre Spannung in sich:** das Passiv belohnt, *drin* zu sein, Stauung belohnt, dass es
-*endet*. Und Zinsen/Mitklang sind ein Spiegelpaar — im Block-Build wächst Zinsen und Mitklang steht
-auf ×1, im bunten Build umgekehrt. Dieselbe Linie bedient beide Spielstile.
+*endet*. Und Beharrlichkeit/Mitklang sind ein Spiegelpaar — im Block-Build wächst Beharrlichkeit und
+Mitklang steht auf ×1, im bunten Build umgekehrt. Dieselbe Linie bedient beide Spielstile.
 
 **Warnung:** in einem harten Block-Build kann eine Haltung sehr lang laufen, potenziell einen ganzen
-Durchlauf. Zinsen als Rampe je Stich hätte dann 30+ Schritte. Das ist die Stelle, an der diese Linie
-wegläuft, falls sie wegläuft.
+Durchlauf. Beharrlichkeit hätte dann 30+ Schritte — auf Episch wären das +1,8, also ×3,2 zusätzlich.
+Das ist die Stelle, an der diese Linie wegläuft, falls sie wegläuft. Bewusst ohne Deckel, weil das
+Raster sagt: lieber niedrigere Werte als Deckel auf Rampen.
 
 ### 5.2 · Crit-Linie — voll
 
@@ -199,6 +227,20 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 | **Grundrauschen** | Ein Teil der Chance gilt auch außerhalb der Haltung. Der Anti-Leerlauf-Skill der Linie. |
 | **Übertrag** | Ein Crit springt auf den nächsten Stich über — der wird ebenfalls ein Crit, auch wenn er von sich aus ein normaler Sieg gewesen wäre. |
 | **Schwungrad** | Jeder Crit verlängert die laufende Haltung um einen Stich. |
+
+**Startwerte:**
+
+| Kennwert | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
+| **Übertrag** · Reichweite des Übersprungs | 1 Stich | 2 Stiche | 3 Stiche | 4 Stiche |
+| *ergibt Critrate (Passiv 50 %)* | *67 %* | *75 %* | *80 %* | *83 %* |
+| **Schwungrad** · Verlängerungen je Haltung | höchstens 2× | 3× | 5× | 8× |
+
+Übertrag ist bewusst über die **Reichweite** gestaffelt und nicht über eine Sprungchance: mit einer
+Chance von 50 → 100 % bewegte sich die Critrate nur von 60 auf 67 %, das wäre eine Leiter, die nichts
+tut. Und **Schwungrads Deckel ist der Stufenwert** — damit ist die Runaway-Rechnung aus §6.4 in der
+Tabelle erledigt statt als Sonderregel.
 
 **Regel, die Übertrag braucht:** der übergesprungene Crit darf **nicht seinerseits überspringen** —
 sonst crittet man ab dem ersten Crit bis zum Ende der Haltung durch, ohne Abbruch.
@@ -215,6 +257,19 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | **Anklang** | Die vorige Haltung klingt länger nach. |
 | **Runde** | Hast du alle vier Haltungen einmal getragen, gibt die vollendete Runde etwas auf den Score — **im nächsten Durchlauf**. |
 | **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. Schritt **und Boden** sind Stufenwerte. |
+
+**Startwerte:**
+
+| Kennwert | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Anklang** · Mindestdauer statt 3 Stichen | 4 | 5 | 6 | 8 |
+| **Runde** · Basis-Score je Sieg im nächsten Durchlauf | 60 | 90 | 130 | 200 + *mehrere Runden stapeln* |
+| **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
+
+**Runde stapelt erst auf Episch** — das beantwortet die frühere offene Frage als Stufenwert statt als
+Sonderregel. Und **Beschleunigungs Boden geht nicht auf 1**: bei Schwelle 1 löst jede Farbe mit ihrem
+ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7). Boden 2 macht die Rotation
+sehr schnell, ohne in diesen Zustand zu kippen.
 
 **Runde zahlt verzögert**, und das ist eine Eigenschaft, keine Nebensache: zwischen den Durchläufen
 liegt die Aufstellungsphase. Der Spieler weiß also, dass der Bonus kommt, und kann darauf aufstellen.
@@ -243,6 +298,17 @@ Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** 
 | **Übergriff** | Das Abfärben springt über die Segmentgrenze. |
 | **Verankerung** | Beim Auslösen der Haltung erbt jede Karte des aktuellen Segments einmal. Zündet auch in einer Haltung, die nur einen Stich lebt — also der für den Tanz-Build. |
 
+**Startwerte:**
+
+| Kennwert | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Doppelbindung** · für wie viele Formationstypen | 1 | 2 | 3 | alle 4 |
+| **Übergriff** · Grenzen mit den meisten Formationen daneben | 1 | 2 | 3 | alle |
+| **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
+
+Übergriffs Leiter spiegelt bewusst **Spalier** (`1 / 2 / 3 / alle`) — dasselbe Muster für dieselbe
+Geste spart dem Spieler eine Regel.
+
 **Offen dazu:** was Übergriff auf einer Grenze tut, die ohnehin schon offen ist. Spalier (Pflanze),
 Segmentarbeit (Perk-Familie E) und Durchlass (Auftragsbeute) öffnen Grenzen bereits — dort wäre der
 Skill wirkungslos, solange das Abfärben offenen Grenzen von selbst folgt. Entweder folgt es ihnen
@@ -264,9 +330,25 @@ auf voll, mit Score, Serie und Farbzähler.
 
 | Skill | Wirkung |
 | --- | --- |
-| **Genugtuung** | Ein gerutschter Sieg zahlt Basis-Score je Punkt Rückstand, den er gedreht hat. Je deutlicher du eigentlich verloren hättest, desto mehr zahlt er — der einzige Griff im Entwurf, der niedrige Karten wertvoll macht. |
+| **Genugtuung** | **Jeder gerutschte Stich** zahlt Basis-Score je Punkt Rückstand, den er gedreht hat. Je deutlicher du eigentlich verloren hättest, desto mehr zahlt er — der einzige Griff im Entwurf, der niedrige Karten wertvoll macht. |
 | **Rückhalt** | Nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. |
 | **Kehrtwende** | Ein gerutschter Stich verlängert die Haltung um einen Stich. |
+
+> **Korrektur an Genugtuung.** Ursprünglich stand dort „ein gerutschter **Sieg**". Das zahlt nichts:
+> das Passiv schiebt eine Niederlage nur auf Gleichstand, ein gerutschter Sieg war also immer ein
+> Gleichstand — und der hat per Definition **Rückstand 0**. Sie liest deshalb **jeden** gerutschten
+> Stich; dann trägt die Niederlage ihren Rückstand bei und die Fantasie stimmt.
+
+**Startwerte:**
+
+| Kennwert | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
+| **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
+| **Kehrtwende** · Verlängerungen je Haltung | höchstens 3× | 4× | 6× | 10× |
+
+Kehrtwendes Deckel liegt bewusst **über** dem von Schwungrad (2/3/5/8), weil ihre Rate niedriger ist
+und sie strukturell nicht weglaufen kann (§6.5).
 
 **Warnung zu Kehrtwende** (§6.5).
 
@@ -394,6 +476,8 @@ Durchläufe.
 | **Pechbremse** (ein Sieg ohne Crit hebt die Chance für den nächsten) | Stirbt am eigenen Erfolg: wer auf Crit baut, verfehlt nie, also greift sie nie. Gehört zur Sorte „immer genommen, nie gespürt" (`skill-rework.md` §8.5). |
 | **Metronom · Takt · Zielschuss** | Hingen alle am gestrichenen Takt-Passiv. |
 | **„Aufteilung"** | Name belegt (Glossar: „Aufteilung deines Scores auf Formationen / Crits / Übrige"), und mechanisch war der Skill identisch zu Mitklang, nur auf der Crit-Achse. |
+| **„Echo" als Fraktionsname** | Doppelt belegt: `L_ECHO` ist ein legendäres Perk, und im englischen Katalog ist „Echo" die Übersetzung von **Nachhall** — dem Begriff für genau den Mechanismus dieser Fraktion. |
+| **„Zinsen" als Skillname** | Belegt durch **Zinseszins**, ein legendäres Perk („die Bank", Kapital × Zinssatz) mit eigenem Readout in der Build-Übersicht. Der Skill heißt jetzt **Beharrlichkeit**. |
 | **Trägheit** (je länger eine Haltung hält, desto stärker wird sie) | Owner: zu teuer. Der Skill hätte **jedem der vier Passive eine Dauer-Skala** aufgezwungen — vier Umbauten für einen Skill, und jedes Passiv müsste eine zweite Achse tragen, die es sonst nicht braucht. Campen zahlt stattdessen über *Zinsen* (Score-Linie). |
 | **Zweitstufe · Standhaft · Gnadenfrist** (Ergebnis-Kandidaten) | Nicht gewählt. *Standhaft* wäre der Skill gewesen, der außerhalb der eigenen Haltung wirkt (§4.1). |
 | **Kehrtwende, ursprüngliche Fassung** (ein gerutschter Stich zählt für den Farbzähler seiner Farbe) | Vom Owner umdefiniert auf „verlängert die Haltung um einen Stich". Die alte Fassung hätte in die eigene Maschine zurückgespeist — dieselbe Form wie der nicht gewählte *Taktgeber* der Crit-Linie. |
@@ -410,27 +494,37 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 ## 8 · Offene Punkte
 
-1. **Welche Haltung ein Verlängerer verlängert** — §6.5. Die einzige offene Frage, die eine *Regel*
-   braucht und kein Tarieren.
-2. **Stapeln mehrere Runden?** — §5.3. Mit Beschleunigung sind zwei bis drei Runden je Durchlauf
-   erreichbar; ob ihre Boni sich addieren, entscheidet, wie stark die Rotationslinie insgesamt ist.
-3. **Übergriff auf bereits offenen Grenzen** — §5.4.
-4. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
+**Drei Regelfragen** — sie brauchen eine Antwort, kein Tarieren, und sie blockieren den Sim-Bau:
+
+1. **Welche Haltung ein Verlängerer verlängert** — die eigene oder die laufende (§6.5).
+2. **Blaus 50 %: additiv oder Mindestwert?** Additiv gelesen käme ein Blitz-Deck bei 80 % auf 130 %
+   und bekäme aus dem Überschuss +0,3× Crit-Multiplikator. Als Mindestwert bekäme dasselbe Deck
+   **gar nichts**. Die Wandlung am Deckel funktioniert nur additiv.
+3. **Zählt die aktive Farbe weiter — und gilt ein Selbst-Auslösen als Wechsel?** Jetzt scharf, seit
+   der Lauf fest in Rot startet: löst Rot bei 5 erneut aus, während es schon aktiv ist, zählt das
+   dann für **Beschleunigung** (Schwelle sinkt) und für **Runde** (Farbe getragen)? Ein Mono-Rot-Deck
+   könnte damit Beschleunigung auf den Boden fahren, ohne je zu rotieren.
+
+**Werte und Design:**
+
+4. **Was zahlt ein gerutschter Sieg?** Er war ein Gleichstand — zahlt er wie ein echter Sieg (100 %,
+   am einfachsten und am stärksten) oder einen Anteil? Dazu der Nebeneffekt ohne Zahl: eine zur
+   Gleichstand gerutschte Niederlage ist für **alles** keine Niederlage mehr — Niederlagenserie,
+   Schwachstellenanalyse, Revanche und Initiative laufen ins Leere.
+5. **Übergriff auf bereits offenen Grenzen** — §5.4.
+6. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
    Zuordnung selbst ist gesetzt.
-5. **Bekommt Campen etwas Eigenes?** Zinsen zahlt dafür, aber als Linie, nicht als Fundament.
-6. **Womit startet der Lauf** — welche Haltung ist zu Beginn aktiv, und wird sie gewürfelt oder
-   gewählt? Hängt mit dem geparkten „Fokus am Start" aus `skill-rework.md` §1 zusammen.
 7. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
    `lightYield`, Eis `glacierYield` — jede Fraktion trägt einen eigenen Score-Kanal. Diese hier
    beugt nur Regeln. Ob das ein Mangel ist oder die Pointe, ist offen.
 8. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
    und Balancing stehen.
-9. **Name und Thema.** Vier Fraktionen sind Elemente, diese wäre ein Konzept. Die Genre-Recherche im
-   Repo nennt das Elementar-Skin „das generischste im Feld", der Bruch wäre also möglicherweise ein
-   Gewinn. Kandidat, der das Element *und* die Farbe trägt: **Licht / Prisma**. Owner: wird
-   nachgelagert entschieden.
-10. **Drei Legendäre.**
-11. **Alle Zahlen.**
+9. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
+   wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
+   Feld", der Bruch wäre also möglicherweise ein Gewinn.
+10. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
+    geliefert hat.
+11. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)
 
@@ -479,8 +573,12 @@ Ranglisten-Zugang, bis sie einen Lauf damit beendet haben), `skills.js`, Fraktio
 
 ## 10 · Nächster Schritt
 
-**Alle 15 Skills stehen.** Was bleibt, in der Reihenfolge, die Eis und Pflanze schon gegangen sind:
-die Farbzuordnung, die drei Legendären, dann die Zahlen.
+**Alle 15 Skills stehen, mit Startwerten je Stufe, dazu die vier Grundwerte der Passive.** Der Plan
+des Owners von hier aus:
 
-Vorher zu klären ist der eine Punkt, der eine **Regel** braucht und kein Tarieren: welche Haltung ein
-Verlängerer verlängert (§6.5).
+1. **Die drei Regelfragen** aus §8 beantworten — sie blockieren den Sim-Bau.
+2. **Die Sim auf das neue Deck bauen und messen**, gegen die bestehenden vier.
+3. **Erst mit diesen Zahlen die drei Legendären entwerfen** — bewusst danach, damit sie sich an einem
+   gemessenen Stand messen und nicht an einer Schätzung.
+
+Die Zahlen in §5 sind Startwerte zum Bauen, nicht zum Verteidigen.
