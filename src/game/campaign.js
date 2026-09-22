@@ -380,6 +380,19 @@ export function upkeepWith(state, perkCount = 0) {
   return Math.min(state.coins || 0, Math.floor(Math.max(0, perkCount) / per));
 }
 
+/* Der Schließer setzt vor JEDER Aufstellphase eines der acht Segmente fest, jedes Mal zufällig
+   gezogen (Owner 2026-09-22). Bewusst ein eigenes Feld statt `challengeBlockForm`: das gehört dem
+   ganzen Lauf (Wochen-Modifikatoren), diese Sperre wechselt mit der Phase. */
+export const SEGMENT_SIZE = 5;
+export function drawLockedSegment(state, rng = Math.random, segments = 8) {
+  if (!bossEffect(state).lockSegment) return null;
+  return Math.floor(rng() * segments) % segments;
+}
+export const segmentLocked = (state, i) => {
+  const seg = state && state.lockedSegment;
+  return seg != null && seg >= 0 && Math.floor(i / SEGMENT_SIZE) === seg;
+};
+
 // ---- What a campaign run starts with -----------------------------------------------------
 
 /* Everything the campaign decides BEFORE the first trick, in one place: which decks are in the

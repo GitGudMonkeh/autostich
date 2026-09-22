@@ -549,3 +549,81 @@ describe("Wucherer auf den anderen Kaufflächen", () => {
     expect([0, 1].map(coverPrice)).toEqual([20, 40]);
   });
 });
+
+describe("Schließer und Lauf-Ende im Reducer", () => {
+  const start = (campaign, unlocked = [], seed = 11) =>
+    reducer(null, { type: "START_RUN", rng: makeRng(seed), seed, architect: true, campaign, unlocked });
+
+  const play = (s, seed = 11, until = () => false) => {
+    const rng = makeRng(seed);
+    const pol = randomPolicy({ architectGreedy: true });
+    let guard = 0;
+    while (s.phase !== "gameover" && !until(s)) {
+      if (++guard > 200000) throw new Error("stuck");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return s;
+  };
+
+  it("setzt mit dem Schließer in jeder Aufstellphase genau ein Segment fest", () => {
+    const c = { ...CP.emptyCampaign(), bosses: ["schliesser", "x", "y"] };
+    const s = play(start(c), 11, (x) => x.phase === "formation");
+    expect(s.phase).toBe("formation");
+    expect(s.lockedSegment).not.toBe(null);
+    expect(s.lockedSegment).toBeGreaterThanOrEqual(0);
+    expect(s.lockedSegment).toBeLessThan(8);
+  });
+
+  it("lässt ohne Schließer kein Segment festsetzen", () => {
+    const c = { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] };
+    const s = play(start(c), 11, (x) => x.phase === "formation");
+    expect(s.lockedSegment).toBe(null);
+  });
+
+  it("weist einen Tausch im festgesetzten Segment ab — an beiden Enden", () => {
+    const c = { ...CP.emptyCampaign(), bosses: ["schliesser", "x", "y"] };
+    const s = play(start(c), 11, (x) => x.phase === "formation" && (x.formationEnergy || 0) > 0);
+    const seg = s.lockedSegment;
+    const drin = seg * CP.SEGMENT_SIZE;                       // eine Karte IM Segment
+    const raus = ((seg + 2) % 8) * CP.SEGMENT_SIZE;           // eine weit außerhalb
+    expect(reducer(s, { type: "SWAP_CARDS", i: drin, j: raus })).toBe(s);   // weg: abgewiesen
+    expect(reducer(s, { type: "SWAP_CARDS", i: raus, j: drin })).toBe(s);   // hin: auch
+    const frei = ((seg + 1) % 8) * CP.SEGMENT_SIZE;
+    expect(reducer(s, { type: "SWAP_CARDS", i: frei, j: raus })).not.toBe(s); // außerhalb geht
+  });
+
+  it("rechnet das Laufende ab: Schwelle gerissen heißt Auslage, verfehlt heißt verloren", () => {
+    const stark = play(start({ ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] }));
+    expect(stark.phase).toBe("gameover");
+    expect(stark.campaign.settled).toBe(true);
+    // Lauf 1 hat Schwelle 5 Mio; ein voller Lauf reißt sie normalerweise.
+    if (stark.score >= CP.THRESHOLDS_L1[0]) {
+      expect(stark.campaign.lost).toBeFalsy();
+      expect(stark.campaign.pending).toBeTruthy();
+      expect(stark.campaign.pending.tier).toBeGreaterThanOrEqual(1);
+    } else {
+      expect(stark.campaign.lost).toBe(true);
+    }
+    expect(stark.campaign.scores).toHaveLength(1);
+  });
+
+  it("rechnet nicht zweimal ab", () => {
+    /* `settled` macht die Abrechnung idempotent. Der Weg dorthin muss echt sein: END_RUN kehrt bei
+       Gameover schon vorher um und erreicht die Abrechnung nie — ein Test darüber sähe wie ein
+       Wächter aus, ohne einer zu sein. RESOLVE_TRICK hat keine Phasen-Sperre und läuft wieder
+       durch, also ist das der Pfad, an dem die Doppelwertung tatsächlich droht. */
+    const s = play(start(CP.emptyCampaign()));
+    expect(s.campaign.scores).toHaveLength(1);
+    const nochmal = reducer(s, { type: "RESOLVE_TRICK", rng: makeRng(11) });
+    expect(nochmal.campaign.scores).toHaveLength(1);
+    expect(reducer(s, { type: "END_RUN" }).campaign.scores).toHaveLength(1);
+  });
+
+  it("wertet auch das freiwillige Beenden", () => {
+    const mitten = play(start(CP.emptyCampaign()), 11, (x) => (x.cycle || 0) >= 3);
+    const beendet = reducer(mitten, { type: "END_RUN" });
+    expect(beendet.phase).toBe("gameover");
+    expect(beendet.campaign.settled).toBe(true);
+    expect(beendet.campaign.lost).toBe(true);   // nach drei Durchläufen reißt die Schwelle nicht
+  });
+});

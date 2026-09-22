@@ -1006,6 +1006,7 @@ export function resolveTrick(state, rng) {
   let newSkillOfferTiers = state.skillOfferTiers || null; // exp skill rework: tier per offered skill (rollSkillOfferTiers)
   let newSkillDoors = state.skillDoors || null; // exp skill rework: the two doors of a skill phase (buildSkillDoors)
   let newFormationEnergy = formationEnergy;
+  let newLockedSegment = state.lockedSegment ?? null; // Kampagne/Schliesser: haelt bis zur naechsten Aufstellphase
   let newFormationSwaps = formationSwaps;
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
   let newArchitect = architect;
@@ -1222,6 +1223,10 @@ export function resolveTrick(state, rng) {
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
         // `cycle` ist hier bereits erhöht (neuer Durchlauf) → explizit durchreichen, nicht state.cycle nehmen.
         newFormationEnergy = formationEnergyFor({ ...state, perks, familyTiers, cycle });
+        /* Schliesser (Kampagne): vor JEDER Aufstellphase ein frisch gezogenes Segment, dessen
+           fuenf Karten sich nicht verschieben lassen. Eigener rngAt-Adressstrom je Durchlauf —
+           deterministisch und ohne die Deal-Reihenfolge zu stoeren. */
+        newLockedSegment = CP.drawLockedSegment(state, rngAtOr(cycle, "schliesser"));
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
@@ -1264,7 +1269,7 @@ export function resolveTrick(state, rng) {
     glacierBuffPending: newGlacierBuffPending, glacierBuffActive: newGlacierBuffActive, // Eis-Neudesign (Frostbund): Nachbar-Wert-Buffs
 
 
-    formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
+    formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, lockedSegment: newLockedSegment, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank

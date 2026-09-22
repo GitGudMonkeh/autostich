@@ -95,7 +95,10 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   }
   if (decision === "formation") {
     const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null, bordersOf(s));
-    return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
+    // Schliesser (Kampagne): auch der allererste Entscheidungspunkt zieht sein Segment. Die
+    // uebrigen Aufstellphasen kommen aus der Engine (resolveTrick), nicht von hier.
+    return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations,
+             lockedSegment: CP.drawLockedSegment(s, rngAt(seed, "schliesser", s.cycle || 0)) };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
   // exp skill rework: der Dev-Run zeigt den flachen Voll-Katalog; sonst die zwei Türen (docs/skill-rework.md §1),
@@ -382,6 +385,18 @@ function dropSkill(state, skillId) {
     glacierBuffPending: ice ? state.glacierBuffPending : {}, glacierBuffActive: ice ? state.glacierBuffActive : {} };
 }
 
+/* Kampagne: das Laufende abrechnen — Schwelle geprueft, Kette fortgeschrieben, Auslage gestellt.
+   Sie haengt an BEIDEN Wegen ins Laufende (die Engine nach dem letzten Durchlauf, END_RUN beim
+   freiwilligen Beenden), und `settled` macht sie idempotent: ein zweiter Aufruf auf demselben
+   Gameover-State wuerde sonst ein zweites Mal werten. */
+const settleCampaign = (s) =>
+  (s && s.campaign && s.phase === "gameover" && !s.campaign.settled)
+    ? { ...s, campaign: { ...CP.settleRun(s.campaign, {
+          score: s.score || 0,
+          contracts: ((s.contracts && s.contracts.done) || []).length,
+        }), settled: true } }
+    : s;
+
 export function reducer(state, action) {
   switch (action.type) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
@@ -557,7 +572,7 @@ export function reducer(state, action) {
 
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
-      return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
+      return (state.phase === "menu" || state.phase === "gameover") ? state : settleCampaign({ ...state, phase: "gameover" });
 
 
     /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;
@@ -700,7 +715,7 @@ export function reducer(state, action) {
 
     case "RESOLVE_TRICK": {
       const next = resolveTrick(state, action.rng);
-      return state.contractsEnabled ? contractStep(state, next, action.rng) : next;
+      return settleCampaign(state.contractsEnabled ? contractStep(state, next, action.rng) : next);
     }
 
     case "PICK_PERK": {
@@ -1228,6 +1243,9 @@ export function reducer(state, action) {
       if (state.glacierLocked && (state.glacierLocked[i] || state.glacierLocked[j])) return state;
       // #301 C3: gesperrte Aufstell-Zellen sind fixiert — weder weg- noch hin-tauschbar (beide Endpunkte prüfen).
       if (state.challengeBlockForm && (state.challengeBlockForm.includes(i) || state.challengeBlockForm.includes(j))) return state;
+      // Schliesser (Kampagne): die fuenf Karten des festgesetzten Segments lassen sich nicht
+      // verschieben - weder weg noch hin, genau wie die gesperrten Zellen darueber.
+      if (CP.segmentLocked(state, i) || CP.segmentLocked(state, j)) return state;
       if ((state.formationEnergy || 0) <= 0) return state; // Tausch braucht Energie
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
       const order = state.playerOrder.slice();
