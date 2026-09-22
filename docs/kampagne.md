@@ -449,10 +449,17 @@ Garantie „mindestens ein Stück der oberen Stufe" mitwandert.
    geknüpft, der Rest ist Augenmaß gegen die Basiswerte. Drei Stellen sind auffällig heiß:
    *Waffenrecht/Zehnt* (+1 ist schon ~10 Punkte Siegquote), *Pfründe* (+1 ist +50 % Einkommen) und
    *Gnadengesuch* (schon 1× nimmt der Kampagne ihre Schärfe).
-2. **Zwei Zuschnitte brauchen einen Blick in den Code, bevor sie zugesagt werden:** *Bauherrschaft*
-   (setzt voraus, dass es legendäre Gebäude als Rarität überhaupt gibt) und *Lückenschluss*
-   (Formationen werden heute als exaktes Muster erkannt — Farbblock, Wiederholung, Treppe,
-   Wechsel; eine Toleranz von X falschen Karten muss der Erkenner erst tragen können).
+2. ~~Zwei Zuschnitte mit Code-Vorbehalt~~ — **beide nachgesehen, beide tragen** (2026-09-22):
+   - *Bauherrschaft*: **legendäre Gebäude gibt es** — `A_FUNDAMENT`, `A_BOLLWERK`, `A_SCHATZ`
+     tragen `legendary: true` in `architect.js`, und `MAX_TIER = 4` hält sie ausdrücklich außerhalb
+     der Stufenleiter. Nichts Neues zu bauen.
+   - *Lückenschluss*: **der Erkenner kann das schon.** `markRuns` in `formations.js` nimmt
+     `gap = { run, seg }` — erlaubte fremde Karten je Lauf bzw. je Segment — und genau dieser
+     Regler wird heute von `E_PACE` (Wiederholung) und `E_COLORBRIDGE` (Farbblock) gedreht,
+     `Infinity` heißt unbegrenzt. Der Reward hebt denselben Wert.
+     **Ein Detail bleibt:** Treppe und Wechsel laufen über `markTreppe` mit eigenen Budgets
+     (`eqRun`, `revRun`, `drehSeg`) statt über `gap`. „X Karten dürfen falsch sein" muss dort
+     entweder auf ein Budget abgebildet oder für diese zwei Formationsarten anders gefasst werden.
 3. **Losentscheid liegt nah am Perk *Patt*** (Niederlage um ≤ 2 zählt als Sieg). Entweder anders
    schneiden oder bewusst als stärkere Kampagnen-Variante führen.
 4. **Achsen 7 und 8 tragen Raritätsstufen schlecht** — der Sprung von „gar nicht" auf „einmal" ist
@@ -636,6 +643,19 @@ wächst der Pool auf fünf, damit gibt es echte Auswahl statt einer festen Reihe
 > einen Formations-Multiplikator nimmt, und als Boss, der ihn aufzwingt. Kein Fehler, nur zu wissen.
 
 **Score-Schwellen für Zwischen- und Hauptboss:** wird ausgetestet, **erstmal ohne**.
+
+### Was an den Bossen für die Umsetzung noch fehlt
+
+Die fünf Mechaniken stehen als Satz da, nicht als Regel. Jede braucht vor dem Bauen eine
+Entscheidung — alle klein, aber keine davon rät sich von selbst:
+
+| Boss | Offen |
+| --- | --- |
+| **Denkmalpfleger** | **Welche** sechs Zellen? Zufällig je Lauf, fest gesetzt, zusammenhängend oder gestreut? Sieht der Spieler sie vor dem ersten Bauen? |
+| **Schließer** | Wird das Segment je Phase **zufällig** gezogen oder geht es reihum? Darf dasselbe zweimal hintereinander kommen? |
+| **Der Konter** | Der Aufschlag trifft **nur die nächste** Gegnerkarte oder alle folgenden? Läuft er über das Durchlauf-Ende weiter, oder setzt jeder neue Durchlauf ihn zurück? |
+| **Wucherer** | „Derselben Art" — zählt jede Kaufart (Neuwurf · Energie · Baufeld · Fokus) ihre **eigene** Leiter, oder alle zusammen? |
+| **Schmarotzer** | Wird bei ungerader Perk-Zahl ab- oder aufgerundet? Und wenn die Münzen nur für einen Teil reichen: anteilig abziehen oder gar nicht? |
 
 ### Wo der Boss im Interface steht
 
