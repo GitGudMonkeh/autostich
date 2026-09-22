@@ -107,11 +107,24 @@ export function CampaignTile({ state }) {
   );
 }
 
+/* Zwei Knöpfe im Fuß der Übersicht, die etwas zerstören, und beide bestätigen sich SELBST statt
+   über ein zweites Overlay: der erste Klick tauscht die Beschriftung, der zweite führt aus. Kein
+   Ein-Tap-Verlust (dieselbe Linie wie #254), aber auch kein Dialog über einem Dialog.
+   Ein Klick auf den einen nimmt dem anderen die Bestätigung wieder ab. */
+const KillButton = ({ armed, onArm, onFire, label, sure, color }) => (
+  <button type="button" onClick={armed ? onFire : onArm}
+    className="text-meta hover:opacity-100 transition-opacity"
+    style={armed ? { color, opacity: 1 } : { opacity: 0.6 }}>
+    {armed ? sure : label}
+  </button>
+);
+
 /* ---- Übersicht: der Einstieg in eine laufende oder frische Kampagne ---- */
-export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp }) {
+export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, onReset = null }) {
   const c = campaign || CP.emptyCampaign();
   const held = Object.entries(c.held || {});
   const run = c.run || 1;
+  const [armed, setArmed] = useState(null); // null | "giveUp" | "reset"
   return (
     <Shell accent="gold">
       <div className="flex items-end gap-3 mb-4 flex-wrap">
@@ -161,10 +174,16 @@ export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp })
 
       <UnlockLadder unlocked={unlocked} />
 
-      <div className="flex items-center gap-3 mt-5">
-        <button type="button" onClick={onGiveUp} className="text-meta opacity-60 hover:opacity-100">{t("campaign.giveUp")}</button>
+      <div className="flex items-center gap-4 mt-5 flex-wrap">
+        <KillButton armed={armed === "giveUp"} onArm={() => setArmed("giveUp")} onFire={onGiveUp}
+          label={t("campaign.giveUp")} sure={t("campaign.giveUp.sure")} color={RED} />
+        {/* Testknopf: setzt AUCH die Freischaltungen zurück, sonst wäre er nur ein zweites „Aufgeben". */}
+        {onReset && (
+          <KillButton armed={armed === "reset"} onArm={() => setArmed("reset")} onFire={onReset}
+            label={t("campaign.reset")} sure={t("campaign.reset.sure")} color={RED} />
+        )}
         <div className="flex-1" />
-        <ActionButton kind="primary" onClick={onStart}>{t("campaign.start", { n: run })}</ActionButton>
+        <ActionButton kind="primary" onClick={() => { setArmed(null); onStart(); }}>{t("campaign.start", { n: run })}</ActionButton>
       </div>
     </Shell>
   );

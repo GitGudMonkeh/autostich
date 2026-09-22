@@ -1029,6 +1029,17 @@ function AutostichGame() {
     setCampScreen(c.pending ? "tally" : "overview");
   }
   function giveUpCampaign() { clearCampaign(); setCampaign(null); setCampScreen(null); setCampUnlock(null); }
+  /* Testknopf (Owner 2026-09-22): alles zurück auf null, ANDERS als „Aufgeben". Aufgeben beendet die
+     Kette und lässt die Freischaltungen stehen — das ist die Spielregel. Der Reset nimmt auch sie
+     mit, sonst könnte man Lauf 1 nie wieder unter Startbedingungen sehen. Er zieht sofort eine
+     frische Kette, damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
+  function resetCampaign() {
+    clearCampaign();
+    setProfile(saveProfile({ ...profile, campaignRunsWon: 0 }));
+    const c = CP.startCampaign(Math.random, []);
+    setCampaign(c); saveCampaign(c);
+    setCampOffers([]); setCampUnlock(null); setCampScreen("overview");
+  }
   function closeCampaign() { setCampScreen(null); setCampUnlock(null); if (state.phase !== "menu") toMenu(); }
   // Übersicht → Bossblock → Lauf. Zwei Schritte, weil der Boss VOR dem Start gelesen werden soll.
   function campaignRun() { setCampScreen(null); launchRun({ campaign }); }
@@ -1397,7 +1408,7 @@ function AutostichGame() {
           der darunter stehen bleibt: der Lauf ist normal gewertet, nur nicht der letzte Bildschirm. */}
       {campScreen === "overview" && campaign && (
         <CampaignOverview campaign={campaign} unlocked={campUnlocked}
-          onStart={() => setCampScreen("boss")} onGiveUp={giveUpCampaign} />
+          onStart={() => setCampScreen("boss")} onGiveUp={giveUpCampaign} onReset={resetCampaign} />
       )}
       {campScreen === "boss" && campaign && (
         <CampaignBoss campaign={campaign} onStart={campaignRun} />

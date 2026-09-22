@@ -131,6 +131,22 @@ describe("Kampagne · Übersicht", () => {
     expect(h).toContain("Lauf 2 starten");
   });
 
+  it("lässt keinen der beiden Zerstör-Knöpfe auf einen Klick durch", () => {
+    /* Gerendert wird statisch, der zweite Klick ist hier also nicht prüfbar — prüfbar ist das, was
+       zählt: im Ruhezustand steht KEINE Bestätigung auf dem Schirm, und beide Knöpfe sind da. */
+    const h = txt(html(CampaignOverview, { campaign: camp(), unlocked: [], onStart: () => {}, onGiveUp: () => {}, onReset: () => {} }));
+    expect(h).toContain("Kampagne aufgeben");
+    expect(h).toContain("Kampagne zurücksetzen");
+    expect(h).not.toContain("Wirklich aufgeben?");
+    expect(h).not.toContain("Alles zurück auf null?");
+  });
+
+  it("zeigt den Reset nur, wo ein Reset angeboten wird", () => {
+    const ohne = txt(html(CampaignOverview, { campaign: camp(), unlocked: [], onStart: () => {}, onGiveUp: () => {} }));
+    expect(ohne).toContain("Kampagne aufgeben");
+    expect(ohne).not.toContain("Kampagne zurücksetzen");
+  });
+
   it("nennt die Fürsprache-gesenkte Schwelle, nicht die Grundschwelle", () => {
     const c = camp({ run: 1, held: { fuersprache: 3 } });
     const h = txt(html(CampaignOverview, { campaign: c, unlocked: [], onStart: () => {}, onGiveUp: () => {} }));
@@ -213,6 +229,17 @@ describe("Kampagne · Verdrahtung", () => {
     for (const s of ["overview", "boss", "tally", "pick", "unlock", "lost", "won"]) {
       expect(app, `Panel „${s}" nicht verdrahtet`).toContain(`campScreen === "${s}"`);
     }
+  });
+
+  it("nimmt beim Reset auch die Freischaltungen mit — sonst wäre er nur ein zweites Aufgeben", () => {
+    const i = app.indexOf("function resetCampaign()");
+    expect(i, "resetCampaign nicht gefunden").toBeGreaterThan(-1);
+    const rumpf = app.slice(i, app.indexOf("\n  }", i));
+    expect(rumpf).toContain("clearCampaign()");
+    expect(rumpf).toMatch(/campaignRunsWon:\s*0/);
+    // Der Gegen-Check: „Aufgeben" darf sie gerade NICHT anfassen, das ist die Spielregel.
+    const j = app.indexOf("function giveUpCampaign()");
+    expect(app.slice(j, app.indexOf("\n", j))).not.toContain("campaignRunsWon");
   });
 
   it("stellt die Lauf-Kachel in die Leiste", () => {
