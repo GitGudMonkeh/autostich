@@ -20,6 +20,8 @@ SIM_CRIT_MULT_CAP=1000 N=60 node sim/probes/blitz-multsource.mjs   # same for th
 N=60 node sim/probes/faction-pacing.mjs                  # score after rounds 10/20/30/40/50 per faction, legendary split
 SIM_LIGHTNING_CRIT_SOCKET=0.08 SIM_LIGHTNING_CRIT_PER_SKILL=0.03 \
   node --import ./sim/probes/lightning-socket-hook.mjs sim/probes/blitz-ramp.mjs   # unbuilt passive shape (§7.29)
+N=40 node sim/probes/kampagne-schwelle.mjs               # end-of-run score spread + threshold clear rates (docs/kampagne.md §6)
+REUSE=1 LADDER=8,12,18 node sim/probes/kampagne-schwelle.mjs   # …re-query another ladder from the cache, no replay
 ```
 
 Reading rules (measured, see §7.22): the paired greedy ablation (`--mode skills`) is the arbiter for

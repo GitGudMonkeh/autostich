@@ -52,7 +52,10 @@ Läufe reicht, ohne dauerhaft zu sein.
 1. **Die Schwellen-Leiter selbst.** Vier Zahlen für Ebene 1. Siehe die Messung in §6 — die Streuung
    der Endscores ist der Kern des Problems.
 2. **Was „Boss" über die Schwelle hinaus bedeutet.** Ist die vierte Runde nur eine höhere Zahl, oder
-   trägt sie eine eigene Regel (Modifikator, Handicap, Sonderbedingung)?
+   trägt sie eine eigene Regel (Modifikator, Handicap, Sonderbedingung)? — **Nachgesehen: im Code
+   gibt es heute keinen Boss.** `grep -i boss src/` findet nur „Amboss" (Feuer-Schmiede). Ein Boss
+   wäre also nicht die Anpassung eines bestehenden Gegners, sondern ein neues Ding; wenn die vierte
+   Runde nur eine höhere Schwelle ist, kostet sie dagegen nichts extra.
 3. **Wie viele Rewards zur Wahl stehen.** Eins wird genommen — aber aus wie vielen? (Die Aufträge
    legen drei aus; dieselbe Zahl wäre naheliegend, ist aber nicht gesetzt.)
 4. **Die Raritätsstufen der Rewards.** Dieselben vier plus Legendär wie sonst im Spiel, oder eigene?
@@ -115,30 +118,59 @@ Ermöglichung, die Power kommt erst durch das, was der Spieler darauf baut. Eben
 
 ## 6. Gemessen: Endscore eines ganzen Laufs
 
-Die Bezugsgröße für jede Schwelle. 12 Seeds je Spielweise, voller Lauf über 50 Durchläufe,
-Architekt an, alle vier Fraktionen freigeschaltet (2026-09-22).
+Die Bezugsgröße für jede Schwelle. **40 Seeds je Spielweise, 200 volle Läufe** über je 50 Durchläufe,
+Architekt an, alle vier Fraktionen freigeschaltet (2026-09-22). Alle Zahlen in Mio.
 
-| Spielweise | p25 | p50 | p75 | max |
-| --- | --- | --- | --- | --- |
-| naiv (kein Umbau) | 16,8 Mio | 18,6 Mio | 55,0 Mio | 77,1 Mio |
-| Blitz | 8,1 Mio | 19,2 Mio | 49,5 Mio | 66,7 Mio |
-| Feuer | 12,3 Mio | 17,8 Mio | 47,2 Mio | 55,1 Mio |
-| Eis | 18,2 Mio | 33,6 Mio | 72,8 Mio | **432,0 Mio** |
-| Pflanze | 16,3 Mio | 18,2 Mio | 44,0 Mio | 310,9 Mio |
+> Ersetzt eine erste Messung mit 12 Seeds vom selben Tag. Die war zu dünn: bei dieser Streuung
+> wanderten einzelne Perzentile um Faktor 2, und das Maximum war um Faktor 9 daneben.
 
-> **Das ist der Kern des Schwellen-Problems: zwischen p25 und dem Maximum liegt Faktor 50.**
-> Eine feste Zahl ist für einen guten Bau geschenkt und für einen schlechten unmöglich — und der
-> zweite Raritäts-Eingang („wie weit über der Schwelle") ist damit bei einem Eis-Ausreißer sofort am
-> Anschlag, während ein p25-Lauf die Schwelle gar nicht erst reißt.
->
-> Wer die Leiter setzt, muss das mitentscheiden. Mögliche Richtungen, ungewichtet und **nicht**
-> vorgeschlagen, nur als Sortierung der Frage: feste Zahlen; Schwelle relativ zum eigenen bisherigen
-> Bestwert; Schwelle relativ zum Median der Ebene; oder der zweite Raritäts-Eingang misst nicht den
-> Faktor, sondern eine gedeckelte Stufenleiter.
+| Spielweise | p10 | p25 | p50 | p75 | p90 | max |
+| --- | --- | --- | --- | --- | --- | --- |
+| naiv (kein Umbau) | 6 | 8 | 16 | 27 | 56 | 92 |
+| Blitz | 7 | 9 | 19 | 49 | 102 | **627** |
+| Feuer | 5 | 7 | 9 | 18 | 37 | 55 |
+| Eis | 9 | 15 | 34 | 62 | 174 | 432 |
+| Pflanze | 8 | 12 | 24 | 43 | 106 | 470 |
+| **alle zusammen** | **6** | **9** | **17** | **37** | **84** | **627** |
 
-**Zur Messung selbst:** die Sim spielt auf Score, nicht auf eine Schwelle. Ein Spieler, der eine
-Schwelle kennt und darauf spielt, verhält sich anders — derselbe Vorbehalt, der im Auftragsdokument
-bei Sperrfeuer und Aufmarsch steht. Die Zahlen sind eine Untergrenze für das Machbare, kein Urteil.
+**Erreichungsquote** — Anteil der Läufe, die eine Schwelle reißen, **ohne jedes Kampagnen-Reward**
+(also genau die Lage in Lauf 1). Die letzte Spalte ist reine Arithmetik auf derselben Messung:
+vier solche Läufe hintereinander, ein Fehlschlag setzt die Kampagne zurück.
+
+| Schwelle | naiv | Blitz | Feuer | Eis | Pflanze | **alle** | 4 am Stück |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 5 Mio | 98 % | 98 % | 83 % | 100 % | 98 % | **95 %** | 81,5 % |
+| 10 Mio | 68 % | 68 % | 48 % | 88 % | 80 % | **70 %** | 24,0 % |
+| 15 Mio | 50 % | 58 % | 33 % | 75 % | 68 % | **57 %** | 10,2 % |
+| 20 Mio | 35 % | 48 % | 20 % | 70 % | 53 % | **45 %** | 4,1 % |
+| 30 Mio | 23 % | 28 % | 13 % | 53 % | 33 % | **30 %** | 0,8 % |
+| 50 Mio | 18 % | 23 % | 5 % | 30 % | 15 % | **18 %** | 0,1 % |
+| 100 Mio | 0 % | 10 % | 0 % | 13 % | 13 % | **7 %** | 0,0 % |
+
+**Drei Befunde, die jede Leiter mitentscheiden muss:**
+
+1. **Die Kette kostet mehr als die einzelne Schwelle.** Weil ein Verlust die ganze Kampagne
+   zurücksetzt, multiplizieren sich die Quoten. Eine Schwelle, die einzeln in 70 % der Läufe fällt,
+   trägt eine Kampagne nur noch in 24 %.
+2. **Faktor 100 zwischen schwachem und starkem Lauf** (p10 6 Mio, max 627 Mio). Eine feste Zahl ist
+   für den einen geschenkt und für den anderen unmöglich — und der zweite Raritäts-Eingang („wie weit
+   über der Schwelle") steht bei einem Ausreißer sofort am Anschlag.
+3. **Die Spielweise verschiebt das um Faktor 4.** Feuer liegt im Median bei 9 Mio, Eis bei 34 Mio.
+   Dieselbe feste Schwelle ist je nach Bau ein anderes Spiel.
+
+> Mögliche Richtungen, ungewichtet und **nicht** vorgeschlagen, nur als Sortierung der Frage: feste
+> Zahlen; Schwelle relativ zum eigenen bisherigen Bestwert; Schwelle relativ zum Median der Ebene;
+> oder der zweite Raritäts-Eingang misst nicht den Faktor, sondern eine gedeckelte Stufenleiter.
+
+**Zwei Vorbehalte.** Erstens spielt die Sim auf Score, nicht auf eine Schwelle; ein Spieler, der die
+Schwelle kennt, verhält sich anders — derselbe Vorbehalt wie bei Sperrfeuer und Aufmarsch im
+Auftragsdokument. Zweitens misst die Tabelle einen Lauf **ohne Rewards**. Sie beschreibt damit
+Sprosse 1 exakt und die Sprossen 2–4 gar nicht: was dort machbar ist, hängt daran, wie viel Power ein
+Reward gibt — und das ist noch nicht entschieden (§3.6). Die Zahlen sind eine Untergrenze, kein Urteil.
+
+**Beide Tabellen kommen aus einer Sonde**, die im Repo liegt statt im Scratchpad:
+`N=40 node sim/probes/kampagne-schwelle.mjs`. Sie legt die Rohwerte ab, `REUSE=1 LADDER=8,12,18 …`
+fragt eine andere Leiter daraus ab, ohne 200 Läufe neu zu spielen.
 
 ---
 
