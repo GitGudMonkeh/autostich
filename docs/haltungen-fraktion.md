@@ -99,14 +99,21 @@ erste Stelle, an der ich beim Tarieren nachsehen würde.
 Jede beugt **eine Regel**, die es schon gibt, statt eine Zahl zu addieren. Keine doppelt eine andere,
 und zusammen decken sie die Score-Pipeline ab.
 
-| Haltung | Greift an | Was sie tut |
-| --- | --- | --- |
-| **Überlappung** | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. |
-| **Crit** | die Spitze | Durchgehend 50 % Crit-Chance, solange sie klingt. |
-| **Ergebnis** | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. |
-| **Score** | den Basis-Score | Glatter Multiplikator. |
+| Farbe | Haltung | Greift an | Was sie tut |
+| --- | --- | --- | --- |
+| **Rot** | **Anheben** (Ergebnis) | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. |
+| **Blau** | Crit | die Spitze | Durchgehend 50 % Crit-Chance, solange sie klingt. |
+| **Grün** | Überlappung | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. |
+| **Gelb** | Score | den Basis-Score | Glatter Multiplikator. |
 
-**Offen:** welche Farbe welche Haltung trägt.
+**Farbzuordnung gesetzt** (Owner). Sie ist seit §2.2 reine Gefühlssache — die Grundfarbe entscheidet
+nur, *wann* eine Haltung zündet, nicht *was* sie tut. Das Farbregister liest sich stimmig: Rot dreht
+den verlorenen Stich, Blau ist die Spitze, Grün das Verweben, Gelb der Ertrag.
+
+**Namen sind damit noch nicht vergeben.** „Anheben" ist die Wendung des Owners für die rote Haltung
+und als Name frei (im Code nur als gewöhnliches Wort in einem Kommentar). **„Blitz" für die blaue
+geht nicht** — so heißt die Fraktion. Ob die Haltungen überhaupt eigene Namen bekommen oder schlicht
+über ihre Farbe laufen, ist offen.
 
 **Was dabei zu wissen ist:**
 
@@ -408,10 +415,8 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 2. **Stapeln mehrere Runden?** — §5.3. Mit Beschleunigung sind zwei bis drei Runden je Durchlauf
    erreichbar; ob ihre Boni sich addieren, entscheidet, wie stark die Rotationslinie insgesamt ist.
 3. **Übergriff auf bereits offenen Grenzen** — §5.4.
-4. **Die Farbzuordnung** — welche Farbe trägt welche Haltung. Seit §2.2 (Grundfarbe zählt) ist das
-   **reine Gefühlssache**: Grün ist für das Haltungssystem nicht mehr besonders.
-   *(Überholt: die frühere Notiz, Grün + Pflanze sei eine „Camping-Ehe". Sie galt, solange der
-   Wechsel die effektive Farbe las. Über die Grundfarbe gelesen ist es das Gegenteil — §2.2.)*
+4. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
+   Zuordnung selbst ist gesetzt.
 5. **Bekommt Campen etwas Eigenes?** Zinsen zahlt dafür, aber als Linie, nicht als Fundament.
 6. **Womit startet der Lauf** — welche Haltung ist zu Beginn aktiv, und wird sie gewürfelt oder
    gewählt? Hängt mit dem geparkten „Fokus am Start" aus `skill-rework.md` §1 zusammen.
