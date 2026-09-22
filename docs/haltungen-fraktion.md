@@ -122,7 +122,7 @@ und zusammen decken sie die Score-Pipeline ab.
 
 | Farbe | Haltung | Greift an | Was sie tut | Grundwert |
 | --- | --- | --- | --- | --- |
-| **Rot** | **Anheben** (Ergebnis) | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. | eine Stufe |
+| **Rot** | Ergebnis | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. | eine Stufe |
 | **Blau** | Crit | die Spitze | Durchgehend Crit-Chance, solange sie klingt. | **+50 %** |
 | **Grün** | Überlappung | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. | +1 Stufe |
 | **Gelb** | Score | den Basis-Score | Glatter Multiplikator. | **×1,4** |
@@ -135,10 +135,11 @@ grob +10 % über den Lauf; Feuers Hitze-Multiplikator liegt zum Vergleich bei ×
 nur, *wann* eine Haltung zündet, nicht *was* sie tut. Das Farbregister liest sich stimmig: Rot dreht
 den verlorenen Stich, Blau ist die Spitze, Grün das Verweben, Gelb der Ertrag.
 
-**Namen sind damit noch nicht vergeben.** „Anheben" ist die Wendung des Owners für die rote Haltung
-und als Name frei (im Code nur als gewöhnliches Wort in einem Kommentar). **„Blitz" für die blaue
-geht nicht** — so heißt die Fraktion. Ob die Haltungen überhaupt eigene Namen bekommen oder schlicht
-über ihre Farbe laufen, ist offen.
+**Die Haltungen bekommen vorerst keine eigenen Namen** (Owner). Im Spiel laufen sie über ihre Farbe —
+„die rote Haltung", „die blaue Haltung". Die Spalte **Haltung** oben ist Engineering-Kurzschrift für
+dieses Dokument, kein Spielertext. Das spart vier Vokabeln in einem System, das ohnehin viele neue
+Begriffe mitbringt, und die Farbe ist im Panel ohnehin das, was der Spieler abliest. Später
+nachrüstbar, ohne dass eine Regel sich ändert.
 
 **Was dabei zu wissen ist:**
 
@@ -200,7 +201,32 @@ drei Linien liegen sonst strukturell den größten Teil der Zeit still.
 
 ## 5 · Die Skills, Stand
 
-Kennwerte sind durchweg **offen**. Hier steht nur, was der Skill tut.
+**Alle 15 stehen mit Startwerten je Stufe.** Die Leitern sind geschätzt und folgen dem Raster aus
+`skill-rework.md` §1 (Faktoren ≈ 0,85 / 1,05 / 1,35 / 1,8; keine zwei Stufen gleich; keine Deckel auf
+Rampen, lieber niedrigere Werte). **Nichts davon ist gemessen.** Was jeder Skill tut, steht in der
+jeweiligen Linie darunter; hier die Leitern auf einen Blick:
+
+| Linie | Skill · Kennwert | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- | --- |
+| **Score** (gelb) | **Stauung** · Zuschlag auf den Stau | ×1,25 | ×1,4 | ×1,6 | ×2,0 + *entlädt auch am Durchlauf-Ende* |
+| | **Beharrlichkeit** · je Stich Laufzeit | +0,02 | +0,03 | +0,04 | +0,06 |
+| | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
+| **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
+| | **Übertrag** · Reichweite des Übersprungs | 1 Stich | 2 | 3 | 4 |
+| | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
+| **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
+| | **Übergriff** · Grenzen | 1 | 2 | 3 | alle |
+| | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
+| **Ergebnis** (rot) | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
+| | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
+| | **Kehrtwende** · Verlängerungen je Haltung | 3× | 4× | 6× | 10× |
+| **Rotation** (alle) | **Anklang** · Mindestdauer statt 3 Stichen | 4 | 5 | 6 | 8 |
+| | **Runde** · Basis-Score je Sieg im nächsten Durchlauf | 60 | 90 | 130 | 200 + *Runden stapeln* |
+| | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
+
+**Drei Leitern sind Deckel statt Rampen** — Schwungrad, Kehrtwende und Beschleunigungs Boden. Das ist
+Absicht: die drei Runaway-Rechnungen aus §6 sind damit in der Stufentabelle erledigt statt als
+Sonderregel, so wie das Raster es vorzieht.
 
 ### 5.1 · Score-Linie — voll
 
@@ -526,25 +552,23 @@ Mindestdauer auf.** Die aktive Haltung läuft ohnehin bis zur Ablösung, spürba
 danach — eine Farbe, die kurz vor ihrer Verdrängung noch einmal ausgelöst hat, klingt drei Stiche
 länger nach. Das ist die Stelle, an der „die Farbe warm halten" überhaupt etwas wert ist.
 
-**Zwei Punkte sind seither entschieden** (Owner) und stehen dort, wo sie beim Bauen gelesen werden:
-ein gerutschter Sieg zahlt **voll** (§3), und **Übergriff wirkt auf einer schon offenen Grenze
-nicht** (§5.4).
+**Drei Punkte sind seither entschieden** (Owner) und stehen dort, wo sie beim Bauen gelesen werden:
+ein gerutschter Sieg zahlt **voll** (§3), **Übergriff wirkt auf einer schon offenen Grenze nicht**
+(§5.4), und die **Haltungen bekommen vorerst keine eigenen Namen** — sie laufen über ihre Farbe (§3).
 
 **Werte und Design, offen:**
 
-1. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
-   Zuordnung selbst ist gesetzt.
-2. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
+1. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
    `lightYield`, Eis `glacierYield` — jede Fraktion trägt einen eigenen Score-Kanal. Diese hier
    beugt nur Regeln. Ob das ein Mangel ist oder die Pointe, ist offen.
-3. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
+2. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
    und Balancing stehen.
-4. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
+3. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
    wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
    Feld", der Bruch wäre also möglicherweise ein Gewinn.
-5. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
+4. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
    geliefert hat.
-6. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
+5. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)
 
