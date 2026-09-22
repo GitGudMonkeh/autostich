@@ -797,6 +797,74 @@ Die Zahlen oben stammen deshalb aus festen Builds und einem doppelt so großen, 
 30-Seed-Vergleiche in §6.10 und §6.12 sind aus demselben Grund mit Vorsicht zu lesen** — die Rangfolge
 dort ist robust (die Abstände sind groß), einzelne Prozentangaben sind es nicht.
 
+### 6.14 · Die 15 Skills im Duo und Trio — **gemessen, groß**
+
+Sechs gemischte Welten, je eigener Seed-Bereich: **Prisma+Blitz · +Pflanze · +Eis** (Duos) und
+**+Blitz+Pflanze · +Blitz+Feuer · +Pflanze+Feuer** (Trios). Je Welt 600 Explore-Läufe, 120 Greedy-Läufe
+und für jeden der 15 Skills eine gepaarte Ablation über dieselben 120 Seeds — rund **15.000 Läufe**,
+das Zwölffache von §6.9. Die Welt bleibt breit, der Bericht ist auf Prisma verengt (`--only`).
+
+#### A · Der gierige Spieler nimmt die Fraktion, aber nicht ihre Skills
+
+| Welt | Ø Skills gehalten | davon Prisma | Anteil |
+| --- | --- | --- | --- |
+| Prisma + Blitz | 12,8 | 3,4 | 27 % |
+| Prisma + Pflanze | 13,0 | 3,3 | 25 % |
+| Prisma + Eis | 13,0 | **1,9** | **15 %** |
+| Prisma + Blitz + Pflanze | 12,9 | 3,1 | 24 % |
+| Prisma + Blitz + Feuer | 12,7 | 3,3 | 26 % |
+| Prisma + Pflanze + Feuer | 12,0 | 2,0 | 17 % |
+
+Im **Duo** stellt Prisma die Hälfte des Angebotstopfs — genommen werden **22 %**. Der kompetente
+Spieler schaltet die Fraktion mit zwei, drei Picks ein und gibt den Rest beim Partner aus. Genau das
+passt zum Befund aus §6.12: was Prisma im Mischbuild wertvoll macht, sind die **Passive und die
+Leiste**, nicht die Skills — die Passive sind ab dem ersten Skill voll, alles Weitere ist optional.
+
+#### B · Vierzehn von fünfzehn liegen im Rauschen
+
+Median des Ablations-Effekts; `pos/6` = in wie vielen der sechs Welten der Skill positiv maß (bei
+reinem Rauschen wären 3 zu erwarten).
+
+| Skill | Halte | Duos | Trios | alle 6 | pos/6 | Spanne je Welt |
+| --- | --- | --- | --- | --- | --- | --- |
+| Doppelbindung | 21 % | 4 % | 10 % | **7 %** | 6/6 | 3 % … 40 % |
+| Schwungrad | 15 % | 10 % | 2 % | **6 %** | 4/6 | -39 % … 77 % |
+| Beschleunigung | 45 % | 11 % | -2 % | **2 %** | 4/6 | -2 % … 25 % |
+| Runde | 14 % | -0 % | -0 % | **-0 %** | 2/6 | -20 % … 42 % |
+| Rückhalt | 10 % | 4 % | -6 % | **-1 %** | 3/6 | -46 % … 33 % |
+| Mitklang | 14 % | 4 % | -7 % | **-1 %** | 3/6 | -17 % … 31 % |
+| Grundrauschen | 18 % | -3 % | -0 % | **-2 %** | 2/6 | -13 % … 126 % |
+| Übertrag | 17 % | -10 % | 6 % | **-2 %** | 3/6 | -23 % … 20 % |
+| Verankerung | 17 % | -11 % | -1 % | **-3 %** | 2/6 | -15 % … 4 % |
+| Genugtuung | 6 % | -5 % | -2 % | **-4 %** | 1/6 | -64 % … 3 % |
+| Stauung | 18 % | -4 % | 0 % | **-4 %** | 2/6 | -32 % … 36 % |
+| Beharrlichkeit | 14 % | -3 % | -5 % | **-4 %** | 1/6 | -64 % … 40 % |
+| Kehrtwende | 11 % | -2 % | -13 % | **-9 %** | 1/6 | -43 % … 8 % |
+| Übergriff | 12 % | -21 % | 1 % | **-10 %** | 3/6 | -39 % … 8 % |
+| Anklang | 17 % | -12 % | -8 % | **-10 %** | 2/6 | -60 % … 8 % |
+
+**Genau ein Skill trägt ein sauberes Signal: Doppelbindung** — positiv in **6 von 6** Welten (bei
+reinem Zufall 1,6 % Wahrscheinlichkeit), im Trio +10 %. Dass ausgerechnet er es ist, passt: er hebt
+die Überlappungs-ANZAHL, und die Überlappung ist die einzige Achse, auf der Prisma multiplikativ mit
+dem Rest des Spiels zusammenwirkt.
+
+Beschleunigung und Schwungrad stehen bei 4/6 — das ist nicht vom Zufall zu trennen. Alle übrigen
+zwölf liegen bei 1/6 bis 3/6 und mit Median zwischen −10 % und +0 %.
+
+**Die rechte Spalte ist die wichtigste.** Schwungrad reicht von −39 % bis +77 %, Grundrauschen von
+−13 % bis +126 %, Anklang von −60 % bis +8 %. Bei 120 gepaarten Läufen und diesen Verteilungen sagt
+eine EINZELNE Welt nichts; nur das Vorzeichen über sechs Welten trägt. Wer aus dieser Tabelle eine
+einzelne Prozentzahl zitiert, zitiert Rauschen.
+
+#### C · Was das heißt
+
+Die Rotations-Linie, die in der Mono-Welt allein +32 % trug (§6.9), ist im Mischbuild ebenfalls
+verschwunden (Beschleunigung +2 %, Anklang −10 %, Runde −0 %). **Prisma hat im Duo und Trio derzeit
+keine Skills, die etwas entscheiden** — es hat vier Passive, eine Leiste und fünfzehn Beigaben.
+
+Das ist kein Tarier-, sondern ein Entwurfsbefund, und er hängt an derselben Wurzel wie §6.12: solange
+die Passive bei einem Slot voll sind, gibt es keinen Grund, einen zweiten zu investieren.
+
 ---
 
 ## 7 · Verworfen — und warum
