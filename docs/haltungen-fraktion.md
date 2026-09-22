@@ -57,6 +57,13 @@ Das ist die zweite Dimension auf derselben Entscheidung, die das Spiel ohnehin t
 - **Alle vier Haltungen laufen ab dem ersten Skill der Fraktion.** Kein Aufbau, keine Skalierung mit
   der Skill-Zahl — die vier Grundwerte in §3 gelten sofort und unverändert (anders als Blitz, dessen
   Passiv je gehaltenem Skill wächst).
+- **Ein Verlängerer verlängert immer die aktuell aktive Haltung**, nicht seine eigene.
+- **Crit-Chance ist additiv**, kein Mindestwert: Blaus +50 % addieren sich auf, was das Deck schon
+  hat. Ein Blitz-Deck bei 80 % steht damit bei 130 % und bekommt aus dem Überschuss über der
+  100-%-Klemme +0,3× Crit-Multiplikator.
+- **Nur ein echter Wechsel löst aus.** Erreicht die schon aktive Farbe erneut 5, passiert nichts —
+  sie zählt weiter, aber sie löst sich nicht selbst aus. Für Beschleunigung und Runde zählen
+  ausschließlich echte Wechsel.
 - **Der Lauf startet in Rot.** Fest, nicht gewürfelt. Damit beginnt jeder Lauf mit der nachsichtigsten
   Haltung, und das trifft genau die Phase, in der das Deck am schwächsten ist (45 % Siegquote roh).
 
@@ -428,11 +435,14 @@ Ein „gerutschter" Stich ist alles, was kein echter Sieg bleibt — die Rutschq
 Schwungrad läuft bei 100 % Crit ins Unendliche, Kehrtwende kann das strukturell nicht. Gutes
 Gegengewicht — solange die beiden nicht zusammenwirken.
 
-**Offen und wichtig:** klingen zwei Haltungen gleichzeitig und beide tragen einen Verlängerer —
-**welche wird verlängert?** Gilt ein Verlängerer nur für die **eigene** Haltung, ist alles gut. Gilt
-er für die **laufende**, addieren sich die Raten: 0,67 aus Schwungrad plus rund 0,45 aus Kehrtwende
-liegen **über 1**, und dann endet die Haltung nicht mehr. Die Antwort gehört in die Regel, nicht ins
-Tarieren.
+**Entschieden (Owner): ein Verlängerer verlängert immer die aktuell aktive Haltung**, nicht seine
+eigene. Das ist die Lesart, bei der sich die Raten addieren — 0,67 aus Schwungrad plus rund 0,45 aus
+Kehrtwende liegen über 1, rechnerisch würde die Haltung also nicht mehr enden.
+
+**Aufgefangen wird das durch die Stufenwerte**, nicht durch eine Sonderregel: Schwungrad deckelt bei
+2/3/5/8 Verlängerungen je Haltung, Kehrtwende bei 3/4/6/10. Beide auf Episch gehalten sind zusammen
+höchstens 18 Verlängerungen, die Haltung läuft also längstens 21 Stiche. Endlich, und nur mit zwei
+epischen Skills aus zwei Linien erreichbar.
 
 ### 6.6 · Der Stapel
 
@@ -494,37 +504,35 @@ davon. Der Brainstorm bleibt als Landkarte gültig.
 
 ## 8 · Offene Punkte
 
-**Drei Regelfragen** — sie brauchen eine Antwort, kein Tarieren, und sie blockieren den Sim-Bau:
+**Eine Regelfrage bleibt** — sie folgt aus „nur ein echter Wechsel löst aus" und blockiert den Sim-Bau:
 
-1. **Welche Haltung ein Verlängerer verlängert** — die eigene oder die laufende (§6.5).
-2. **Blaus 50 %: additiv oder Mindestwert?** Additiv gelesen käme ein Blitz-Deck bei 80 % auf 130 %
-   und bekäme aus dem Überschuss +0,3× Crit-Multiplikator. Als Mindestwert bekäme dasselbe Deck
-   **gar nichts**. Die Wandlung am Deckel funktioniert nur additiv.
-3. **Zählt die aktive Farbe weiter — und gilt ein Selbst-Auslösen als Wechsel?** Jetzt scharf, seit
-   der Lauf fest in Rot startet: löst Rot bei 5 erneut aus, während es schon aktiv ist, zählt das
-   dann für **Beschleunigung** (Schwelle sinkt) und für **Runde** (Farbe getragen)? Ein Mono-Rot-Deck
-   könnte damit Beschleunigung auf den Boden fahren, ohne je zu rotieren.
+1. **Was passiert mit dem Zähler der aktiven Farbe, wenn er über 5 läuft?** Rot ist aktiv und steigt
+   auf 12. Blau übernimmt. Rot steht weiter bei 12 und ist jetzt **nicht mehr** die aktive Farbe —
+   löst es damit sofort wieder aus? Dann pendeln Rot und Blau im Takt weniger Stiche, und weil die
+   Mindestdauer 3 beträgt, klingen beide praktisch dauerhaft. Zwei Auswege: der Zähler **setzt beim
+   Verlassen zurück**, oder er ist **bei 5 gedeckelt** und löst erst beim nächsten Sieg aus. Beides
+   verhindert das Pendeln, die zweite Variante belohnt dabei weiterhin, die Farbe warm zu halten.
 
 **Werte und Design:**
 
-4. **Was zahlt ein gerutschter Sieg?** Er war ein Gleichstand — zahlt er wie ein echter Sieg (100 %,
+2. **Was zahlt ein gerutschter Sieg?** Er war ein Gleichstand — zahlt er wie ein echter Sieg (100 %,
    am einfachsten und am stärksten) oder einen Anteil? Dazu der Nebeneffekt ohne Zahl: eine zur
    Gleichstand gerutschte Niederlage ist für **alles** keine Niederlage mehr — Niederlagenserie,
    Schwachstellenanalyse, Revanche und Initiative laufen ins Leere.
-5. **Übergriff auf bereits offenen Grenzen** — §5.4.
-6. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
+3. **Übergriff auf bereits offenen Grenzen** — §5.4.
+4. **Namen der vier Haltungen** — ob sie eigene bekommen oder über ihre Farbe laufen (§3). Die
    Zuordnung selbst ist gesetzt.
-7. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
+5. **Hat die Fraktion einen eigenen Ertrag?** Feuer hat `fireBase`, Pflanze `plantBase`, Blitz
    `lightYield`, Eis `glacierYield` — jede Fraktion trägt einen eigenen Score-Kanal. Diese hier
    beugt nur Regeln. Ob das ein Mangel ist oder die Pointe, ist offen.
-8. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
+6. **Paare oder Drei** — wie viele Haltungen gleichzeitig klingen dürfen. Bewusst offen bis Skills
    und Balancing stehen.
-9. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
+7. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
    wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
    Feld", der Bruch wäre also möglicherweise ein Gewinn.
-10. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
+8. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
     geliefert hat.
-11. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
+9. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)
 
