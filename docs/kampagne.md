@@ -38,7 +38,9 @@ Läufe reicht, ohne dauerhaft zu sein.
 - **Zwischen den Läufen, zu Beginn des nächsten, wird ein Reward gewählt.** Eins, nicht mehrere.
 - **Rewards bleiben** bis zum Endboss oder bis ein Lauf verloren geht.
 - **Verloren heißt: die Kampagne beginnt von vorn.**
-- **Rewards geben Power** — und sind die **einzige** Reward-Achse, die das tun soll.
+- **Rewards geben Power.** Ursprünglich als **einzige** Power-Achse gesetzt; **abgeschwächt am
+  2026-09-22**: die Auftrags-Beute darf über *Lehrbrief* und *Aufstockung* weiter Power geben. Der
+  Owner nimmt das **„fürs erste" hin** — also ausdrücklich vorläufig, nicht abgeräumt (§5).
 - **Rewards haben Raritäten.** Die Rarität steigt mit **zwei** Eingängen:
   1. Zahl der erfolgreich abgeschlossenen **Aufträge**,
   2. wie weit der Endscore **über** der Schwelle lag.
@@ -66,7 +68,17 @@ Läufe reicht, ohne dauerhaft zu sein.
    je Auftrag +1, ab 2× Schwelle +1, ab 3× Schwelle +2 (§10). Zwei Detailfragen stehen dort noch
    offen.
 6. **Der Reward-Katalog.** Umfang, Achsen, Werte. — **Entwurf steht in §9**; offen sind dort nur noch Werte und Raritätsstufen.
-7. **Der Kollisionsfall aus §5** — gehört er dazu?
+7. ~~**Der Kollisionsfall aus §5**~~ — **entschieden: hingenommen, fürs erste** (§5). Vorläufig,
+   nicht abgeräumt; der Playtest entscheidet, ob es dabei bleibt.
+
+**Damit ist jede Frage aus dieser Liste beantwortet.** Was noch fehlt, ist keine Designfrage mehr,
+sondern Zahlenarbeit und eine Machbarkeitsprüfung:
+
+- **die Werte.** Im Katalog (§9) steht jede Größe als X, und je Reward sind es fünf Werte — einer je
+  Raritätsstufe.
+- **zwei Details an der Raritätsformel** (§10): trägt Stufe 3 weiterhin eine Chance auf Legendär,
+  und gilt die Rarität für alle drei ausliegenden Rewards oder nur für das beste Stück?
+- **drei Zuschnitte mit Code-Vorbehalt** (§9): *Ratsbrief*, *Bauherrschaft*, *Lückenschluss*.
 
 ---
 
@@ -116,7 +128,18 @@ Grenzfall, bewusst nicht mitgezählt: **Baurecht** und **Stadtrecht** heben den 
 Ermöglichung, die Power kommt erst durch das, was der Spieler darauf baut. Ebenso **Vollendung**
 (legendäres Stück): macht einen Skill episch, also dieselbe Frage wie Lehrbrief, nur einmalig.
 
-**Nicht angefasst.** Dem Owner gemeldet, Entscheidung offen (§3.7).
+**Entschieden am 2026-09-22: hingenommen, fürs erste.** Die beiden Stücke bleiben wie sie sind, und
+der Satz „Rewards sind die einzige Power-Achse" gilt ab jetzt abgeschwächt (§2). Nichts zu bauen.
+
+**Was dabei bewusst in Kauf genommen wird.** Zwei Kampagnen-Rewards zielen direkt auf diese Beute —
+*Doppelwahl* (zwei Stücke statt einem) und *Adelsbrief* (eine Stufe höher) — und die Raritätsformel
+zahlt Aufträge obendrein ein zweites Mal (§10: je Auftrag eine Raritätsstufe). Ein Spieler, der auf
+Aufträge spielt, wird damit vierfach belohnt: mehr Beute, bessere Beute, stärkere Skills und
+Gebäude daraus, und dazu ein höherwertiger Kampagnen-Reward.
+
+**Woran man merkt, dass es doch kippt:** wenn im Playtest der Auftrags-Fokus die einzige sinnvolle
+Spielweise wird. Dann liegen die zwei anderen Wege weiterhin bereit — Lehrbrief und Aufstockung auf
+Ermöglichung umbauen (trifft 8 der 61 Beutestücke), oder Doppelwahl und Adelsbrief anders ausrichten.
 
 ---
 
