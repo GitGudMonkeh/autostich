@@ -74,14 +74,27 @@ Läufe reicht, ohne dauerhaft zu sein.
 7. ~~**Der Kollisionsfall aus §5**~~ — **entschieden: hingenommen, fürs erste** (§5). Vorläufig,
    nicht abgeräumt; der Playtest entscheidet, ob es dabei bleibt.
 
-**Damit ist jede Frage aus dieser Liste beantwortet.** Was noch fehlt, ist keine Designfrage mehr,
-sondern Zahlenarbeit und eine Machbarkeitsprüfung:
+**Damit ist jede Frage aus dieser Liste beantwortet**, und die Mockups sind abgenommen (§11).
 
-- **die Werte.** Im Katalog (§9) steht jede Größe als X, und je Reward sind es fünf Werte — einer je
-  Raritätsstufe.
-- **zwei Details an der Raritätsformel** (§10): trägt Stufe 3 weiterhin eine Chance auf Legendär,
-  und gilt die Rarität für alle drei ausliegenden Rewards oder nur für das beste Stück?
-- **drei Zuschnitte mit Code-Vorbehalt** (§9): *Ratsbrief*, *Bauherrschaft*, *Lückenschluss*.
+### Was vor dem ersten Commit noch entschieden sein muss
+
+Der Owner will **das ganze Konstrukt am Stück testen**, Änderungen Stück für Stück danach. Diese
+fünf Punkte blockieren den Bau — alle klein, keiner rät sich von selbst:
+
+1. **Die fünf Boss-Details** (§11): welche sechs Zellen, zufällig oder reihum, stapelt der Konter
+   über Durchlauf-Grenzen, zählt der Wucherer je Kaufart, wie rundet der Schmarotzer.
+2. **Was die Abschaltungen mitnehmen.** Ohne Münzen fallen Neuwurf, Energie-Kauf, Baufeld-Kauf,
+   Fokus **und** die Forfeit-Einnahmen weg. Offen: was passiert mit Perks, Skills und Beute, die
+   Münzen voraussetzen (*Zinseszins*, *Münzrecht*, *Nachlass*, *Freizug*) — aus dem Angebot nehmen
+   oder wirkungslos drin lassen? Dasselbe beim Raritäts-Deckel.
+3. **Zwei Details an der Raritätsformel** (§10): trägt Stufe 3 weiterhin eine Chance auf Legendär,
+   und gilt die Rarität für alle drei ausliegenden Rewards oder nur für das beste Stück?
+4. **Wo der Stand lebt.** Kampagnen-Fortschritt und Freischaltungen müssen über Sitzungen halten
+   (`storage.js`, Profil).
+5. **Ausblenden oder durchstreichen?** Die abgeschalteten Knöpfe sind im Mockup durchgestrichen
+   gezeichnet; ausblenden wäre sauberer.
+
+**Nicht blockierend:** die Werte im Katalog (§9). Ein erster Satz steht, der Playtest zieht nach.
 
 ---
 
@@ -668,7 +681,14 @@ Entscheidung — alle klein, aber keine davon rät sich von selbst:
 ### Die Oberflächen, die Ebene 1 braucht
 
 Mockups aller zwölf: **https://claude.ai/artifact/DxrxDD3fAMUwWx5CsVhupU** (privat, mit der Palette
-aus `rarity.js` und `index.css` gebaut).
+aus `rarity.js` und `index.css` gebaut). **Vom Owner als MVP-Stand abgenommen (2026-09-22)** —
+sie sind damit die Vorlage für den Bau, nicht mehr Diskussionsgegenstand.
+
+> Beim Abnehmen gestrichen: sämtliche erklärenden Beizeilen („Vier Läufe hintereinander …",
+> „Freischaltungen sind dauerhaft …", „Jeder Reward ist nur einmal wählbar …" und ein Dutzend
+> weiterer). **Hausregel für alle neuen Oberflächen: keine Mini-Beschreibungen, keine
+> Gedankenstriche in Spielertexten.** Was die Regel erklärt, steht in diesem Dokument, nicht auf
+> dem Schirm.
 
 | # | Oberfläche | Vom Owner genannt |
 | --- | --- | --- |
