@@ -667,7 +667,7 @@ Entscheidung — alle klein, aber keine davon rät sich von selbst:
 
 ### Die Oberflächen, die Ebene 1 braucht
 
-Mockups aller acht: **https://claude.ai/artifact/DxrxDD3fAMUwWx5CsVhupU** (privat, mit der Palette
+Mockups aller zwölf: **https://claude.ai/artifact/DxrxDD3fAMUwWx5CsVhupU** (privat, mit der Palette
 aus `rarity.js` und `index.css` gebaut).
 
 | # | Oberfläche | Vom Owner genannt |
@@ -679,20 +679,28 @@ aus `rarity.js` und `index.css` gebaut).
 | 5 | **Reward-Wahl** — drei liegen aus, einer wird genommen | ja |
 | 6 | **Freischaltung im Goldrahmen** zwischen den Läufen | ja |
 | 7 | **Kampagne verloren** — was bleibt, was weg ist | nein |
-| 8 | **Spielpanel-Leiste** — Boss, Endboss und gehaltene Rewards, je anklickbar | teilweise |
+| 8 | **Ebene 1 abgeschlossen** — der Sieg, und der einzige Ort, an dem Ebene 2 auftaucht | nein |
+| 9 | **Spielpanel-Leiste** — Boss, Endboss und gehaltene Rewards, je anklickbar | teilweise |
+| 10 | **Boss-Katalog** — alle sechs mit ihrer Mechanik, zugleich die Textreferenz | nein |
+| 11 | **Boss-Wirkung im Spielfeld** — gesperrte Zellen, festgesetztes Segment, Aufschlag auf der Gegnerkarte | nein |
+| 12 | **Was am Anfang abgeschaltet ist** — Münzleiste, Decks, Raritäts-Deckel | nein |
 
-**Zu den dreien, die nicht auf der Liste standen.** Ohne (2) ist der Kampagnen-Knopf ein Sprung ins
+**Zu den sechsen, die nicht auf der Liste standen.** Ohne (2) ist der Kampagnen-Knopf ein Sprung ins
 Dunkle, sobald eine Kampagne mittendrin steht. (7) ist der Screen, den ein neuer Spieler **am
 häufigsten sieht** — ohne Rewards trägt die Kette 14 % (§7); er ist zweigeteilt gebaut, links im
 Goldrahmen die dauerhaften Freischaltungen, rechts abgeblendet die verlorenen Rewards, damit die
-Aussage „du bist weiter als vorher" lautet und nicht „alles umsonst". Und (8): der Owner nannte
-Boss und Zwischenboss im Spielpanel — die bis zu drei gehaltenen Rewards laufen aber genauso mit
-und brauchen dieselbe Behandlung wie heute die Beute.
+Aussage „du bist weiter als vorher" lautet und nicht „alles umsonst". (8) ist sein Gegenstück.
+Bei (9) nannte der Owner Boss und Zwischenboss — die bis zu drei gehaltenen Rewards laufen aber
+genauso mit. (10) ist Referenz, nicht Screen. **(11) und (12) sind die eigentliche Bauarbeit an der
+Oberfläche:** gesperrte Baufeld-Zellen, ein festgesetztes Aufstellsegment und der Aufschlag auf der
+Gegnerkarte sind neue Zustände *im Spielfeld*, keine neuen Panels — und die Abschaltungen ändern
+Leisten, die es schon gibt.
 
-**Zwei Entwurfsentscheidungen im Mockup**, beide umkehrbar: Auswertung (4) und Reward-Wahl (5) sind
-**zwei** Screens, weil sonst Hochzählen und Auslage gleichzeitig in Bewegung wären. Und die
+**Drei Entwurfsentscheidungen im Mockup**, alle umkehrbar: Auswertung (4) und Reward-Wahl (5) sind
+**zwei** Screens, weil sonst Hochzählen und Auslage gleichzeitig in Bewegung wären. Die
 2×/3×-Marken stehen von Anfang an auf der Score-Leiste, damit beim Hochzählen sichtbar ist, worauf
-es zuläuft.
+es zuläuft. Und in (12) sind die abgeschalteten Knöpfe **durchgestrichen statt versteckt** — das
+macht aus jeder Freischaltung ein Ereignis, ist aber die Lesart, die der Owner noch bestätigen muss.
 
 ---
 
