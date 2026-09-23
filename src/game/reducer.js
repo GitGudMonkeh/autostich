@@ -497,7 +497,12 @@ export function reducer(state, action) {
         unlockedArchetypes: cSetup ? cSetup.archetypes : archPool,
         rareCap: cSetup ? cSetup.rareCap : effRareCap,
         rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
-        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder, doubleLoot: cSetup.doubleLoot } : {}),
+        /* `settled: false` ist der Reset des Laufende-Riegels, und er gehört HIERHER: dies ist die
+           eine Tür, durch die jeder Kampagnenlauf geht. `takeReward` schob bis 2026-09-23 auf Lauf 2
+           weiter und liess das Flag des ersten Laufs stehen — ab da rechnete `settleCampaign` nie
+           wieder ab. Die Auswertung stand auf 0, kein verfehlter Lauf galt als verloren, und die
+           Kampagne war nicht mehr zu gewinnen. */
+        ...(cSetup ? { campaign: { ...camp, settled: false }, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder, doubleLoot: cSetup.doubleLoot } : {}),
         weekMods: weekModsState,
         challengeBlockArch: [...new Set([...wmBlockArch, ...(cSetup ? cSetup.blockCells : [])])],
         challengeBlockForm: [...new Set(wmBlockForm)] };
