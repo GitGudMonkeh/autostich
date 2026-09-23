@@ -270,6 +270,30 @@ export function thresholdWith(campaign, run = null) {
 
 export const isCleared = (campaign, score = 0, run = null) => score >= thresholdWith(campaign, run);
 
+/* Der Stand zur nächsten Stufe, live und als EINE Rechnung: wie viele Durchgänge stehen, wie weit
+   der laufende ist, worauf er zuläuft.
+
+   Es ist dieselbe Leiter, die `stepsFor` am Laufende abrechnet (2× gibt eine Raritätsstufe, 3×
+   zwei) — nur eben während des Laufs statt danach. Getrennt gerechnet würden die Leiste und die
+   Auswertung irgendwann verschiedene Dinge sagen, und der Spieler sähe es erst am Endscreen.
+
+   `done` zählt die gerissenen Schwellen (0 bis 3), `pct` ist der Fortschritt IM laufenden
+   Durchgang, nicht auf der ganzen Strecke: genau das ist der Grund, warum sich die Leiste dreimal
+   füllt statt einmal. Über 3× bleibt sie voll stehen. */
+export function thresholdProgress(campaign, score = 0, run = null) {
+  const base = thresholdWith(campaign, run);
+  if (!(base > 0)) return { done: 0, pct: 0, target: 0, mult: 1, full: false };
+  const done = score >= base * 3 ? 3 : score >= base * 2 ? 2 : score >= base ? 1 : 0;
+  if (done >= 3) return { done: 3, pct: 100, target: base * 3, mult: 3, full: true };
+  return {
+    done,
+    pct: Math.max(0, Math.min(100, ((score - done * base) / base) * 100)),
+    target: (done + 1) * base,
+    mult: done + 1,
+    full: false,
+  };
+}
+
 /* One finished run. Clearing the threshold advances the chain and earns a reward pick; missing it
    ends the campaign. The won-run count that drives the unlocks is kept by the caller, because it
    outlives the campaign. */

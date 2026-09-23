@@ -19,7 +19,7 @@ import { overlayPortal } from "./overlayPortal.jsx";
 import { PHASE_ACCENTS, phaseCard, ActionButton, DECK_BORDER } from "./modalStyle.jsx";
 import { t } from "../i18n/index.js";
 import * as CP from "../game/campaign.js";
-import { bossName, bossText, isEndBoss, unlockName, unlockText, axisName, rewardName, rewardText, tierColor, tierLabel, mio } from "./campaignText.js";
+import { bossName, bossText, isEndBoss, unlockName, unlockText, axisName, rewardName, rewardText, tierColor, tierLabel, mio, PASS_COLORS } from "./campaignText.js";
 
 const GOLD = PHASE_ACCENTS.gold.c;
 const RED = PHASE_ACCENTS.red.c;
@@ -56,6 +56,62 @@ export const RewardChip = ({ id, tier, axis = null, onClick = null }) => {
   );
 };
 
+/* ---- Die Schwellen-Leiste. Sie sitzt im `milestone`-Slot der Vitalleiste, also direkt neben dem
+   Score, den sie misst (ab 1280 px als 250-px-Zelle `.sb-ms`, darunter als volle Zeile unter der
+   Score-Reihe). Beide Fassungen kommen aus DIESEM einen Element, die Leiste ist nur eine Zeile.
+
+   EINE Leiste, die sich dreimal füllt, statt einer über die ganze Strecke: bei 3× Gesamtbreite
+   wären die ersten 15 Mio ein Drittel und der Sprung „bestanden" verschwände im Verlauf. Der
+   letzte volle Durchgang bleibt in ganzer Breite liegen, der neue läuft darüber. ---- */
+export function CampaignProgress({ state, className = "" }) {
+  const c = state && state.campaign;
+  if (!c) return null;
+  const score = state.score || 0;
+  const p = CP.thresholdProgress(c, score);
+  const under = p.done > 0 ? PASS_COLORS[Math.min(2, p.done - 1)] : null;
+  const active = p.full ? null : PASS_COLORS[p.done];
+  const tone = active || PASS_COLORS[2];
+  const label = p.full ? t("campaign.bar.max")
+    : p.done === 0 ? t("campaign.bar.threshold")
+    : `${p.mult}×`;
+  return (
+    /* Die drei Zeilen tragen ihre Breite SELBST (`w-full`), statt sie von der Ausrichtung der
+       Spalte zu erben. Der Grund ist gemessen, nicht vermutet: ab 1280 px setzt `.sb-ms` in
+       index.css `display:flex; align-items:center` auf genau dieses Element. Die Leiste hat keine
+       Eigenbreite, wurde damit auf der Querachse zentriert und maß 0 px. `items-stretch` dagegen
+       hilft nicht — eine Tailwind-Utility liegt in einem `@layer` und verliert gegen die
+       ungelayerte Regel, egal in welcher Reihenfolge sie steht. */
+    <div className={`flex flex-col justify-center gap-1.5 px-2.5 py-2 w-full min-w-0 ${className}`}>
+      <div className="flex w-full items-baseline gap-2 min-w-0">
+        <span className="ty-screen-title text-micro truncate" style={{ color: tone }}>{label}</span>
+        {/* Über 3× steht nur noch der Score: ein Ziel, das hinter einem liegt, als „31 / 30" zu
+            zeigen, liest sich wie ein Fehler. */}
+        <span className="ty-num-sm ml-auto text-micro whitespace-nowrap" style={{ color: tone }}>
+          {p.full ? t("campaign.threshold", { n: mio(score) })
+                  : t("campaign.bar.progress", { a: mio(score), b: mio(p.target) })}
+        </span>
+      </div>
+      <div className="relative w-full h-[9px] rounded-full overflow-hidden"
+           role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p.pct)}
+           style={{ background: "#26262f", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }}>
+        {under && <div className="absolute inset-0 rounded-full" style={{ background: under }} />}
+        {active && (
+          <div className="absolute left-0 top-0 bottom-0 rounded-full"
+               style={{ width: `${p.pct}%`, background: active, transition: "width 220ms ease-out" }} />
+        )}
+      </div>
+      {/* Die drei Punkte tragen, was die Farbe allein nicht kann: wie weit die Kette ist, auch bei
+          fast leerer Leiste (Owner-Entscheid 2026-09-23, Variante B). */}
+      <div className="flex w-full items-center gap-1.5" aria-hidden="true">
+        {PASS_COLORS.map((col, i) => (
+          <span key={i} className="block w-[5px] h-[5px] rounded-full"
+                style={{ background: i < p.done ? col : "#32323d" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ---- Die Leisten-Kachel IM Lauf. Bewusst dieselbe Form wie die Auftrags-Kachel daneben
    (ContractPhase.jsx): zugeklappt Boss und Schwelle, aufgeklappt die Mechanik und was man hält.
    Sie rendert sich selbst weg, wenn der Lauf keine Kampagne trägt. ---- */
@@ -65,9 +121,6 @@ export function CampaignTile({ state }) {
   if (!c) return null;
   const run = c.run || 1;
   const boss = CP.bossFor(c, run);
-  const threshold = CP.thresholdWith(c, run);
-  const score = state.score || 0;
-  const reached = score >= threshold;
   const held = Object.entries(c.held || {});
   const col = isEndBoss(boss) ? VIOLET : RED;
   const counter = CP.counterBonus(state);   // Konter: was der nächste Gegner gerade obendrauf hat
@@ -78,12 +131,14 @@ export function CampaignTile({ state }) {
         aria-expanded={open} title={bossText(boss)}>
         <div className="text-micro uppercase tracking-wide opacity-50 truncate flex items-center gap-1">
           <span className="inline-block w-2 text-center" aria-hidden="true">{open ? "▾" : "▸"}</span>
-          {t("campaign.rail.label", { n: run, runs: CP.RUNS_PER_LEVEL })} · {bossName(boss)}
+          {t("campaign.rail.label", { n: run, runs: CP.RUNS_PER_LEVEL })}
         </div>
-        <div className="ty-num font-bold text-body-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
-             style={{ color: reached ? GREEN : col }}>
-          {t("campaign.threshold", { n: mio(score) })}
-          <span className="text-micro opacity-45 ml-1">{t("campaign.over.need", { n: mio(threshold) })}</span>
+        {/* Der Score-Stand steht seit der Schwellen-Leiste NICHT mehr hier: er stünde sonst zweimal
+            auf dem Schirm, und die Leiste sitzt am Score, wo man ohnehin hinsieht. Die Kachel macht,
+            was sie besser kann — der Boss und was man hält, beides zum absichtlichen Nachschlagen. */}
+        <div className="ty-title font-bold text-body-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
+             style={{ color: col }}>
+          {bossName(boss)}
         </div>
         {/* Der Konter-Aufschlag steht zugeklappt da: er ändert sich mit JEDEM Stich, und wer ihn erst
             nach dem Aufklappen sieht, sieht ihn nie zur richtigen Zeit. */}

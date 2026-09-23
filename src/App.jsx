@@ -9,7 +9,7 @@ import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeig
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory, saveCampaign, loadCampaign, clearCampaign } from "./game/storage.js";
 import * as CP from "./game/campaign.js"; // Kampagne: Ebene, Bosse, Rewards, Freischaltungen
-import { CampaignOverview, CampaignBoss, CampaignTally, CampaignPick, CampaignUnlock, CampaignLost, CampaignWon } from "./ui/CampaignScreens.jsx";
+import { CampaignOverview, CampaignBoss, CampaignTally, CampaignPick, CampaignUnlock, CampaignLost, CampaignWon, CampaignProgress } from "./ui/CampaignScreens.jsx";
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
@@ -1296,7 +1296,11 @@ function AutostichGame() {
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
-          {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten. */}
+          {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten.
+              Kampagne: die Schwellen-Leiste sitzt im `milestone`-Slot. Der war für genau so einen Balken
+              gebaut, ist seit dem Ausbau der Meta-Progression leer, und bringt beide Breiten schon mit
+              (`.sb-ms` als 250-px-Zelle ab 1280 px, darunter volle Zeile unter der Score-Reihe). Ohne
+              Kampagne bleibt er null und die Leiste ist exakt die von heute. */}
           <StatusBar className="rn-bar"
             score={state.score} ghost={ghost}
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
@@ -1306,7 +1310,7 @@ function AutostichGame() {
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
-            milestone={null}
+            milestone={state.campaign ? <CampaignProgress state={state} className="sb-ms" /> : null}
             music={wide && state.phase !== "gameover"
               ? <MusicBar className="sb-music" title={musicTitle} onNext={() => music.next()} />
               : null}

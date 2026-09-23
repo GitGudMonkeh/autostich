@@ -6,7 +6,16 @@
 
 import { t } from "../i18n/index.js";
 import { TIER_META } from "../game/rarity.js";
+import { PHASE_ACCENTS } from "./modalStyle.jsx";
 import * as CP from "../game/campaign.js";
+
+/* Die drei Durchgänge der Schwellen-Leiste, in der Reihenfolge, in der sie laufen. KEINE neuen
+   Farben: Grün ist der Ton eines bestandenen Laufs, Blau der der 2×-Marke auf der Auswertung,
+   Gold ist --ac-gold. Sie stehen hier und nicht an den zwei Zeichenstellen, weil Leiste und
+   Auswertung nebeneinander gelesen werden — zwei Listen driften genau dort auseinander, wo es
+   auffällt. `#5a8ade` ist ein Literal, weil es keinen Token dafür gibt; PHASE_ACCENTS.blue ist
+   ein anderes, dunkleres Blau. */
+export const PASS_COLORS = [PHASE_ACCENTS.green.c, "#5a8ade", PHASE_ACCENTS.gold.c];
 
 /* Raritätsfarben des Spiels — Ebene 1 kommt nie über „Sehr selten" hinaus, aber die Leiter steht
    vollständig hier, damit spätere Ebenen nichts nachziehen müssen. */

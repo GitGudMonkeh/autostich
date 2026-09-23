@@ -878,3 +878,31 @@ sie befolgen jetzt dieselbe Vorrang-Regel wie das Auftrags-Angebot.
 ### Was noch nicht da ist
 
 - Ebene 2 und 3 (Schwellen, Bosse, Rewards ab Episch).
+
+### Die Schwellen-Leiste (Owner 2026-09-23)
+
+Eine Leiste, die sich **dreimal** füllt: bis zur Schwelle in Grün, dann bis 2× in Blau über dem
+Grün, dann bis 3× in Gold über dem Blau. Der letzte volle Durchgang bleibt in ganzer Breite liegen,
+der neue läuft darüber. Drei Punkte darunter zählen, wie viele Durchgänge stehen (Variante B aus dem
+Entwurf; die Farbe allein sagt bei fast leerer Leiste nicht, im wievielten Durchgang man ist).
+
+**Warum dreimal und nicht einmal über die ganze Strecke:** auf einer Leiste bis 3× wäre die halbe
+Schwelle 16,7 % statt 50 %, und der Sprung „bestanden" verschwände im Verlauf.
+
+**Wo sie sitzt:** im `milestone`-Slot der Vitalleiste (`StatusBar`), also direkt am Score, den sie
+misst. Der Slot war für genau so einen Balken gebaut und stand seit dem Ausbau der Meta-Progression
+auf `null`. Er bringt beide Breiten mit: ab 1280 px die 250-px-Zelle `.sb-ms` zwischen Karten und
+Münzen (Leiste 221 px), darunter eine volle Zeile unter der Score-Reihe (374 px bei 420 px Gerät).
+Beides gemessen im gebauten Build.
+
+**Die Kachel in der Rail gibt dafür ihre Zahl ab.** Sonst stünde derselbe Stand zweimal auf dem
+Schirm. Sie trägt jetzt Boss, Mechanik, gehaltene Rewards und den Konter-Aufschlag.
+
+`CP.thresholdProgress(campaign, score)` ist die eine Rechnung dahinter. Sie teilt die Leiter mit
+`stepsFor` am Laufende (2× gibt eine Raritätsstufe, 3× zwei) — getrennt gerechnet sagten Leiste und
+Auswertung irgendwann Verschiedenes, und der Spieler sähe es erst am Endscreen.
+
+**Eine Falle, die zwei Builds gekostet hat:** `.sb-ms` setzt `display:flex; align-items:center` auf
+das Element. Eine Spalte ohne Eigenbreite wird darin auf der Querachse zentriert und misst 0 px.
+`items-stretch` hilft nicht — eine Tailwind-Utility liegt in einem `@layer` und verliert gegen die
+ungelayerte Regel. Die drei Zeilen tragen deshalb je ein eigenes `w-full`.

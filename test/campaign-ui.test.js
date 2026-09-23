@@ -5,7 +5,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as CP from "../src/game/campaign.js";
 import { mio } from "../src/ui/campaignText.js";
-import { CampaignTally, CampaignPick, CampaignWon, CampaignLost, CampaignTile, CampaignOverview } from "../src/ui/CampaignScreens.jsx";
+import { CampaignTally, CampaignPick, CampaignWon, CampaignLost, CampaignTile, CampaignOverview, CampaignProgress } from "../src/ui/CampaignScreens.jsx";
+import { PASS_COLORS } from "../src/ui/campaignText.js";
 import { RestartConfirm } from "../src/ui/RunConfirm.jsx"; // die Warnung vor dem Kampagnen-Neustart
 
 /* ============================================================================
@@ -162,11 +163,14 @@ describe("Kampagne · die Kachel im Lauf", () => {
     expect(html(CampaignTile, { state: { score: 5e6 } })).toBe("");
   });
 
-  it("zeigt Boss, Stand und Schwelle des laufenden Laufs", () => {
+  it("zeigt den Boss des laufenden Laufs, aber NICHT mehr den Score", () => {
+    /* Der Score-Stand ist seit der Schwellen-Leiste deren Sache. Stünde er hier auch, stünde er
+       zweimal auf dem Schirm — und zwei Stellen für dieselbe Zahl laufen auseinander. */
     const h = txt(html(CampaignTile, { state: { score: 8_200_000, campaign: camp({ run: 2, held: { zehnt: 2 } }) } }));
     expect(h).toContain("Der Bremser");            // bosses[1] = Lauf 2
-    expect(h).toContain("8,2 Mio");
-    expect(h).toContain("von 10 Mio nötig");
+    expect(h).toContain("Lauf 2/4");
+    expect(h).not.toContain("8,2 Mio");
+    expect(h).not.toContain("von 10 Mio");
   });
 
   it("zeigt den Konter-Aufschlag mit der Zahl, die auch auf dem Brett wirkt", () => {
@@ -260,5 +264,156 @@ describe("Kampagne · Verdrahtung", () => {
 
   it("stellt die Lauf-Kachel in die Leiste", () => {
     expect(src("ui/StatusRail.jsx")).toContain("<CampaignTile state={state} />");
+  });
+});
+
+/* ============================================================================
+   SCHWELLEN-LEISTE — eine Leiste, die sich dreimal füllt (Owner 2026-09-23).
+
+   Die Rechnung und das Bild werden getrennt geprüft: `thresholdProgress` sagt, WO man steht, das
+   Panel malt es. Beides an Zahlen, nicht an Klassennamen — eine Leiste, die eine Breite von 0 %
+   zeichnet, wäre mit einem Klassen-Test grün und auf dem Schirm leer.
+   ============================================================================ */
+describe("Schwellen-Leiste · die Rechnung", () => {
+  const c = camp({ run: 2 });                      // Schwelle 10 Mio
+  const T = CP.thresholdWith(c, 2);
+
+  it("zählt die gerissenen Schwellen, nicht die Strecke", () => {
+    expect(T).toBe(10_000_000);
+    expect(CP.thresholdProgress(c, 0).done).toBe(0);
+    expect(CP.thresholdProgress(c, T - 1).done).toBe(0);
+    expect(CP.thresholdProgress(c, T).done).toBe(1);
+    expect(CP.thresholdProgress(c, T * 2).done).toBe(2);
+    expect(CP.thresholdProgress(c, T * 3).done).toBe(3);
+  });
+
+  it("misst den Fortschritt IM Durchgang, nicht auf der ganzen Strecke", () => {
+    /* Das ist der ganze Grund für die drei Durchgänge: auf einer Leiste über 3× wäre die halbe
+       Schwelle 16,7 % statt 50 %, und „bestanden" verschwände im Verlauf. */
+    expect(CP.thresholdProgress(c, T / 2).pct).toBeCloseTo(50, 5);
+    expect(CP.thresholdProgress(c, T * 1.5).pct).toBeCloseTo(50, 5);
+    expect(CP.thresholdProgress(c, T * 2.5).pct).toBeCloseTo(50, 5);
+    // und an jeder Grenze springt sie auf 0 des nächsten Durchgangs
+    expect(CP.thresholdProgress(c, T).pct).toBe(0);
+    expect(CP.thresholdProgress(c, T * 2).pct).toBe(0);
+  });
+
+  it("nennt das nächste Ziel und bleibt über 3× voll stehen", () => {
+    expect(CP.thresholdProgress(c, 0)).toMatchObject({ target: T, mult: 1, full: false });
+    expect(CP.thresholdProgress(c, T)).toMatchObject({ target: T * 2, mult: 2, full: false });
+    expect(CP.thresholdProgress(c, T * 2)).toMatchObject({ target: T * 3, mult: 3, full: false });
+    expect(CP.thresholdProgress(c, T * 9)).toMatchObject({ done: 3, pct: 100, mult: 3, full: true });
+  });
+
+  it("rechnet gegen die Fürsprache-Schwelle, nicht gegen die Grundschwelle", () => {
+    const g = camp({ run: 2, held: { fuersprache: 3 } });
+    const gesenkt = CP.thresholdWith(g, 2);
+    expect(gesenkt).toBeLessThan(T);
+    expect(CP.thresholdProgress(g, gesenkt).done, "die gesenkte Schwelle reißt früher").toBe(1);
+    expect(CP.thresholdProgress(g, gesenkt).target).toBe(gesenkt * 2);
+  });
+
+  it("teilt die Leiter mit der Abrechnung am Laufende, statt zweimal zu rechnen", () => {
+    // `done` der Leiste und der Score-Anteil von stepsFor müssen dieselbe Grenze sehen.
+    for (const f of [0.5, 1, 1.5, 2, 2.5, 3, 4]) {
+      const score = T * f;
+      const ausLeiste = CP.thresholdProgress(c, score).done;          // 0..3 gerissene Schwellen
+      const ausAbrechnung = CP.stepsFor({ contracts: 0, score, threshold: T }); // 0/1/2 Stufen
+      expect(Math.max(0, ausLeiste - 1), `bei ${f}×`).toBe(ausAbrechnung);
+    }
+  });
+});
+
+describe("Schwellen-Leiste · was gezeichnet wird", () => {
+  const bar = (score, over = {}) => html(CampaignProgress, { state: { score, campaign: camp({ run: 2, ...over }) } });
+  const T = 10_000_000;
+
+  it("rendert nichts ohne Kampagne", () => {
+    expect(html(CampaignProgress, { state: { score: 5e6 } })).toBe("");
+  });
+
+  it("benennt den Durchgang und das Ziel", () => {
+    expect(txt(bar(6.4e6))).toContain("Schwelle");
+    expect(txt(bar(6.4e6))).toContain("6,4 / 10 Mio");
+    expect(txt(bar(T + 5e6))).toContain("2×");
+    expect(txt(bar(T + 5e6))).toContain("15 / 20 Mio");
+    expect(txt(bar(T * 2 + 5e6))).toContain("3×");
+    expect(txt(bar(T * 3 + 1e6))).toContain("Maximum");
+  });
+
+  /* React schreibt Inline-Styles ohne Leerzeichen: `style="width:50%;background:#5ab87a"`. */
+  const unterlage = (h) => (h.match(/inset-0[^>]*style="background:(#[0-9a-f]{6})/i) || [])[1] || null;
+  const fuellung = (h) => (h.match(/width:(\d+(?:\.\d+)?)%;background:(#[0-9a-f]{6})/i) || []).slice(1);
+  const punkte = (h) => [...h.matchAll(/w-\[5px\][^"]*" style="background:(#[0-9a-f]{6})/gi)].map((m) => m[1]);
+
+  it("legt den vollen Durchgang unter den laufenden, statt ihn zu ersetzen", () => {
+    expect(unterlage(bar(4e6)), "der erste Durchgang hat nichts unter sich").toBeNull();
+    expect(fuellung(bar(4e6))[1]).toBe(PASS_COLORS[0]);
+
+    expect(unterlage(bar(T + 5e6)), "Grün liegt in voller Breite darunter").toBe(PASS_COLORS[0]);
+    expect(fuellung(bar(T + 5e6))[1], "Blau läuft darüber").toBe(PASS_COLORS[1]);
+
+    expect(unterlage(bar(T * 2 + 5e6)), "im dritten liegt Blau darunter, nicht mehr Grün").toBe(PASS_COLORS[1]);
+    expect(fuellung(bar(T * 2 + 5e6))[1]).toBe(PASS_COLORS[2]);
+
+    expect(unterlage(bar(T * 3 + 1e6)), "voll ausgereizt: Gold in ganzer Breite").toBe(PASS_COLORS[2]);
+    expect(fuellung(bar(T * 3 + 1e6)), "und keine laufende Füllung mehr").toEqual([]);
+  });
+
+  it("zeichnet die Breite des laufenden Durchgangs als Prozent", () => {
+    expect(fuellung(bar(T / 2))[0]).toBe("50");
+    expect(fuellung(bar(T * 1.25))[0]).toBe("25");
+    expect(fuellung(bar(0))[0]).toBe("0");
+  });
+
+  it("zählt mit drei Punkten, wie viele Durchgänge stehen", () => {
+    expect(punkte(bar(4e6))).toEqual(["#32323d", "#32323d", "#32323d"]);
+    expect(punkte(bar(T + 5e6))).toEqual([PASS_COLORS[0], "#32323d", "#32323d"]);
+    expect(punkte(bar(T * 2 + 5e6))).toEqual([PASS_COLORS[0], PASS_COLORS[1], "#32323d"]);
+    expect(punkte(bar(T * 3 + 1e6))).toEqual(PASS_COLORS);
+  });
+
+  it("zeigt über 3× kein Ziel mehr an, das hinter einem liegt", () => {
+    expect(txt(bar(T * 3 + 1e6))).toContain("31 Mio");
+    expect(txt(bar(T * 3 + 1e6)), "ein Ziel hinter einem läse sich wie ein Fehler").not.toContain("/ 30");
+  });
+
+  it("meldet den Stand auch an die Bedienhilfe", () => {
+    expect(bar(T / 2)).toContain('role="progressbar"');
+    expect(bar(T / 2)).toContain('aria-valuenow="50"');
+  });
+});
+
+describe("Schwellen-Leiste · Verdrahtung", () => {
+  const app = readFileSync(fileURLToPath(new URL("../src/App.jsx", import.meta.url)), "utf8");
+
+  it("hängt im milestone-Slot der Vitalleiste, nicht in der Analyse-Rail", () => {
+    const zeile = app.split("\n").find((l) => l.includes("milestone="));
+    expect(zeile, "milestone nicht gefunden").toBeTruthy();
+    expect(zeile).toContain("CampaignProgress");
+    expect(zeile, "die Desktop-Zelle ist .sb-ms").toContain("sb-ms");
+    expect(zeile, "ohne Kampagne bleibt der Slot leer").toContain("state.campaign ?");
+  });
+
+  it("lässt die Leiste ausserhalb einer Kampagne unverändert", () => {
+    expect(app.split("\n").find((l) => l.includes("milestone="))).toContain(": null");
+  });
+
+  it("gibt jeder Zeile ihre eigene Breite, statt sie von der Spalte zu erben", () => {
+    /* Gemessen im Build, nicht vermutet: `.sb-ms` setzt ab 1280 px `display:flex` mit
+       `align-items:center` auf genau dieses Element. Ohne eigene Breite wurde die Leiste auf der
+       Querachse zentriert und maß 0 px — sichtbar leer, und kein Test hätte es gesehen.
+       `items-stretch` hilft dagegen NICHT: eine Tailwind-Utility liegt in einem `@layer` und
+       verliert gegen die ungelayerte Regel.
+
+       Was dieser Wächter kann und was nicht: er liest die Schreibweise, nicht die gerenderte
+       Breite. Die bräuchte einen Browser, den die Suite nicht hat. Er hält die drei `w-full`
+       fest, damit sie niemand beim Aufräumen als Redundanz entfernt — genau so entstünde der
+       Fehler wieder. */
+    const src = readFileSync(fileURLToPath(new URL("../src/ui/CampaignScreens.jsx", import.meta.url)), "utf8");
+    const i = src.indexOf("export function CampaignProgress");
+    const rumpf = src.slice(i, src.indexOf("\n}", i));
+    const zeilen = rumpf.split("\n").filter((l) => /className="flex w-full|className="relative w-full/.test(l));
+    expect(zeilen.length, "Label-Zeile, Leiste und Punkte tragen je ein w-full").toBe(3);
   });
 });
