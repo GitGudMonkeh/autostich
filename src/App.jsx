@@ -1451,7 +1451,7 @@ function AutostichGame() {
           onNext={() => { setCampUnlock(null); setCampScreen("overview"); }} />
       )}
       {campScreen === "lost" && campaign && (
-        <CampaignLost campaign={campaign} score={(campaign.scores || []).slice(-1)[0] || 0} unlocked={campUnlocked}
+        <CampaignLost campaign={campaign} score={(campaign.scores || []).slice(-1)[0] || 0}
           onAgain={() => { const c = CP.startCampaign(Math.random, campUnlocked); setCampaign(c); saveCampaign(c); setCampScreen("overview"); }}
           onMenu={() => { setCampaign(null); closeCampaign(); }} />
       )}

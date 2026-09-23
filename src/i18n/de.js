@@ -1779,13 +1779,8 @@ export default {
   "campaign.unlock.iceDeck.text": "Gletscher, Frost, Lawine.",
 
   "campaign.lost.title": "Die Kampagne beginnt von vorn.",
-  "campaign.lost.keep": "DAS BEHÄLTST DU",
-  "campaign.lost.lose": "DAS IST WEG",
-  "campaign.lost.open": "Noch {n} von {max} offen.",
   "campaign.lost.again": "Neue Kampagne",
   "campaign.lost.menu": "Ins Menü",
-  "campaign.lost.wins_one": "{n} gewonnener Lauf in diesem Versuch.",
-  "campaign.lost.wins_other": "{n} gewonnene Läufe in diesem Versuch.",
 
   "campaign.won.title": "EBENE {level} ABGESCHLOSSEN",
   "campaign.won.fallen": "{boss} IST GEFALLEN",
