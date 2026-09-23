@@ -255,7 +255,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | --- | --- | --- | --- | --- | --- |
 | **Score** (gelb) | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
 | | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
-| | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
+| | **Mitklang** · je zusätzlich klingender Haltung | +0,3 | +0,5 | +0,7 | +1,0 |
 | **Crit** (blau) | **Grundrauschen** · Crit-Chance, in jeder Haltung | +12 % | +18 % | +26 % | +40 % + *Crit-Mult +0,5* |
 | | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
@@ -289,7 +289,7 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 | --- | --- | --- | --- | --- |
 | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
 | **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
-| **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
+| **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,3 | +0,5 | +0,7 | +1,0 |
 
 **Neudesign §5.3 (Owner), in zwei Schritten.** Zuerst: *„Der größte gestaute Stich zahlt doppelt —
 aber nicht doppelt, sondern skaliert mit der Länge der gelben Haltung."* Dann, auf die gebaute
@@ -338,7 +338,18 @@ ist mit dem Bunkern gegangen. Übrig bleibt das Spiegelpaar Beharrlichkeit/Mitkl
 wächst Beharrlichkeit und Mitklang steht auf ×1, im bunten Build umgekehrt. **Zu beobachten:** ob die
 gelbe Linie damit zu einseitig ist — die Gegenspannung müsste dann woanders herkommen.
 
-**Neudesign §5.3 (Owner): alle vier Sätze ×10** (vorher `+0,02 / 0,03 / 0,04 / 0,06`). Auf den alten
+**Neudesign §5.3, Mitklang (Owner): verdoppelt** (`+0,15/0,25/0,35/0,50` → `+0,3/0,5/0,7/1,0`). Es
+klingen höchstens **drei** zusätzliche Haltungen gleichzeitig, und drei gibt es nur im Einklang oder
+direkt nach dichten Wechseln — der alte Satz trug entsprechend wenig. Was er jetzt trägt (Basis
+`×1,4`):
+
+| zusätzlich klingend | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| 1 | ×1,7 | ×1,9 | ×2,1 | ×2,4 |
+| 2 | ×2,0 | ×2,4 | ×2,8 | ×3,4 |
+| 3 *(alle vier)* | ×2,3 | ×2,9 | ×3,5 | ×4,4 |
+
+**Neudesign §5.3, Beharrlichkeit (Owner): alle vier Sätze ×10** (vorher `+0,02 / 0,03 / 0,04 / 0,06`). Auf den alten
 Werten war Campen eine Geste ohne Gewicht: die gelbe Haltung lebt typisch 4–7 Stiche, das waren
 `+0,08 … +0,42` auf einer Basis von `×1,4`. Was der Satz jetzt trägt:
 
@@ -519,8 +530,9 @@ Laufs trägt Faktor 1 und zählt deshalb nicht mit; das ist die Konvention des S
 eigene Lesart dieses Skills.
 
 **Zahlen sind reine Startwerte** (Owner ausdrücklich: *„Balancing muss dann über die Sim gemacht
-werden, keine Ahnung, was aktuell hier zu stark oder zu schwach ist"*). Die Leiter spiegelt
-**Mitklang** (`+0,15 / 0,25 / 0,35 / 0,50`), weil sie dieselbe „je X"-Form hat.
+werden, keine Ahnung, was aktuell hier zu stark oder zu schwach ist"*). Die Leiter
+(`+0,15 / 0,25 / 0,35 / 0,50`) war die von **Mitklang**, weil beide dieselbe „je X"-Form haben —
+Mitklang ist seither verdoppelt (§5.1), Verankerung steht noch auf den alten Werten.
 
 ### 5.5 · Ergebnis-Linie — voll
 

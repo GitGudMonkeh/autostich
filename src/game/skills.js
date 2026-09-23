@@ -194,7 +194,9 @@ const HALTUNG = {
   // §5.3 (Owner): alle vier Sätze ×10. Auf 0,02 war Campen eine Geste ohne Gewicht — die gelbe Haltung lebt
   // typisch 4–7 Stiche, das waren +0,08…+0,42 auf einer Basis von ×1,4.
   beharrlichkeit: [{ perTrick: 0.2 }, { perTrick: 0.3 }, { perTrick: 0.4 }, { perTrick: 0.6 }],
-  mitklang:       [{ perStance: 0.15 }, { perStance: 0.25 }, { perStance: 0.35 }, { perStance: 0.5 }],
+  // §5.3 (Owner): verdoppelt (0,15/0,25/0,35/0,5 → 0,3/0,5/0,7/1,0). Höchstens drei zusätzliche Haltungen klingen
+  // je gleichzeitig, und drei gibt es nur im Einklang oder nach dichten Wechseln — der Satz trug entsprechend wenig.
+  mitklang:       [{ perStance: 0.3 }, { perStance: 0.5 }, { perStance: 0.7 }, { perStance: 1.0 }],
   // Crit-Linie (blau).
   // §5.3 (Owner): Werte angehoben (8/12/17/25 → 12/18/26/40), Episch bekommt einen Crit-Multiplikator obendrauf,
   // und der Ausschluss gegen das blaue Passiv ist weg — beides gilt jetzt in JEDER Haltung und addiert sich auf die
