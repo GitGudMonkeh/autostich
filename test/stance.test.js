@@ -5,7 +5,7 @@ import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCou
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
   carryArmed, armCarry, spendCarry, banksNow, dischargeBank, stanceCycleEnd,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
-  anklangScore } from "../src/game/factions/stance.js";
+  anklangScore, extTotal } from "../src/game/factions/stance.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, overlapFactor, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -319,16 +319,39 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     let s = st({ stance: "B" });
     const max = T.schwungrad[0].max;
     for (let i = 0; i < max + 3; i++) s = extendStance(s, skills, {}, "crit");
-    expect(s.ext).toBe(max);                                   // das Budget deckelt, keine Sonderregel
+    expect(s.ext.crit).toBe(max);                              // das Budget deckelt, keine Sonderregel
     expect(s.ring.B).toBe(0);                                  // noch nichts auf dem Nachklang — er wird erst beim Wechsel gelegt
     // Die Verlängerung wird bei der ABLÖSUNG eingelöst: sie kommt auf die Mindestdauer obendrauf.
     const after = stanceTick({ ...s, counts: { ...s.counts, G: C.STANCE_THRESHOLD - 1 } }, [], {}, { wonSuit: "G" }).stance;
     expect(after.stance).toBe("G");
     expect(after.ring.B).toBe(C.STANCE_MIN_DURATION + max);
     expect(ringsNow(after, "B")).toBe(true);
-    expect(after.ext).toBe(0);                                 // Budget für die neue Haltung frisch
+    expect(extTotal(after)).toBe(0);                           // Budget für die neue Haltung frisch
     // Ohne den Skill verpufft nichts, weil nichts gesammelt wird.
-    expect(extendStance(st({ stance: "B" }), [], {}, "crit").ext).toBe(0);
+    expect(extTotal(extendStance(st({ stance: "B" }), [], {}, "crit"))).toBe(0);
+  });
+  it("die beiden Verlängerer haben GETRENNTE Budgets — beide episch sind die 18 aus §6.5, nicht 10", () => {
+    const skills = [S.SCHWUNGRAD, S.KEHRTWENDE];
+    const epic = { [S.SCHWUNGRAD]: 3, [S.KEHRTWENDE]: 3 };
+    const sMax = T.schwungrad[3].max, kMax = T.kehrtwende[3].max;
+    let s = st({ stance: "B" });
+    for (let i = 0; i < sMax + kMax + 6; i++) {
+      s = extendStance(s, skills, epic, "crit");
+      s = extendStance(s, skills, epic, "slid");
+    }
+    expect(s.ext.crit).toBe(sMax);
+    expect(s.ext.slid).toBe(kMax);
+    expect(extTotal(s)).toBe(sMax + kMax);
+    // Gegenprobe gegen den alten Defekt (EIN Zähler, je gegen den eigenen Deckel geprüft): der lieferte den
+    // größeren der beiden Deckel statt ihrer Summe.
+    expect(extTotal(s)).toBeGreaterThan(Math.max(sMax, kMax));
+    // Und die Summe ist es auch, die bei der Ablösung auf den Nachklang kommt.
+    const after = stanceTick({ ...s, counts: { ...s.counts, G: C.STANCE_THRESHOLD - 1 } }, skills, epic, { wonSuit: "G" }).stance;
+    expect(after.ring.B).toBe(minDuration(skills, epic) + sMax + kMax);
+    // Der Deckel der einen Quelle sperrt die andere nicht: ein volles Schwungrad lässt Kehrtwende weiterzählen.
+    let only = st({ stance: "B" });
+    for (let i = 0; i < sMax + 3; i++) only = extendStance(only, skills, epic, "crit");
+    expect(extendStance(only, skills, epic, "slid").ext.slid).toBe(1);
   });
 });
 
@@ -414,11 +437,11 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
     const max = T.kehrtwende[0].max;
     expect(max).toBeGreaterThan(T.schwungrad[0].max);          // niedrigere Rate → größerer Deckel (§6.5)
     for (let i = 0; i < max + 3; i++) s = extendStance(s, skills, {}, "slid");
-    expect(s.ext).toBe(max);
+    expect(s.ext.slid).toBe(max);
     // In der Engine sammelt der gerutschte Stich die Verlängerung; eingelöst wird sie bei der Ablösung.
     const one = resolveTrick(run(st(), { deck: constDeck(0), oppDeck: constDeck(12), skills }), noCrit);
     expect(one.lastTrick.result).toBe("tie");
-    expect(one.stance.ext).toBe(1);
+    expect(one.stance.ext.slid).toBe(1);
     const handover = stanceTick({ ...one.stance, counts: { ...one.stance.counts, Y: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "Y" }).stance;
     expect(handover.stance).toBe("Y");
     expect(handover.ring.R).toBe(C.STANCE_MIN_DURATION + 1);   // Mindestdauer plus die eine gesammelte Verlängerung

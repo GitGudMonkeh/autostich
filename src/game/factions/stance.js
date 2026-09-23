@@ -58,7 +58,7 @@ export function initStance() {
     ring: zero(),                  // Reststiche der Mindestdauer je Farbe (Nachklang)
     ranFor: zero(),                // Stiche, die die Farbe ununterbrochen klingt (Beharrlichkeit)
     threshold: C.STANCE_THRESHOLD, // Schwelle für den nächsten Wechsel (Beschleunigung senkt sie)
-    ext: 0,                        // Verlängerungen auf der AKTUELL aktiven Haltung (Schwungrad/Kehrtwende)
+    ext: { crit: 0, slid: 0 },     // Verlängerungen auf der AKTUELL aktiven Haltung, je Quelle (Schwungrad/Kehrtwende)
     carry: 0,                      // Übertrag: Reststiche, in denen ein Sieg zwangsweise crittet
     carried: [C.STANCE_START],     // Runde: Farben, die in dieser Runde schon getragen wurden
     echo: 0,                       // Anklang: Reststiche des Fensters NACH einem Haltungswechsel
@@ -183,13 +183,19 @@ export const rueckhaltValue = (skills, skillTiers) =>
    je gebraucht wird. Gemessen war genau das der Grund, aus dem beide Verlängerer schädlich maßen (Schwungrad
    −5 %, Kehrtwende −12 %): sie kosteten einen Platz und taten nichts. „Verlängert die Haltung" kann nur heißen,
    dass sie LÄNGER NACHKLINGT — und das entscheidet sich beim Wechsel. `ext` fällt dort auf 0. */
+/* Jede Quelle hat ihr EIGENES Budget (Owner): „höchstens 10× je Haltung" ist Kehrtwendes Deckel, nicht der
+   gemeinsame. Vorher lag beides auf einem Zähler, den jeder Skill gegen seinen eigenen Deckel prüfte — beide
+   episch kamen damit auf 10 statt auf die 18, die §6.5 ausrechnet. */
 export function extendStance(st, skills, skillTiers, source) {
   if (!st || !st.active) return st;
   const id = source === "crit" ? S.SCHWUNGRAD : S.KEHRTWENDE;
   const budget = stanceParam(skills, skillTiers, id, "max");
-  if (!budget || st.ext >= budget) return st;
-  return { ...st, ext: st.ext + 1 };
+  const used = st.ext?.[source] || 0;
+  if (!budget || used >= budget) return st;
+  return { ...st, ext: { ...st.ext, [source]: used + 1 } };
 }
+// Was bei der Ablösung auf den Nachklang kommt: die Summe beider Quellen.
+export const extTotal = (st) => (st?.ext?.crit || 0) + (st?.ext?.slid || 0);
 
 /* ---- Übertrag (Crit-Linie) ----
    Ein Crit springt über: die nächsten `range` Stiche critten zwangsweise. Der übergesprungene Crit darf NICHT
@@ -256,7 +262,7 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
            Haltung" etwas bedeuten kann, weil die aktive Haltung ohnehin bis zur Ablösung läuft. */
         next = { ...next, ring: {
           ...next.ring,
-          [next.stance]: minDuration(skills, skillTiers) + (next.ext || 0),
+          [next.stance]: minDuration(skills, skillTiers) + extTotal(next),
           [wonSuit]: 0, // die neue Haltung ist aktiv; ein Rest-Nachklang von früher wäre nur Ballast
         } };
         next = { ...next, echo: minDuration(skills, skillTiers) }; // Anklangs Fenster, aufgefrischt statt gestapelt
@@ -266,7 +272,7 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
         const step = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "step") || 0;
         const floor = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "floor") ?? next.threshold;
         next = {
-          ...next, stance: wonSuit, switches: next.switches + 1, ext: 0, carried,
+          ...next, stance: wonSuit, switches: next.switches + 1, ext: { crit: 0, slid: 0 }, carried,
           threshold: step ? Math.max(floor, next.threshold - step) : next.threshold,
         };
         // Runde vollendet: alle vier Haltungen einmal getragen. Reine Telemetrie, seit die Leiste den Sammler trägt.
