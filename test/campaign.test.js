@@ -1503,15 +1503,42 @@ describe("Kampagnen-Kette · jeder Lauf wird abgerechnet, nicht nur der erste", 
     expect(c.lost, "unter der Schwelle ist die Kampagne vorbei").toBe(true);
   });
 
-  it("führt die Kette bis zum Sieg durch", () => {
+  it("gibt JEDEM der vier Läufe seine eigene Auswertung", () => {
+    /* Nicht nur „die Kette läuft durch": jeder Lauf bekommt einen ANDEREN Endscore, und geprüft
+       wird, dass in seiner Auswertung genau dieser steht. Mit vier gleichen Zahlen wäre der Test
+       auch dann grün, wenn Lauf 3 die Auswertung von Lauf 2 wiederholte. */
+    const scores = [12_000_000, 432_500_000, 77_000_000, 210_000_000];
     let c = frisch();
     for (let n = 1; n <= CP.RUNS_PER_LEVEL; n++) {
-      c = lauf(c, 500_000_000);
+      c = lauf(c, scores[n - 1]);
       expect(c.lost, `Lauf ${n} war über der Schwelle`).toBeFalsy();
-      if (c.pending) c = CP.takeReward(c, { id: "sold", tier: 1 });
+      if (n < CP.RUNS_PER_LEVEL) {
+        expect(c.pending, `Lauf ${n} legt eine Auswertung an`).toBeTruthy();
+        expect(c.pending.score, `Lauf ${n} wertet seinen eigenen Score`).toBe(scores[n - 1]);
+        expect(c.pending.threshold, `Lauf ${n} misst an seiner eigenen Schwelle`)
+          .toBe(CP.thresholdWith(c, n));
+        c = CP.takeReward(c, { id: "sold", tier: 1 });
+        expect(c.run, "und schiebt auf den nächsten").toBe(n + 1);
+      }
     }
-    expect(c.done, "der vierte Lauf schliesst die Ebene ab").toBe(true);
-    expect(c.scores).toHaveLength(CP.RUNS_PER_LEVEL);
+    /* Der LETZTE Lauf legt bewusst keine Auslage an — es gäbe keinen Lauf mehr, der sie nutzt.
+       Er gewinnt die Ebene, und das ist `done`. */
+    expect(c.pending, "der vierte Lauf stellt keine Auslage").toBe(null);
+    expect(c.done, "er schliesst die Ebene ab").toBe(true);
+    expect(c.scores, "alle vier Endscores stehen in der Kette").toEqual(scores);
+  });
+
+  it("erklärt einen verfehlten Lauf in JEDER Position für verloren", () => {
+    // Der Fehler sass im Übergang, also wird jeder der vier Übergänge einzeln verfehlt.
+    for (let miss = 1; miss <= CP.RUNS_PER_LEVEL; miss++) {
+      let c = frisch();
+      for (let n = 1; n <= miss; n++) {
+        c = lauf(c, n === miss ? 1 : 500_000_000);
+        if (c.pending) c = CP.takeReward(c, { id: "sold", tier: 1 });
+      }
+      expect(c.lost, `ein verfehlter Lauf ${miss} muss die Kampagne beenden`).toBe(true);
+      expect(c.done, `und sie nicht gewinnen`).toBeFalsy();
+    }
   });
 
   it("löst den Riegel an der einen Tür, durch die jeder Lauf geht", () => {
