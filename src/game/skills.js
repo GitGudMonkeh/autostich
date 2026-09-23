@@ -222,7 +222,9 @@ const HALTUNG = {
   // §5.3 (Owner): Genugtuung zahlt nicht mehr sofort je Punkt Rückstand, sondern im NACHKLANG je gedrehtem Stich —
   // und die Sätze sind verdreifacht (25/40/55/80 → 75/120/165/240).
   genugtuung:     [{ score: 75 }, { score: 120 }, { score: 165 }, { score: 240 }],
-  rueckhalt:      [{ value: 3 }, { value: 4 }, { value: 6 }, { value: 8 }],
+  // §5.3 (Owner): kein Ein-Stich-Bonus nach jedem Rutscher mehr, sondern ein FENSTER nach dem Ende der roten
+  // Haltung. Die Leiter ist die Zahl der Karten; Episch hebt zusätzlich den Wert (4 → 6).
+  rueckhalt:      [{ cards: 6, value: 4 }, { cards: 7, value: 4 }, { cards: 8, value: 4 }, { cards: 10, value: 6 }],
   // §5.3 (Owner): Kehrtwende bekommt eine zweite, eigene Zahl — der gerutschte Stich gibt Serienpunkte. Die
   // Verlängerung allein war ein Körper, der nichts wiegt; die Serie ist die Achse, auf der ein gedrehter Stich
   // tatsächlich etwas dreht.
@@ -541,7 +543,7 @@ export const SKILL_DEFS = {
   SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
     ...tiered(HALTUNG.genugtuung, (r) => `Klingt die rote Haltung nach, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie gedreht hat.`) },
   SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
-    ...tiered(HALTUNG.rueckhalt, (r) => `Nach einem gerutschten Stich kämpft die nächste Karte mit +${r.value} Wert.`) },
+    ...tiered(HALTUNG.rueckhalt, (r) => `Endet die rote Haltung, kämpfen deine nächsten ${r.cards} Karten mit +${r.value} Wert.`) },
   SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,
     ...tiered(HALTUNG.kehrtwende, (r) => `Ein gerutschter Stich gibt +${r.streak} Serienpunkt${r.streak === 1 ? "" : "e"} und verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.${r.streakStep ? ` Solange die rote Haltung klingt, zählt jeder Serienpunkt +${de(r.streakStep * 100)} % mehr auf den Serien-Multiplikator.` : ""}`) },
   // Rotation — wirkt über alle Haltungen

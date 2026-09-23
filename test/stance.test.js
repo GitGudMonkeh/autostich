@@ -504,17 +504,37 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
     expect(ringsNow(s, "R")).toBe(false);
     expect(s.turns).toBe(0);
   });
-  it("SK_STANCE_11 Rückhalt: nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert", () => {
+  it("SK_STANCE_11 Rückhalt: das Fenster NACH dem Ende der roten Haltung (§5.3)", () => {
     const skills = [S.RUECKHALT];
-    expect(rueckhaltValue(skills, {})).toBe(T.rueckhalt[0].value);
-    expect(rueckhaltValue(skills, { [S.RUECKHALT]: 3 })).toBe(T.rueckhalt[3].value);
-    expect(rueckhaltValue([], {})).toBe(0);
-    // Ein Rückstand von genau dem Bonus kippt den Stich.
+    // Der Wert hängt am laufenden Fenster, nicht mehr am vorigen Stich.
+    expect(rueckhaltValue(st({ guard: 3 }), skills, {})).toBe(T.rueckhalt[0].value);
+    expect(rueckhaltValue(st({ guard: 3 }), skills, { [S.RUECKHALT]: 3 })).toBe(T.rueckhalt[3].value);
+    expect(rueckhaltValue(st({ guard: 0 }), skills, {})).toBe(0);
+    expect(rueckhaltValue(st({ guard: 3 }), [], {})).toBe(0);
+    // Gesetzt wird es, wenn Rot AUFHÖRT zu klingen — nicht schon bei der Ablösung.
+    let s = st({ counts: { B: C.STANCE_THRESHOLD - 1 } });
+    s = stanceTick(s, skills, {}, { wonSuit: "B" }).stance;
+    expect(ringsNow(s, "R")).toBe(true);
+    expect(s.guard).toBe(0);                                   // Nachklang läuft noch, kein Fenster
+    for (let i = 0; i < C.STANCE_MIN_DURATION; i++) s = stanceTick(s, skills, {}, {}).stance;
+    expect(ringsNow(s, "R")).toBe(false);
+    expect(s.guard).toBe(T.rueckhalt[0].cards);                // jetzt steht es, in voller Länge
+    // … und zählt Stich für Stich ab, bis es leer ist.
+    for (let i = T.rueckhalt[0].cards; i > 0; i--) {
+      expect(rueckhaltValue(s, skills, {})).toBe(T.rueckhalt[0].value);
+      s = stanceTick(s, skills, {}, {}).stance;
+    }
+    expect(s.guard).toBe(0);
+    expect(rueckhaltValue(s, skills, {})).toBe(0);
+    // In der Engine: ein Rückstand von genau dem Bonus kippt den Stich, solange das Fenster läuft.
     const gap = T.rueckhalt[0].value;
-    const armed = st({ slid: true });
-    const s = resolveTrick(run(armed, { deck: constDeck(5), oppDeck: constDeck(5 + gap), skills }), noCrit);
-    expect(s.lastTrick.pValue).toBe(5 + gap);
-    expect(s.lastTrick.result).toBe("win_tie");                // gleichauf, und Rot hebt den Gleichstand
+    const armed = st({ stance: "B", guard: 2 });               // Rot klingt NICHT — der Bonus hängt am Fenster
+    const won = resolveTrick(run(armed, { deck: constDeck(5), oppDeck: constDeck(5 + gap), skills }), noCrit);
+    expect(won.lastTrick.pValue).toBe(5 + gap);
+    expect(won.lastTrick.result).toBe("tie");                  // gleichauf, und ohne Rot hebt nichts den Gleichstand
+    expect(won.stance.guard).toBe(1);                          // eine Karte verbraucht
+    const bare = resolveTrick(run(st({ stance: "B", guard: 2 }), { deck: constDeck(5), oppDeck: constDeck(5 + gap) }), noCrit);
+    expect(bare.lastTrick.pValue).toBe(5);                     // ohne den Skill kein Wert
   });
   it("SK_STANCE_12 Kehrtwende: ein gerutschter Stich verlängert, mit eigenem Budget ÜBER dem des Schwungrads", () => {
     const skills = [S.KEHRTWENDE];

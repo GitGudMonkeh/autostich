@@ -67,7 +67,7 @@ export function initStance() {
     einklang: 0,                   // Telemetrie: wie oft die Leiste diesen Lauf voll war
     peakBest: 0,                   // Stauung: größter Sieg der klingenden gelben Haltung
     peakTicks: 0,                  // Stauung: Stiche, die die gelbe Haltung schon klingt (Hebel des Spitzen-Zuschlags)
-    slid: false,                   // Rückhalt: hat der VORIGE Stich gerutscht?
+    guard: 0,                      // Rückhalt: Restkarten, die nach dem Ende der roten Haltung mit mehr Wert kämpfen
     turns: 0,                      // Genugtuung: gedrehte Stiche dieser roten Haltung (zahlt im Nachklang)
     switches: 0,                   // echte Haltungswechsel (Telemetrie/Sim)
     rounds: 0,                     // vollendete Runden im ganzen Lauf (Telemetrie/Sim)
@@ -180,9 +180,12 @@ export function genugtuungScore(st, skills, skillTiers) {
 // Ein gedrehter Stich, gemerkt für den Nachklang. Rot klingt hier immer (sonst hätte nichts gedreht).
 export const noteTurn = (st) => ({ ...st, turns: (st.turns || 0) + 1 });
 
-// Rückhalt: nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert.
-export const rueckhaltValue = (skills, skillTiers) =>
-  stanceParam(skills, skillTiers, S.RUECKHALT, "value") || 0;
+/* Rückhalt (§5.3, Owner-Neudesign): nicht mehr EIN Stich nach jedem Rutscher, sondern ein Fenster NACH dem Ende
+   der roten Haltung — die nächsten `cards` Karten kämpfen mit mehr Wert. Rot gibt dem Deck also etwas mit, wenn es
+   geht, statt jeden Rutscher einzeln zu beantworten. `guard` zählt die Restkarten und wird in stanceTick gesetzt
+   und heruntergezählt. */
+export const rueckhaltValue = (st, skills, skillTiers) =>
+  (st && st.active && (st.guard || 0) > 0 ? stanceParam(skills, skillTiers, S.RUECKHALT, "value") || 0 : 0);
 
 /* Kehrtwende, zweite Hälfte (§5.5, Owner): ein gerutschter Stich gibt zusätzliche Serienpunkte. Sie liest JEDEN
    gerutschten Stich, wie Genugtuung — auch die zum Gleichstand gehobene Niederlage, die für die Serie sonst gar
@@ -267,7 +270,7 @@ export function cashPeak(st, skills, skillTiers) {
      3. `ranFor` auf den Stand nachziehen, mit dem der NÄCHSTE Stich rechnet.
    Gibt { stance, switched, ended } zurück — `ended` nennt die Farben, die mit diesem Stich aufgehört haben zu
    klingen (die Stauung entlädt daran). */
-export function stanceTick(st, skills, skillTiers, { wonSuit = null, slid = false } = {}) {
+export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
   if (!st || !st.active) return { stance: st, switched: false, ended: [] };
   const before = STANCE_SUITS.filter((s) => ringsNow(st, s));
   const ring = { ...st.ring };
@@ -323,12 +326,20 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, slid = fals
   }
   const ranFor = { ...next.ranFor };
   for (const s of STANCE_SUITS) ranFor[s] = ringsNow(next, s) ? (ranFor[s] || 0) + 1 : 0;
-  next = { ...next, ranFor, slid };
+  next = { ...next, ranFor };
   // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, der Nachklang zahlt ihn ja erst aus.
   if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
   // Übertrags Rampe lebt so lange wie die blaue Haltung und fällt mit ihr (§5.2). Der Nachklang trägt sie noch.
   if (!ringsNow(next, "B")) next = { ...next, critRamp: 0 };
   const ended = before.filter((s) => !ringsNow(next, s));
+  /* Rückhalt (§5.3): endet die rote Haltung, kämpfen die nächsten `cards` Karten mit mehr Wert. Erst den
+     laufenden Schutz abzählen, dann neu setzen — sonst verlöre ein frisch gesetztes Fenster noch im selben
+     Stich seine erste Karte. Ein neues Fenster ersetzt ein altes, es stapelt nicht. */
+  if ((next.guard || 0) > 0) next = { ...next, guard: next.guard - 1 };
+  if (ended.includes("R")) {
+    const cards = stanceParam(skills, skillTiers, S.RUECKHALT, "cards");
+    if (cards) next = { ...next, guard: cards };
+  }
   return { stance: next, switched, ended };
 }
 

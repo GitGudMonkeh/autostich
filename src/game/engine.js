@@ -408,9 +408,9 @@ export function resolveTrick(state, rng) {
   const wmCardBonus = weekModMag(state.weekMods, "cardValue");
   // Pflanze (§6.13, Ewiger Frühling): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion.
   const plantValue = plantValueBonus(skills, pCard);
-  // Haltungen, Rückhalt (§5.5): nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. `slid` trägt
-  // den Stand des VORIGEN Stichs — der Skill ist die Antwort der roten Linie auf die eigene Rutsche.
-  const stanceValue = (stanceOn && stance.slid) ? rueckhaltValue(skills, skillTiers) : 0;
+  // Haltungen, Rückhalt (§5.5): nach dem ENDE der roten Haltung kämpfen die nächsten Karten mit mehr Wert —
+  // `guard` trägt die Restkarten des Fensters, gesetzt und abgezählt in stanceTick.
+  const stanceValue = stanceOn ? rueckhaltValue(stance, skills, skillTiers) : 0;
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
   const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + glacierBuff + glacierTongue + wmCardBonus + plantValue + stanceValue;
   // Verdichtung (§5.18): Kampfwert ÜBER dem Grundwert wird zusätzlich Masse. Sie unterdrückt nichts mehr — der Wert wird
@@ -961,7 +961,7 @@ export function resolveTrick(state, rng) {
     // Gelb endet und ausgezahlt wird. Auch eine Niederlage zählt: sie verlängert die Haltung ebenso.
     if (stauungOn(newStance, skills, skillTiers)) newStance = tickPeak(newStance);
     const tick = stanceTick(newStance, skills, skillTiers, {
-      wonSuit: won ? pCard.suit : null, pos: actualPos, slid: stanceSlid, segmentSize: SEGMENT_SIZE,
+      wonSuit: won ? pCard.suit : null,
     });
     newStance = tick.stance;
     if (tick.ended.includes("Y")) {

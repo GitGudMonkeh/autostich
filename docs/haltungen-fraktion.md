@@ -263,7 +263,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Übergriff** · Zuschlag auf den Überlappungsbonus (dazu: alle Grenzen offen) | +0,3 | +0,4 | +0,55 | +0,7 |
 | | **Verankerung** · Score-Multiplikator im Nachklang, je Formation | +0,15 | +0,25 | +0,35 | +0,50 |
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
-| | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
+| | **Rückhalt** · Karten nach dem Ende der Haltung · Stichwert | 6 · +4 | 7 · +4 | 8 · +4 | 10 · +6 |
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2* |
@@ -546,7 +546,7 @@ auf voll, mit Score, Serie und Farbzähler.
 | Skill | Wirkung |
 | --- | --- |
 | **Genugtuung** | Die rote Haltung sammelt, wie viele Stiche sie gedreht hat. In ihrem **Nachklang** zahlt dann jeder Stich Basis-Score je gedrehtem Stich. |
-| **Rückhalt** | Nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. |
+| **Rückhalt** | Endet die rote Haltung, kämpfen die nächsten Karten mit mehr Wert. Sie gibt dem Deck etwas mit, wenn sie geht. |
 | **Kehrtwende** | Ein gerutschter Stich gibt **Serienpunkte** und verlängert die Haltung um einen Stich. |
 
 > **Korrektur an Genugtuung.** Ursprünglich stand dort „ein gerutschter **Sieg**". Das zahlt nichts:
@@ -563,10 +563,24 @@ auf voll, mit Score, Serie und Farbzähler.
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
-| **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
+| **Rückhalt** · Karten nach dem Ende der Haltung | 6 | 7 | 8 | 10 |
+| **Rückhalt** · Stichwert dieser Karten | +4 | +4 | +4 | +6 |
 | **Kehrtwende** · Serienpunkte je gerutschtem Stich | +1 | +2 | +3 | +4 |
 | **Kehrtwende** · Verlängerungen je Haltung | höchstens 3× | 4× | 6× | 10× |
 | **Kehrtwende** · Satz des Serien-Multiplikators, solange Rot klingt | — | — | — | +0,5 % je Serienpunkt |
+
+**Neudesign §5.3, Rückhalt (Owner):** *„Kämpfen die nächsten x Karten nach dem Ende der Haltung +4
+Wert. x ist die Leiter … 10 mit plus 6."* Aus dem Ein-Stich-Bonus nach jedem Rutscher ist ein
+**Fenster** geworden: **endet** die rote Haltung — Rot klingt gar nicht mehr, auch der Nachklang ist
+durch — kämpfen die nächsten `cards` Karten mit mehr Wert. Episch hebt zusätzlich den Wert (`+4 → +6`).
+
+Die rote Linie hat damit ihre drei Zeitpunkte sauber verteilt: **Kehrtwende** zahlt *im* Stich,
+**Genugtuung** *im Nachklang*, **Rückhalt** *danach*. Rot gibt dem Deck etwas mit, wenn es geht, statt
+jeden Rutscher einzeln zu beantworten.
+
+Zwei Festlegungen, die der Code trifft: ein neues Fenster **ersetzt** ein laufendes (es stapelt
+nicht), und die Restkarten zählen auf **jedem** Stich herunter, gewonnen oder nicht — es ist ein
+Fenster in der Reihenfolge, keine Zahl von Siegen.
 
 **Neudesign §5.3, Genugtuung (Owner):** *„Ändern in extra Score auf jeden Stich im Nachklang, für
 jeden gedrehten Stich während der Haltung. Und verdreifache die aktuellen Basis-Score-Werte."*
