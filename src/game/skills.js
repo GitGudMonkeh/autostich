@@ -195,10 +195,12 @@ const HALTUNG = {
   // typisch 4–7 Stiche, das waren +0,08…+0,42 auf einer Basis von ×1,4.
   beharrlichkeit: [{ perTrick: 0.2 }, { perTrick: 0.3 }, { perTrick: 0.4 }, { perTrick: 0.6 }],
   mitklang:       [{ perStance: 0.15 }, { perStance: 0.25 }, { perStance: 0.35 }, { perStance: 0.5 }],
-  // Crit-Linie (blau). Übertrag ist über die REICHWEITE gestaffelt, nicht über eine Sprungchance: mit einer Chance
-  // von 50 → 100 % bewegte sich die Critrate nur von 60 auf 67 %, das wäre eine Leiter, die nichts tut (§5.2).
+  // Crit-Linie (blau).
   grundrauschen:  [{ crit: 0.08 }, { crit: 0.12 }, { crit: 0.17 }, { crit: 0.25 }],
-  uebertrag:      [{ range: 1 }, { range: 2 }, { range: 3 }, { range: 4 }],
+  // §5.3 (Owner): Übertrag arbeitet nicht mehr auf der Crit-CHANCE, sondern auf dem MULTIPLIKATOR — der Hebel, den
+  // die blaue Linie sonst gar nicht hatte. `step` je Crit der Haltung; Größenordnung an Blitz geeicht (ein
+  // Ionen-Stapel ist +0,15). STARTWERTE.
+  uebertrag:      [{ step: 0.10 }, { step: 0.15 }, { step: 0.20 }, { step: 0.30 }],
   schwungrad:     [{ max: 2 }, { max: 3 }, { max: 5 }, { max: 8 }],
   // Überlappungs-Linie (grün).
   doppelbindung:  [{ types: 1 }, { types: 2 }, { types: 3 }, { types: 4 }],
@@ -520,7 +522,7 @@ export const SKILL_DEFS = {
   SK_STANCE_04: { id: "SK_STANCE_04", name: "Grundrauschen", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.grundrauschen,
     ...tiered(HALTUNG.grundrauschen, (r) => `Klingt die blaue Haltung nicht, hast du trotzdem +${pct(r.crit)} % Crit-Chance.`) },
   SK_STANCE_05: { id: "SK_STANCE_05", name: "Übertrag", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.uebertrag,
-    ...tiered(HALTUNG.uebertrag, (r) => `Ein Crit der blauen Haltung springt über: ${de1(r.range)} ${r.range === 1 ? "weiterer Stich" : "weitere Stiche"} ${r.range === 1 ? "ist" : "sind"} ebenfalls Crits. Ein übergesprungener Crit springt nicht weiter.`) },
+    ...tiered(HALTUNG.uebertrag, (r) => `Solange die blaue Haltung klingt, hebt jeder Crit deinen Crit-Multiplikator um +${de(r.step)}. Verklingt sie, fällt der Zuschlag wieder auf 0.`) },
   SK_STANCE_06: { id: "SK_STANCE_06", name: "Schwungrad", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.schwungrad,
     ...tiered(HALTUNG.schwungrad, (r) => `Jeder Crit verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
   // Überlappungs-Linie (grün)

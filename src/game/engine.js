@@ -27,7 +27,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, noteTurn, verankerungMult, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
+  genugtuungScore, noteTurn, verankerungMult, rueckhaltValue, extendStance, noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -343,12 +343,8 @@ export function resolveTrick(state, rng) {
   }
   // Henker (#203): im letzten Segment (Pos 36–40 / Index ≥ HENKER_ZONE_START) ist jeder Sieg garantiert ein Crit
   // (der ×-Bonus läuft unten im Score-Stack). Ersetzt die alte L10-Kettenreaktion (chainArmed) als forceCrit-Quelle.
-  /* Haltungen, Übertrag (§5.2): ein Crit springt über — die armierten Stiche critten zwangsweise, wie beim Henker.
-     `wasCarried` trennt den übergesprungenen Crit vom eigenen: nur ein EIGENER armiert neu, sonst crittete man ab
-     dem ersten Crit bis zum Ende der Haltung durch. Die Reichweite zählt STICHE, nicht Siege — ein verlorener
-     Stich verbraucht sie also mit. */
-  const wasCarried = stanceOn && carryArmed(stance);
-  const forceCrit = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) || wasCarried;
+  // (§5.3: Haltungen erzwingen keinen Crit mehr — Übertrag hebt seit dem Neudesign den Crit-MULTIPLIKATOR.)
+  const forceCrit = ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START;
   // C2 Triumph: die Armierung dieser Karte wird durch das Spielen verbraucht (Neu-Armierung nur bei Sieg).
   if (triumphActive) triumphArmed = triumphArmed.filter((id) => id !== pCard.id);
   const ctx = {
@@ -599,7 +595,8 @@ export function resolveTrick(state, rng) {
     // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
-                   + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCardR, skills, skillTiers) + overcritMult(rawCrit); // pCardR: Resonanz-Stapel (§7.25)
+                   + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCardR, skills, skillTiers) + overcritMult(rawCrit) // pCardR: Resonanz-Stapel (§7.25)
+                   + (stanceOn ? uebertragMult(stance, skills, skillTiers) : 0); // Übertrag (§5.2): die Rampe der blauen Haltung, eine Quelle unter vielen in derselben Summe
     // (§7.42: Entladungs Episch-Extra hing hier als Crit-Mult-Verdopplung; mit dem Wechsel auf die Score-Achse zählt
     //  die Rampe stattdessen bei einem Crit doppelt — s. entladungScoreFor in den Flats unten.)
     // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird WEICH gedeckelt — bewusst NACH allen Additionen,
@@ -608,10 +605,11 @@ export function resolveTrick(state, rng) {
     // wandelte, ist gestrichen; was über dem Deckel liegt, verfällt wieder.)
     critMultiplier = C.softCritMult(critMultiplier);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
-    // Haltungen: der eigene Crit armiert den Übertrag und dreht das Schwungrad (§5.2). Beide hängen an der
-    // klingenden blauen Haltung — das Armieren prüft das im Modul, der Verlängerer trifft die AKTIVE Haltung.
+    /* Haltungen: der Crit hebt Übertrags Rampe und dreht das Schwungrad (§5.2). Beide hängen an der klingenden
+       blauen Haltung — die Rampe prüft das im Modul, der Verlängerer trifft die AKTIVE Haltung. Die Rampe steigt
+       NACH `critMultiplier` oben: der auslösende Crit zahlt noch mit dem alten Stand. */
     if (stanceOn && isCrit) {
-      if (!wasCarried) newStance = armCarry(newStance, skills, skillTiers);
+      newStance = noteCrit(newStance);
       newStance = extendStance(newStance, skills, skillTiers, "crit");
     }
     // Sprödbruch Episch (§5.18): ein Crit mit einer Gletscherkarte friert wieder an. Der Kreis Masse → Crit → Masse ist
@@ -959,7 +957,6 @@ export function resolveTrick(state, rng) {
       const kehr = kehrtwendeStreak(skills, skillTiers);
       if (kehr) { winStreak += kehr; if (winStreak > bestStreak) bestStreak = winStreak; }
     }
-    if (wasCarried) newStance = spendCarry(newStance);
     // Stauung: die Laufzeit zählt VOR dem Takt hoch — sonst fehlte dem Spitzen-Zuschlag genau der Stich, in dem
     // Gelb endet und ausgezahlt wird. Auch eine Niederlage zählt: sie verlängert die Haltung ebenso.
     if (stauungOn(newStance, skills, skillTiers)) newStance = tickPeak(newStance);

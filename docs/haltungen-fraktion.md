@@ -256,7 +256,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
 | **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
-| | **Übertrag** · Reichweite des Übersprungs | 1 Stich | 2 | 3 | 4 |
+| | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
 | **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
 | | **Übergriff** · Zuschlag auf den Überlappungsbonus (dazu: alle Grenzen offen) | +0,3 | +0,4 | +0,55 | +0,7 |
@@ -360,7 +360,7 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 | Skill | Wirkung |
 | --- | --- |
 | **Grundrauschen** | Ein Teil der Chance gilt auch außerhalb der Haltung. Der Anti-Leerlauf-Skill der Linie. |
-| **Übertrag** | Ein Crit springt auf den nächsten Stich über — der wird ebenfalls ein Crit, auch wenn er von sich aus ein normaler Sieg gewesen wäre. |
+| **Übertrag** | Jeder Crit hebt den **Crit-Multiplikator** weiter, solange die Haltung klingt. Die Rampe fällt mit ihr. |
 | **Schwungrad** | Jeder Crit verlängert die laufende Haltung um einen Stich. |
 
 **Startwerte:**
@@ -368,17 +368,33 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
-| **Übertrag** · Reichweite des Übersprungs | 1 Stich | 2 Stiche | 3 Stiche | 4 Stiche |
-| *ergibt Critrate (Passiv 50 %)* | *67 %* | *75 %* | *80 %* | *83 %* |
+| **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | **Schwungrad** · Verlängerungen je Haltung | höchstens 2× | 3× | 5× | 8× |
 
-Übertrag ist bewusst über die **Reichweite** gestaffelt und nicht über eine Sprungchance: mit einer
-Chance von 50 → 100 % bewegte sich die Critrate nur von 60 auf 67 %, das wäre eine Leiter, die nichts
-tut. Und **Schwungrads Deckel ist der Stufenwert** — damit ist die Runaway-Rechnung aus §6.4 in der
-Tabelle erledigt statt als Sonderregel.
+**Schwungrads Deckel ist der Stufenwert** — damit ist die Runaway-Rechnung aus §6.4 in der Tabelle
+erledigt statt als Sonderregel.
 
-**Regel, die Übertrag braucht:** der übergesprungene Crit darf **nicht seinerseits überspringen** —
-sonst crittet man ab dem ersten Crit bis zum Ende der Haltung durch, ohne Abbruch.
+**Neudesign §5.3, Übertrag (Owner):** *„Anstatt Crit-Chance würde ich gerne etwas anderes — eventuell
+hebt es den Crit-Multi an oder erhöht den Crit weiter."* Gewählt wurde die **Rampe**: jeder Crit der
+klingenden blauen Haltung hebt den Crit-Multiplikator um einen Schritt weiter, und der Zuschlag fällt
+auf 0, sobald Blau verklungen ist (den Nachklang trägt er noch).
+
+Der Grund, warum dieser Slot überhaupt frei war: die blaue Linie hatte **Chance** (Grundrauschen),
+**erzwungene Crits** (Übertrag alt) und **Dauer** (Schwungrad), aber nichts auf dem Multiplikator —
+Prisma trug zu `critMultiplier` gar nichts bei. Jetzt schließt die Linie ihren Kreis: Chance macht
+Crits, Crits machen Multiplikator, Schwungrad macht Dauer für mehr davon.
+
+Der Schritt zählt **nach** dem Stich, der ihn auslöst (wie Serienanker und Crit-Folge) — der erste
+Crit einer Haltung ist also noch ein normaler.
+
+**Zu beachten:** `critMultiplier` wird aus allen Quellen **addiert** und danach weich gedeckelt
+(`softCritMult`, Owner-gehalten). Was Prisma beiträgt, landet in derselben Summe und unter demselben
+Deckel wie Blitz, Präzision und der Überschuss-Crit. Größenordnung an Blitz geeicht: ein Ionen-Stapel
+ist `+0,15`. **Startwerte.**
+
+**Der Kreis ist auch die Warnung:** Blau crittet mit dem Passiv ohnehin zu 50 %, Schwungrad verlängert
+je Crit, und die Rampe wächst je Crit — drei Zahlen, die sich gegenseitig füttern. Das ist die Stelle,
+an der die blaue Linie zuerst wegläuft (§6.4).
 
 **Warnung zu Schwungrad** (§6.4).
 
@@ -626,7 +642,12 @@ Und es gibt einen sauberen Schlüssel: **ab Kartenwert 11 gewinnt eine Karte imm
 ist 10, `VALUE_CAP` ist bewusst `null`). Vier Karten über 10, eine je Farbe, nebeneinander gelegt,
 sind ein **garantierter Zünder**.
 
-### 6.3 · Übertrag hebt die Critrate auf ⅔
+### 6.3 · Übertrag hebt die Critrate auf ⅔ — SUPERSEDED (§5.3)
+
+> Galt für die alte Fassung (ein Crit springt auf die nächsten Stiche über). Seit dem Neudesign hebt
+> Übertrag den Crit-MULTIPLIKATOR und die Critrate gar nicht mehr. Die Rechnung unten und die Zeile
+> „⅔ (mit Übertrag)" in §6.4 sind damit hinfällig; ohne Übertrag steht die Critrate der blauen
+> Haltung bei den 50 % des Passivs.
 
 Ohne Kette: nach einem Crit ist der nächste sicher, nach einem übergesprungenen würfelt man wieder.
 Im stationären Zustand crittet damit **zwei von drei Stichen** statt einem von zwei.
@@ -641,7 +662,7 @@ hält, solange sie schneller verlängert wird, als sie abläuft. Im Erwartungswe
 | Critrate | Dauer |
 | --- | --- |
 | 50 % (Passiv allein) | 6 Stiche |
-| ⅔ (mit Übertrag) | 9 Stiche |
+| ⅔ *(galt mit dem alten Übertrag, §6.3)* | 9 Stiche |
 | 90 % (mit Blitz/Präzision) | 30 Stiche |
 | 100 % | **sie endet nie** |
 

@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, redEchoes, verankerungMult, greenEchoes, rueckhaltValue, extendStance,
-  carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
+  noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -309,22 +309,34 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     expect(stanceCrit(st({ stance: "B" }), skills, {})).toBe(C.STANCE_CRIT);     // Blau klingt → das Passiv, nicht beides
     expect(stanceCrit(st({ stance: "B" }), skills, {})).toBeGreaterThan(T.grundrauschen[3].crit);
   });
-  it("SK_STANCE_05 Übertrag: ein Crit springt über, der übergesprungene aber nicht weiter (§5.2)", () => {
-    const skills = [S.UEBERTRAG], blue = st({ stance: "B" });
-    expect(carryArmed(blue)).toBe(false);
-    const armed = armCarry(blue, skills, {});
-    expect(armed.carry).toBe(T.uebertrag[0].range);
-    expect(carryArmed(armed)).toBe(true);
-    // Armieren hängt an der klingenden blauen Haltung.
-    expect(armCarry(st(), skills, {}).carry).toBe(0);
-    // Die Reichweite zählt Stiche und läuft aus.
-    let s = armCarry(st({ stance: "B" }), skills, { [S.UEBERTRAG]: 2 });
-    for (let i = 0; i < T.uebertrag[2].range; i++) { expect(carryArmed(s)).toBe(true); s = spendCarry(s); }
-    expect(carryArmed(s)).toBe(false);
-    // In der Engine crittet der armierte Stich zwangsweise, auch wenn der Wurf dagegen ist.
-    const forced = resolveTrick(run(armed, { skills }), noCrit);
-    expect(forced.lastTrick.isCrit).toBe(true);
-    expect(forced.stance.carry).toBe(T.uebertrag[0].range - 1); // verbraucht, nicht neu armiert
+  it("SK_STANCE_05 Übertrag: jeder Crit der blauen Haltung hebt den Crit-MULTIPLIKATOR weiter (§5.3)", () => {
+    const skills = [S.UEBERTRAG], step = T.uebertrag[0].step;
+    // Die Rampe zählt nur, solange Blau klingt.
+    expect(noteCrit(st({ stance: "B" })).critRamp).toBe(1);
+    expect(noteCrit(st()).critRamp).toBe(0);                    // Rot klingt, nicht Blau
+    expect(uebertragMult(st({ stance: "B", critRamp: 3 }), skills, {})).toBeCloseTo(3 * step, 6);
+    expect(uebertragMult(st({ stance: "B", critRamp: 3 }), skills, { [S.UEBERTRAG]: 3 })).toBeCloseTo(3 * T.uebertrag[3].step, 6);
+    expect(uebertragMult(st({ stance: "B", critRamp: 3 }), [], {})).toBe(0);
+    expect(uebertragMult(st({ stance: "B" }), skills, {})).toBe(0); // ohne Crit keine Rampe
+    // Sie erzwingt KEINEN Crit mehr — das war die alte Fassung.
+    expect(resolveTrick(run(st({ stance: "B", critRamp: 2 }), { skills }), noCrit).lastTrick.isCrit).toBe(false);
+    // In der Engine: derselbe Crit, einmal mit und einmal ohne stehende Rampe.
+    const flat = resolveTrick(run(st({ stance: "B" }), { skills }), zero);
+    const ramped = resolveTrick(run(st({ stance: "B", critRamp: 3 }), { skills }), zero);
+    expect(flat.lastTrick.isCrit).toBe(true);
+    expect(ramped.lastTrick.breakdown.critMult - flat.lastTrick.breakdown.critMult).toBeCloseTo(3 * step, 6);
+    // Der auslösende Crit zahlt noch mit dem ALTEN Stand; gezählt wird danach.
+    expect(flat.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT, 6);
+    expect(flat.stance.critRamp).toBe(1);
+  });
+  it("Übertrags Rampe fällt, sobald Blau verklungen ist", () => {
+    let s = st({ stance: "B", critRamp: 4, counts: { G: C.STANCE_THRESHOLD - 1 } });
+    s = stanceTick(s, [], {}, { wonSuit: "G" }).stance;
+    expect(ringsNow(s, "B")).toBe(true);
+    expect(s.critRamp).toBe(4);                                 // der Nachklang trägt sie noch
+    for (let i = 0; i < C.STANCE_MIN_DURATION + 1; i++) s = stanceTick(s, [], {}, {}).stance;
+    expect(ringsNow(s, "B")).toBe(false);
+    expect(s.critRamp).toBe(0);
   });
   it("SK_STANCE_06 Schwungrad: jeder Crit verlängert die laufende Haltung — der Deckel IST der Stufenwert", () => {
     const skills = [S.SCHWUNGRAD];

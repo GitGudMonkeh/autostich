@@ -59,7 +59,7 @@ export function initStance() {
     ranFor: zero(),                // Stiche, die die Farbe ununterbrochen klingt (Beharrlichkeit)
     threshold: C.STANCE_THRESHOLD, // Schwelle für den nächsten Wechsel (Beschleunigung senkt sie)
     ext: { crit: 0, slid: 0 },     // Verlängerungen auf der AKTUELL aktiven Haltung, je Quelle (Schwungrad/Kehrtwende)
-    carry: 0,                      // Übertrag: Reststiche, in denen ein Sieg zwangsweise crittet
+    critRamp: 0,                   // Übertrag: Crits dieser blauen Haltung (je Schritt +Crit-Multiplikator)
     carried: [C.STANCE_START],     // Runde: Farben, die in dieser Runde schon getragen wurden
     echo: 0,                       // Anklang: Reststiche des Fensters NACH einem Haltungswechsel
     bar: 0,                        // Einklang-Leiste: füllt sich mit jedem echten Wechsel
@@ -217,16 +217,17 @@ export function extendStance(st, skills, skillTiers, source) {
 export const extTotal = (st) => (st?.ext?.crit || 0) + (st?.ext?.slid || 0);
 
 /* ---- Übertrag (Crit-Linie) ----
-   Ein Crit springt über: die nächsten `range` Stiche critten zwangsweise. Der übergesprungene Crit darf NICHT
-   seinerseits überspringen (§5.2) — sonst crittete man ab dem ersten Crit bis zum Ende der Haltung durch. Das
-   Armieren hängt an der klingenden blauen Haltung; die schon armierte Reichweite läuft aus, wo sie hinfällt. */
-export const carryArmed = (st) => !!(st && st.active && (st.carry || 0) > 0);
-export function armCarry(st, skills, skillTiers) {
-  if (!st || !st.active || !ringsNow(st, "B")) return st;
-  const range = stanceParam(skills, skillTiers, S.UEBERTRAG, "range");
-  return range ? { ...st, carry: range } : st;
+   §5.3, Neudesign (Owner): nicht mehr Crit-CHANCE, sondern der Crit-MULTIPLIKATOR. Solange Blau klingt, hebt jeder
+   Crit ihn um einen Schritt weiter; die Rampe fällt, sobald Blau verklungen ist. Damit hat die blaue Linie ihren
+   fehlenden Hebel — vorher hatte sie Chance (Grundrauschen), erzwungene Crits (Übertrag alt) und Dauer
+   (Schwungrad), aber nichts auf dem Multiplikator: Prisma trug zu `critMultiplier` gar nichts bei.
+   Der Schritt zählt NACH dem Stich, der ihn auslöst — wie Serienanker und Crit-Folge. Der auslösende Crit zahlt
+   also noch mit dem alten Stand; sonst wäre der erste Crit einer Haltung schon der verstärkte. */
+export const noteCrit = (st) => (ringsNow(st, "B") ? { ...st, critRamp: (st.critRamp || 0) + 1 } : st);
+export function uebertragMult(st, skills, skillTiers) {
+  const step = stanceParam(skills, skillTiers, S.UEBERTRAG, "step");
+  return step && st && st.active ? step * (st.critRamp || 0) : 0;
 }
-export const spendCarry = (st) => (carryArmed(st) ? { ...st, carry: st.carry - 1 } : st);
 
 /* ---- Stauung (Score-Linie) ----
    §5.3, zweites Neudesign (Owner: „der Skill macht zuviel"): das Bunkern ist WEG. Siege zahlen wieder normal.
@@ -316,6 +317,8 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, slid = fals
   next = { ...next, ranFor, slid };
   // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, der Nachklang zahlt ihn ja erst aus.
   if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
+  // Übertrags Rampe lebt so lange wie die blaue Haltung und fällt mit ihr (§5.2). Der Nachklang trägt sie noch.
+  if (!ringsNow(next, "B")) next = { ...next, critRamp: 0 };
   const ended = before.filter((s) => !ringsNow(next, s));
   return { stance: next, switched, ended };
 }
