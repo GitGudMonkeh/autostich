@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, redEchoes, rueckhaltValue, extendStance,
+  stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, redEchoes, verankerungMult, greenEchoes, rueckhaltValue, extendStance,
   carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
 import { streakBaseMult } from "../src/game/perks.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { computeFormations, overlapFactor, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
+import { computeFormations, overlapFactor, OVERLAP_BONUS } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 
@@ -398,24 +398,36 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
     const plus = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, overlapPlus: 0.5 });
     expect(plus[3].mult / shut[3].mult).toBeCloseTo((overlapFactor(2) + 0.5) / overlapFactor(2));
   });
-  it("SK_STANCE_09 Verankerung: die Reichweite beim Auslösen, Segment für Segment", () => {
-    expect(anchorPositions({ anchor: 1, anchorSeg: 0 }, 40)).toEqual([0, 1, 2, 3, 4]);
-    expect(anchorPositions({ anchor: 2, anchorSeg: 0 }, 40)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    expect(anchorPositions({ anchor: 3, anchorSeg: 0 }, 40)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]); // das Segment davor gibt es nicht
-    expect(anchorPositions({ anchor: 8, anchorSeg: 3 }, 40)).toHaveLength(40);
-    // Sie zündet nur in einer VERANKERTEN Haltung — vor dem Auslösen ist anchorSeg null.
-    expect(stanceOverlapOpts(st({ stance: "G" }), [S.VERANKERUNG], {}).anchor).toBe(0);
-    expect(stanceOverlapOpts(st({ stance: "G", anchorSeg: 2 }), [S.VERANKERUNG], {}).anchor).toBe(T.verankerung[0].segments);
+  it("SK_STANCE_09 Verankerung: im NACHKLANG von Grün ein Zuschlag je Formation an der Siegposition (§5.3)", () => {
+    const skills = [S.VERANKERUNG], rate = T.verankerung[0].perForm;
+    const active = st({ stance: "G" });
+    const echo = st({ stance: "R", ring: { G: 2 } });
+    expect(greenEchoes(active)).toBe(false);
+    expect(greenEchoes(echo)).toBe(true);
+    expect(verankerungMult(active, skills, {}, 3)).toBe(1);      // aktiv zahlt sie NICHT
+    expect(verankerungMult(echo, skills, {}, 3)).toBeCloseTo(1 + 3 * rate, 6);
+    expect(verankerungMult(echo, skills, {}, 0)).toBe(1);        // keine Formation → nichts
+    expect(verankerungMult(echo, [], {}, 3)).toBe(1);
+    expect(verankerungMult(echo, skills, { [S.VERANKERUNG]: 3 }, 3)).toBeCloseTo(1 + 3 * T.verankerung[3].perForm, 6);
+    // Sie ändert KEINE Geometrie mehr: die Überlappungs-Optionen kennen sie nicht.
+    expect(Object.keys(stanceOverlapOpts(st({ stance: "G" }), skills, {}))).not.toContain("anchor");
   });
-  it("das Auslösen von Grün merkt sich sein Segment und vergisst es, wenn Grün verklungen ist", () => {
-    let s = st({ counts: { G: C.STANCE_THRESHOLD - 1 } });
-    s = stanceTick(s, [], {}, { wonSuit: "G", pos: 12, segmentSize: SEGMENT_SIZE }).stance;
-    expect(s.stance).toBe("G");
-    expect(s.anchorSeg).toBe(2);
-    s = stanceTick({ ...s, counts: { ...s.counts, R: C.STANCE_THRESHOLD - 1 } }, [], {}, { wonSuit: "R" }).stance;
-    for (let i = 0; i < C.STANCE_MIN_DURATION + 1; i++) s = stanceTick(s, [], {}, {}).stance;
-    expect(ringsNow(s, "G")).toBe(false);
-    expect(s.anchorSeg).toBeNull();
+  it("Verankerung in der Engine: derselbe Stich, einmal mit klingendem grünem Nachklang und einmal ohne", () => {
+    /* Position 4 ist die ZWEITE Karte der Wiederholung 7/7 und damit die einzige dort, die eine ZAHLENDE Formation
+       trägt (die erste Karte eines Laufs hat Faktor 1). Genau die zählt `activeFormationCount` — dieselbe Zahl, die
+       der Stich anzeigt und die Brennpunkt/Feuerlinie lesen; Verankerung liest bewusst keine andere. */
+    const skills = [S.VERANKERUNG], rate = T.verankerung[0].perForm;
+    const board = { deck: board10(), oppDeck: constDeck(0), playerOrder: order10(), oppOrder: order10(), pos: 4 };
+    const bare = resolveTrick(run(st({ stance: "R", ring: { G: 2 } }), board), noCrit);
+    const held = resolveTrick(run(st({ stance: "R", ring: { G: 2 } }), { ...board, skills }), noCrit);
+    const forms = bare.lastTrick.breakdown.formBase;
+    expect(forms).toBeGreaterThan(1);                            // die Position trägt wirklich eine Formation
+    expect(held.lastTrick.breakdown.stanceMult / bare.lastTrick.breakdown.stanceMult).toBeCloseTo(1 + rate, 6);
+    expect(held.lastTrick.gained).toBeGreaterThan(bare.lastTrick.gained);
+    // Grün AKTIV statt im Nachklang: derselbe Stich zahlt den Zuschlag nicht.
+    const green = resolveTrick(run(st({ stance: "G" }), { ...board, skills }), noCrit);
+    const greenBare = resolveTrick(run(st({ stance: "G" }), board), noCrit);
+    expect(green.lastTrick.breakdown.stanceMult).toBeCloseTo(greenBare.lastTrick.breakdown.stanceMult, 6);
   });
 });
 

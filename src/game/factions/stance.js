@@ -67,7 +67,6 @@ export function initStance() {
     einklang: 0,                   // Telemetrie: wie oft die Leiste diesen Lauf voll war
     peakBest: 0,                   // Stauung: größter Sieg der klingenden gelben Haltung
     peakTicks: 0,                  // Stauung: Stiche, die die gelbe Haltung schon klingt (Hebel des Spitzen-Zuschlags)
-    anchorSeg: null,               // Verankerung: Segment, in dem Grün zuletzt ausgelöst hat (null = nicht verankert)
     slid: false,                   // Rückhalt: hat der VORIGE Stich gerutscht?
     turns: 0,                      // Genugtuung: gedrehte Stiche dieser roten Haltung (zahlt im Nachklang)
     switches: 0,                   // echte Haltungswechsel (Telemetrie/Sim)
@@ -258,18 +257,17 @@ export function cashPeak(st, skills, skillTiers) {
      3. `ranFor` auf den Stand nachziehen, mit dem der NÄCHSTE Stich rechnet.
    Gibt { stance, switched, ended } zurück — `ended` nennt die Farben, die mit diesem Stich aufgehört haben zu
    klingen (die Stauung entlädt daran). */
-export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, slid = false, segmentSize = 5 } = {}) {
+export function stanceTick(st, skills, skillTiers, { wonSuit = null, slid = false } = {}) {
   if (!st || !st.active) return { stance: st, switched: false, ended: [] };
   const before = STANCE_SUITS.filter((s) => ringsNow(st, s));
   const ring = { ...st.ring };
   for (const s of STANCE_SUITS) ring[s] = Math.max(0, (ring[s] || 0) - 1);
   let next = { ...st, ring, echo: Math.max(0, (st.echo || 0) - 1) };
-  let switched = false, triggered = false;
+  let switched = false;
   if (wonSuit && STANCE_SUITS.includes(wonSuit)) {
     const counts = { ...next.counts, [wonSuit]: (next.counts[wonSuit] || 0) + 1 };
     if (counts[wonSuit] >= next.threshold) {
       counts[wonSuit] = 0; // nur die auslösende Farbe fällt zurück — die anderen drei zählen weiter
-      triggered = true;
       // Ein Selbst-Auslösen zählt NICHT als Haltungswechsel (§2, Owner) und tut sonst nichts: die Haltung ist
       // ohnehin aktiv. Es hält nur den Zähler unten, und damit ist das Pendeln an der Wurzel ausgeschlossen.
       if (wonSuit !== next.stance) {
@@ -316,10 +314,6 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
   const ranFor = { ...next.ranFor };
   for (const s of STANCE_SUITS) ranFor[s] = ringsNow(next, s) ? (ranFor[s] || 0) + 1 : 0;
   next = { ...next, ranFor, slid };
-  // Verankerung: das Segment merken, in dem Grün ausgelöst hat — sie zahlt, solange die Haltung klingt, und fällt
-  // mit ihr. „Erbt einmal" heißt EINE Stufe, nicht einen Stich (Lesart; §8 hält sie als Annahme fest).
-  if (triggered && wonSuit === "G") next = { ...next, anchorSeg: Math.floor(pos / segmentSize) };
-  if (!ringsNow(next, "G")) next = { ...next, anchorSeg: null };
   // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, der Nachklang zahlt ihn ja erst aus.
   if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
   const ended = before.filter((s) => !ringsNow(next, s));
@@ -332,13 +326,10 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
    Skill Übergriff hätte nichts zu tun. Angenehmer Nebeneffekt: die LAGE im Segment zählt — eine Karte am Rand
    färbt nur nach innen, eine in der Mitte nach beiden Seiten.
 
-   Übergriff hebt die Bindung für die `borders` Grenzen mit den meisten Formationen daneben. Er weicht schon
-   offenen Grenzen NICHT aus (Owner): dort tut er nichts, und wer Spalier, Segmentarbeit oder Durchlass
-   mitführt, wählt ihn nicht. Verankerung lässt beim Auslösen der Haltung jede Karte der Reichweite einmal
-   erben — der Skill für den Tanz-Build, weil er auch in einer Haltung zündet, die nur einen Stich lebt. */
+   Übergriff hebt die Bindung ganz auf, solange Grün klingt (§5.4). Verankerung steht seit §5.3 nicht mehr hier:
+   sie ändert keine Geometrie mehr, sondern zahlt im Nachklang einen Multiplikator (s. u.). */
 export function stanceOverlapOpts(st, skills, skillTiers) {
   if (!ringsNow(st, "G")) return null;
-  const anchored = st.anchorSeg != null;
   return {
     bleed: C.STANCE_BLEED,
     // Übergriff (§5.4, Owner): solange Grün klingt, zählt das Brett, als wären ALLE Segmentgrenzen offen —
@@ -346,11 +337,20 @@ export function stanceOverlapOpts(st, skills, skillTiers) {
     allBorders: held(skills, S.UEBERGRIFF),
     overlapPlus: stanceParam(skills, skillTiers, S.UEBERGRIFF, "bonus") || 0,
     doubleBind: stanceParam(skills, skillTiers, S.DOPPELBINDUNG, "types") || 0,
-    anchor: anchored ? (stanceParam(skills, skillTiers, S.VERANKERUNG, "segments") || 0) : 0,
-    anchorSeg: st.anchorSeg || 0,
   };
 }
 // Der Schlüssel, an dem die Engine erkennt, dass das Brett neu gelesen werden muss. Alles, was die Geometrie
 // verändert, steckt darin — und nur das: ein Wechsel, der Grün nicht berührt, rechnet nichts neu.
 export const stanceFormKeyOf = (opts) =>
-  (opts ? `${opts.bleed}|${opts.allBorders ? 1 : 0}|${opts.overlapPlus}|${opts.doubleBind}|${opts.anchor}|${opts.anchorSeg}` : "");
+  (opts ? `${opts.bleed}|${opts.allBorders ? 1 : 0}|${opts.overlapPlus}|${opts.doubleBind}` : "");
+
+/* Verankerung (§5.3, Owner-Neudesign): im NACHKLANG der grünen Haltung bekommt jeder Stich einen Zuschlag auf
+   seinen Multiplikator, je Formation an seiner Siegposition. Die Leiter ist der Satz je Formation.
+   Sie ändert damit keine Geometrie mehr (vorher: Überlappungs-Stufen beim Auslösen) und ist der Gegenpol zu
+   Genugtuung: dieselbe Zwei-Phasen-Form, nur auf Grün und multiplikativ statt flach.
+   Gezählt wird `activeFormationCount` — dieselbe Zahl, die der Stich anzeigt und die Brennpunkt/Feuerlinie lesen. */
+export const greenEchoes = (st) => !!(st && st.active && st.stance !== "G" && (st.ring?.G || 0) > 0);
+export function verankerungMult(st, skills, skillTiers, formCount) {
+  const rate = stanceParam(skills, skillTiers, S.VERANKERUNG, "perForm");
+  return rate && formCount > 0 && greenEchoes(st) ? 1 + rate * formCount : 1;
+}

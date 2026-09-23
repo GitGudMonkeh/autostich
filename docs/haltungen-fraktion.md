@@ -204,9 +204,11 @@ Stufe auf seine Weise — ist verworfen: bei Rot und Grün skaliert sie holprig,
 gerutschtem Stich") wäre wortgleich mit dem Skill **Genugtuung** gewesen. Das Passiv hätte seinen eigenen
 Skill aufgefressen.
 
-**Offen (Annahme):** der Einklang lässt die Haltungen *klingen*, er *löst sie nicht aus*. **Verankerung**
-hängt am Auslösen und geht im Einklang deshalb leer aus; Grüns Abfärben wirkt dagegen normal, weil es nur am
-Klingen hängt.
+**Offen (Annahme):** der Einklang lässt die Haltungen *klingen*, er *löst sie nicht aus*. Für die Skills, die
+am Klingen hängen, macht das keinen Unterschied; keiner hängt seit §5.3 noch am **Auslösen**. Zu beachten ist
+dafür etwas anderes: der Einklang lässt alle vier gleichzeitig klingen, ohne dass eine ABGELÖST wurde — die
+Nachklang-Skills (**Genugtuung**, **Verankerung**) prüfen deshalb auf „klingt, ist aber nicht aktiv" und nicht
+auf die Leiste.
 
 ---
 
@@ -258,7 +260,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
 | **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
 | | **Übergriff** · Zuschlag auf den Überlappungsbonus (dazu: alle Grenzen offen) | +0,3 | +0,4 | +0,55 | +0,7 |
-| | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
+| | **Verankerung** · Score-Multiplikator im Nachklang, je Formation | +0,15 | +0,25 | +0,35 | +0,50 |
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
@@ -435,7 +437,7 @@ Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** 
 | --- | --- |
 | **Doppelbindung** | Eine Karte darf in zwei Formationen desselben Typs liegen. Der einzige Weg über die ×3-Decke, weil es sonst nur vier Typen gibt — hebt die *Anzahl*, nicht den *Wert*. |
 | **Übergriff** | Solange Grün klingt, zählen **alle** Segmentgrenzen als offen. Dazu ein Zuschlag auf den Überlappungsbonus. |
-| **Verankerung** | Beim Auslösen der Haltung erbt jede Karte des aktuellen Segments einmal. Zündet auch in einer Haltung, die nur einen Stich lebt — also der für den Tanz-Build. |
+| **Verankerung** | Im **Nachklang** der Haltung zählt jeder Stich einen Score-Multiplikator je Formation an seiner Siegposition. |
 
 **Startwerte:**
 
@@ -443,7 +445,7 @@ Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** 
 | --- | --- | --- | --- | --- |
 | **Doppelbindung** · für wie viele Formationstypen | 1 | 2 | 3 | alle 4 |
 | **Übergriff** · Zuschlag auf den Überlappungsbonus | +0,3 | +0,4 | +0,55 | +0,7 |
-| **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
+| **Verankerung** · Score-Multiplikator im Nachklang, je Formation | +0,15 | +0,25 | +0,35 | +0,50 |
 
 **Neudesign §5.3 (Owner):** *„Stiche während grün aktiv ist oder nachklingt zählen, als wären alle
 Segmentgrenzen offen. Als Leiter: der Überlappbonus wird größer."* Die alte Fassung staffelte die
@@ -466,6 +468,28 @@ die offenen Grenzen zusätzlich, ohne dafür zu zahlen. Startwerte, nicht tarier
 (SK_PLANT_03) öffnet Segmentgrenzen. Spalier, Segmentarbeit (Perk-Familie E) und Durchlass
 (Auftragsbeute) überschneiden sich mit Übergriffs Grenz-Hälfte — anders als vorher bleibt ihm daneben
 aber der Zuschlag, er ist also nie ein toter Skill-Platz.
+
+**Neudesign §5.3, Verankerung (Owner):** *„Komplett ändern. Im Nachklang bekommen nachklingende Stiche
+einen Bonus auf Multi, abhängig von der Anzahl der Formationen, die auf ihnen liegen. Leiter ist der
+Bonus."*
+
+Die alte Fassung (Überlappungs-Stufen für ganze Segmente beim **Auslösen** der grünen Haltung) ist
+ersatzlos gestrichen, samt `anchorSeg` im Zustand und `anchorPositions` in `formations.js`. **Sie
+ändert damit keine Geometrie mehr** — das tun nur noch das Abfärben, Doppelbindung und Übergriff.
+
+Sie ist stattdessen der Gegenpol zu **Genugtuung**: dieselbe Zwei-Phasen-Form (aktiv sammeln, im
+Nachklang zahlen), nur auf Grün statt Rot und **multiplikativ statt flach**. Der Zuschlag liegt in
+`stanceMult`, nicht in `formMult` — sie ist eine Zahl, keine Geometrie, und das Brett muss dafür nicht
+neu gelesen werden.
+
+Gezählt wird `activeFormationCount`: die **zahlenden** Formationen der Siegposition — dieselbe Zahl,
+die der Stich anzeigt und die Brennpunkt, Feuerlinie und Spannungsfeld lesen. Die *erste* Karte eines
+Laufs trägt Faktor 1 und zählt deshalb nicht mit; das ist die Konvention des Spiels und nicht eine
+eigene Lesart dieses Skills.
+
+**Zahlen sind reine Startwerte** (Owner ausdrücklich: *„Balancing muss dann über die Sim gemacht
+werden, keine Ahnung, was aktuell hier zu stark oder zu schwach ist"*). Die Leiter spiegelt
+**Mitklang** (`+0,15 / 0,25 / 0,35 / 0,50`), weil sie dieselbe „je X"-Form hat.
 
 ### 5.5 · Ergebnis-Linie — voll
 

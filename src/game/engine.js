@@ -27,7 +27,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, noteTurn, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
+  genugtuungScore, noteTurn, verankerungMult, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -720,8 +720,12 @@ export function resolveTrick(state, rng) {
     /* Haltungen, gelb (§3): glatter Multiplikator auf den Sieg-Score, solange Gelb klingt — dazu Beharrlichkeit
        (je Stich Laufzeit) und Mitklang (je zusätzlich klingender Haltung). Ein eigener Faktor wie der Feuer-Stack,
        KEINE zweite Achse auf einer fremden Ressource (§7.51: zwei Achsen an derselben Ressource ergaben den
-       kubischen Weglauf). Grün wirkt nicht hier, sondern über die Geometrie in formMult; Blau über den Crit. */
-    const stanceMult = stanceOn ? stanceScoreMult(stance, skills, skillTiers) : 1;
+       kubischen Weglauf). Blau wirkt über den Crit, Grün über die Geometrie in formMult — bis auf Verankerung,
+       die seit §5.3 hier sitzt: im NACHKLANG von Grün ein Zuschlag je Formation an der Siegposition. Sie steht im
+       selben Faktor, weil sie eine Zahl ist und keine Geometrie; das Brett muss dafür nicht neu gelesen werden. */
+    const stanceMult = stanceOn
+      ? stanceScoreMult(stance, skills, skillTiers) * verankerungMult(stance, skills, skillTiers, activeFormationCount(posForm))
+      : 1;
     /* §7.51 (Owner): Blitz hat KEINEN eigenen Faktor im Produkt. Der Crit-Multiplikator ist die Multiplikator-Achse
        der Fraktion — jeder Stapel zahlt über ION_CRIT_MULT_PER_STACK dorthin. §7.43 hatte daneben `lightMult`
        gestellt, in der falschen Annahme, Blitz habe keinen; zwei Achsen an derselben Ressource ergaben das

@@ -206,7 +206,10 @@ const HALTUNG = {
   // keiner Stufe. Gestaffelt ist der Überlappungsbonus. Die Leiter liegt unter Verwachsung (0.4/0.7/1/1.4), weil
   // Übergriff die offenen Grenzen obendrauf bekommt; beide addieren auf denselben `overlapPlus`.
   uebergriff:     [{ bonus: 0.3 }, { bonus: 0.4 }, { bonus: 0.55 }, { bonus: 0.7 }],
-  verankerung:    [{ segments: 1 }, { segments: 2 }, { segments: 3 }, { segments: 8 }],
+  // §5.3 (Owner, komplett ersetzt): Verankerung ändert keine Geometrie mehr. Im Nachklang der grünen Haltung gibt
+  // jeder Stich einen Multiplikator-Zuschlag je Formation an seiner Siegposition. Die Leiter spiegelt Mitklang —
+  // dieselbe „je X"-Form, und der Owner hat ausdrücklich keine Zahlen gesetzt: STARTWERTE für die Sim.
+  verankerung:    [{ perForm: 0.15 }, { perForm: 0.25 }, { perForm: 0.35 }, { perForm: 0.50 }],
   // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
   // und sie strukturell nicht weglaufen kann (§6.5).
   // §5.3 (Owner): Genugtuung zahlt nicht mehr sofort je Punkt Rückstand, sondern im NACHKLANG je gedrehtem Stich —
@@ -525,8 +528,8 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.doppelbindung, (r) => `Eine Karte zählt für die Überlappung in ${r.types === 4 ? "jedem" : `bis zu ${de1(r.types)}`} Formationstyp${r.types === 4 || r.types === 1 ? "" : "en"} doppelt.`) },
   SK_STANCE_08: { id: "SK_STANCE_08", name: "Übergriff", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.uebergriff,
     ...tiered(HALTUNG.uebergriff, (r) => `Klingt die grüne Haltung, zählen alle Segmentgrenzen als offen. Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um ${de(r.bonus)} höher.`) },
-  SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.verankerung,
-    ...tiered(HALTUNG.verankerung, (r) => `Löst die grüne Haltung aus, erbt jede Karte ${r.segments >= 8 ? "aller Segmente" : r.segments === 1 ? "des aktuellen Segments" : `von ${de1(r.segments)} Segmenten`} einmal eine Überlappungs-Stufe.`) },
+  SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.verankerung,
+    ...tiered(HALTUNG.verankerung, (r) => `Klingt die grüne Haltung nach, zählt jeder Stich +${de(r.perForm)} Score-Multiplikator je Formation an seiner Siegposition.`) },
   // Ergebnis-Linie (rot)
   SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
     ...tiered(HALTUNG.genugtuung, (r) => `Klingt die rote Haltung nach, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie gedreht hat.`) },
