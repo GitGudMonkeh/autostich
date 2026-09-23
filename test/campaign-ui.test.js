@@ -8,6 +8,9 @@ import { mio } from "../src/ui/campaignText.js";
 import { CampaignTally, CampaignPick, CampaignWon, CampaignLost, CampaignTile, CampaignOverview, CampaignProgress } from "../src/ui/CampaignScreens.jsx";
 import { PASS_COLORS } from "../src/ui/campaignText.js";
 import { RestartConfirm } from "../src/ui/RunConfirm.jsx"; // die Warnung vor dem Kampagnen-Neustart
+import { SkillUpgrade } from "../src/ui/SkillUpgrade.jsx";
+import { reducer } from "../src/game/reducer.js";
+import { upgradeBuy } from "../src/game/coins.js";
 
 /* ============================================================================
    Kampagnen-UI — was der Spieler LIEST, nicht welcher Schlüssel gesetzt wurde.
@@ -140,9 +143,12 @@ describe("Kampagne · Übersicht", () => {
     for (const verdeckt of ["Der Bremser", "Der Schließer", "Der Konter"]) {
       expect(h, `${verdeckt} steht noch aus und darf nicht dastehen`).not.toContain(verdeckt);
     }
-    expect(h).toContain("Unbekannt");
-    // Dass Lauf 4 der Endboss ist, bleibt sichtbar: das ist Struktur, keine Überraschung.
-    expect(h).toContain("ENDBOSS");
+    /* Verdeckt steht die ART da, nicht „Unbekannt" (Owner 2026-09-23). Läufe 2 und 3 sind
+       Minibosse, Lauf 4 der Endboss — dass Lauf 4 anders ist, bleibt damit sichtbar, ohne dass
+       daneben noch ein Abzeichen dasselbe Wort wiederholt. */
+    expect(h.match(/Miniboss/g) || [], "Lauf 2 und 3 stehen verdeckt").toHaveLength(2);
+    expect(h).toContain("Endboss");
+    expect(h, "der alte Platzhalter ist abgelöst").not.toContain("Unbekannt");
   });
 
   it("deckt mit jedem bestandenen Lauf einen Boss mehr auf", () => {
@@ -439,5 +445,71 @@ describe("Schwellen-Leiste · Verdrahtung", () => {
     const rumpf = src.slice(i, src.indexOf("\n}", i));
     const zeilen = rumpf.split("\n").filter((l) => /className="flex w-full|className="relative w-full/.test(l));
     expect(zeilen.length, "Label-Zeile, Leiste und Punkte tragen je ein w-full").toBe(3);
+  });
+});
+
+/* ============================================================================
+   AUFWERTEN: WAS DER KNOPF SAGT, MUSS DER REDUCER TUN
+
+   Beide Aufwert-Zeilen riefen `upgradeBuy({ coins }, tier)` — mit einem abgespeckten State. Damit
+   fielen ZWEI Regeln heraus, die am State hängen: der Handelsbrief-Nachlass (der Knopf nannte den
+   vollen Preis, der Reducer zog den ermäßigten ab) und der Kampagnen-Deckel. Gemessen wird deshalb
+   beides an derselben Zahl: was dasteht, und was vom Konto geht.
+   ============================================================================ */
+describe("Aufwerten · Knopf und Reducer lesen dieselbe Zahl", () => {
+  const halt = (over = {}) => ({
+    phase: "levelup", coins: 99, skills: ["SK_FIRE_01"], skillTiers: { SK_FIRE_01: 0 },
+    familyTiers: {}, roles: {}, deck: {}, playerOrder: [], perks: [], ...over });
+
+  const zeile = (state) => txt(html(SkillUpgrade, { state, onUpgrade: () => {}, onClose: () => {} }));
+
+  it("nennt mit Handelsbrief den ermäßigten Preis, nicht den vollen", () => {
+    const voll = upgradeBuy(halt(), 0).price;
+    const brief = { ...CP.emptyCampaign(), held: { handelsbrief: 3 } };
+    const s = halt({ campaign: brief, campaignUnlocked: CP.UNLOCK_IDS });
+    const ab = upgradeBuy(s, 0).price;
+    expect(ab, "Vorbedingung: der Handelsbrief senkt den Preis überhaupt").toBeLessThan(voll);
+
+    // was der Reducer wirklich abzieht
+    const nach = reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" });
+    expect(s.coins - nach.coins, "der Reducer zieht den ermäßigten Preis ab").toBe(ab);
+
+    // und was der Knopf anzeigt
+    const h = zeile(s);
+    expect(h, `der Knopf nennt ${ab}`).toContain(String(ab));
+    expect(h, `der Knopf nennt NICHT den vollen Preis ${voll}`).not.toContain(String(voll));
+  });
+
+  it("sperrt über dem Kampagnen-Deckel, statt das Ende der Leiter zu behaupten", () => {
+    // Selten (Stufe 1, 0-basiert) ist die Decke, solange die Rarität nicht freigeschaltet ist.
+    const s = halt({ rareCap: CP.START_MAX_TIER, skillTiers: { SK_FIRE_01: CP.START_MAX_TIER - 1 } });
+    const buy = upgradeBuy(s, CP.START_MAX_TIER - 1);
+    expect(buy.locked, "gesperrt, nicht am Ende der Leiter").toBe(true);
+    expect(buy.maxed).toBe(false);
+    expect(buy.can).toBe(false);
+
+    const h = zeile(s);
+    expect(h).toContain("Noch nicht freigeschaltet");
+    expect(h, "das Ende der Leiter waere gelogen — die Stufe darueber gibt es").not.toContain("Höchste Stufe");
+
+    // und der Reducer lässt sie auch nicht durch
+    expect(reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" })).toBe(s);
+  });
+
+  it("sagt am wirklichen Ende der Leiter weiterhin Höchste Stufe", () => {
+    // Gegenprobe: ohne Deckel endet die Leiter wie immer, und zwar mit dem anderen Wort.
+    const s = halt({ skillTiers: { SK_FIRE_01: 3 } });
+    const buy = upgradeBuy(s, 3);
+    expect([buy.maxed, buy.locked]).toEqual([true, false]);
+    const h = zeile(s);
+    expect(h).toContain("Höchste Stufe");
+    expect(h).not.toContain("Noch nicht freigeschaltet");
+  });
+
+  it("lässt unter dem Deckel normal aufwerten", () => {
+    // Sonst misst der Test nur eine kaputte Liste.
+    const s = halt({ rareCap: CP.START_MAX_TIER, skillTiers: { SK_FIRE_01: 0 } });
+    expect(upgradeBuy(s, 0).locked).toBe(false);
+    expect(reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" })).not.toBe(s);
   });
 });

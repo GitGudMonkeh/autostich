@@ -7,6 +7,8 @@ import { runOne } from "../sim/run.js";
 import { newMemory } from "../sim/memory.js";
 import { greedyPolicy, buildValueTable, tierKey, skillOfOption, tierOfOption, DECLINE } from "../sim/policies/greedy.js";
 import { flagFor } from "../sim/skills-eval.js";
+import { randomPolicy } from "../sim/policies/random.js";
+import { architectStep } from "../sim/architect-policy.js";
 
 /* exp skill rework — Sim-Nähte der großen Auswertung: Archetyp-Allowlist je Lauf, stufenbewusste Arme, Greedy-
    Determinismus und die gepaarte Ablation (drop). Kleine Läufe (Formations-Solver aus), damit der Test schnell bleibt. */
@@ -77,5 +79,48 @@ describe("Sim — greedyPolicy (stufenbewusst)", () => {
     const kipp = [{ n: 20, lift: 1.1 }, { n: 20, lift: 1.0 }, { n: 5, lift: 0.5 }, { n: 20, lift: 1.2 }];
     expect(flagFor(row({ applicableRate: 0.5, pctEffect: 0.1, winRate: 0.65 }, kipp))).toBe("Leiter");
     expect(flagFor(row(null, [{ n: 20, lift: 1.0 }, { n: 20, lift: 1.05 }, { n: 20, lift: 1.1 }, { n: 20, lift: 1.2 }]))).toBe("");
+  });
+});
+
+/* Die Bau-Policy muss die gesperrten Zellen kennen, sonst dreht sich die Sim endlos: der Reducer
+   lehnt eine Platzierung darauf ab (`return state`), die Greedy-Policy schlägt dieselbe wieder vor.
+   Aufgefallen 2026-09-23 am Kampagnen-Boss Denkmalpfleger; dasselbe Feld tragen die
+   Wochen-Modifikatoren (#301 C3). */
+describe("Sim — die Bau-Policy respektiert gesperrte Zellen", () => {
+  const bisArchitekt = (blocked, seed = 3) => {
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, archetypes: ARCH });
+    let guard = 0;
+    while (s.phase !== "gameover" && !(s.phase === "architect" && (s.architect?.offers || []).some((o) => !o.used))) {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, randomPolicy({ architectGreedy: true }).act(s, rng));
+    }
+    return { ...s, challengeBlockArch: blocked };
+  };
+
+  it("weicht genau den Zellen aus, auf die sie sonst gebaut hätte", () => {
+    /* Der scharfe Fall: erst die Wunschlage der Policy ohne Sperre holen, dann GENAU die sperren.
+       Eine beliebige Sperre sagt nichts — der Greedy hätte sie zufällig meiden können. */
+    const frei = bisArchitekt([]);
+    expect(frei.phase, "die Architektenphase wurde erreicht").toBe("architect");
+    const wunsch = architectStep(frei, makeRng(7), { greedy: true });
+    expect(wunsch.type, "die Policy will bauen").toBe("ARCHITECT_BUILD");
+    expect(wunsch.footprint.length, "und zwar auf Zellen").toBeGreaterThan(0);
+
+    const gesperrt = { ...frei, challengeBlockArch: wunsch.footprint };
+    const a = architectStep(gesperrt, makeRng(7), { greedy: true });
+    expect(a, "die Policy gibt immer eine Aktion zurück").toBeTruthy();
+    if (a.type === "ARCHITECT_BUILD" || a.type === "ARCHITECT_MOVE") {
+      expect(a.footprint.some((p) => wunsch.footprint.includes(p)),
+             "die Policy baut auf eine gesperrte Zelle — der Reducer lehnt ab, die Sim dreht sich").toBe(false);
+    }
+    expect(reducer(gesperrt, a), `der Reducer hat ${a.type} abgelehnt`).not.toBe(gesperrt);
+  });
+
+  it("gibt ohne Sperre dieselbe Aktion wie bisher", () => {
+    // Bestandspfad: ohne gesperrte Zellen darf der Riegel nichts verschieben.
+    const s = bisArchitekt([]);
+    const a = architectStep(s, makeRng(7), { greedy: true });
+    expect(reducer(s, a), "ohne Sperre baut die Policy wie immer").not.toBe(s);
   });
 });

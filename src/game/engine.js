@@ -1185,7 +1185,8 @@ export function resolveTrick(state, rng) {
           const doors = buildSkillDoors(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), rngAtOr(cycle, "skill", 0, "tiers"),
             { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize,
               doors: CT.skillDoorsWith(state, C.SKILL_DOORS, cycle),                                   // Freibrief: die dritte Tür
-              legendaryChance: CT.skillLegendaryWith(state, C.SKILL_LEGENDARY_PER_SLOT) });             // Freibrief IV · §4b: Archetyp-Gatung
+              legendaryChance: CT.skillLegendaryWith(state, C.SKILL_LEGENDARY_PER_SLOT),               // Freibrief IV · §4b: Archetyp-Gatung
+              maxTier: rareCapEff });                                                                  // §4c Rarität-Deckel — derselbe, den Perks und Gebäude lesen
           if (doors.length > 0) { phase = "levelup"; newSkillDoors = CT.liftDoorTiers(state, doors, cycle); } // Veredelung
           else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
         }

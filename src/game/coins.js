@@ -12,6 +12,7 @@
    Owner-Entscheid 2026-09-09, um im Spiel zu sehen, wie sich die höhere Kaufkraft anfühlt. */
 
 import { envNum } from "./constants.js";
+import * as CP from "./campaign.js"; // Handelsbrief: derselbe Nachlass auf jeden Preis (kein Zyklus — campaign.js kennt nur rarity.js)
 
 /* ---- Zwei Regeln, die nirgends Code brauchen (docs/muenz-oekonomie.md) ---------------------------
    1. MÜNZVERFALL AM LAUFENDE. Übrige Münzen verfallen (Owner 2026-09-09) — kein Score-Umtausch, keine
@@ -173,9 +174,16 @@ export const coverPrice = (bought = 0) => step(COVER_BASE, bought);
 
 /* Ein Kauf mit Vorrat — eine Quelle für Knopf und Reducer, wie `rerollOffer`. `left` trägt die Anzeige
    (die Punkte am Baufeld-Knopf), `can` die Auslösbarkeit: ausverkauft ODER zu wenig Münzen. */
+/* `netto` ist die eine Stelle, an der ein fertiger Preis zum ZAHLBAREN wird: Handelsbrief nimmt
+   seine Prozente, nachdem die Treppe (und damit der Wucherer) gerechnet hat. Sie sitzt in den
+   PREIS-Funktionen und nicht im Reducer, weil Knopf und Reducer dieselbe Zahl lesen muessen — die
+   Lehre aus dem Beute-Audit 2026-09-17, als ein Nachlass im Reducer wirkte und am Knopf nicht. */
+const netto = (state, price) => CP.discountWith(state, price);
+
 export function stepBuy(state = {}, bought = 0, max = 0, price = 0) {
   const left = Math.max(0, max - (bought || 0));
-  return { left, max, price, soldOut: left <= 0, can: left > 0 && (state.coins || 0) >= price };
+  const p = netto(state, price);
+  return { left, max, price: p, soldOut: left <= 0, can: left > 0 && (state.coins || 0) >= p };
 }
 /* Wucherer gilt fuer JEDE Kaufart, jede mit ihrem eigenen Zaehler (Owner 2026-09-22) — deshalb
    reicht jede Kaufflaeche die Leiter des Laufs durch. */
@@ -190,6 +198,8 @@ export const coverBuy = (state = {}) =>
 // Owner 2026-09-14: 5 → 10. Zusammen mit COIN_FORM_PER 8 → 10 kostet der Ruf damit über drei
 // Durchlauf-Einnahmen statt einer knappen — er ist eine Entscheidung, kein Beiläufiges mehr.
 export const FOCUS_PRICE = envNum("SIM_COIN_FOCUS", 10);
+// Derselbe Preis, nur mit dem Nachlass — der Ruf ist ein Kauf wie jeder andere.
+export const focusPrice = (state = {}) => netto(state, FOCUS_PRICE);
 
 /* ---- Skill aufwerten (§3.5) ----------------------------------------------------------------------- */
 /* Preis nach ZIELSTUFE, nicht nach Reihenfolge: jeder Schritt kostet, was seine Stufe wert ist. Wer von
@@ -206,12 +216,19 @@ export const upgradePrice = (targetTier) => UPGRADE_PRICES[targetTier] || 0;
 // lohnt hineinzugehen, ohne dass der Knopf einen Preis nennt, der von der Auswahl abhängt.
 export const UPGRADE_FROM = Math.min(...UPGRADE_PRICES.filter((p) => p > 0));
 
-/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer. */
+/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer.
+
+   DREI Ausgänge, nicht zwei: `maxed` ist das Ende der Leiter, `locked` der Kampagnen-Deckel davor.
+   Sie auseinanderzuhalten kostet ein Feld und spart eine Lüge — „Höchste Stufe" an einem Skill auf
+   Selten wäre schlicht falsch, die Stufe darüber gibt es, sie ist nur noch nicht freigeschaltet.
+   Owner 2026-09-23: man soll nicht über Selten aufwerten können, bevor die Rarität offen ist.
+   `state.rareCap` ist 1-basiert (4 = kein Deckel), `tier`/`next` hier 0-basiert. */
 export function upgradeBuy(state = {}, tier = 0) {
   const next = (tier || 0) + 1;
-  if (next > MAX_SKILL_TIER) return { maxed: true, next: null, price: 0, can: false };
-  const price = upgradePrice(next);
-  return { maxed: false, next, price, can: (state.coins || 0) >= price };
+  if (next > MAX_SKILL_TIER) return { maxed: true, locked: false, next: null, price: 0, can: false };
+  if (state.rareCap && next > state.rareCap - 1) return { maxed: false, locked: true, next: null, price: 0, can: false };
+  const price = netto(state, upgradePrice(next));
+  return { maxed: false, locked: false, next, price, can: (state.coins || 0) >= price };
 }
 
 /* Dieselbe Leiter für PERKS (Owner 2026-09-08: „genauso wie Skills, gleiche Kosten").
@@ -224,7 +241,7 @@ export function upgradeBuy(state = {}, tier = 0) {
    Wer UPGRADE_PRICES anfasst, verschiebt beide. */
 export function familyUpgradeBuy(state = {}, tier = 0) {
   const buy = upgradeBuy(state, (tier || 0) - 1);
-  return buy.maxed ? buy : { ...buy, next: buy.next + 1 };
+  return buy.maxed || buy.locked ? buy : { ...buy, next: buy.next + 1 };   // beide tragen next: null
 }
 
 export const MAX_FAMILY_TIER = MAX_SKILL_TIER + 1;

@@ -6,7 +6,7 @@ import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
-import { FOCUS_PRICE, UPGRADE_FROM, FORFEIT_SKILL, coinsOn } from "../game/coins.js"; // Münz-Ökonomie §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { focusPrice, UPGRADE_FROM, FORFEIT_SKILL, coinsOn } from "../game/coins.js"; // Münz-Ökonomie §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
 import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { SkillUpgrade } from "./SkillUpgrade.jsx";                        // §3.5: die Aufwertphase (eigener Bildschirm)
@@ -72,7 +72,8 @@ function KeywordGlossary({ tokens }) {
    Namen, keine Stufen) und öffnen über denselben Weg; die gerufene trägt zusätzlich ihre Marke, den
    violetten Rahmen mit Schein und steht über die volle Breite. EINE Komponente, damit die bezahlte Tür
    nicht auseinanderdriftet von der, die man umsonst bekommt. */
-function DoorCard({ door, label = null, called = false, phone = false, onOpen }) {
+// `focusPaid` = was der Ruf gekostet HAT; der Aufrufer kennt den State, die Karte nicht.
+function DoorCard({ door, label = null, called = false, phone = false, focusPaid = 0, onOpen }) {
   const archs = (door.skills || []).map(archetypeOf).filter(Boolean);
   const count = {};
   for (const a of archs) count[a] = (count[a] || 0) + 1;
@@ -86,7 +87,7 @@ function DoorCard({ door, label = null, called = false, phone = false, onOpen })
         ? <div className="w-full flex items-center gap-2">
             <FocusIcon />
             <span className="text-meta-3 font-bold uppercase tracking-widest" style={{ color: "#cdbcf5" }}>{t("focus.called")}</span>
-            <span className="ml-auto text-meta-1 inline-flex items-center gap-1 opacity-70"><CoinAmount n={FOCUS_PRICE} size={11} />{t("focus.paid")}</span>
+            <span className="ml-auto text-meta-1 inline-flex items-center gap-1 opacity-70"><CoinAmount n={focusPaid} size={11} />{t("focus.paid")}</span>
           </div>
         : <div className="text-meta-3 font-bold uppercase tracking-widest opacity-60">{label}</div>}
       <div className="flex items-center justify-center gap-4">
@@ -116,7 +117,8 @@ function FocusIcon({ size = 15 }) {
 function FocusCall({ state, onCallFocus }) {
   if (!onCallFocus || state.focusCalled) return null;
   const coins = state.coins || 0;
-  const can = coins >= FOCUS_PRICE;
+  const preis = focusPrice(state);   // Knopf und Reducer lesen dieselbe Zahl (Handelsbrief)
+  const can = coins >= preis;
   const held = {};
   for (const id of state.skills || []) { const a = archetypeOf(id); if (a) held[a] = (held[a] || 0) + 1; }
   const lead = Object.keys(held).sort((a, b) => held[b] - held[a])[0] || null;
@@ -126,7 +128,7 @@ function FocusCall({ state, onCallFocus }) {
       <div className="flex items-center gap-2">
         <FocusIcon />
         <span className="text-body-lg-5 font-bold" style={{ color: "#cdbcf5" }}>{t("focus.title")}</span>
-        <span className="ml-auto"><CoinAmount n={FOCUS_PRICE} size={12} dim={!can} have={coins} /></span>
+        <span className="ml-auto"><CoinAmount n={preis} size={12} dim={!can} have={coins} /></span>
       </div>
       <div className="text-body-5 leading-snug mt-1.5" style={{ color: "#9a93b5" }}>{t("focus.hint")}</div>
       <div className="grid grid-cols-4 gap-1.5 mt-3">
@@ -515,7 +517,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                 Spalte wären es je ~115 px, und die gerufene sähe aus wie eine von dreien statt wie die, für
                 die bezahlt wurde. Sie ersetzt nichts: die zwei gewürfelten bleiben offen. */}
             {doors.map((d, i) => (d.called ? (
-              <DoorCard key={`c${i}`} door={d} called phone={phone} onOpen={() => onChooseDoor?.(i)} />
+              <DoorCard key={`c${i}`} door={d} called phone={phone} focusPaid={focusPrice(state)} onOpen={() => onChooseDoor?.(i)} />
             ) : null))}
             <FocusCall state={state} onCallFocus={onCallFocus} />
           </div>

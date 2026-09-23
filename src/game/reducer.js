@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollsLeft, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
+import { rerollsLeft, energyBuy, coverBuy, COVER_CELLS, focusPrice, upgradeBuy, familyUpgradeBuy, COIN_START,
          coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
 import { sellPatch, deckDeltaOf, withDeckDelta } from "./perkSale.js"; // §3.6 Perk-Verkauf: Erlös, Rückbau und das Gedächtnis der Deck-Differenzen
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
@@ -110,7 +110,7 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   // Stufen und Legendär-Chance je Platz mit der Tür gewürfelt, sichtbar erst nach dem Öffnen (CHOOSE_DOOR).
   if (devMode) { const rolled = devSkillOffer(); return { phase: "levelup", skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, skillDoors: null }; }
   const doors = buildSkillDoors([], [], rngAtOr("skill", 0), rngAtOr("skill", 0, "tiers"),
-    { unlockedArchetypes: s.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize }); // §4b: Archetyp-Gatung
+    { unlockedArchetypes: s.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize, maxTier: rareCap }); // §4b: Archetyp-Gatung · §4c Rarität-Deckel
   if (doors.length) return { phase: "levelup", skillDoors: doors, skillOffer: null, skillOfferTiers: null };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -632,7 +632,9 @@ export function reducer(state, action) {
       const b = a.buildings.find((x) => x.id === action.buildingId);
       if (!b) return state;
       const fam = archFamily(b.familyId);
-      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER) return state; // legendär/Maximalstufe → nicht ausbaubar
+      // Kampagnen-Deckel (Owner 2026-09-23): dieselbe Decke wie am Angebot. Gebäudestufen zählen ab 1,
+      // `rareCap` auch — hier braucht es keinen Versatz, anders als bei den Skills.
+      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER || b.tier + 1 > (state.rareCap || 4)) return state; // legendär/Maximalstufe/gedeckelt → nicht ausbaubar
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, tier: x.tier + 1 } : x));
       // #361-Folge: Aufwerten ist verbindlich (Hauptaktion) → KEIN Undo-Schritt.
       return { ...state, architect: { ...a, buildings, actedMain: true } };
@@ -798,7 +800,7 @@ export function reducer(state, action) {
       // exp skill rework: das Bonus-Angebot ist ein normales Türen-Angebot (zwei Türen, Stufen hinter der Tür).
       const bonusDoors = (def.skillSlotBonus && !goTarget)
         ? buildSkillDoors(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0), rngFor(state, action, state.cycle, "meisterhand", 1),
-            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize })
+            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize, maxTier: state.rareCap || 4 })
         : [];
       const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state))
@@ -1047,14 +1049,16 @@ export function reducer(state, action) {
       if (state.focusCalled) return state;                            // einmal je Phase
       const arch = action.arch;
       if (!arch || !ARCHETYPE_ORDER.includes(arch)) return state;
-      if ((state.coins || 0) < FOCUS_PRICE) return state;
+      // Handelsbrief gilt auch hier: der Ruf ist ein Kauf wie jeder andere.
+      const focusCost = focusPrice(state);
+      if ((state.coins || 0) < focusCost) return state;
       const held = (state.skillDoors || []).flatMap((d) => d.skills || []); // die gewürfelten Türen doppeln sich nicht in die gerufene
       const built = buildSkillDoors([...state.skills, ...held], state.activeArchetypes || [],
         rngFor(state, action, state.cycle, "focus", 0), rngFor(state, action, state.cycle, "focus", 0, "tiers"),
         { unlockedArchetypes: [arch], maxArchetypes: C.MAX_ARCHETYPES, doors: 1, factions: 1,
-          size: skillOfferParams(state).doorSize });
+          size: skillOfferParams(state).doorSize, maxTier: state.rareCap || 4 });
       if (!built.length || !(built[0].skills || []).length) return state; // Fraktion hat nichts mehr → nicht kassieren
-      return { ...state, coins: (state.coins || 0) - FOCUS_PRICE, focusCalled: true,
+      return { ...state, coins: (state.coins || 0) - focusCost, focusCalled: true,
                skillDoors: [...state.skillDoors, { ...built[0], called: true, arch }] };
     }
 
@@ -1243,7 +1247,7 @@ export function reducer(state, action) {
         const skillP = skillOfferParams(state);
         const rolled = buildSkillDoors(state.skills, state.activeArchetypes || [],
           rngFor(state, action, state.cycle, "skill", idxD), rngFor(state, action, state.cycle, "skill", idxD, "tiers"),
-          { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize });
+          { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize, maxTier: state.rareCap || 4 });
         if (!rolled.length) return state;                            // nichts Neues verfügbar → Ressource behalten
         return { ...state, skillDoors: [...rolled, ...kept], offerRerolls: idxD,
                  ...(paidD ? paidD.patch : { rerollsSkill: tokensD - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
@@ -1257,7 +1261,7 @@ export function reducer(state, action) {
       const legBuy = !!(paid && paid.legendary);
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
       const archs = Array.isArray(state.skillOfferArchs) && state.skillOfferArchs.length ? state.skillOfferArchs : state.skillOffer.map(archetypeOf);
-      const rolled = rerollDoorSkills(archs, state.skills, state.skillOffer, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"), legBuy ? { forceLegendary: 1 } : undefined);
+      const rolled = rerollDoorSkills(archs, state.skills, state.skillOffer, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"), { ...(legBuy ? { forceLegendary: 1 } : {}), maxTier: state.rareCap || 4 });
       if (!rolled.offer.length) return state;                       // nichts Neues verfügbar → Ressource behalten
       // Garantie nicht einlösbar (kein freies Legendäres in den Fraktionen der Tür) → nicht kassieren.
       if (legBuy && !rolled.offer.some(isLegendarySkill)) return state;

@@ -205,8 +205,9 @@ export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, o
           const boss = CP.bossFor(c, n);
           /* Bosse stehen verdeckt, bis ihr Lauf vorbei ist (Owner 2026-09-23). Wer vorher weiß, was
              kommt, baut dagegen, statt sich anzupassen — und der Bossblock am Lauf-Start hätte
-             nichts mehr zu sagen. Dass Lauf 4 den Endboss trägt, ist Struktur und keine
-             Überraschung: das Abzeichen bleibt, der NAME nicht. */
+             nichts mehr zu sagen. Verdeckt steht die ART da, nicht „Unbekannt" (Owner): Miniboss
+             oder Endboss. Dass Lauf 4 den Endboss trägt, ist Struktur und keine Überraschung —
+             die Art sagt es, ein zusätzliches Abzeichen daneben wäre dasselbe Wort zweimal. */
           const col = done ? GREEN : now ? GOLD : isEndBoss(boss) ? VIOLET : MUTED;
           return (
             <div key={n} className="rounded-xl p-3 flex flex-col gap-2"
@@ -215,15 +216,13 @@ export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, o
                 <span className="text-meta opacity-70">{t("campaign.run", { n })}</span>
                 {done && <span style={{ color: GREEN }}>✓</span>}
                 {now && <span className="ty-badge text-micro" style={{ color: GOLD }}>{t("campaign.now")}</span>}
-                {!done && !now && isEndBoss(boss) && (
-                  <span className="ty-badge text-micro" style={{ color: VIOLET }}>{t("campaign.boss.end")}</span>
-                )}
               </div>
               <div className="ty-num text-body-lg" style={{ color: done ? GREEN : undefined }}>
                 {t("campaign.threshold", { n: mio(CP.thresholdWith(c, n)) })}
               </div>
-              <div className="text-meta" style={{ color: done ? col : MUTED }}>
-                {done ? bossName(boss) : t("campaign.boss.unknown")}
+              {/* `col` statt MUTED auch verdeckt: sonst verlöre Lauf 4 sein Violett mit dem Abzeichen. */}
+              <div className="text-meta" style={{ color: col }}>
+                {done ? bossName(boss) : t(isEndBoss(boss) ? "campaign.boss.kind.end" : "campaign.boss.kind.mid")}
               </div>
               {done && (c.scores || [])[i] != null && (
                 <div className="ty-num-sm text-micro" style={{ color: GREEN }}>{t("campaign.reached", { n: mio(c.scores[i]) })}</div>

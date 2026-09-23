@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import {
   shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
@@ -52,6 +52,7 @@ const UPGRADE_REASON = {
   inert: "arch.upgrade.reason.inert",
   legendary: "arch.upgrade.reason.legendary",
   max: "arch.upgrade.reason.max",
+  locked: "arch.upgrade.reason.locked",
   acted: "arch.upgrade.reason.acted",
 };
 
@@ -103,6 +104,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const committed = architect.buildings || [];
   const offers = architect.offers || [];
+  /* EINE Stelle fuer den Kampagnen-Deckel statt sieben. `upgradeInfo` fragt sonst jede Aufrufstelle
+     einzeln, und eine vergessene fiele still durch — genau die Falle, die den Raritaet-Deckel schon
+     einmal an den Skills vorbeilaufen liess (Owner-Fund 2026-09-23). Ohne Kampagne bleibt der Aufruf
+     der alte, damit kein Bestandspfad ueber einen Deckel stolpert, den es nicht gibt. */
+  // `useCallback`, damit der Memo unten eine STABILE Abhaengigkeit bekommt: als frische Funktion je
+  // Render rechnete er sonst jedes Mal neu (oder braeuchte ein eslint-disable, das die Naht verdeckt).
+  const upInfo = useCallback(
+    (fam, tier) => (state.rareCap ? upgradeInfo(fam, tier, state.rareCap) : upgradeInfo(fam, tier)),
+    [state.rareCap]);
   const maxCover = architect.maxCover ?? N_POS;
   // #361: „↶ Rückgängig"/„Zurücksetzen" — aktiv, sobald in DIESER Phase etwas geschah (Undo-Stapel nicht leer),
   // analog `hasSwaps` in der Aufstellungsphase. Gleiche Beschriftung/Look wie dort.
@@ -203,9 +213,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const upgradeableBids = useMemo(() => {
     const s = new Set();
     if (phase !== "upgrade") return s;
-    for (const b of buildings) { const f = familyDef(b.familyId); if (f && upgradeInfo(f, b.tier).can) s.add(b.id); }
+    for (const b of buildings) { const f = familyDef(b.familyId); if (f && upInfo(f, b.tier).can) s.add(b.id); }
     return s;
-  }, [phase, buildings]);
+  }, [phase, buildings, upInfo]);
 
   // #UI: Gebäude-Kontur als durchgezogene SVG-Linie (wie in der Aufstellungsphase, archFrameLines) statt eines
   // Rahmens JE ZELLE → ein mehrzelliges Gebäude liest sich als EINE Form. Farbe = TYP-Farbe (Wert/Score/Formation); die Rarität zeigt die Stufen-Zahl in der Ecke.
@@ -309,7 +319,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const catCount = { value: 0, score: 0, formation: 0 };
   for (const b of committed) { const f = familyDef(b.familyId); if (f) catCount[f.category] += 1; }
 
-  const canUpgradeAny = committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can);
+  const canUpgradeAny = committed.some((b) => upInfo(familyDef(b.familyId), b.tier).can);
 
   // ---- Geometrie-Helfer ----
   const anchorOf = (fp) => posOf(Math.min(...fp.map(rowOf)), Math.min(...fp.map(colOf)));
@@ -414,7 +424,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     if (pendingUpgrade == null) return;
     const b = committed.find((x) => x.id === pendingUpgrade);
     const fam = b ? familyDef(b.familyId) : null;
-    const info = upgradeInfo(fam, b?.tier);
+    const info = upInfo(fam, b?.tier);
     if (!b || !fam || !info.can || architect.actedMain) {                       // No-op-Bedingungen des Reducers spiegeln → kein Scheinerfolg
       setUpgradeMsg({ name: fam ? fam.name : t("arch.buildingFallback"), reason: architect.actedMain ? "acted" : info.reason });
       setPendingUpgrade(null);
@@ -429,7 +439,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const tapCell = (pos) => {
     if (chLockSet.has(pos)) return; // #301 C2: gesperrte Zelle — keine Interaktion
     if (removeFor) { const cb = committedAt(pos); if (cb) setDemolishIds((cur) => cur.includes(cb.id) ? cur.filter((x) => x !== cb.id) : [...cur, cb.id]); return; } // #235/#281: markieren statt sofort abreißen; beliebiges Gebäude (de)markieren — Mehrfach-Abriss für große Legendäre
-    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : t("arch.buildingFallback"), reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
+    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : t("arch.buildingFallback"), reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
     if (phase === "choose") { const cb = committedAt(pos); if (cb) setInspectId((cur) => (cur === cb.id ? null : cb.id)); return; } // Brett-Tap → Beschreibung leuchtet (Liste ↔ Brett)
@@ -792,7 +802,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const isRemovable = !!removeFor && !!cbHere && replaceableSet.has(cbHere.id); // nur Gebäude, deren Abriss Platz schafft
                 const isMarkedDemolish = !!removeFor && !!cbHere && demolishIds.includes(cbHere.id); // #235/#281: markiertes Abriss-Ziel (Mehrfach)
                 // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
-                const upCan = phase === "upgrade" && b && !isPending && upgradeInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
+                const upCan = phase === "upgrade" && b && !isPending && upInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
                 const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
                 const isInspected = phase === "choose" && inspectId != null && b && b.id === inspectId; // choose: aus der Liste inspiziertes Gebäude → leuchtet (cyan), zeigt wo es liegt
                 const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
@@ -1129,9 +1139,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
                             markiert das Gebäude (setPendingUpgrade) → es leuchtet gold am Brett und Jetzt/Danach erscheint;
                             aufgewertet wird erst mit „Aufwerten bestätigen". Alternativ weiterhin per Tap aufs Brett. */}
-                        {committed.some((b) => upgradeInfo(familyDef(b.familyId), b.tier).can) && (
+                        {committed.some((b) => upInfo(familyDef(b.familyId), b.tier).can) && (
                           <div className="flex flex-col gap-1 mt-1">
-                            {committed.filter((b) => upgradeInfo(familyDef(b.familyId), b.tier).can).map((b) => {
+                            {committed.filter((b) => upInfo(familyDef(b.familyId), b.tier).can).map((b) => {
                               const f = familyDef(b.familyId);
                               return (
                                 <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}

@@ -623,17 +623,27 @@ export function rollTier(rng, weights = C.SKILL_TIER_WEIGHTS) {
    for a given rng; exactly two draws per slot at most. Returns { offer, tiers } with tiers = { [id]: 0..3 } for the
    normal skills only. */
 export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, weights = C.SKILL_TIER_WEIGHTS,
-                                    { forceLegendary = 0, excludeLegendary = [] } = {}) {
+                                    { forceLegendary = 0, excludeLegendary = [], maxTier = 4 } = {}) {
   const out = [...(offer || [])];
   const tiers = {};
   const taken = new Set([...(owned || []), ...out, ...(excludeLegendary || [])]);
+  /* `maxTier` ist DERSELBE Deckel, den Perks und Gebäude schon kennen (`state.rareCap`, 1-basiert,
+     4 = kein Deckel) — die Skills hatten ihn bis 2026-09-23 als einzige nicht, und die Kampagne
+     bot auf Ebene 1 „Sehr selten" an, obwohl die Freischaltung noch fehlte.
+
+     Zwei Regeln, beide von perks.js abgeschrieben statt neu erfunden:
+     Stufen über dem Deckel fallen aus den Gewichten, und unter Stufe IV gibt es GAR KEINE
+     Legendären — die schalten zusammen mit „lila" frei, sonst leckten sie am Deckel vorbei.
+     Ohne Deckel (4) wird kein rng-Zug anders gezogen: Bestandspfade bleiben byte-identisch. */
+  const legOk = maxTier >= 4;
+  const w = maxTier < weights.length ? weights.slice(0, Math.max(1, maxTier)) : weights;
   /* Legendär-Neuwurf (docs/muenz-oekonomie.md §3.1): so viele Plätze tragen GARANTIERT ein Legendäres, und
      `excludeLegendary` hält die gerade angezeigten heraus — man kauft einen anderen Wurf, nicht denselben.
      Der Platz wird gezogen statt von vorn genommen, sonst säße das Legendäre immer links. Hat die Fraktion
      eines Platzes keins mehr frei, geht es zum nächsten; bleibt gar keins übrig, kommt das Angebot ohne
      Legendäres zurück und der Aufrufer kassiert nicht (Reducer REROLL_SKILL).
      forceLegendary = 0 (Default) verbraucht KEINEN rng-Zug → alle Bestandspfade bleiben byte-identisch. */
-  let need = Math.max(0, forceLegendary || 0);
+  let need = legOk ? Math.max(0, forceLegendary || 0) : 0;
   if (need > 0) {
     const order = out.map((_, i) => i).filter((i) => !isLegendarySkill(out[i]));
     for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(rng() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
@@ -648,7 +658,7 @@ export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legend
   for (let i = 0; i < out.length; i++) {
     const id = out[i];
     if (isLegendarySkill(id)) continue; // already a legendary (dev catalog) — nothing to roll
-    if (legendaryChance > 0 && rng() < legendaryChance) {
+    if (legOk && legendaryChance > 0 && rng() < legendaryChance) {
       const arch = archetypeOf(id);
       const pool = SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !taken.has(s.id)).map((s) => s.id);
       if (pool.length) {
@@ -658,7 +668,7 @@ export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legend
         continue;
       }
     }
-    tiers[id] = rollTier(rng, weights);
+    tiers[id] = rollTier(rng, w);
   }
   return { offer: out, tiers };
 }
@@ -675,7 +685,7 @@ export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legend
    [] (perk fallback). Returns [{ skills: [id…], tiers: { [id]: 0..3 } }, …] — doors without a skill are dropped. */
 export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES,
   doors = C.SKILL_DOORS, size = C.SKILL_DOOR_SIZE, factions = C.SKILL_DOOR_FACTIONS, pool = C.SKILL_OFFER_ARCHETYPES,
-  legendaryChance = C.SKILL_LEGENDARY_PER_SLOT } = {}) {
+  legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, maxTier = 4 } = {}) {
   const have = owned || [];
   const active = activeArchetypes || [];
   const world = unlockedArchetypes || pool;
@@ -697,7 +707,7 @@ export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlock
       skills.push(id); taken.add(id);
     }
     if (!skills.length) continue;
-    const rolled = rollSkillOfferTiers(skills, [...taken], rngTiers, legendaryChance); // taken keeps a legendary off both doors
+    const rolled = rollSkillOfferTiers(skills, [...taken], rngTiers, legendaryChance, C.SKILL_TIER_WEIGHTS, { maxTier }); // taken keeps a legendary off both doors
     for (const id of rolled.offer) taken.add(id);
     out.push({ skills: rolled.offer, tiers: rolled.tiers });
   }
@@ -708,7 +718,7 @@ export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlock
    promise stays, the skills behind it change. Per slot an unowned skill of that slot's faction, preferring skills not in
    the current offer (those come back only when the faction has nothing else left); tiers and the legendary chance are
    rolled again. A slot whose faction is exhausted is dropped; nothing left → { offer: [], tiers: {} } (reducer no-op). */
-export function rerollDoorSkills(archs, owned, current, rng, rngTiers, { legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, forceLegendary = 0 } = {}) {
+export function rerollDoorSkills(archs, owned, current, rng, rngTiers, { legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, forceLegendary = 0, maxTier = 4 } = {}) {
   const have = owned || [];
   const cur = current || [];
   const pools = {};
@@ -726,7 +736,7 @@ export function rerollDoorSkills(archs, owned, current, rng, rngTiers, { legenda
   // Angebots aus. Nur gegen das aktuelle — die Kette hat kein Gedächtnis, beim zweiten Kauf darf das aus
   // dem ersten wiederkommen.
   return rollSkillOfferTiers(skills, have, rngTiers, legendaryChance, C.SKILL_TIER_WEIGHTS,
-    { forceLegendary, excludeLegendary: forceLegendary ? cur.filter(isLegendarySkill) : [] });
+    { forceLegendary, excludeLegendary: forceLegendary ? cur.filter(isLegendarySkill) : [], maxTier });
 }
 
 /* (exp skill rework: Ionisierung, Ladung, Stapel-Score und alle Blitz-Prädikate liegen in
