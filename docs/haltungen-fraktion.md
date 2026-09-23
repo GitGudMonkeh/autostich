@@ -166,8 +166,9 @@ nachrüstbar, ohne dass eine Regel sich ändert.
   Dauer. Das war der Prüfstein, an dem das alte Crit-Passiv gescheitert ist (§7).
 - **Die Segmentbindung des Abfärbens ist eine bewusste Einschränkung, keine geerbte.** „Die
   Nachbarkarte erbt" ist von sich aus positionsbezogen, und Positionen kennen keine Segmente — ohne
-  die ausdrückliche Klausel liefe das Abfärben über jede Grenze und der Skill *Übergriff* (§5.4)
-  hätte nichts zu tun. Sie muss deshalb im Spielertext des Passivs stehen, nicht nur hier (Owner).
+  die ausdrückliche Klausel liefe das Abfärben über jede Grenze, und der Skill *Übergriff* (§5.4),
+  der genau sie aufhebt, hätte die Hälfte seiner Wirkung schon geschenkt bekommen.
+  Sie muss deshalb im Spielertext des Passivs stehen, nicht nur hier (Owner).
   Angenehmer Nebeneffekt: damit zählt die **Lage innerhalb des Segments** — eine Karte am Rand färbt
   nur nach innen, eine in der Mitte nach beiden Seiten.
 
@@ -256,7 +257,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Übertrag** · Reichweite des Übersprungs | 1 Stich | 2 | 3 | 4 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
 | **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
-| | **Übergriff** · Grenzen | 1 | 2 | 3 | alle |
+| | **Übergriff** · Zuschlag auf den Überlappungsbonus (dazu: alle Grenzen offen) | +0,3 | +0,4 | +0,55 | +0,7 |
 | | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
@@ -384,7 +385,7 @@ Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** 
 | Skill | Wirkung |
 | --- | --- |
 | **Doppelbindung** | Eine Karte darf in zwei Formationen desselben Typs liegen. Der einzige Weg über die ×3-Decke, weil es sonst nur vier Typen gibt — hebt die *Anzahl*, nicht den *Wert*. |
-| **Übergriff** | Das Abfärben springt über die Segmentgrenze. |
+| **Übergriff** | Solange Grün klingt, zählen **alle** Segmentgrenzen als offen. Dazu ein Zuschlag auf den Überlappungsbonus. |
 | **Verankerung** | Beim Auslösen der Haltung erbt jede Karte des aktuellen Segments einmal. Zündet auch in einer Haltung, die nur einen Stich lebt — also der für den Tanz-Build. |
 
 **Startwerte:**
@@ -392,28 +393,30 @@ Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Doppelbindung** · für wie viele Formationstypen | 1 | 2 | 3 | alle 4 |
-| **Übergriff** · Grenzen mit den meisten Formationen daneben | 1 | 2 | 3 | alle |
+| **Übergriff** · Zuschlag auf den Überlappungsbonus | +0,3 | +0,4 | +0,55 | +0,7 |
 | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
 
-Übergriffs Leiter spiegelt bewusst **Spalier** (`1 / 2 / 3 / alle`) — dasselbe Muster für dieselbe
-Geste spart dem Spieler eine Regel.
+**Neudesign §5.3 (Owner):** *„Stiche während grün aktiv ist oder nachklingt zählen, als wären alle
+Segmentgrenzen offen. Als Leiter: der Überlappbonus wird größer."* Die alte Fassung staffelte die
+**Anzahl** der Grenzen (1 / 2 / 3 / alle) und traf damit auf der Normal-Stufe neben jedem anderen
+Grenzöffner gar nichts. Jetzt ist die **Geste** unbedingt — Grün klingt, alle Grenzen sind offen, für
+die Erkennung wie fürs Abfärben — und gestaffelt ist der **Zuschlag**. Beides zusammen wirkt sowohl
+auf der Naht (Formationen und Abfärben laufen über die Grenze) als auch überall sonst (jede
+Mehrfach-Überlappung ist mehr wert), und der Skill hat damit auf jedem Brett einen Körper.
 
-**Entschieden** (Owner): **das Abfärben folgt jeder offenen Grenze von selbst — auf einer schon
-offenen Grenze tut Übergriff also nichts.** Es gibt damit nur *eine* Sorte offene Grenze im Spiel,
-der Spieler muss keine zweite Regel lernen. Der Preis ist bewusst in Kauf genommen: wer Spalier
-(Pflanze), Segmentarbeit (Perk-Familie E) oder Durchlass (Auftragsbeute) mitführt, hat Teile der
-Wirkung schon, und Übergriff ist dort ein toter Skill-Platz. **Das gehört in den Spielertext** — der
-Skill muss erkennbar machen, dass er sich mit jedem Grenzöffner überschneidet, sonst ist es eine
-Falle statt einer Entscheidung.
+Der Zuschlag liegt **absolut** auf dem Überlappungsfaktor — dieselbe Achse und dieselbe Rechnung wie
+Pflanzes **Verwachsung**, die Stelle im Code ist `overlapPlus` in `formations.js`.
 
-**Die Auswahl weicht nicht aus:** Übergriff nimmt „die Grenzen mit den meisten Formationen daneben",
-auch wenn die schon offen sind. Auf der Normal-Stufe (eine Grenze) heißt das, dass der Skill neben
-einem Grenzöffner **gar nichts** tun kann, nicht nur weniger. Das ist so gewollt (Owner) — es ist die
-Spitze desselben Preises: wer Spalier oder Durchlass mitführt, wählt Übergriff nicht.
+**Zu beachten, nicht entschieden:** Übergriff und **Verwachsung** (`0,4 / 0,7 / 1 / 1,4`) **addieren
+sich** auf derselben Achse. Ein Prisma-Pflanze-Build, der beide episch hält, steht bei `+2,1` auf
+einem Faktor, dessen Basis `1,5` (zwei Formationen) ist — das ist die Stelle, an der diese Paarung
+zuerst wegläuft. Übergriffs Leiter liegt deshalb **bewusst unter** der von Verwachsung: er bekommt
+die offenen Grenzen zusätzlich, ohne dafür zu zahlen. Startwerte, nicht tariert.
 
-**Nachbarschaft zu Pflanze, zu beachten:** **Verwachsung** (SK_PLANT_14) hebt den Überlappungs-*Wert*,
-**Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier** (SK_PLANT_03) öffnet Segmentgrenzen. Wer
-hier baut, sollte einen dritten Griff nehmen.
+**Nachbarschaft zu Pflanze, weiterhin:** **Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier**
+(SK_PLANT_03) öffnet Segmentgrenzen. Spalier, Segmentarbeit (Perk-Familie E) und Durchlass
+(Auftragsbeute) überschneiden sich mit Übergriffs Grenz-Hälfte — anders als vorher bleibt ihm daneben
+aber der Zuschlag, er ist also nie ein toter Skill-Platz.
 
 ### 5.5 · Ergebnis-Linie — voll
 
@@ -913,6 +916,11 @@ länger nach. Das ist die Stelle, an der „die Farbe warm halten" überhaupt et
 **Drei Punkte sind seither entschieden** (Owner) und stehen dort, wo sie beim Bauen gelesen werden:
 ein gerutschter Sieg zahlt **voll** (§3), **Übergriff wirkt auf einer schon offenen Grenze nicht**
 (§5.4), und die **Haltungen bekommen vorerst keine eigenen Namen** — sie laufen über ihre Farbe (§3).
+
+> **SUPERSEDED IN PART (§5.3, Owner):** Der mittlere Punkt gilt nicht mehr. Übergriff wählt keine
+> Grenzen mehr aus — solange Grün klingt, sind **alle** offen, und die Stufe staffelt stattdessen
+> einen Zuschlag auf den Überlappungsbonus. Auf einer ohnehin offenen Grenze gewinnt er weiterhin
+> nichts, aber der Skill ist deswegen nicht mehr wirkungslos (§5.4).
 
 **Werte und Design, offen:**
 

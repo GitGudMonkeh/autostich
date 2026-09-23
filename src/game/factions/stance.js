@@ -314,7 +314,10 @@ export function stanceOverlapOpts(st, skills, skillTiers) {
   const anchored = st.anchorSeg != null;
   return {
     bleed: C.STANCE_BLEED,
-    borders: stanceParam(skills, skillTiers, S.UEBERGRIFF, "borders") || 0,
+    // Übergriff (§5.4, Owner): solange Grün klingt, zählt das Brett, als wären ALLE Segmentgrenzen offen —
+    // ohne Stufe und ohne Auswahl. Die Stufe sitzt stattdessen auf dem Überlappungsbonus selbst.
+    allBorders: held(skills, S.UEBERGRIFF),
+    overlapPlus: stanceParam(skills, skillTiers, S.UEBERGRIFF, "bonus") || 0,
     doubleBind: stanceParam(skills, skillTiers, S.DOPPELBINDUNG, "types") || 0,
     anchor: anchored ? (stanceParam(skills, skillTiers, S.VERANKERUNG, "segments") || 0) : 0,
     anchorSeg: st.anchorSeg || 0,
@@ -323,4 +326,4 @@ export function stanceOverlapOpts(st, skills, skillTiers) {
 // Der Schlüssel, an dem die Engine erkennt, dass das Brett neu gelesen werden muss. Alles, was die Geometrie
 // verändert, steckt darin — und nur das: ein Wechsel, der Grün nicht berührt, rechnet nichts neu.
 export const stanceFormKeyOf = (opts) =>
-  (opts ? `${opts.bleed}|${opts.borders}|${opts.doubleBind}|${opts.anchor}|${opts.anchorSeg}` : "");
+  (opts ? `${opts.bleed}|${opts.allBorders ? 1 : 0}|${opts.overlapPlus}|${opts.doubleBind}|${opts.anchor}|${opts.anchorSeg}` : "");

@@ -29,7 +29,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
   genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank,
   stanceCycleEnd, anklangScore } from "./factions/stance.js";
-import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES, stanceBorders } from "./formations.js";
+import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
@@ -223,25 +223,16 @@ export function resolveTrick(state, rng) {
   /* Haltungen, grün (§3/§9): die einzige Fraktions-Mechanik, die die Formations-GEOMETRIE ändert statt einer Zahl.
      `computeFormations` läuft sonst einmal je Durchlauf und hält — hier hängt das Brett aber an der klingenden
      Haltung, die mitten im Durchlauf wechselt. `stanceFormKey` fasst alles zusammen, was die Geometrie verändert:
-     ändert er sich, wird neu gelesen, sonst nicht. Ein Wechsel, der Grün gar nicht berührt, kostet damit nichts.
-     Übergriff braucht zwei Durchgänge, weil „die Grenzen mit den meisten Formationen daneben" erst nach der
-     Erkennung feststehen — nur solange der Skill liegt. */
+     ändert er sich, wird neu gelesen, sonst nicht. Ein Wechsel, der Grün gar nicht berührt, kostet damit nichts. */
   const stanceOn = !!(stance && stance.active && (activeArchetypes || []).includes("stance"));
   const stanceOpts = stanceOn ? stanceOverlapOpts(stance, skills, skillTiers) : null;
   const stanceKey = stanceFormKeyOf(stanceOpts);
   let newStanceFormKey = stanceFormKey;
   /* EIN Weg, das Brett zu lesen — beide Aufrufstellen (Durchlauf-Beginn hier, Formationsphase am Ende) gehen
-     hierdurch. `o.borders` kommt als ANZAHL herein und geht als AUSWAHL hinaus: der erste Durchgang liefert die
-     Formationen, an denen sich „die Grenzen mit den meisten daneben" überhaupt erst bestimmen lassen. Ohne
-     Übergriff bleibt es bei einem Durchgang. `deck`/`growthArg` werden bewusst spät gelesen — am Durchlauf-Ende
-     steht der Pflanzen-Stand dieses Stichs schon drin. */
-  const readBoard = (o, growthArg) => {
-    const call = (opts) => computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: growthArg }, CT.openBordersOf(state), opts);
-    if (!o) return call(null);
-    const first = call({ ...o, borders: null });
-    if (!o.borders) return first;
-    return call({ ...o, borders: stanceBorders(first, o.borders) });
-  };
+     hierdurch. `deck`/`growthArg` werden bewusst spät gelesen — am Durchlauf-Ende steht der Pflanzen-Stand
+     dieses Stichs schon drin. */
+  const readBoard = (o, growthArg) =>
+    computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: growthArg }, CT.openBordersOf(state), o || null);
   if (stanceOn && pos !== 0 && stanceKey !== stanceFormKey) { formations = readBoard(stanceOpts, growth); newStanceFormKey = stanceKey; }
   if (pos === 0) {
     formations = readBoard(stanceOpts, growth);

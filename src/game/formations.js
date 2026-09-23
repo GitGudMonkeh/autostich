@@ -121,22 +121,6 @@ export function overlapFactor(count) {
   if (c <= 4) return OVERLAP_BONUS[c];
   return OVERLAP_BONUS[4] + (c - 4) * STANCE_OVERLAP_OVER;
 }
-/* Übergriff (§5.4): die `count` Segmentgrenzen mit den MEISTEN Formationen daneben. Braucht einen ersten
-   Durchgang, weil die Formationen erst nach der Erkennung feststehen — die Engine rechnet deshalb zweimal, wenn
-   der Skill liegt. Er weicht schon offenen Grenzen NICHT aus (Owner): steht eine der besten Grenzen ohnehin
-   offen, verfällt dort seine Wirkung. Stabile Sortierung über den Grenz-Index, damit die Auswahl deterministisch
-   bleibt. */
-export function stanceBorders(formations = [], count = 0) {
-  const n = formations.length;
-  const nBorder = Math.max(0, Math.ceil(n / SEGMENT_SIZE) - 1);
-  if (!count || !nBorder) return new Set();
-  const weight = (b) => {
-    const left = (b + 1) * SEGMENT_SIZE - 1, right = left + 1;
-    return ((formations[left]?.formations || []).length) + ((formations[right]?.formations || []).length);
-  };
-  const ranked = Array.from({ length: nBorder }, (_, b) => b).sort((a, b) => weight(b) - weight(a) || a - b);
-  return new Set(ranked.slice(0, count));
-}
 /* Verankerung (§5.4): die Positionen, die beim Auslösen der grünen Haltung eine Stufe erben. Reichweite je Stufe —
    das Segment, in dem ausgelöst wurde, dazu das folgende, die drei darum, oder alle acht. */
 export function anchorPositions(st, n) {
@@ -298,11 +282,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   /* Haltungen (docs/haltungen-fraktion.md §3/§5.4): die grüne Haltung ändert als einzige Fraktions-Mechanik die
-     Formations-GEOMETRIE statt einer Zahl. `stanceOpts` = { bleed, borders, doubleBind, anchor, anchorSeg } und ist
-     null, sobald Grün nicht klingt — dann rechnet unten alles wie vorher. Übergriffs Grenzen kommen als `borders`
-     schon ausgewählt herein (stanceBorders, zwei Durchgänge) und laufen über dieselbe `lootBorders`-Naht wie
-     Durchlass und Spalier: damit folgt das Abfärben JEDER offenen Grenze von selbst, und auf einer ohnehin offenen
-     Grenze tut Übergriff nichts (Owner). */
+     Formations-GEOMETRIE statt einer Zahl. `stanceOpts` = { bleed, allBorders, overlapPlus, doubleBind, anchor,
+     anchorSeg } und ist null, sobald Grün nicht klingt — dann rechnet unten alles wie vorher. Übergriff läuft über
+     dieselbe `lootBorders`-Naht wie Durchlass und Spalier: solange Grün klingt, sind ALLE Grenzen offen. */
   const st = stanceOpts && stanceOpts.bleed ? stanceOpts : null;
   // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
   // Stufe je Skill und das Wachstum je Karte (Wildwuchs braucht die Rangfolge). Ohne das Bündel
@@ -368,11 +350,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const segInfo = openSegmentInfo(familyTiers);
   const spalierBorders = spalierOpenBorders(cards, skills, pTiers);
   const lootBorders = openBorders instanceof Set ? new Set(openBorders) : new Set(openBorders || []);
-  // Übergriff: dieselbe Naht wie Durchlass. `borders` ist hier die AUSWAHL (Set/Array), nicht die Anzahl — die
-  // wählt der Aufrufer im ersten Durchgang (stanceBorders). Eine durchgereichte Zahl wäre ein Aufrufer-Fehler
-  // und würde hier still zur Wirkungslosigkeit; deshalb der ausdrückliche Typtest statt `for…of` auf Verdacht.
-  const stBorders = st && (st.borders instanceof Set || Array.isArray(st.borders)) ? st.borders : [];
-  for (const b of stBorders) lootBorders.add(b);
+  // Übergriff (§5.4): dieselbe Naht wie Durchlass, aber ohne Auswahl — solange Grün klingt, sind ALLE Grenzen
+  // offen. Das gilt für die Erkennung wie fürs Abfärben, denn beide fragen `canExtendSeg`.
+  if (st && st.allBorders) for (let b = 0; b * SEGMENT_SIZE < n - SEGMENT_SIZE; b++) lootBorders.add(b);
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
     || spalierBorders.has((k + 1) / SEGMENT_SIZE - 1) // Pflanze Spalier: grün gesäumte Grenze offen
     || lootBorders.has((k + 1) / SEGMENT_SIZE - 1)    // Durchlass (Auftrags-Beute): gewählte Grenze offen
@@ -523,7 +503,10 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Verwachsung (Pflanze, §6.26): hebt den Überlappungsbonus um einen ABSOLUTEN Betrag — der Zwei-Formations-Sieg
   // gewinnt damit relativ am meisten (×1,5 → ×1,75 sind +17 %, ×3 → ×3,25 nur +8 %), und dort liegen 38 % der Siege.
   // Prozentual würde die Spitze aufgeblasen, in der die Konzentration der Fraktion ohnehin sitzt (§6.22 C).
-  const overlapPlus = plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0;
+  /* Überlappungs-Zuschlag, ABSOLUT auf den Faktor. Zwei Quellen addieren sich: Pflanzes Verwachsung und
+     Übergriff (dessen Stufe hier sitzt, §5.4). Wer beide hält, stapelt auf derselben Achse — gewollt, aber
+     die Stelle, an der ein Prisma-Pflanze-Build zuerst wegläuft. */
+  const overlapPlus = (plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0) + ((st && st.overlapPlus) || 0);
   /* Haltungen, grün (§3): das Abfärben. Eine Karte, die in mindestens einer Formation liegt, gibt ihrer
      NACHBARKARTE eine Überlappungs-Stufe — innerhalb des Segments, es sei denn, die Grenze dazwischen ist offen
      (`canExtendSeg`, dieselbe Frage, die auch ein Lauf stellt). Die Segmentbindung ist eine ausdrückliche Klausel,

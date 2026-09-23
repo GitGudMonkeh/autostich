@@ -196,10 +196,12 @@ const HALTUNG = {
   grundrauschen:  [{ crit: 0.08 }, { crit: 0.12 }, { crit: 0.17 }, { crit: 0.25 }],
   uebertrag:      [{ range: 1 }, { range: 2 }, { range: 3 }, { range: 4 }],
   schwungrad:     [{ max: 2 }, { max: 3 }, { max: 5 }, { max: 8 }],
-  // Überlappungs-Linie (grün). Übergriffs Leiter spiegelt bewusst Spalier (1 / 2 / 3 / alle) — dasselbe Muster für
-  // dieselbe Geste spart dem Spieler eine Regel.
+  // Überlappungs-Linie (grün).
   doppelbindung:  [{ types: 1 }, { types: 2 }, { types: 3 }, { types: 4 }],
-  uebergriff:     [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
+  // §5.3 (Owner): Übergriff öffnet ALLE Segmentgrenzen, solange Grün klingt — das ist die Geste, und sie hängt an
+  // keiner Stufe. Gestaffelt ist der Überlappungsbonus. Die Leiter liegt unter Verwachsung (0.4/0.7/1/1.4), weil
+  // Übergriff die offenen Grenzen obendrauf bekommt; beide addieren auf denselben `overlapPlus`.
+  uebergriff:     [{ bonus: 0.3 }, { bonus: 0.4 }, { bonus: 0.55 }, { bonus: 0.7 }],
   verankerung:    [{ segments: 1 }, { segments: 2 }, { segments: 3 }, { segments: 8 }],
   // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
   // und sie strukturell nicht weglaufen kann (§6.5).
@@ -511,7 +513,7 @@ export const SKILL_DEFS = {
   SK_STANCE_07: { id: "SK_STANCE_07", name: "Doppelbindung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.doppelbindung,
     ...tiered(HALTUNG.doppelbindung, (r) => `Eine Karte zählt für die Überlappung in ${r.types === 4 ? "jedem" : `bis zu ${de1(r.types)}`} Formationstyp${r.types === 4 || r.types === 1 ? "" : "en"} doppelt.`) },
   SK_STANCE_08: { id: "SK_STANCE_08", name: "Übergriff", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.uebergriff,
-    ...tiered(HALTUNG.uebergriff, (r) => `Das Abfärben der grünen Haltung springt über ${r.borders >= 7 ? "jede Segmentgrenze" : `${de1(r.borders)} Segmentgrenze${r.borders === 1 ? "" : "n"}`}. Eine Grenze, die ohnehin offen ist, gewinnt dadurch nichts.`) },
+    ...tiered(HALTUNG.uebergriff, (r) => `Klingt die grüne Haltung, zählen alle Segmentgrenzen als offen. Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um ${de(r.bonus)} höher.`) },
   SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.verankerung,
     ...tiered(HALTUNG.verankerung, (r) => `Löst die grüne Haltung aus, erbt jede Karte ${r.segments >= 8 ? "aller Segmente" : r.segments === 1 ? "des aktuellen Segments" : `von ${de1(r.segments)} Segmenten`} einmal eine Überlappungs-Stufe.`) },
   // Ergebnis-Linie (rot)

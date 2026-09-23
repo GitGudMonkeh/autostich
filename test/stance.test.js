@@ -7,7 +7,7 @@ import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCou
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore } from "../src/game/factions/stance.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { computeFormations, overlapFactor, stanceBorders, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
+import { computeFormations, overlapFactor, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 
@@ -220,11 +220,11 @@ describe("Haltungen — die vier Passive (§3)", () => {
     // Die Segmentbindung hält: 4 und 5 liegen nebeneinander, aber in verschiedenen Segmenten — sie erben je nur
     // von ihrem eigenen Nachbarn, nicht voneinander. Beide stehen deshalb auf zwei Stufen, nicht auf drei.
     expect(green[5].mult).toBeCloseTo(plain[5].mult * OVERLAP_BONUS[2], 6);
-    // Übergriff öffnet genau diese Grenze — dann erben sie über sie hinweg, und aus zwei Stufen werden drei.
-    const over = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, borders: new Set([0]) });
+    // Gegenprobe, dass die Bindung eine echte Klausel ist: fällt sie (Übergriff öffnet alle Grenzen), erben 4 und 5
+    // über die Naht hinweg und stehen auf drei Stufen. 3 liegt mitten im Segment und ändert sich dadurch nicht.
+    const over = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, allBorders: true });
     expect(over[4].mult).toBeCloseTo(plain[4].mult * OVERLAP_BONUS[3], 6);
     expect(over[5].mult).toBeCloseTo(plain[5].mult * OVERLAP_BONUS[3], 6);
-    // ... und an der anderen Grenze, die niemand geöffnet hat, ändert sich nichts.
     expect(over[3].mult).toBe(green[3].mult);
   });
   it("das Abfärben tut auf einer formationslosen Karte nichts — der Bonus beginnt erst bei zwei (§3)", () => {
@@ -343,20 +343,25 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
     const two = computeFormations(identity(), deck, {}, [], [], [], {}, null, null, null, { bleed: 1, doubleBind: 4 });
     expect(two[0].mult).toBeGreaterThan(one[0].mult);
   });
-  it("SK_STANCE_08 Übergriff wählt die Grenzen mit den meisten Formationen daneben — und weicht offenen NICHT aus", () => {
-    expect(stanceOverlapOpts(st({ stance: "G" }), [S.UEBERGRIFF], {}).borders).toBe(T.uebergriff[0].borders);
-    // Auswahl: die Grenze mit der dichtesten Nachbarschaft gewinnt, Gleichstand entscheidet der Index.
-    const forms = Array.from({ length: 40 }, () => ({ formations: [] }));
-    forms[9] = { formations: [{}, {}] }; forms[10] = { formations: [{}] };   // Grenze 1 → Gewicht 3
-    forms[4] = { formations: [{}] };                                          // Grenze 0 → Gewicht 1
-    expect([...stanceBorders(forms, 1)]).toEqual([1]);
-    expect([...stanceBorders(forms, 2)].sort()).toEqual([0, 1]);
-    expect([...stanceBorders(forms, 0)]).toEqual([]);
-    // Eine offene Grenze gewinnt nichts dazu: dieselbe Naht, doppelt geöffnet, ändert das Brett nicht (Owner).
-    const deck = constDeck(3).map((c, i) => ({ ...c, value: i < 2 ? 7 : i, baseRank: i < 2 ? 7 : i }));
-    const open = computeFormations(identity(), deck, {}, [], [], [], {}, null, null, [0], { bleed: 1, borders: new Set([0]) });
-    const once = computeFormations(identity(), deck, {}, [], [], [], {}, null, null, [0], { bleed: 1 });
-    expect(open.map((p) => p.mult)).toEqual(once.map((p) => p.mult));
+  it("SK_STANCE_08 Übergriff öffnet ALLE Grenzen, solange Grün klingt — gestaffelt ist der Zuschlag", () => {
+    const opts = stanceOverlapOpts(st({ stance: "G" }), [S.UEBERGRIFF], {});
+    expect(opts.allBorders).toBe(true);
+    expect(opts.overlapPlus).toBe(T.uebergriff[0].bonus);
+    // Ohne den Skill bleiben die Grenzen zu und der Zuschlag bei 0 — die Geste hängt an keiner Stufe, der Zuschlag schon.
+    const bare = stanceOverlapOpts(st({ stance: "G" }), [], {});
+    expect(bare.allBorders).toBe(false);
+    expect(bare.overlapPlus).toBe(0);
+    expect(stanceOverlapOpts(st({ stance: "G" }), [S.UEBERGRIFF], { [S.UEBERGRIFF]: 3 }).overlapPlus).toBe(T.uebergriff[3].bonus);
+    /* Das Abfärben über die Naht: auf board10 liegen zwei Wiederholungen Rücken an Rücken an Grenze 0 (3/4 und 5/6).
+       Ohne Übergriff färbt 4 nicht auf 5 und 5 nicht auf 4 — beide stehen auf Stufe 2. Mit Übergriff auf Stufe 3. */
+    const shut = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1 });
+    const open = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, allBorders: true });
+    for (const k of [4, 5]) expect(open[k].mult / shut[k].mult).toBeCloseTo(overlapFactor(3) / overlapFactor(2));
+    // Die Positionen, die ohnehin im Segment bleiben, ändern sich nicht: Übergriff wirkt genau an der Naht.
+    for (const k of [3, 6]) expect(open[k].mult).toBeCloseTo(shut[k].mult);
+    // Der Zuschlag liegt ABSOLUT auf dem Überlappungsfaktor — dieselbe Achse wie Pflanzes Verwachsung.
+    const plus = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, overlapPlus: 0.5 });
+    expect(plus[3].mult / shut[3].mult).toBeCloseTo((overlapFactor(2) + 0.5) / overlapFactor(2));
   });
   it("SK_STANCE_09 Verankerung: die Reichweite beim Auslösen, Segment für Segment", () => {
     expect(anchorPositions({ anchor: 1, anchorSeg: 0 }, 40)).toEqual([0, 1, 2, 3, 4]);
