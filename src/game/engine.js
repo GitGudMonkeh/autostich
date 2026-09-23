@@ -28,7 +28,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
   genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank,
-  stanceCycleEnd } from "./factions/stance.js";
+  stanceCycleEnd, anklangScore } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES, stanceBorders } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
@@ -595,7 +595,7 @@ export function resolveTrick(state, rng) {
        (§3.1: Runde zahlt keinen Score mehr, sie verkürzt die Einklang-Leiste.) */
     let stanceFlat = 0;
     if (stanceOn) {
-      stanceFlat = genugtuungScore(skills, skillTiers, stanceDeficit);
+      stanceFlat = genugtuungScore(skills, skillTiers, stanceDeficit) + anklangScore(stance, skills, skillTiers);
       stanceBase += stanceFlat;
     }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf

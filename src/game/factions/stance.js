@@ -61,6 +61,7 @@ export function initStance() {
     ext: 0,                        // Verlängerungen auf der AKTUELL aktiven Haltung (Schwungrad/Kehrtwende)
     carry: 0,                      // Übertrag: Reststiche, in denen ein Sieg zwangsweise crittet
     carried: [C.STANCE_START],     // Runde: Farben, die in dieser Runde schon getragen wurden
+    echo: 0,                       // Anklang: Reststiche des Fensters NACH einem Haltungswechsel
     bar: 0,                        // Einklang-Leiste: füllt sich mit jedem echten Wechsel
     level: 0,                      // Stufe: dauerhaft, der einzige Sammler der Fraktion (Score-Multiplikator)
     einklang: 0,                   // Telemetrie: wie oft die Leiste diesen Lauf voll war
@@ -99,6 +100,15 @@ export const ringCount = (st) => (st && st.active ? STANCE_SUITS.filter((s) => r
 // Mindestdauer einer auslösenden Haltung — Anklang hebt sie, sonst der Grundwert.
 export const minDuration = (skills, skillTiers) =>
   stanceParam(skills, skillTiers, S.ANKLANG, "duration") ?? C.STANCE_MIN_DURATION;
+
+/* Anklang (§5.3): die Stiche NACH einem Haltungswechsel zahlen Basis-Score. Das Fenster ist genau so lang wie
+   der Nachklang, den der Skill ohnehin verlängert — die Stufe ist also EINE Zahl, die beides steuert.
+   Eigener Zähler statt `ring`, aus zwei Gründen: der Einklang lässt alle vier klingen, ohne dass ein Wechsel
+   stattgefunden hätte (dort zahlt Anklang nicht), und zwei dichte Wechsel sollen nicht doppelt zahlen — das
+   Fenster wird aufgefrischt, nicht gestapelt. Basis-Score gibt es nur auf einem Sieg; „bis zu 800" ist deshalb
+   die Decke, nicht der Erwartungswert. */
+export const anklangScore = (st, skills, skillTiers) =>
+  (st && st.active && (st.echo || 0) > 0 ? (stanceParam(skills, skillTiers, S.ANKLANG, "score") || 0) : 0);
 
 /* ---- Die Leiste und die Stufe (§3.1) ----
    „Runde" verkürzt die Leiste: derselbe Lauf füllt sie öfter, also steigt die Stufe schneller. Der Skill hieß
@@ -228,7 +238,7 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
   const before = STANCE_SUITS.filter((s) => ringsNow(st, s));
   const ring = { ...st.ring };
   for (const s of STANCE_SUITS) ring[s] = Math.max(0, (ring[s] || 0) - 1);
-  let next = { ...st, ring };
+  let next = { ...st, ring, echo: Math.max(0, (st.echo || 0) - 1) };
   let switched = false, triggered = false;
   if (wonSuit && STANCE_SUITS.includes(wonSuit)) {
     const counts = { ...next.counts, [wonSuit]: (next.counts[wonSuit] || 0) + 1 };
@@ -249,6 +259,7 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
           [next.stance]: minDuration(skills, skillTiers) + (next.ext || 0),
           [wonSuit]: 0, // die neue Haltung ist aktiv; ein Rest-Nachklang von früher wäre nur Ballast
         } };
+        next = { ...next, echo: minDuration(skills, skillTiers) }; // Anklangs Fenster, aufgefrischt statt gestapelt
         const carried = next.carried.includes(wonSuit) ? next.carried : [...next.carried, wonSuit];
         // Beschleunigung: jeder echte Wechsel senkt die Schwelle, bis auf den Boden der Stufe. Der Boden geht
         // bewusst nicht auf 1 — dort löste jede Farbe mit ihrem ersten Sieg aus (§6.7).

@@ -4,7 +4,8 @@ import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
   carryArmed, armCarry, spendCarry, banksNow, dischargeBank, stanceCycleEnd,
-  stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult } from "../src/game/factions/stance.js";
+  stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
+  anklangScore } from "../src/game/factions/stance.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, overlapFactor, stanceBorders, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -421,6 +422,30 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
 });
 
 describe("Haltungen — Rotation (wirkt über alle)", () => {
+  it("SK_STANCE_13 Anklang zahlt Basis-Score in den Stichen NACH dem Wechsel — aufgefrischt, nicht gestapelt", () => {
+    const skills = [S.ANKLANG], rate = T.anklang[0].score, dur = T.anklang[0].duration;
+    expect(anklangScore(st(), skills, {})).toBe(0);                 // ohne Wechsel kein Fenster
+    expect(anklangScore(st({ echo: 2 }), [], {})).toBe(0);          // ohne den Skill nichts
+    expect(anklangScore(st({ echo: 2 }), skills, {})).toBe(rate);
+    // Der Wechsel öffnet das Fenster in voller Länge; es zählt Stich für Stich herunter.
+    let s = stanceTick(st({ counts: { B: C.STANCE_THRESHOLD - 1 } }), skills, {}, { wonSuit: "B" }).stance;
+    expect(s.echo).toBe(dur);
+    for (let i = 1; i <= dur; i++) { expect(anklangScore(s, skills, {}), `Stich ${i}`).toBe(rate); s = stanceTick(s, skills, {}, {}).stance; }
+    expect(s.echo).toBe(0);
+    expect(anklangScore(s, skills, {})).toBe(0);
+    // Ein zweiter Wechsel frischt auf, er stapelt nicht — der Satz je Stich bleibt derselbe.
+    const again = stanceTick({ ...s, echo: 2, counts: { ...s.counts, G: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "G" }).stance;
+    expect(again.echo).toBe(dur);
+    expect(anklangScore(again, skills, {})).toBe(rate);
+    // Und in der Engine landet es als Flat in der multiplizierten Basis.
+    const w = resolveTrick(run(st({ echo: 3 }), { skills }), noCrit);
+    expect(w.lastTrick.breakdown.flats).toBe(rate);
+    expect(w.stanceBase).toBe(rate);
+    // Die Decke ist Dauer × Satz — erreichbar nur mit lauter Siegen, Basis-Score gibt es sonst nicht.
+    expect(T.anklang[3].duration * T.anklang[3].score).toBe(800);
+    const lost = resolveTrick(run(st({ echo: 3 }), { skills, deck: constDeck(0), oppDeck: constDeck(12) }), noCrit);
+    expect(lost.stanceBase).toBe(0);
+  });
   it("SK_STANCE_13 Anklang: die Mindestdauer steigt, und die Haltung klingt entsprechend länger nach", () => {
     expect(minDuration([], {})).toBe(C.STANCE_MIN_DURATION);
     expect(minDuration([S.ANKLANG], {})).toBe(T.anklang[0].duration);

@@ -261,7 +261,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
 | | **Kehrtwende** · Verlängerungen je Haltung | 3× | 4× | 6× | 10× |
-| **Rotation** (alle) | **Anklang** · Mindestdauer statt 3 Stichen | 4 | 5 | 6 | 8 |
+| **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2* |
 | | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
 
@@ -337,7 +337,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 
 | Skill | Wirkung |
 | --- | --- |
-| **Anklang** | Die vorige Haltung klingt länger nach. |
+| **Anklang** | Die vorige Haltung klingt länger nach — und jeder Stich in diesem Fenster gibt Basis-Score. |
 | **Runde** | Die Einklang-Leiste ist schon nach weniger Wechseln voll (§3.1) — der Lauf sammelt also schneller Stufen. |
 | **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. Schritt **und Boden** sind Stufenwerte. |
 
@@ -345,9 +345,19 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Anklang** · Mindestdauer statt 3 Stichen | 4 | 5 | 6 | 8 |
+| **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2 Stiche* |
 | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
+
+**Anklang hat mit §6.14 einen eigenen Körper bekommen** (Owner). Vorher verlängerte er nur, wie lange etwas
+anderes gilt — sein ganzer Wert war der Wert fremder Passive, und gemessen kam nichts dabei heraus. Jetzt
+zahlen die Stiche im Fenster selbst: **+100 Basis-Score je Stich**, also 400 / 500 / 600 / **800** als Decke.
+Der Satz ist flach, die STUFE ist die Länge.
+
+Drei Dinge, die die Regel festlegt: das Fenster wird bei einem zweiten Wechsel **aufgefrischt, nicht
+gestapelt** (sonst zahlte Hin-und-Her doppelt); der **Einklang zahlt nicht** (dort klingen alle vier, ohne dass
+ein Wechsel stattgefunden hat); und die Decke ist eine Decke — Basis-Score gibt es nur auf einem **Sieg**, bei
+rund 57 % Siegquote bringt Episch also eher 450 als 800.
 
 **Beschleunigungs Boden geht nicht auf 1**: bei Schwelle 1 löst jede Farbe mit ihrem ersten Sieg aus, und
 dann klingen dauerhaft drei bis vier Haltungen (§6.7). Boden 2 macht die Rotation sehr schnell, ohne in
