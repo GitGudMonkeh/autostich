@@ -318,6 +318,10 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     expect(uebertragMult(st({ stance: "B", critRamp: 3 }), skills, { [S.UEBERTRAG]: 3 })).toBeCloseTo(3 * T.uebertrag[3].step, 6);
     expect(uebertragMult(st({ stance: "B", critRamp: 3 }), [], {})).toBe(0);
     expect(uebertragMult(st({ stance: "B" }), skills, {})).toBe(0); // ohne Crit keine Rampe
+    // Gezahlt wird nur, solange Blau KLINGT — im Nachklang ja, danach nicht. Die Prüfung steht eigenständig in
+    // uebertragMult und hängt nicht daran, dass stanceTick die Rampe aufräumt (zwei verschiedene Regeln).
+    expect(uebertragMult(st({ stance: "R", ring: { B: 2 }, critRamp: 3 }), skills, {})).toBeCloseTo(3 * step, 6);
+    expect(uebertragMult(st({ stance: "R", critRamp: 3 }), skills, {})).toBe(0);
     // Sie erzwingt KEINEN Crit mehr — das war die alte Fassung.
     expect(resolveTrick(run(st({ stance: "B", critRamp: 2 }), { skills }), noCrit).lastTrick.isCrit).toBe(false);
     // In der Engine: derselbe Crit, einmal mit und einmal ohne stehende Rampe.

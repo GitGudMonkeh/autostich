@@ -224,9 +224,12 @@ export const extTotal = (st) => (st?.ext?.crit || 0) + (st?.ext?.slid || 0);
    Der Schritt zählt NACH dem Stich, der ihn auslöst — wie Serienanker und Crit-Folge. Der auslösende Crit zahlt
    also noch mit dem alten Stand; sonst wäre der erste Crit einer Haltung schon der verstärkte. */
 export const noteCrit = (st) => (ringsNow(st, "B") ? { ...st, critRamp: (st.critRamp || 0) + 1 } : st);
+/* Die Prüfung auf klingendes Blau steht hier AUCH, obwohl stanceTick die Rampe ohnehin fallen lässt: beides sind
+   verschiedene Regeln, nicht dieselbe doppelt. Der Reset sagt „eine neue blaue Haltung fängt bei null an", diese
+   Zeile sagt „gezahlt wird nur, solange Blau klingt". Ohne sie hinge die Auszahlung an fremdem Aufräumen. */
 export function uebertragMult(st, skills, skillTiers) {
   const step = stanceParam(skills, skillTiers, S.UEBERTRAG, "step");
-  return step && st && st.active ? step * (st.critRamp || 0) : 0;
+  return step && ringsNow(st, "B") ? step * (st.critRamp || 0) : 0;
 }
 
 /* ---- Stauung (Score-Linie) ----
