@@ -1459,3 +1459,104 @@ describe("Rarität-Deckel · die Architektenoberfläche fragt überall über die
     expect(rumpf, `der Helfer ignoriert den Deckel: ${rumpf}`).toContain("state.rareCap");
   });
 });
+
+/* ============================================================================
+   DIE KETTE MUSS JEDEN LAUF ABRECHNEN (Playtest exp, 2026-09-23)
+
+   Owner-Fund: ein Lauf 2 mit 432,5 Mio stand in der Auswertung auf 0 Mio, 0 Stufen, Reward
+   „Normal". Ursache war EIN Feld: `settleCampaign` hat einen Riegel `campaign.settled`, damit ein
+   Gameover-State nicht zweimal gewertet wird — und `takeReward` schob auf den nächsten Lauf weiter,
+   ohne ihn zu lösen. Ab Lauf 2 rechnete die Kampagne deshalb NIE wieder ab.
+
+   Die Anzeige war nur das sichtbare Drittel. Genauso still blieben:
+     kein verfehlter Lauf galt als verloren (die Kampagne war nicht mehr zu verlieren),
+     `done` wurde nie gesetzt (sie war auch nicht mehr zu gewinnen),
+     und `scores` trug nur den ersten Lauf.
+
+   Gemessen wird deshalb die ganze Kette durch die echte Tür (START_RUN → END_RUN), nicht das Feld.
+   ============================================================================ */
+describe("Kampagnen-Kette · jeder Lauf wird abgerechnet, nicht nur der erste", () => {
+  /* Ein Lauf durch den echten Reducer. Der ENDSCORE wird gesetzt statt erspielt — er ist die
+     Vorbedingung, nicht das Messergebnis; abgerechnet wird durch END_RUN. */
+  const lauf = (campaign, score, seed = 3) => {
+    const s0 = reducer(null, { type: "START_RUN", rng: makeRng(seed), seed, architect: true, campaign, unlocked: [] });
+    return reducer({ ...s0, score }, { type: "END_RUN" }).campaign;
+  };
+  const frisch = () => CP.startCampaign(() => 0.5, []);
+
+  it("trägt den Endscore des ZWEITEN Laufs in die Auswertung", () => {
+    let c = lauf(frisch(), 12_000_000);
+    expect(c.pending.score, "Lauf 1 rechnet ab").toBe(12_000_000);
+    c = CP.takeReward(c, { id: "sold", tier: 1 });
+    expect(c.run).toBe(2);
+
+    c = lauf(c, 432_500_000);
+    expect(c.pending, "Lauf 2 legt eine Auswertung an").toBeTruthy();
+    expect(c.pending.score, "und zwar mit dem Score DIESES Laufs").toBe(432_500_000);
+    expect(c.pending.steps, "432 Mio sind über dem Dreifachen der Schwelle").toBe(2);
+    expect(c.scores, "beide Läufe stehen in der Kette").toEqual([12_000_000, 432_500_000]);
+  });
+
+  it("erklärt einen verfehlten zweiten Lauf für verloren", () => {
+    let c = CP.takeReward(lauf(frisch(), 12_000_000), { id: "sold", tier: 1 });
+    c = lauf(c, 1);
+    expect(c.lost, "unter der Schwelle ist die Kampagne vorbei").toBe(true);
+  });
+
+  it("gibt JEDEM der vier Läufe seine eigene Auswertung", () => {
+    /* Nicht nur „die Kette läuft durch": jeder Lauf bekommt einen ANDEREN Endscore, und geprüft
+       wird, dass in seiner Auswertung genau dieser steht. Mit vier gleichen Zahlen wäre der Test
+       auch dann grün, wenn Lauf 3 die Auswertung von Lauf 2 wiederholte. */
+    const scores = [12_000_000, 432_500_000, 77_000_000, 210_000_000];
+    let c = frisch();
+    for (let n = 1; n <= CP.RUNS_PER_LEVEL; n++) {
+      c = lauf(c, scores[n - 1]);
+      expect(c.lost, `Lauf ${n} war über der Schwelle`).toBeFalsy();
+      if (n < CP.RUNS_PER_LEVEL) {
+        expect(c.pending, `Lauf ${n} legt eine Auswertung an`).toBeTruthy();
+        expect(c.pending.score, `Lauf ${n} wertet seinen eigenen Score`).toBe(scores[n - 1]);
+        expect(c.pending.threshold, `Lauf ${n} misst an seiner eigenen Schwelle`)
+          .toBe(CP.thresholdWith(c, n));
+        c = CP.takeReward(c, { id: "sold", tier: 1 });
+        expect(c.run, "und schiebt auf den nächsten").toBe(n + 1);
+      }
+    }
+    /* Der LETZTE Lauf legt bewusst keine Auslage an — es gäbe keinen Lauf mehr, der sie nutzt.
+       Er gewinnt die Ebene, und das ist `done`. */
+    expect(c.pending, "der vierte Lauf stellt keine Auslage").toBe(null);
+    expect(c.done, "er schliesst die Ebene ab").toBe(true);
+    expect(c.scores, "alle vier Endscores stehen in der Kette").toEqual(scores);
+  });
+
+  it("erklärt einen verfehlten Lauf in JEDER Position für verloren", () => {
+    // Der Fehler sass im Übergang, also wird jeder der vier Übergänge einzeln verfehlt.
+    for (let miss = 1; miss <= CP.RUNS_PER_LEVEL; miss++) {
+      let c = frisch();
+      for (let n = 1; n <= miss; n++) {
+        c = lauf(c, n === miss ? 1 : 500_000_000);
+        if (c.pending) c = CP.takeReward(c, { id: "sold", tier: 1 });
+      }
+      expect(c.lost, `ein verfehlter Lauf ${miss} muss die Kampagne beenden`).toBe(true);
+      expect(c.done, `und sie nicht gewinnen`).toBeFalsy();
+    }
+  });
+
+  it("löst den Riegel an der einen Tür, durch die jeder Lauf geht", () => {
+    /* Der Riegel selbst bleibt richtig — er verhindert, dass EIN Gameover zweimal zählt. Falsch war
+       nur, dass ihn niemand löst. START_RUN ist die Stelle: ein Kampagnenstand mit stehendem Flag
+       muss den Lauf trotzdem abrechnen können. */
+    const alt = { ...frisch(), settled: true };
+    const s = reducer(null, { type: "START_RUN", rng: makeRng(3), seed: 3, architect: true, campaign: alt, unlocked: [] });
+    expect(s.campaign.settled, "der Lauf startet ungewertet").toBeFalsy();
+    expect(reducer({ ...s, score: 9_000_000 }, { type: "END_RUN" }).campaign.pending.score).toBe(9_000_000);
+  });
+
+  it("wertet dasselbe Laufende trotzdem nur EINMAL", () => {
+    // Gegenprobe zum Riegel: er muss noch tun, wofür er da ist.
+    const s0 = reducer(null, { type: "START_RUN", rng: makeRng(3), seed: 3, architect: true, campaign: frisch(), unlocked: [] });
+    const eins = reducer({ ...s0, score: 9_000_000 }, { type: "END_RUN" });
+    expect(eins.campaign.scores).toEqual([9_000_000]);
+    const zwei = reducer(eins, { type: "END_RUN" });
+    expect(zwei.campaign.scores, "ein zweiter Aufruf haengt keinen zweiten Score an").toEqual([9_000_000]);
+  });
+});

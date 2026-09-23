@@ -12,6 +12,7 @@ import { RestartConfirm } from "../src/ui/RunConfirm.jsx"; // die Warnung vor de
 import { SkillUpgrade } from "../src/ui/SkillUpgrade.jsx";
 import { reducer } from "../src/game/reducer.js";
 import { upgradeBuy } from "../src/game/coins.js";
+import { makeRng } from "../src/game/deck.js";
 
 /* ============================================================================
    Kampagnen-UI — was der Spieler LIEST, nicht welcher Schlüssel gesetzt wurde.
@@ -102,6 +103,23 @@ describe("Kampagne · Siegschirm kündigt keine Ebene an, die es nicht gibt", ()
   it("listet die vier Endscores des Durchgangs", () => {
     const h = won(1);
     for (const s of ["6 Mio", "12 Mio", "17 Mio", "30 Mio"]) expect(h).toContain(s);
+  });
+
+  it("listet sie auch, wenn die Kette WIRKLICH durchgespielt wurde", () => {
+    /* Der Test darüber füttert einen handgebauten Stand. Bis 2026-09-23 half das nichts: ab Lauf 2
+       rechnete die Kampagne gar nicht mehr ab (`campaign.settled` blieb stehen), und ein echter
+       Durchgang hätte hier drei leere Zeilen gezeigt. Deshalb einmal die Kette durch den echten
+       Reducer und dann auf den Schirm. */
+    const scores = [12_000_000, 432_500_000, 77_000_000, 210_000_000];
+    let c = CP.startCampaign(() => 0.5, []);
+    for (let n = 1; n <= CP.RUNS_PER_LEVEL; n++) {
+      const s0 = reducer(null, { type: "START_RUN", rng: makeRng(3), seed: 3, architect: true, campaign: c, unlocked: [] });
+      c = reducer({ ...s0, score: scores[n - 1] }, { type: "END_RUN" }).campaign;
+      if (c.pending) c = CP.takeReward(c, { id: "sold", tier: 1 });
+    }
+    expect(c.done, "die Ebene ist gewonnen").toBe(true);
+    const h = txt(html(CampaignWon, { campaign: c, unlocked: CP.unlocksFor(4), onNext: () => {} }));
+    for (const s of scores) expect(h, `${mio(s)} Mio fehlt auf dem Siegschirm`).toContain(`${mio(s)} Mio`);
   });
 });
 

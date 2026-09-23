@@ -1048,3 +1048,31 @@ auch die Sim-Policy erreichen, sonst dreht sie sich.**
 Die Architektenoberfläche fragt an sieben Stellen nach dem Aufwert-Status. Sie gehen alle über einen
 Helfer (`upInfo`), und ein Wächter zählt nach, dass daneben nur die zwei Zweige des Helfers selbst
 `upgradeInfo` direkt rufen.
+
+### Ein Feld hat die halbe Kampagne stillgelegt (Owner-Fund 2026-09-23)
+
+Ein Lauf 2 mit 432,5 Mio stand in der Auswertung auf **0 Mio, 0 Stufen, Reward „Normal"**.
+
+**Die Ursache ist ein Riegel, den niemand löst.** `settleCampaign` rechnet das Laufende ab und setzt
+`campaign.settled`, damit derselbe Gameover-State nicht zweimal gewertet wird — der Riegel hängt an
+beiden Wegen ins Laufende (Engine und `END_RUN`) und ist an sich richtig. Nur schob `takeReward` auf
+den nächsten Lauf weiter (`run + 1`, `pending: null`) und **liess das Flag des vorigen Laufs stehen**.
+Ab Lauf 2 rechnete die Kampagne deshalb nie wieder ab.
+
+**Die Anzeige war das sichtbare Drittel.** Genauso still blieben:
+
+- kein verfehlter Lauf galt als verloren — die Kampagne war ab Lauf 2 **nicht mehr zu verlieren**,
+- `done` wurde nie gesetzt — sie war ab Lauf 2 auch **nicht mehr zu gewinnen**,
+- `scores` trug nur den ersten Lauf, der Siegschirm hätte drei leere Zeilen gezeigt.
+
+**Der Reset gehört an START_RUN**, nicht an `takeReward`. `takeReward` ist heute der einzige Weg auf
+den nächsten Lauf, aber START_RUN ist die Tür, durch die jeder Lauf geht — ein zweiter Weg nach vorn
+(oder ein Fortsetzen aus dem Stand) hätte den Fehler sonst still zurückgeholt. Gemessen wird die
+ganze Kette durch die echte Tür: Lauf 1 abrechnen, Reward nehmen, Lauf 2 abrechnen, Score vergleichen
+— plus die Gegenprobe, dass der Riegel weiterhin tut, wofür er da ist (zweimal `END_RUN` hängt keinen
+zweiten Score an).
+
+**Warum die Tests es nicht hatten:** sie prüften `settleRun` als Funktion und den Reducer an EINEM
+Laufende. Die Kette über mehrere Läufe hat niemand gespielt — und genau dort sass der Fehler. Dieselbe
+Lehre wie im Methodenwechsel oben, eine Ebene höher: nicht nur die Zahl eines Laufs messen, sondern
+den Übergang zwischen zweien.
