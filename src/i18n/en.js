@@ -1933,7 +1933,8 @@ export default {
   "campaign.unlocks.count": "{n} / {max}",
 
   "campaign.boss.mid": "MID BOSS",
-  "campaign.boss.unknown": "Unknown",
+  "campaign.boss.kind.mid": "Mini boss",
+  "campaign.boss.kind.end": "End boss",
   "campaign.boss.end": "END BOSS",
   "campaign.boss.denkmalpfleger": "The Conservator",
   "campaign.boss.denkmalpfleger.text": "Six cells of the build field are sealed. You cannot build there.",

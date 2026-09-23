@@ -140,9 +140,12 @@ describe("Kampagne · Übersicht", () => {
     for (const verdeckt of ["Der Bremser", "Der Schließer", "Der Konter"]) {
       expect(h, `${verdeckt} steht noch aus und darf nicht dastehen`).not.toContain(verdeckt);
     }
-    expect(h).toContain("Unbekannt");
-    // Dass Lauf 4 der Endboss ist, bleibt sichtbar: das ist Struktur, keine Überraschung.
-    expect(h).toContain("ENDBOSS");
+    /* Verdeckt steht die ART da, nicht „Unbekannt" (Owner 2026-09-23). Läufe 2 und 3 sind
+       Minibosse, Lauf 4 der Endboss — dass Lauf 4 anders ist, bleibt damit sichtbar, ohne dass
+       daneben noch ein Abzeichen dasselbe Wort wiederholt. */
+    expect(h.match(/Miniboss/g) || [], "Lauf 2 und 3 stehen verdeckt").toHaveLength(2);
+    expect(h).toContain("Endboss");
+    expect(h, "der alte Platzhalter ist abgelöst").not.toContain("Unbekannt");
   });
 
   it("deckt mit jedem bestandenen Lauf einen Boss mehr auf", () => {

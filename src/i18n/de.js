@@ -1722,7 +1722,8 @@ export default {
   "campaign.unlocks.count": "{n} / {max}",
 
   "campaign.boss.mid": "ZWISCHENBOSS",
-  "campaign.boss.unknown": "Unbekannt",
+  "campaign.boss.kind.mid": "Miniboss",
+  "campaign.boss.kind.end": "Endboss",
   "campaign.boss.end": "ENDBOSS",
   "campaign.boss.denkmalpfleger": "Der Denkmalpfleger",
   "campaign.boss.denkmalpfleger.text": "Sechs Zellen des Baufelds sind gesperrt, dort baust du nicht.",
