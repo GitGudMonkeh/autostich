@@ -17,7 +17,7 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { energyBuy, unspentEnergyCoins, coinsForFormations } from "../game/coins.js";
+import { energyBuy, unspentEnergyCoins, coinsForFormations, coinsOn } from "../game/coins.js";
 import { ContractLine } from "./ContractPhase.jsx"; // Zwischenaufgaben: der Stand, den dieses Overlay sonst zudeckt  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt · §2.2 was die Aufstellung zahlt — dieselbe Quelle wie der Reducer
 import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
 import { CoinAmount, CoinReward } from "./CoinMark.jsx"; // §2.3: was die übrige Energie einbringt
@@ -133,7 +133,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
      die keine gebaute Formation sind und nicht zahlen. Gemessen gehen die beiden Zahlen in einem Drittel
      der Aufstellungen auseinander (Ø 22,2 angezeigt gegen Ø 18,8 bezahlt) — die Münzen müssen der
      Rechnung des Reducers folgen, nicht der Zahl, neben der sie stehen. */
-  const placementCoins = coinsForFormations(countBuiltFormations(formations));
+  // Ohne Muenz-Oekonomie zahlt die Aufstellung nichts — dann steht auch keine Marke daneben.
+  const placementCoins = coinsOn(state) ? coinsForFormations(countBuiltFormations(formations)) : 0;
   const hasSwaps = (formationSwaps || []).length > 0;
   // #201.4: Karten, die in einem Tausch dieser Phase beteiligt waren, dezent ausgrauen (folgt der KARTE via id,
   // nicht dem Slot → übersteht Weg-und-zurück-Tausch; Undo/Reset ziehen die ids automatisch mit).
@@ -260,8 +261,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
                 und der Spieler sieht den Preis eines Tauschs, während er ihn erwägt. GEKAUFTE Energie ist
                 herausgerechnet (unspentEnergyCoins): ein Kauf hebt die Zahl nicht, sonst wäre er ein Rabatt
                 auf die eigene Erstattung. */}
-            <CoinReward n={unspentEnergyCoins(formationEnergy, state.coinEnergy)} />
-            {!energy.soldOut && (
+            <CoinReward n={coinsOn(state) ? unspentEnergyCoins(formationEnergy, state.coinEnergy) : 0} />
+            {!energy.soldOut && onBuyEnergy && (
               <button onClick={energy.can ? onBuyEnergy : undefined} disabled={!energy.can}
                 className="ml-auto as-edge-thin px-2.5 py-1.5 rounded-lg text-body-5 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"
                 title={t("form.energy.buy.title", { n: energy.left })}

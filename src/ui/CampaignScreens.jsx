@@ -203,6 +203,10 @@ export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, o
           const done = n < run;
           const now = n === run;
           const boss = CP.bossFor(c, n);
+          /* Bosse stehen verdeckt, bis ihr Lauf vorbei ist (Owner 2026-09-23). Wer vorher weiß, was
+             kommt, baut dagegen, statt sich anzupassen — und der Bossblock am Lauf-Start hätte
+             nichts mehr zu sagen. Dass Lauf 4 den Endboss trägt, ist Struktur und keine
+             Überraschung: das Abzeichen bleibt, der NAME nicht. */
           const col = done ? GREEN : now ? GOLD : isEndBoss(boss) ? VIOLET : MUTED;
           return (
             <div key={n} className="rounded-xl p-3 flex flex-col gap-2"
@@ -218,7 +222,9 @@ export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, o
               <div className="ty-num text-body-lg" style={{ color: done ? GREEN : undefined }}>
                 {t("campaign.threshold", { n: mio(CP.thresholdWith(c, n)) })}
               </div>
-              <div className="text-meta" style={{ color: col }}>{bossName(boss)}</div>
+              <div className="text-meta" style={{ color: done ? col : MUTED }}>
+                {done ? bossName(boss) : t("campaign.boss.unknown")}
+              </div>
               {done && (c.scores || [])[i] != null && (
                 <div className="ty-num-sm text-micro" style={{ color: GREEN }}>{t("campaign.reached", { n: mio(c.scores[i]) })}</div>
               )}
