@@ -365,7 +365,12 @@ describe("Lauf-Konfiguration aus der Kampagne", () => {
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
-import { rerollPrice, energyPrice, coverPrice, energyBuy, coverBuy } from "../src/game/coins.js";
+import { rerollPrice, energyPrice, coverPrice, energyBuy, coverBuy, upgradeBuy, focusPrice, FOCUS_PRICE } from "../src/game/coins.js";
+import { rerollOfferWith, liftDoorTiers, liftSkillTiers } from "../src/game/contracts.js";
+import { FORMATION_ENERGY as C_FORMATION_ENERGY } from "../src/game/constants.js";
+import { archetypeOf } from "../src/game/skills.js";
+import { familyDef, enumeratePlacements } from "../src/game/architect.js";
+import { readFileSync } from "node:fs";
 
 /* Verdrahtung: nicht der geschriebene Schlüssel zählt, sondern die Zahl im Lauf-State. Die Lehre
    aus dem Beute-Audit (Veredelung schrieb ihren Schlüssel und wirkte trotzdem nie). */
@@ -837,4 +842,519 @@ describe("Doppelwahl · im echten Auftragslauf", () => {
     expect(s.doubleLoot, "und ist danach leer").toBe(0);
     expect(s.campaign.double.used, "das überlebt den Lauf, also steht es im Stand").toBe(true);
   }, 30_000);
+});
+
+/* ============================================================================
+   DIE BEDINGUNGEN MÜSSEN AUCH ANKOMMEN (Playtest exp, 2026-09-23)
+
+   Zweiter Fund derselben Art: `runSetup` schreibt `rareCap: 2` in den Lauf, der Reducer trägt es
+   ein, ein Test bestätigt das Feld — und die Skill-Türen boten „Sehr selten" an, weil sie den
+   Deckel als einziges System nie gelesen haben. (Der erste Fund war dieselbe Form: `coinsEnabled`
+   stand richtig da, die Oberfläche zeigte trotzdem Preise.)
+
+   Genau davor warnt AGENTS.md: prüfen, dass sich eine ZAHL ändert, nicht dass ein Schlüssel
+   geschrieben wird. Die Tests darüber prüfen die Felder — das ist richtig und reicht NICHT. Hier
+   steht deshalb für jede Kampagnen-Bedingung, was im echten Lauf herauskommt.
+   ============================================================================ */
+describe("Kampagnen-Bedingungen im echten Lauf", () => {
+  const start = (unlocked, seed = 3) =>
+    reducer(null, { type: "START_RUN", rng: makeRng(seed), seed, architect: true,
+                    campaign: { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] }, unlocked });
+
+  /* Alle Stufen, die in einem ganzen Lauf tatsächlich angeboten werden — Türen wie geöffnete
+     Angebote, samt der Legendären, die gar keine Stufe tragen. */
+  const angeboteneStufen = (s0, seed = 3) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = s0, guard = 0;
+    const stufen = new Set(), legendaer = [];
+    const sammle = (st) => {
+      for (const d of st.skillDoors || []) {
+        for (const id of d.skills || []) {
+          if (id.includes("_L0")) legendaer.push(id);
+          else stufen.add((d.tiers || {})[id] ?? 0);
+        }
+      }
+      for (const id of st.skillOffer || []) {
+        if (id.includes("_L0")) legendaer.push(id);
+        else stufen.add((st.skillOfferTiers || {})[id] ?? 0);
+      }
+    };
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      sammle(s);
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return { stufen: [...stufen].sort(), legendaer };
+  };
+
+  it("deckelt die Stufe der SKILL-Angebote, nicht nur das Feld im State", () => {
+    /* Der Fund vom 2026-09-23. Ohne die Freischaltung darf über einen ganzen Lauf keine Tür eine
+       Stufe über „Selten" tragen — und kein Legendäres, die schalten mit „lila" frei. */
+    const s = start([]);
+    expect(s.rareCap, "Vorbedingung: der Deckel steht im State").toBe(CP.START_MAX_TIER);
+    const { stufen, legendaer } = angeboteneStufen(s);
+    expect(stufen.length, "der Lauf hat überhaupt Skills angeboten").toBeGreaterThan(0);
+    // Stufen sind 0-basiert (rollSkillOfferTiers), der Deckel 1-basiert.
+    expect(Math.max(...stufen), `angeboten: ${stufen}`).toBeLessThanOrEqual(CP.START_MAX_TIER - 1);
+    expect(legendaer, "unter Stufe IV gibt es keine Legendären").toEqual([]);
+  });
+
+  it("hebt den Deckel mit der vierten Freischaltung auf Sehr selten", () => {
+    const s = start(CP.unlocksFor(4));
+    expect(s.rareCap).toBe(CP.MAX_TIER_L1);
+    const { stufen, legendaer } = angeboteneStufen(s);
+    expect(Math.max(...stufen)).toBeLessThanOrEqual(CP.MAX_TIER_L1 - 1);
+    expect(legendaer, "auch Ebene 1 mit allen Freischaltungen bleibt unter Legendär").toEqual([]);
+  });
+
+  it("bietet ohne Deckel wieder alles an — sonst misst der Test nur den Deckel", () => {
+    /* Gegenprobe zu den beiden oben: ein Lauf ohne Kampagne muss die hohen Stufen erreichen,
+       sonst wären sie auch ohne Deckel nie erschienen und die Prüfung sagte nichts. */
+    const offen = reducer(null, { type: "START_RUN", rng: makeRng(3), seed: 3, architect: true });
+    expect(offen.rareCap).toBe(4);
+    const { stufen } = angeboteneStufen(offen);
+    expect(Math.max(...stufen), "ohne Deckel kommen hohe Stufen vor").toBeGreaterThan(CP.START_MAX_TIER - 1);
+  });
+
+  it("bietet keinen Skill einer Fraktion an, die noch nicht freigeschaltet ist", () => {
+    const s = start([]);
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(3);
+    let cur = s, guard = 0;
+    const fraktionen = new Set();
+    while (cur.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      for (const d of cur.skillDoors || []) for (const id of d.skills || []) fraktionen.add(archetypeOf(id));
+      for (const id of cur.skillOffer || []) fraktionen.add(archetypeOf(id));
+      cur = cur.phase === "play" ? reducer(cur, { type: "RESOLVE_TRICK", rng }) : reducer(cur, pol.act(cur, rng));
+    }
+    expect(fraktionen.size, "der Lauf hat überhaupt Skills angeboten").toBeGreaterThan(0);
+    expect([...fraktionen].sort()).toEqual([...CP.START_DECKS].sort());
+  });
+
+  it("lässt auch Veredelung nicht über den Deckel heben", () => {
+    /* Dritter Fund derselben Art (2026-09-23), und er hat ein FENSTER: Aufträge schalten mit dem
+       dritten Sieg frei, die Rarität erst mit dem vierten. Dazwischen liegt ein ganzer Lauf, in dem
+       eine Veredelung eine gedeckelte Stufe anheben konnte. Deshalb läuft der Test über die echte
+       Freischaltungsleiter und nicht über ein handgesetztes `rareCap`. */
+    const drei = CP.unlocksFor(3);
+    expect(CP.contractsEnabled(drei), "Fenster: Aufträge laufen schon").toBe(true);
+    const deckel = CP.maxTierFor(drei);
+    expect(deckel, "Fenster: die Rarität noch nicht").toBe(CP.START_MAX_TIER);
+
+    const doors = [{ skills: ["A", "B"], tiers: { A: 0, B: deckel - 1 } }];   // B steht genau auf dem Deckel
+    const s = { contractsEnabled: true, contractBoons: { offerLift: { steps: 1, until: 12 } }, cycle: 4, rareCap: deckel };
+    expect(liftDoorTiers(s, doors, 4)[0].tiers).toEqual({ A: 1, B: deckel - 1 });
+    expect(liftSkillTiers(s, [0, deckel - 1], 4), "auch die flache Form").toEqual([1, deckel - 1]);
+
+    // Gegenprobe: ohne Deckel hebt dieselbe Veredelung sehr wohl — sonst misst der Test nur sich selbst.
+    const offen = { ...s, rareCap: 4 };
+    expect(liftDoorTiers(offen, doors, 4)[0].tiers).toEqual({ A: 1, B: deckel });
+  });
+
+  it("legt ohne die Auftrags-Freischaltung über den ganzen Lauf kein Angebot aus", () => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(3);
+    let s = start([]), guard = 0, gesehen = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      if ((s.contracts?.offers || []).length || s.contracts?.active) gesehen++;
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    expect(gesehen, "Aufträge liefen, obwohl sie nicht freigeschaltet sind").toBe(0);
+  });
+});
+
+/* Derselbe Riegel wie bei computeFormations: ein Deckel, der eine Aufrufstelle nicht erreicht,
+   fällt still aus. Deshalb zählt der Wächter die Stellen, statt einer zu vertrauen. */
+describe("Rarität-Deckel · jede Skill-Aufrufstelle reicht ihn durch", () => {
+  const files = ["src/game/reducer.js", "src/game/engine.js"];
+  const stellen = [];
+  for (const f of files) {
+    const src = readFileSync(new URL(`../${f}`, import.meta.url), "utf8");
+    for (const m of src.matchAll(/(?:buildSkillDoors|rerollDoorSkills)\(/g)) {
+      let i = m.index + m[0].length, d = 1;
+      while (i < src.length && d > 0) { const c = src[i]; if ("([{".includes(c)) d++; if (")]}".includes(c)) d--; i++; }
+      stellen.push({ f, zeile: src.slice(0, m.index).split("\n").length, text: src.slice(m.index, i) });
+    }
+  }
+
+  it("findet die Aufrufe überhaupt", () => {
+    expect(stellen.length).toBeGreaterThan(4);
+  });
+
+  it("übergibt überall maxTier", () => {
+    const ohne = stellen.filter((s) => !/maxTier:/.test(s.text)).map((s) => `${s.f}:${s.zeile}`);
+    expect(ohne, `ohne Rarität-Deckel: ${ohne.join(", ")}`).toEqual([]);
+  });
+});
+
+/* ============================================================================
+   JEDER REWARD MUSS IM LAUF ANKOMMEN
+
+   Die Tür-Tests oben prüfen `CP.soldWith({}, 400)` — die Rechnung. Sie sagen NICHT, dass der Motor
+   sie ruft. Genau diese Lücke hat der Playtest zweimal gefunden (Münz-Oberfläche, Raritäts-Deckel):
+   eine Bedingung war richtig gerechnet und erreichte ihr System nie.
+
+   Hier läuft deshalb derselbe Seed zweimal durch einen GANZEN Lauf, einmal mit und einmal ohne das
+   Stück, und verglichen wird der Fingerabdruck am Laufende. Was der Reward genau tut, steht in
+   seinem Tür-Test; hier steht nur: er tut überhaupt etwas.
+
+   Drei Seeds je Reward, und es muss auf MINDESTENS einem etwas anders herauskommen — ein Reward
+   kann auf einem einzelnen Brett zufällig folgenlos bleiben.
+   ============================================================================ */
+describe("Rewards wirken im Lauf, nicht nur in ihrer Tür", () => {
+  const SEEDS = [3, 11, 29];
+
+  const lauf = (held, unlocked, seed, over = {}) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, unlocked,
+      campaign: { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"], held, ...over } });
+    let guard = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      const c = s.contracts || {};
+      if ((c.pendingLoot || []).length) { const p = c.pendingLoot[0]; s = reducer(s, { type: "PICK_LOOT", lootId: p.id, tier: p.tier, rng }); continue; }
+      if (c.pendingBorderPick) { s = reducer(s, { type: "PICK_CONTRACT_BORDER", borders: [] }); continue; }
+      if (c.pendingSkillPick) { s = reducer(s, { type: "PICK_CONTRACT_SKILL", skillId: null }); continue; }
+      if ((c.offers || []).length) { const o = c.offers[0]; s = reducer(s, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step }); continue; }
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    // Der Fingerabdruck deckt die vier Wege ab, auf denen ein Reward wirken kann.
+    return JSON.stringify([Math.round(s.score || 0), s.wins || 0, s.losses || 0, s.coins || 0]);
+  };
+
+  /* Alle sechzehn. `unlocked` nur dort, wo das Stück ohne Freischaltung gar nicht angeboten würde —
+     sonst misst der Test die Freischaltung statt den Reward.
+
+     VIER haben eine eigene Messung, und zwar nicht aus Bequemlichkeit: der Fingerabdruck am
+     Laufende sieht sie nicht. Die Test-Policy kauft nie und tauscht nie, also bleiben ein
+     Preisnachlass und zusätzliche Aufstell-Energie darin unsichtbar — ein grüner Sweep wäre hier
+     eine Lüge. Jedes der vier wird unten an der Zahl gemessen, die es wirklich bewegt. */
+  const EIGENE_MESSUNG = new Set([
+    "fuersprache",   // senkt die Schwelle des NÄCHSTEN Laufs (thresholdWith-Tests weiter oben)
+    "doppelwahl",    // wirkt an der Beutewahl (eigener Lauf-Test weiter oben)
+    "handelsbrief",  // wirkt auf PREISE, und die Policy kauft nichts → Preistest unten
+    "fahnenrecht",   // wirkt auf die Aufstell-ENERGIE, und die Policy tauscht nicht → Energietest unten
+  ]);
+
+  for (const r of CP.REWARDS) {
+    if (EIGENE_MESSUNG.has(r.id)) continue;
+    it(`${r.id} ändert den Lauf`, () => {
+      const unlocked = r.requires ? CP.UNLOCK_IDS : [];
+      /* Das Feldzeichen hebt eine AUSGEWÜRFELTE Achse; ohne sie ist es folgenlos, und das ist
+         richtig so. `takeReward` schreibt sie beim Nehmen, hier steht sie von Hand. */
+      const over = r.rolls === "multAxis" ? { axes: { [r.id]: "crit" } } : {};
+      const anders = SEEDS.filter((seed) => lauf({}, unlocked, seed, {}) !== lauf({ [r.id]: 3 }, unlocked, seed, over));
+      expect(anders.length, `${r.id} auf ${SEEDS.length} Seeds ohne jede Wirkung — Tür vorhanden, Motor ruft sie nicht`)
+        .toBeGreaterThan(0);
+    });
+  }
+
+  it("prüft dabei wirklich alle sechzehn", () => {
+    // Ein Reward, der still aus dem Katalog fällt, soll hier auffallen und nicht durchrutschen.
+    expect(CP.REWARDS.length).toBe(16);
+    for (const id of EIGENE_MESSUNG) expect(CP.REWARD_BY_ID[id], `${id} steht nicht mehr im Katalog`).toBeTruthy();
+  });
+});
+
+/* Dieselbe Frage für die andere Hälfte der Kampagne: `runSetup` schreibt die Boss-Wirkung hin, und
+   niemand garantiert, dass sie jemand liest.
+
+   Der Fingerabdruck am Laufende, der bei den Rewards trägt, trägt hier NICHT — zweimal
+   nachgewiesen, nicht vermutet:
+
+   1. Die Test-Policy macht über einen ganzen Lauf 0 Tauschzüge, 0 Käufe und hält 0 Perks. Drei der
+      sechs Bosse greifen genau dort an und wären damit unsichtbar.
+   2. Schlimmer, und das hat erst die Gegenprobe gezeigt: beim Denkmalpfleger zieht `runSetup` seine
+      sechs Zellen aus DEMSELBEN rng wie der Lauf. Der Fingerabdruck wird dadurch anders, auch wenn
+      man die gesperrten Zellen hinterher wegwirft — er hätte „wirkt" gemeldet und nur gemessen,
+      dass sechs Zufallszahlen verbraucht wurden.
+
+   Jeder Boss hat deshalb eine eigene Messung an der Zahl, die er wirklich bewegt. Der Test unten
+   hält fest, dass keiner dabei fehlt. */
+describe("Boss-Effekte · jeder mit seiner eigenen Messung", () => {
+  /* Wo die Messung steht. Der Katalogtest darunter verlangt für JEDEN Boss einen Eintrag — ein
+     neuer Boss ohne Messung fällt damit auf, statt still mitzulaufen. */
+  const MESSUNG = {
+    denkmalpfleger: "Boss · Denkmalpfleger sperrt echte Bauzellen",
+    schliesser: "Schließer sperrt im echten Tausch, nicht nur im Feld",
+    bremser: "Fahnenrecht liegt in der echten Aufstellphase",   // prüft beide Richtungen an der Energie
+    wucherer: "Wucherer auf den anderen Kaufflächen",           // die Preistreppe, Zahl für Zahl
+    schmarotzer: "Schmarotzer zieht am Durchlauf-Ende echte Münzen ab",
+    konter: "Boss · Der Konter legt auf die Gegnerkarte",
+  };
+
+  it("lässt keinen Boss ohne Messung", () => {
+    const alle = [...CP.MID_BOSSES.map((b) => b.id), CP.END_BOSS.id];
+    expect(alle.length).toBe(6);
+    expect(alle.filter((id) => !MESSUNG[id]), "Boss ohne eigene Messung").toEqual([]);
+    expect(Object.keys(MESSUNG).filter((id) => !CP.BOSS_BY_ID[id]), "Messung ohne Boss").toEqual([]);
+  });
+
+  /* Die Vorbedingung, auf die sich drei der Messungen berufen. Wenn die Policy irgendwann DOCH
+     tauscht oder Perks nimmt, soll das hier auffallen und nicht in einer Begründung verstauben. */
+  it("die Policy tauscht wirklich nicht und hält keine Perks", () => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(3);
+    let s = reducer(null, { type: "START_RUN", rng, seed: 3, architect: true, unlocked: CP.UNLOCK_IDS,
+      campaign: { ...CP.emptyCampaign(), run: 1, bosses: ["__keiner__", "__keiner__", "__keiner__"] } });
+    let guard = 0, swaps = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      const a = s.phase === "play" ? { type: "RESOLVE_TRICK", rng } : pol.act(s, rng);
+      if (a && a.type === "SWAP_CARDS") swaps++;
+      s = reducer(s, a);
+    }
+    expect(swaps, "die Policy tauscht jetzt — Aufstell-Effekte sind messbar geworden").toBe(0);
+    expect((s.perks || []).length, "die Policy hält Perks — Unterhalt ist messbar geworden").toBe(0);
+  });
+});
+
+describe("Boss · Denkmalpfleger sperrt echte Bauzellen", () => {
+  /* Gemessen wird die Sperre selbst: sechs Zellen im Lauf, und der Reducer lehnt genau dort ein
+     Gebäude ab. Nicht der Endscore — der verschiebt sich schon dadurch, dass die Ziehung der sechs
+     Zellen aus demselben rng kommt. */
+  const bisArchitekt = (bosses, seed = 3) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, unlocked: [],
+      campaign: { ...CP.emptyCampaign(), run: 1, bosses } });
+    let guard = 0;
+    while (s.phase !== "gameover" && !(s.phase === "architect" && (s.architect?.offers || []).some((o) => !o.used))) {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return s;
+  };
+
+  it("legt sechs Zellen fest, und der Reducer baut nicht darauf", () => {
+    const s = bisArchitekt(["denkmalpfleger", "x", "y"]);
+    expect(s.phase, "die Architektenphase wurde erreicht").toBe("architect");
+    const sperr = s.challengeBlockArch || [];
+    expect(sperr.length, "sechs gesperrte Zellen").toBe(6);
+
+    const off = (s.architect.offers || []).find((o) => !o.used);
+    const fam = familyDef(off.familyId);
+    const frei = enumeratePlacements(fam.form, s.architect.buildings)
+      .filter((fp) => !fp.some((p) => sperr.includes(p)));
+    const drauf = enumeratePlacements(fam.form, s.architect.buildings)
+      .filter((fp) => fp.some((p) => sperr.includes(p)));
+    expect(frei.length, "es gibt freie Plätze").toBeGreaterThan(0);
+    expect(drauf.length, "und Plätze auf der Sperre").toBeGreaterThan(0);
+
+    const bau = (fp) => reducer(s, { type: "ARCHITECT_BUILD", familyId: off.familyId, tier: off.tier, footprint: fp,
+                                     colorChoice: fam.colorLocked ? "H" : undefined });
+    expect(bau(drauf[0]), "auf der Sperre darf nichts entstehen").toBe(s);
+    expect(bau(frei[0]), "daneben schon").not.toBe(s);
+  });
+
+  it("sperrt ohne den Boss gar nichts", () => {
+    const s = bisArchitekt(["__keiner__", "x", "y"]);
+    expect((s.challengeBlockArch || []).length).toBe(0);
+  });
+});
+
+describe("Boss · Der Konter legt auf die Gegnerkarte", () => {
+  /* Der Endboss hängt am vierten Durchlauf, nicht an `bosses` — abschalten lässt er sich nicht.
+     Gemessen wird deshalb der Aufschlag selbst: dieselbe Gegnerkarte, derselbe Stand, einmal mit
+     und einmal ohne Siegesserie. */
+  const lauf4 = { ...CP.emptyCampaign(), run: CP.RUNS_PER_LEVEL, bosses: ["x", "y", "z"] };
+
+  it("hebt die Gegnerkarte um die Siegesserie, und nur im vierten Lauf", () => {
+    const s = { campaign: lauf4 };
+    expect(CP.enemyValueWith(s, 7, 0), "ohne Serie liegt nichts oben drauf").toBe(7);
+    expect(CP.enemyValueWith(s, 7, 3), "drei Siege, drei Punkte").toBe(10);
+    expect(CP.counterBonus({ ...s, counterStack: 3 })).toBe(3);
+
+    const mitte = { campaign: { ...lauf4, run: 1 } };
+    expect(CP.enemyValueWith(mitte, 7, 3), "im ersten Lauf trägt kein Konter").toBe(7);
+  });
+
+  it("zählt die Serie im echten Lauf hoch und die Niederlage nullt sie", () => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(3);
+    let s = reducer(null, { type: "START_RUN", rng, seed: 3, architect: true, unlocked: [], campaign: lauf4 });
+    let guard = 0, hoechste = 0, genullt = false, vorher = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+      const st = s.counterStack || 0;
+      if (vorher > 0 && st === 0) genullt = true;
+      hoechste = Math.max(hoechste, st);
+      vorher = st;
+    }
+    expect(hoechste, "die Serie ist im echten Lauf hochgelaufen").toBeGreaterThan(0);
+    expect(genullt, "und eine Niederlage hat sie genullt").toBe(true);
+  });
+});
+
+describe("Schließer sperrt im echten Tausch, nicht nur im Feld", () => {
+  /* Der Fingerabdruck sieht ihn nicht (die Policy tauscht nicht), also wird hier der Tausch selbst
+     durch den echten Reducer geschickt: einer IM festgesetzten Segment und einer daneben. */
+  const bisAufstellung = (bosses, seed = 3) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, unlocked: [],
+      campaign: { ...CP.emptyCampaign(), run: 1, bosses } });
+    let guard = 0;
+    while (s.phase !== "gameover" && s.phase !== "formation") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return s;
+  };
+
+  it("lehnt den Tausch im festgesetzten Segment ab und lässt ihn daneben zu", () => {
+    const s = bisAufstellung(["schliesser", "x", "y"]);
+    expect(s.phase, "die Aufstellphase wurde erreicht").toBe("formation");
+    expect(s.lockedSegment, "ein Segment ist festgesetzt").not.toBe(null);
+    expect(s.formationEnergy, "Energie zum Tauschen ist da").toBeGreaterThan(0);
+
+    const drin = s.lockedSegment * CP.SEGMENT_SIZE;                 // erste Karte des gesperrten Segments
+    const frei = [...Array(s.playerOrder.length).keys()]
+      .filter((i) => !CP.segmentLocked(s, i));
+    expect(frei.length, "es gibt freie Positionen").toBeGreaterThan(1);
+
+    // hin: gesperrt → der Reducer gibt denselben State zurück
+    expect(reducer(s, { type: "SWAP_CARDS", i: drin, j: frei[0] })).toBe(s);
+    // weg: auch gesperrt, egal an welchem Ende die Sperre sitzt
+    expect(reducer(s, { type: "SWAP_CARDS", i: frei[0], j: drin })).toBe(s);
+    // daneben: geht, sonst misst der Test nur eine kaputte Aufstellphase
+    const frei2 = reducer(s, { type: "SWAP_CARDS", i: frei[0], j: frei[1] });
+    expect(frei2, "ein Tausch außerhalb der Sperre muss durchgehen").not.toBe(s);
+    expect(frei2.formationEnergy).toBe(s.formationEnergy - 1);
+  });
+
+  it("sperrt ohne den Boss gar nichts", () => {
+    const s = bisAufstellung(["__keiner__", "x", "y"]);
+    expect(s.lockedSegment ?? null, "kein Boss, kein Segment").toBe(null);
+    expect(reducer(s, { type: "SWAP_CARDS", i: 0, j: 1 })).not.toBe(s);
+  });
+});
+
+describe("Schmarotzer zieht am Durchlauf-Ende echte Münzen ab", () => {
+  /* Die Policy hält keine Perks, also kann kein gespielter Lauf den Unterhalt zeigen. Gesetzt wird
+     deshalb NUR die Vorbedingung (vier Perks in der Hand); abgezogen wird durch den echten Motor
+     am echten Durchlauf-Ende, und gemessen werden die Münzen davor und danach. */
+  const bisRunde = (bosses, seed = 3) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, unlocked: CP.UNLOCK_IDS,
+      campaign: { ...CP.emptyCampaign(), run: 1, bosses } });
+    let guard = 0;
+    while (s.phase !== "gameover" && !(s.phase === "play" && (s.cycle || 0) > 0)) {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      const c = s.contracts || {};
+      if ((c.offers || []).length) { const o = c.offers[0]; s = reducer(s, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step }); continue; }
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return s;
+  };
+
+  /* Ein Durchlauf-Ende durchspielen und die Münzen am Übergang festhalten. */
+  const muenzenUeberRunde = (bosses) => {
+    const s0 = bisRunde(bosses);
+    expect(s0.phase, "die Spielphase wurde erreicht").toBe("play");
+    const rng = makeRng(99);
+    // Echte Perk-ids — der Motor schlägt die Definitionen nach. Welche, ist gleich: beide Läufe
+    // tragen dieselben vier, ihre Wirkung hebt sich im Vergleich auf.
+    let s = { ...s0, perks: ["E10", "L2", "L6", "L4"], coins: 50 };
+    let guard = 0;
+    const startZyklus = s.cycle || 0;
+    while (s.phase === "play" && (s.cycle || 0) === startZyklus) {
+      if (++guard > 5000) throw new Error("kein Durchlauf-Ende");
+      s = reducer(s, { type: "RESOLVE_TRICK", rng });
+    }
+    return { vor: 50, nach: s.coins || 0 };
+  };
+
+  it("nimmt je zwei Perks eine Münze, zugunsten des Spielers gerundet", () => {
+    const ohne = muenzenUeberRunde(["__keiner__", "x", "y"]);
+    const mit = muenzenUeberRunde(["schmarotzer", "x", "y"]);
+    expect(ohne.nach - mit.nach, "vier Perks kosten zwei Münzen").toBe(2);
+  });
+
+  it("nimmt nie mehr, als auf dem Konto liegt", () => {
+    // Die Grenze selbst, direkt an der Naht — ein Konto mit einer Münze verliert höchstens diese.
+    const s = { campaign: { ...CP.emptyCampaign(), run: 1, bosses: ["schmarotzer", "x", "y"] }, coins: 1 };
+    expect(CP.upkeepWith(s, 8)).toBe(1);
+    expect(CP.upkeepWith({ ...s, coins: 0 }, 8)).toBe(0);
+    expect(CP.upkeepWith({ ...s, coins: 50 }, 3), "drei Perks kosten eine, nicht zwei").toBe(1);
+  });
+});
+
+describe("Handelsbrief gilt für JEDEN Preis, nicht nur den Neuwurf", () => {
+  /* Der Fund vom 2026-09-23, und er war zweiteilig. Erstens kannte nur der Neuwurf den Nachlass —
+     Energie, Baufeld, Fokus und Aufwerten rechneten ohne ihn, obwohl der Reward „alles, was du
+     kaufst" verspricht. Zweitens erreichte er nicht einmal den Neuwurf: `rerollOfferWith` stieg
+     ohne Auftrags-Segen vorher aus und rief die Tür nie, in der er sitzt.
+
+     Gemessen wird an den PREIS-Funktionen, weil Knopf und Reducer beide durch sie gehen. */
+  const mit = (over = {}) => ({ coins: 999, campaign: { ...CP.emptyCampaign(), held: { handelsbrief: 3 } }, ...over });
+  const ohne = (over = {}) => ({ coins: 999, ...over });
+  const pct = CP.rewardValue("handelsbrief", 3) / 100;
+  const erwartet = (voll) => Math.max(1, Math.round(voll * (1 - pct)));
+
+  it("senkt den Neuwurf, auch ohne einen einzigen Auftrags-Segen", () => {
+    const voll = rerollOfferWith(ohne(), 0).price;
+    expect(voll, "Vorbedingung: ein Kauf-Neuwurf liegt an").toBeGreaterThan(0);
+    expect(rerollOfferWith(mit(), 0).price).toBe(erwartet(voll));
+  });
+
+  it("senkt Energie, Baufeld und Aufwerten", () => {
+    expect(energyBuy(mit()).price).toBe(erwartet(energyBuy(ohne()).price));
+    expect(coverBuy(mit()).price).toBe(erwartet(coverBuy(ohne()).price));
+    expect(upgradeBuy(mit(), 0).price).toBe(erwartet(upgradeBuy(ohne(), 0).price));
+  });
+
+  it("senkt den Fokus-Ruf", () => {
+    expect(focusPrice(mit())).toBe(erwartet(focusPrice(ohne())));
+    expect(focusPrice(ohne()), "ohne den Reward bleibt der Grundpreis").toBe(FOCUS_PRICE);
+  });
+
+  it("senkt auch den vom Wucherer erhöhten Preis, nicht den Grundpreis", () => {
+    // Reihenfolge: erst die Treppe (Wucherer), dann die Prozente — sonst wäre der Rabatt zu klein.
+    const w = { priceLadder: 3, coinEnergy: 1 };
+    const voll = energyBuy(ohne(w)).price;
+    expect(voll).toBe(9);                                  // 3 → ×3
+    expect(energyBuy(mit(w)).price).toBe(erwartet(voll));
+  });
+
+  it("lässt einen Lauf ohne den Reward unverändert", () => {
+    for (const f of [() => rerollOfferWith(ohne(), 0).price, () => energyBuy(ohne()).price,
+                     () => coverBuy(ohne()).price, () => upgradeBuy(ohne(), 0).price, () => focusPrice(ohne())]) {
+      expect(f()).toBe(f());
+    }
+    expect(focusPrice({})).toBe(FOCUS_PRICE);
+    expect(energyBuy({ coins: 0 }).price).toBe(energyBuy({ coins: 999 }).price);
+  });
+});
+
+describe("Fahnenrecht liegt in der echten Aufstellphase", () => {
+  /* Die Policy tauscht nicht, also bewegt zusätzliche Energie den Endscore nicht — gemessen wird
+     deshalb die Energie, die in der Phase tatsächlich dasteht. */
+  const bisAufstellung = (held, seed = 3) => {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, seed, architect: true, unlocked: [],
+      campaign: { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"], held } });
+    let guard = 0;
+    while (s.phase !== "gameover" && s.phase !== "formation") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return s;
+  };
+
+  it("gibt der Phase so viel Energie mehr, wie die Stufe sagt", () => {
+    const a = bisAufstellung({});
+    const b = bisAufstellung({ fahnenrecht: 3 });
+    expect(a.phase, "die Aufstellphase wurde erreicht").toBe("formation");
+    expect(b.formationEnergy - a.formationEnergy).toBe(CP.rewardValue("fahnenrecht", 3));
+    // Und der Bremser zieht sie trotzdem ab: die beiden rechnen gegeneinander, nicht nacheinander.
+    expect(a.formationEnergy).toBe(Math.max(0, C_FORMATION_ENERGY - 2));
+  });
 });

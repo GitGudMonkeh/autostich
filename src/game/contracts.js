@@ -798,8 +798,11 @@ export function rerollPriceWith(state, base, legendary = false, normalBase = nul
    coins.js kann contracts.js nicht importieren (Zyklus über MAX_SKILL_TIER), also liegt die Tür hier. */
 export function rerollOfferWith(state, freeTokens = 0, legendary = false) {
   const o = rerollOffer(state, freeTokens, legendary);
-  const b = boonsOf(state);
-  if (!b || o.free || o.capped) return o;      // gratis bleibt gratis, gedeckelt bleibt gedeckelt
+  /* Der Ausstieg stand bis 2026-09-23 auf `!b || o.free || o.capped` — ohne Auftrags-Segen ging es
+     hier hinaus und `rerollPriceWith` wurde NIE gerufen. Dort sitzt aber auch der Kampagnen-Rabatt,
+     und ein Lauf mit Handelsbrief ohne Auftraege zahlte deshalb den vollen Preis. `rerollPriceWith`
+     kommt mit `!b` selbst zurecht; gratis und gedeckelt bleiben die einzigen echten Ausstiege. */
+  if (o.free || o.capped) return o;            // gratis bleibt gratis, gedeckelt bleibt gedeckelt
   const normal = rerollPrice(state.coinRerolls || 0, false);
   const price = rerollPriceWith(state, o.nextPrice, legendary, normal);
   if (price === o.nextPrice) return o;
@@ -855,11 +858,15 @@ export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier =
   const byPhase = live(b.offerLift, cycle) ? (b.offerLift.steps || 1) : 0;
   const below = b.offerLiftBelow || 0;          // 3 = alles unter Sehr selten, 4 = alles unter Episch
   if (!byPhase && !below) return tiers;
+  /* Der Kampagnen-Deckel schlaegt hier genauso durch wie am Wurf (2026-09-23): Auftraege schalten
+     eine Freischaltung VOR der Raritaet frei, also gibt es ein Fenster, in dem Veredelung eine
+     gedeckelte Stufe angehoben haette. `state.rareCap` ist 1-basiert, diese Skala 0-basiert. */
+  const deckel = Math.min(maxTier, state && state.rareCap ? state.rareCap - 1 : maxTier);
   const hebe = (t) => {
     if (!Number.isInteger(t)) return t;          // Legendäre tragen keine Stufe
     let out = t + byPhase;
     if (below && t + 1 < below) out = Math.max(out, t + 1);
-    return Math.min(maxTier, out);
+    return Math.max(t, Math.min(deckel, out));   // Veredelung hebt oder laesst liegen, sie senkt nie
   };
   /* ZWEI Formen, und das war der Fehler: die Türen halten ihre Stufen als OBJEKT je Skill-id
      (`rollSkillOfferTiers` gibt `{ SK_… : 0 }` zurück), eine flache Auswahl als Array. Geprüft wurde

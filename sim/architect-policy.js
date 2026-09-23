@@ -79,15 +79,22 @@ const buildActionFor = (s, fam, off, fp) => {
 // Sim unsichtbar (gemessene 1,00×), obwohl der Reducer (SWAP/BUILD-Gate) die Extra-Fläche längst erlaubt.
 const coverCapOf = (s) => s.architect?.maxCover ?? MAX_COVER;
 
-// Cap-gültige Platzierungen einer Form gegen `buildings` (kein Overlap UND unter dem Baufeld-Deckel).
-function cappedPlacements(form, buildings, cap = MAX_COVER) {
+/* Cap-gültige Platzierungen einer Form gegen `buildings` (kein Overlap UND unter dem Baufeld-Deckel)
+   UND ausserhalb der gesperrten Zellen. Die Sperre fehlte bis 2026-09-23: der Reducer lehnt eine
+   Platzierung darauf ab (`return state`), die Greedy-Policy schlaegt dieselbe wieder vor, und der
+   Lauf drehte sich endlos. Aufgefallen am Kampagnen-Boss Denkmalpfleger (sechs Zellen), gilt aber
+   genauso fuer die Wochen-Modifikatoren, die dasselbe Feld benutzen. */
+function cappedPlacements(form, buildings, cap = MAX_COVER, blocked = []) {
   const occN = occupiedCells(buildings).size;
-  return enumeratePlacements(form, buildings).filter((fp) => occN + fp.length <= cap);
+  const sperr = blocked && blocked.length ? new Set(blocked) : null;
+  return enumeratePlacements(form, buildings)
+    .filter((fp) => occN + fp.length <= cap && (!sperr || !fp.some((p) => sperr.has(p))));
 }
+const blockedOf = (s) => s.challengeBlockArch || [];
 
 // Beste Platzierung EINES Angebots: Primär Struktur-Fortschritt, sekundär value/target-Feinlage.
 function bestPlacementForOffer(s, fam, buildings, before, beforeScore, w) {
-  const places = cappedPlacements(fam.form, buildings, coverCapOf(s));
+  const places = cappedPlacements(fam.form, buildings, coverCapOf(s), blockedOf(s));
   if (!places.length) return null;
   const wantLow = fam.category === "value"; // value kippt schwache Felder; score/formation reitet starke
   let bestFp = null, bestKey = -Infinity;
@@ -176,6 +183,7 @@ function bestMove(s, w) {
   const cur = coverSetOf(a.buildings);
   if (!anyStructureNearComplete(cur, 2)) return null; // kein lohnendes Ziel → sparen
   const curScore = structScore(cur, w);
+  const sperr = blockedOf(s).length ? new Set(blockedOf(s)) : null;   // derselbe Riegel wie beim Neubau
   let best = null;
   for (const b of a.buildings) {
     const fam = familyDef(b.familyId);
@@ -186,6 +194,7 @@ function bestMove(s, w) {
     const base = coverSetOf(others);
     for (const fp of enumeratePlacements(fam.form, others)) {
       if (occN + fp.length > coverCapOf(s)) continue;
+      if (sperr && fp.some((p) => sperr.has(p))) continue;
       if (fp.slice().sort((x, y) => x - y).join(",") === curKey) continue; // identische Lage → kein Fortschritt
       const after = new Set(base); for (const p of fp) after.add(p);
       const gain = structScore(after, w) - curScore;
@@ -212,7 +221,7 @@ function randomMain(s, rng) {
   for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
   for (const off of shuffled) {
     const fam = familyDef(off.familyId);
-    const places = cappedPlacements(fam.form, a.buildings, coverCapOf(s));
+    const places = cappedPlacements(fam.form, a.buildings, coverCapOf(s), blockedOf(s));
     if (places.length) {
       const fp = places[Math.floor(rng() * places.length)];
       const action = { type: "ARCHITECT_BUILD", familyId: off.familyId, tier: off.tier, footprint: fp };

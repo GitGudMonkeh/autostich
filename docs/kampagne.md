@@ -929,3 +929,85 @@ ebenso, und die Verzichts-Marken zeigen 0 statt eines Betrags, der nicht kommt.
 
 **Der GRATIS-Neuwurf bleibt.** Er kostet nichts und ist verdient; das entscheidet
 `rerollOffer.offered`, nicht das Handler-Gate.
+
+### Zwei Funde reichen für einen Methodenwechsel (2026-09-23)
+
+Der dritte Playtest-Fund war „Ebene 1 bietet mir Sehr selten an, obwohl die Rarität nicht
+freigeschaltet ist". Owner-Einwand dazu, und er trifft: *das ist jetzt das zweite Finding, das eine
+Anforderung nicht greift.*
+
+**Was die drei Funde gemeinsam haben.** Jedes Mal stand das Feld richtig im State — `coinsEnabled`,
+`rareCap` — und jedes Mal bestätigte ein grüner Test genau das. Nur las das nachgelagerte System es
+nicht. Ein Test, der prüft, dass ein Schlüssel geschrieben wurde, sagt nichts darüber, ob ihn jemand
+befolgt. `AGENTS.md` warnt davor („die Zahl messen, nicht den Schlüssel"), und die Tests liefen
+trotzdem an der Warnung vorbei.
+
+**Die Methode ist jetzt umgedreht.** Für jede Kampagnen-Bedingung steht ein Test, der einen ganzen
+Lauf durch den echten Reducer spielt und am Ende eine ZAHL vergleicht:
+
+| Bedingung | Gemessen wird |
+| --- | --- |
+| Rarität-Deckel | alle Stufen, die über 40 Durchläufe angeboten wurden, Türen wie Angebote |
+| Fraktionen | jeder angebotene Skill-Archetyp über den ganzen Lauf |
+| Aufträge | ob über den ganzen Lauf je ein Angebot auslag |
+| 16 Rewards | Fingerabdruck `[score, wins, losses, coins]` am Laufende, drei Seeds |
+| 6 Bosse | je eine eigene Messung, keine zwei gleich |
+
+Vier Rewards bewegen nur Preise, Aufstell-Energie oder die Schwelle des nächsten Laufs, und die
+Test-Policy kauft nicht und tauscht nicht — für die wäre ein grüner Sweep eine Lüge. Sie haben je
+eine eigene Messung an der Zahl, die sie wirklich bewegen, und stehen namentlich im Test, damit
+niemand sie stillschweigend dazuzählt.
+
+**Bei den Bossen trägt der Fingerabdruck gar nicht**, und das hat erst die Gegenprobe gezeigt. Zwei
+Gründe, beide nachgemessen: die Policy macht über einen ganzen Lauf 0 Tauschzüge, 0 Käufe und hält 0
+Perks (drei Bosse greifen genau dort an) — und beim Denkmalpfleger zieht `runSetup` seine sechs
+Zellen aus DEMSELBEN rng wie der Lauf. Der Fingerabdruck wurde dadurch anders, auch als ich die
+gesperrten Zellen hinterher wegwarf: er hätte „wirkt" gemeldet und nur gemessen, dass sechs
+Zufallszahlen verbraucht wurden. Jeder Boss hat jetzt eine eigene Messung, und ein Katalogtest
+verlangt für jeden einen Eintrag:
+
+| Boss | Gemessen wird |
+| --- | --- |
+| Denkmalpfleger | sechs gesperrte Zellen, und der Reducer lehnt genau dort ein Gebäude ab |
+| Schließer | der echte Tausch im festgesetzten Segment, beide Enden, und einer daneben geht durch |
+| Bremser | die Energie der echten Aufstellphase |
+| Wucherer | die Preistreppe, Zahl für Zahl |
+| Schmarotzer | die Münzen über ein echtes Durchlauf-Ende |
+| Der Konter | der Aufschlag auf die Gegnerkarte, und die Serie im echten Lauf |
+
+Nebenbefund aus derselben Ecke, im Werkzeug statt im Spiel: **die Bau-Policy der Sim kannte
+gesperrte Zellen nicht.** Der Reducer lehnt eine Platzierung darauf ab und gibt denselben State
+zurück, die Greedy-Policy schlägt dieselbe wieder vor — jeder Sim-Lauf mit Denkmalpfleger drehte
+sich endlos. Dasselbe Feld tragen die Wochen-Modifikatoren (#301 C3), es betraf also nicht nur die
+Kampagne. `cappedPlacements` und der Move filtern die Sperre jetzt mit.
+
+Dazu ein Wächter der anderen Art: ein Deckel, der eine einzige Aufrufstelle nicht erreicht, fällt
+still aus. Der Wächter zählt deshalb die Aufrufe von `buildSkillDoors`/`rerollDoorSkills` in
+`reducer.js` und `engine.js` und verlangt `maxTier:` an jeder — dieselbe Bauart wie der
+Argumentzähler für `computeFormations`.
+
+### Was der Methodenwechsel sofort gefunden hat
+
+**Der Rarität-Deckel erreichte die Skills nie** (Owner-Fund). Perks und Gebäude lasen `rareCap`
+längst, die Skill-Türen als einziges System nicht. `rollSkillOfferTiers` nimmt ihn jetzt als
+`maxTier`: Stufen darüber fallen aus den Gewichten, und unter Stufe IV gibt es gar keine Legendären
+— die schalten zusammen mit „lila" frei, sonst leckten sie am Deckel vorbei. Ohne Deckel wird kein
+rng-Zug anders gezogen, Bestandsläufe bleiben byte-identisch.
+
+**Der Handelsbrief galt fast nirgends** (vom neuen Sweep gefunden, nicht im Playtest). Versprochen
+ist „Alles, was du kaufst"; erreicht hat er nur den Neuwurf — und den auch nicht, weil
+`rerollOfferWith` ohne Auftrags-Segen vorher aussprang und `rerollPriceWith` nie rief, wo der Rabatt
+sitzt. Jetzt geht jeder fertige Preis durch dasselbe `netto()` in `coins.js`: Energie, Baufeld,
+Aufwerten, Fokus-Ruf. Der Ruf hatte bis dahin gar keine Preisfunktion, nur die Konstante — er hat
+jetzt `focusPrice(state)`, und Knopf wie Reducer lesen dieselbe Zahl.
+
+**Veredelung hob über den Deckel** (beim Nachsehen gefunden). Die Freischaltungsleiter öffnet
+Aufträge mit dem dritten Sieg, die Rarität erst mit dem vierten — dazwischen liegt ein ganzer Lauf,
+in dem eine Veredelung eine gedeckelte Stufe anheben konnte. `liftSkillTiers` liest den Deckel jetzt
+mit, und hebt weiterhin nur oder lässt liegen; senken kann sie nichts.
+
+**Offen, und eine Owner-Frage, keine technische.** Der Deckel regelt, was ANGEBOTEN wird. Aufwerten
+mit Münzen (`upgradeBuy`) und Hochspannung (`boostedTier`) heben eine Stufe, die der Spieler schon
+besitzt, und sind ungedeckelt — genau wie bei Perks. Münzen kommen mit Sieg 2, die Rarität mit Sieg
+4: dazwischen kann man sich „Sehr selten" also kaufen. Als Lesart „der Deckel gilt dem Wurf, nicht
+dem Ausbau" ist das stimmig; ob es so gewollt ist, entscheidet der Owner.
