@@ -123,14 +123,38 @@ describe("Kampagne · Niederlage trennt Bleibendes von Verlorenem", () => {
 });
 
 describe("Kampagne · Übersicht", () => {
-  it("führt die vier Schwellen und die Bosse der gezogenen Reihe", () => {
+  it("führt die vier Schwellen", () => {
     const c = camp({ run: 2, scores: [7_500_000] });
     const h = txt(html(CampaignOverview, { campaign: c, unlocked: CP.unlocksFor(1), onStart: () => {}, onGiveUp: () => {} }));
     for (let n = 1; n <= CP.RUNS_PER_LEVEL; n++) expect(h).toContain(`${mio(CP.thresholdWith(c, n))} Mio`);
-    expect(h).toContain("Der Denkmalpfleger");
-    expect(h).toContain("Der Konter");                 // der Endboss steht immer an Lauf 4
     expect(h).toContain("7,5 Mio erreicht");           // der Score des bestandenen Laufs
     expect(h).toContain("Lauf 2 starten");
+  });
+
+  it("nennt nur den Boss des ABGESCHLOSSENEN Laufs, die übrigen bleiben verdeckt", () => {
+    /* Owner 2026-09-23, aus dem Playtest: wer vorher weiß, was kommt, baut dagegen statt sich
+       anzupassen — und der Bossblock am Lauf-Start hätte nichts mehr zu sagen. */
+    const c = camp({ run: 2, scores: [7_500_000] });   // Lauf 1 ist durch, 2 läuft, 3 und 4 stehen aus
+    const h = txt(html(CampaignOverview, { campaign: c, unlocked: CP.unlocksFor(1), onStart: () => {}, onGiveUp: () => {} }));
+    expect(h, "Lauf 1 ist abgeschlossen und nennt seinen Boss").toContain("Der Denkmalpfleger");
+    for (const verdeckt of ["Der Bremser", "Der Schließer", "Der Konter"]) {
+      expect(h, `${verdeckt} steht noch aus und darf nicht dastehen`).not.toContain(verdeckt);
+    }
+    expect(h).toContain("Unbekannt");
+    // Dass Lauf 4 der Endboss ist, bleibt sichtbar: das ist Struktur, keine Überraschung.
+    expect(h).toContain("ENDBOSS");
+  });
+
+  it("deckt mit jedem bestandenen Lauf einen Boss mehr auf", () => {
+    const bis = (run) => txt(html(CampaignOverview, {
+      campaign: camp({ run, scores: Array(run - 1).fill(9e6) }),
+      unlocked: [], onStart: () => {}, onGiveUp: () => {} }));
+    const zaehle = (h) => ["Der Denkmalpfleger", "Der Bremser", "Der Schließer", "Der Konter"]
+      .filter((n) => h.includes(n)).length;
+    expect(zaehle(bis(1))).toBe(0);
+    expect(zaehle(bis(2))).toBe(1);
+    expect(zaehle(bis(3))).toBe(2);
+    expect(zaehle(bis(4))).toBe(3);
   });
 
   it("lässt keinen der beiden Zerstör-Knöpfe auf einen Klick durch", () => {

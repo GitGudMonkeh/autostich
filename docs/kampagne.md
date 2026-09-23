@@ -906,3 +906,26 @@ Auswertung irgendwann Verschiedenes, und der Spieler sähe es erst am Endscreen.
 das Element. Eine Spalte ohne Eigenbreite wird darin auf der Querachse zentriert und misst 0 px.
 `items-stretch` hilft nicht — eine Tailwind-Utility liegt in einem `@layer` und verliert gegen die
 ungelayerte Regel. Die drei Zeilen tragen deshalb je ein eigenes `w-full`.
+
+### Zwei Funde aus dem ersten Playtest auf `exp` (2026-09-23)
+
+**Bosse standen vorab offen.** Die Übersicht nannte alle vier, bevor man den ersten Lauf begonnen
+hatte. Wer vorher weiß, was kommt, baut dagegen statt sich anzupassen, und der Bossblock am
+Lauf-Start hätte nichts mehr zu sagen. Jetzt nennt nur der **abgeschlossene** Lauf seinen Boss; die
+übrigen stehen als „Unbekannt". Dass Lauf 4 den Endboss trägt, bleibt sichtbar: das ist Struktur,
+keine Überraschung.
+
+**Die Münz-Ökonomie war sichtbar, obwohl nicht freigeschaltet.** Neuwurf-Preise, „Fokus rufen" und
+„Ablehnen → Perk (+12)" standen vollständig auf dem Schirm, obwohl `coinGrant` seit der Kampagne
+jede Münze sperrt: die Wirkung war tot, die Oberfläche vollständig da. Die Sperre der Wirkung allein
+reicht also nicht.
+
+`coins.coinsOn(state)` ist jetzt die zweite Hälfte davon, und sie sitzt an einer Stelle: **App.jsx
+gatet die neun Kauf-Handler** (`ifCoins(…)`), die fünf Screens kennen die Regel „kein Handler, kein
+Knopf" schon selbst (`canReroll = !!onReroll`, `FocusCall` gibt ohne `onCallFocus` null zurück …).
+Zwei Kaufflächen prüften ihren Handler nicht und rendern jetzt ebenfalls nur mit ihm (Baufeld,
+Energie). Die Münz-Zelle der Vitalleiste fällt ganz weg, der Auszahlungs-Chip am Durchlaufende
+ebenso, und die Verzichts-Marken zeigen 0 statt eines Betrags, der nicht kommt.
+
+**Der GRATIS-Neuwurf bleibt.** Er kostet nichts und ist verdient; das entscheidet
+`rerollOffer.offered`, nicht das Handler-Gate.

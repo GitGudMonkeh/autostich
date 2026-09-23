@@ -20,7 +20,7 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
-import { coverBuy, COVER_CELLS, FORFEIT_BUILD } from "../game/coins.js"; // Münz-Ökonomie §3.4 Baufeld · §2.3 Phase ohne Hauptaktion — dieselben Rechnungen wie der Reducer
+import { coverBuy, COVER_CELLS, FORFEIT_BUILD, coinsOn } from "../game/coins.js"; // Münz-Ökonomie §3.4 Baufeld · §2.3 Phase ohne Hauptaktion — dieselben Rechnungen wie der Reducer
 import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Nichtbauen einbringt
 import { GlossaryPanel } from "./Glossary.jsx";
@@ -399,7 +399,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   /* §2.3: was diese Phase einbringt, wenn sie ohne Hauptaktion endet. `actedMain` ist dieselbe Bedingung,
      die der Reducer prüft — errichten und ausbauen setzen sie, versetzen und abreißen nicht. Nach einer
      Hauptaktion ist der Wert 0 und die Marke verschwindet, statt eine Zahlung zu versprechen, die ausfällt. */
-  const idleReward = architect.actedMain ? 0 : FORFEIT_BUILD;
+  const idleReward = architect.actedMain || !coinsOn(state) ? 0 : FORFEIT_BUILD;
   // #281: alle markierten Gebäude abreißen (nur wenn die Menge wirklich Platz schafft); der removeFor-Effekt baut danach automatisch.
   const confirmDemolish = () => { if (!demolishIds.length || !demolishFit) return; demolishIds.forEach((id) => onDemolish?.(id)); setDemolishIds([]); };
   // #361-Folge: „↶ Rückgängig"/„Zurücksetzen" betreffen NUR Verschiebungen (die Gebäude bleiben, actedMain unberührt) →
@@ -667,7 +667,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             die Frage entsteht, ob der Platz reicht. Die Punkte sagen, wie viel vom LAUF noch übrig ist: als einzige
             Ausgabe wirkt sie dauerhaft und hat einen Vorrat, der sich leert. Ausverkauft verschwindet die ganze
             Leiste — ein toter Knopf ist schlechter als keiner. */}
-        {!coverSale.soldOut && (
+        {!coverSale.soldOut && onBuyCover && (
           <div className="flex items-center gap-2 mt-2 px-3.5 py-2 rounded-xl" style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
             <span className="text-meta-1 uppercase tracking-wide font-bold min-w-0 truncate" style={{ color: "#6d7f8e" }}>{t("arch.plot.buyStrip")}</span>
             <button onClick={coverSale.can ? onBuyCover : undefined} disabled={!coverSale.can}
@@ -1077,7 +1077,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog).
                       §3.1: ist der Pool leer, ist derselbe Knopf käuflich; ohne Münzen bleibt er sichtbar, aber aus.
                       Den Legendär-Grundpreis gibt es hier nicht — der Plan bindet ihn an Skill- und Perk-Angebote. */}
-                  {!state.devMode && onReroll && (
+                  {!state.devMode && onReroll && archReroll.offered && (
                     <button onClick={archReroll.can ? onReroll : undefined} disabled={!archReroll.can}
                       className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all disabled:cursor-not-allowed"
                       style={archReroll.can

@@ -9,6 +9,7 @@ import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeig
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory, saveCampaign, loadCampaign, clearCampaign } from "./game/storage.js";
 import * as CP from "./game/campaign.js"; // Kampagne: Ebene, Bosse, Rewards, Freischaltungen
+import * as COINS from "./game/coins.js"; // Münz-Ökonomie: gibt es sie in diesem Lauf überhaupt
 import { CampaignOverview, CampaignBoss, CampaignTally, CampaignPick, CampaignUnlock, CampaignLost, CampaignWon, CampaignProgress } from "./ui/CampaignScreens.jsx";
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -1021,6 +1022,13 @@ function AutostichGame() {
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); };
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun + clearActiveRun laufen über den gameover-Effekt
 
+  /* Kampagne, Ebene 1: ohne freigeschaltete Münzen gibt es keine Kaufflächen. Die Sperre sitzt HIER
+     und nicht in den fünf Screens, weil die alle schon die richtige Regel kennen — „kein Handler,
+     kein Knopf" (`canReroll = !!onReroll`, `FocusCall` gibt ohne `onCallFocus` null zurück …). App
+     entscheidet, die Screens gehorchen. Der GRATIS-Neuwurf bleibt davon unberührt; den regelt
+     `rerollOffer.offered`, weil er nichts kostet und man ihn sich verdient hat. */
+  const ifCoins = (fn) => (COINS.coinsOn(state) ? fn : null);
+
   /* ---- Kampagne: die Kette zwischen den Läufen -------------------------------------------
      Der Reducer rechnet den Lauf ab (settleRun in reducer.js, an RESOLVE_TRICK und END_RUN);
      hier steht nur, was danach mit dem STAND passiert: speichern, Freischaltung buchen, das
@@ -1306,7 +1314,7 @@ function AutostichGame() {
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
             getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
-            coins={state.coins || 0} coinGain={state.coinGain}
+            coins={COINS.coinsOn(state) ? (state.coins || 0) : null} coinGain={state.coinGain}
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
@@ -1453,7 +1461,7 @@ function AutostichGame() {
       )}
 
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onBuyEnergy={buyEnergy} options={options} onOption={changeOptions} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onBuyEnergy={ifCoins(buyEnergy)} options={options} onOption={changeOptions} />
       )}
       {state.phase === "glacier-target" && (
         <GlacierPick state={state} onConfirm={lockGlacier} />
@@ -1461,7 +1469,7 @@ function AutostichGame() {
       {state.phase === "architect" && (
         <Suspense fallback={<OverlayFallback />}>
           <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onBuyCover={buyCover} onDone={architectDone}
+            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={ifCoins(rerollArchitect)} onBuyCover={ifCoins(buyCover)} onDone={architectDone}
             onUndo={architectUndo} onReset={architectReset} />
         </Suspense>
       )}
@@ -1473,11 +1481,11 @@ function AutostichGame() {
       )}
       {showChronik && <Suspense fallback={<OverlayFallback />}><ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} /></Suspense>}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} onUpgradeFamily={upgradeFamily} onSellPerk={sellPerk} perks={state.perks} deck={state.deck} state={state}
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={ifCoins(rerollPerk)} onDecline={declinePerk} onUpgradeFamily={ifCoins(upgradeFamily)} onSellPerk={ifCoins(sellPerk)} perks={state.perks} deck={state.deck} state={state}
           options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "levelup" && (state.skillOffer || state.skillDoors) && (
-        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onCallFocus={callFocus} onUpgradeSkill={upgradeSkill} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
+        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onCallFocus={ifCoins(callFocus)} onUpgradeSkill={ifCoins(upgradeSkill)} onPick={pickSkill} onDecline={declineSkill} onReroll={ifCoins(rerollSkill)} skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}

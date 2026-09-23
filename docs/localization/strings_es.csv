@@ -925,6 +925,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "campaign.boss.schliesser.text","i18n","Vor jeder Aufstellphase wird eines der acht Aufstellsegmente festgesetzt. Die fünf Karten darin lassen sich nicht verschieben.","","Before every layout phase one of the eight layout segments is fixed. Its five cards cannot be moved.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.schmarotzer","i18n","Der Schmarotzer","","The Parasite","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.schmarotzer.text","i18n","Je zwei gehaltene Perks kosten dich eine Münze je Durchlauf.","","Every two perks you hold cost you one coin per cycle.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"campaign.boss.unknown","i18n","Unbekannt","","Unknown","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.wucherer","i18n","Der Wucherer","","The Usurer","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.wucherer.text","i18n","Jeder weitere Kauf derselben Art verdreifacht den Preis, statt ihn zu verdoppeln.","","Every further purchase of the same kind triples the price instead of doubling it.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.giveUp","i18n","Kampagne aufgeben","","Abandon campaign","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""

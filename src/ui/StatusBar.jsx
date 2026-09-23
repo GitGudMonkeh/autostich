@@ -127,10 +127,14 @@ export function StatusBar({
               beim Hochzählen nicht springen. */}
           {/* `position: relative` trägt die Gutschrift (§2.3): das „+N" schwebt über der Zelle, statt sie
               zu verbreitern — eine Leiste, die bei jeder Zahlung springt, wäre schlimmer als keine Anzeige. */}
-          <Cell label={t("hud.coins")} className="sb-coins border-l border-[color:var(--deck-border)]" style={{ minWidth: 92, position: "relative" }}>
-            <CoinAmount n={coins} size={15} minDigits={3} style={{ fontSize: 18 }} />
-            <CoinGain gain={coinGain} />
-          </Cell>
+          {/* `coins === null` heisst: dieser Lauf hat keine Muenz-Oekonomie (Kampagne Ebene 1). Dann
+              faellt die ganze Zelle weg statt eine tote Null zu zeigen. App.jsx entscheidet das. */}
+          {coins != null && (
+            <Cell label={t("hud.coins")} className="sb-coins border-l border-[color:var(--deck-border)]" style={{ minWidth: 92, position: "relative" }}>
+              <CoinAmount n={coins} size={15} minDigits={3} style={{ fontSize: 18 }} />
+              <CoinGain gain={coinGain} />
+            </Cell>
+          )}
           {/* Mult — ganz rechts. */}
           <Cell label={t("hud.mult")} className="sb-mult border-l border-[color:var(--deck-border)]">
             <span className={mult?.shakeClass || ""}>

@@ -70,6 +70,14 @@ export const FORFEIT_BUILD = envNum("SIM_COIN_FORFEIT_BUILD", 6);     // Archite
 export const unspentEnergyCoins = (left = 0, bought = 0) =>
   Math.max(0, (left || 0) - (bought || 0)) * FORFEIT_ENERGY;
 
+/* Gibt es in DIESEM Lauf überhaupt Münzen? Die WIRKUNG sperrt `coinGrant` unten; diese Frage stellt
+   die OBERFLÄCHE, damit sie keine Preise und keine Gutschriften für eine Ökonomie zeigt, die es nicht
+   gibt. Beides braucht es, und das ist im Playtest auf `exp` aufgefallen: Neuwurf-Preise, „Fokus
+   rufen" und ein „Ablehnen → Perk (+12)" standen in einem Lauf ohne freigeschaltete Münzen
+   vollständig auf dem Schirm — mechanisch war alles längst tot. Ein Lauf ohne Kampagne trägt das
+   Feld nicht und ist damit an. */
+export const coinsOn = (state = {}) => state.coinsEnabled !== false;
+
 /* Eine Gutschrift, an EINER Stelle gebaut: Kontostand plus die Spur für die Anzeige (§4 — eine
    Verzichts-Zahlung muss in dem Moment sichtbar werden, in dem sie anfällt, sonst merkt niemand, dass
    Ablehnen zahlt). `seq` zählt hoch, damit zweimal derselbe Betrag als zwei Ereignisse ankommt und die
@@ -79,8 +87,8 @@ export function coinGrant(state = {}, n = 0, source = "") {
   /* Kampagne, Ebene 1 (docs/kampagne.md §11): ohne freigeschaltete Ökonomie gibt es keine Münzen —
      auch keine aus dem Verzicht. Die Sperre sitzt hier und nicht an den vier Aufrufern, weil dies
      der einzige Weg ist, auf dem eine Münze entsteht; eine vergessene Stelle wäre sonst ein
-     stiller Kanal. Ein Lauf ohne Kampagne trägt das Feld nicht und zahlt eine Abfrage. */
-  if (state.coinsEnabled === false) return null;
+     stiller Kanal. */
+  if (!coinsOn(state)) return null;
   return { coins: (state.coins || 0) + n, coinGain: { n, source, seq: ((state.coinGain && state.coinGain.seq) || 0) + 1 } };
 }
 
@@ -138,9 +146,14 @@ export function rerollOffer(state = {}, freeTokens = 0, legendary = false) {
   const nextPrice = rerollPrice(state.coinRerolls || 0, legendary, ladderOf(state));
   const left = rerollsLeft(state);
   // Der Deckel steht VOR dem Preis: ist er erreicht, ist auch ein Gratis-Wurf keiner mehr.
-  if (left <= 0) return { free: false, tokens: freeTokens, price: nextPrice, nextPrice, legendary: false, can: false, left: 0, capped: true };
-  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true, left, capped: false };
-  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice, left, capped: false };
+  /* `offered` = gibt es diesen Knopf überhaupt. Die beiden KAUF-Wege hängen daran, ob es in diesem
+     Lauf Münzen gibt (Kampagne Ebene 1); der Gratis-Wurf darunter nicht, den hat man sich verdient.
+     Auch der Deckel-Hinweis geht mit: er deckelt den Kauf, und ohne Ökonomie gibt es nichts zu
+     deckeln. */
+  const kauf = coinsOn(state);
+  if (left <= 0) return { free: false, tokens: freeTokens, price: nextPrice, nextPrice, legendary: false, can: false, left: 0, capped: true, offered: kauf };
+  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true, left, capped: false, offered: true };
+  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice, left, capped: false, offered: kauf };
 }
 
 /* ---- Energie in der Aufstellphase (§3.2) ---------------------------------------------------------- */

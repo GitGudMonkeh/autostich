@@ -13,7 +13,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_START, rerollPrice, rerollOffer, REROLL_CAP, rerollsLeft,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
          upgradePrice, MAX_SKILL_TIER, upgradeBuy, familyUpgradeBuy, MAX_FAMILY_TIER, upgradeSortKey,
-         unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
+         unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD, coinsOn, coinGrant } from "../src/game/coins.js";
 import { countBuiltFormations } from "../src/game/formations.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
 import { isLegendarySkill, archetypeOf } from "../src/game/skills.js";
@@ -633,10 +633,13 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
   });
 
   it("jede Marke rechnet mit der Zahl des Reducers, keine steht als Literal im UI", () => {
-    // Ein hart getipptes „+12" wäre beim ersten Tuning-Schritt eine Lüge am Knopf.
-    expect(read("src/ui/PerkSelect.jsx")).toMatch(/<CoinReward n=\{FORFEIT_PERK\}/);
-    expect(read("src/ui/SkillSelect.jsx")).toMatch(/<CoinReward n=\{FORFEIT_SKILL\}/);
-    expect(read("src/ui/ArchitectScreen.jsx")).toMatch(/idleReward = architect\.actedMain \? 0 : FORFEIT_BUILD/);
+    /* Ein hart getipptes „+12" wäre beim ersten Tuning-Schritt eine Lüge am Knopf.
+       `coinsOn(state) ? … : 0` gehört zum Muster und ist keine Redundanz: ohne freigeschaltete
+       Münz-Ökonomie (Kampagne Ebene 1) faellt die Marke weg, weil die Zahlung nicht kommt.
+       CoinReward gibt bei 0 null zurueck — deshalb reicht die 0 und es braucht kein zweites Gate. */
+    expect(read("src/ui/PerkSelect.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? FORFEIT_PERK : 0\}/);
+    expect(read("src/ui/SkillSelect.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? FORFEIT_SKILL : 0\}/);
+    expect(read("src/ui/ArchitectScreen.jsx")).toMatch(/idleReward = architect\.actedMain \|\| !coinsOn\(state\) \? 0 : FORFEIT_BUILD/);
     /* Die Architekt-Phase hat DREI Ausgänge (nichts bauen mit und ohne Gebäude, und das Bestätigen nach
        dem Umstellen). Alle drei zahlen — versetzen verbraucht keinen Bauplan —, also trägt jeder die
        Marke. Ohne die Zählung fällt ein vierter Ausgang später still durch. */
@@ -645,7 +648,7 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
     for (const line of doneButtons) expect(line).toContain("<CoinReward n={idleReward} />");
     // Die Energie ist die einzige laufende Zahl: sie zählt mit jedem Tausch herunter und rechnet die
     // GEKAUFTE Energie heraus — dieselbe Funktion, die der Reducer beim Bestätigen benutzt.
-    expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{unspentEnergyCoins\(formationEnergy, state\.coinEnergy\)\}/);
+    expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? unspentEnergyCoins\(formationEnergy, state\.coinEnergy\) : 0\}/);
   });
 
   it("die Auszahlung der Aufstellung rechnet über die GEBAUTEN Formationen, nicht über die angezeigte Zahl", () => {
@@ -653,7 +656,7 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
        beiden in einem Drittel der Aufstellungen auseinander (Ø 22,2 gegen Ø 18,8). Wer die Anzeige auf
        `count` umstellt, zeigt eine Auszahlung, die am Durchlaufende nicht kommt. */
     expect(read("src/ui/FormationPhase.jsx"))
-      .toMatch(/placementCoins = coinsForFormations\(countBuiltFormations\(formations\)\)/);
+      .toMatch(/placementCoins = coinsOn\(state\) \? coinsForFormations\(countBuiltFormations\(formations\)\) : 0/);
     expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{placementCoins\}/);
   });
 });
@@ -731,5 +734,70 @@ describe("Neuwurf-Deckel je Phase", () => {
     expect(reducer(skill, { type: "REROLL_SKILL", rng: Math.random }), "Skill").toBe(skill);
     const arch = { ...base, phase: "architect", architect: { actedMain: false, buildings: [], offers: [] } };
     expect(reducer(arch, { type: "REROLL_ARCHITECT", rng: Math.random }), "Architekt").toBe(arch);
+  });
+});
+
+/* ============================================================================
+   OHNE ÖKONOMIE KEINE KAUFFLÄCHEN (Playtest exp, 2026-09-23)
+
+   Gefunden im gebauten Spiel: in einem Kampagnen-Lauf ohne freigeschaltete Münzen standen
+   Neuwurf-Preise, „Fokus rufen" und „Ablehnen → Perk (+12)" vollständig auf dem Schirm. Mechanisch
+   war alles tot — `coinGrant` sperrt seit der Kampagne jede Münze —, sichtbar war alles da.
+
+   Die Sperre der WIRKUNG allein reicht also nicht; die Oberfläche braucht dieselbe Frage. Geprüft
+   wird sie hier an beiden Enden: die reine Regel, und dass die Screens sie auch gestellt bekommen.
+   ============================================================================ */
+describe("Münzen aus, Oberfläche aus", () => {
+  const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+
+  it("ist nur dann aus, wenn es ausdrücklich dasteht", () => {
+    expect(coinsOn({})).toBe(true);                       // ein Lauf ohne Kampagne trägt das Feld nicht
+    expect(coinsOn({ coinsEnabled: true })).toBe(true);
+    expect(coinsOn({ coinsEnabled: false })).toBe(false);
+    expect(coinsOn()).toBe(true);
+  });
+
+  it("lässt den verdienten GRATIS-Wurf stehen und nimmt nur den Kauf weg", () => {
+    const aus = { coinsEnabled: false, coins: 0 };
+    const an = { coins: 99 };
+    expect(rerollOffer(aus, 1).offered, "ein Gratis-Wurf bleibt").toBe(true);
+    expect(rerollOffer(aus, 1).free).toBe(true);
+    expect(rerollOffer(aus, 0).offered, "ohne Gratis-Wurf und ohne Münzen kein Knopf").toBe(false);
+    expect(rerollOffer(an, 0).offered, "mit Münzen bleibt der Kauf").toBe(true);
+    expect(rerollOffer(an, 0).can).toBe(true);
+    // Der Deckel ist eine Kauf-Grenze: ohne Ökonomie gibt es auch nichts zu deckeln.
+    const gedeckelt = { ...aus, coinRerolls: 99, rerollsBought: 99 };
+    expect(rerollOffer(gedeckelt, 0).offered).toBe(false);
+  });
+
+  it("zahlt auch aus dem Verzicht nichts mehr", () => {
+    expect(coinGrant({ coinsEnabled: false, coins: 0 }, FORFEIT_PERK, "perk")).toBe(null);
+    expect(coinGrant({ coins: 0 }, FORFEIT_PERK, "perk")).toMatchObject({ coins: FORFEIT_PERK });
+  });
+
+  it("gatet in App.jsx JEDEN Handler, der Münzen ausgibt", () => {
+    /* App entscheidet, die Screens gehorchen: sie kennen alle schon „kein Handler, kein Knopf".
+       Ein sechster Kauf-Handler, der hier ungatet durchgereicht wird, ist genau der Fehler von
+       oben — deshalb zählt der Wächter die Stellen, statt nur eine zu prüfen. */
+    const app = read("src/App.jsx");
+    for (const h of ["buyEnergy", "buyCover", "rerollArchitect", "rerollPerk", "rerollSkill",
+                     "upgradeFamily", "upgradeSkill", "sellPerk", "callFocus"]) {
+      expect(app, `${h} geht ohne Münz-Gate an den Screen`).toContain(`ifCoins(${h})`);
+    }
+    expect(app, "und das Gate selbst fragt die eine Funktion").toMatch(/const ifCoins = \(fn\) => \(COINS\.coinsOn\(state\) \? fn : null\)/);
+    expect(app, "die Münz-Zelle der Leiste faellt ganz weg statt eine tote Null zu zeigen")
+      .toMatch(/coins=\{COINS\.coinsOn\(state\) \? \(state\.coins \|\| 0\) : null\}/);
+  });
+
+  it("blendet die zwei Kaufflächen aus, die ihren Handler nicht selbst prüfen", () => {
+    /* Die übrigen Screens hängen ihre Knöpfe schon an `!!onX`. Diese beiden rendern sie sonst grau
+       weiter — ein toter Knopf ist schlechter als keiner (dieselbe Regel, die der Baufeld-Vorrat
+       „ausverkauft" daneben schon befolgt). */
+    expect(read("src/ui/ArchitectScreen.jsx")).toContain("{!coverSale.soldOut && onBuyCover && (");
+    expect(read("src/ui/FormationPhase.jsx")).toContain("{!energy.soldOut && onBuyEnergy && (");
+  });
+
+  it("nimmt auch den Auszahlungs-Chip am Durchlaufende weg", () => {
+    expect(read("src/ui/RoundScoreBadge.jsx")).toMatch(/if \(paid == null \|\| !coinsOn\(state\)\) return null/);
   });
 });
