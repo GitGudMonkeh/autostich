@@ -259,7 +259,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
 | | **Übergriff** · Zuschlag auf den Überlappungsbonus (dazu: alle Grenzen offen) | +0,3 | +0,4 | +0,55 | +0,7 |
 | | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
-| **Ergebnis** (rot) | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
+| **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
@@ -478,7 +478,7 @@ auf voll, mit Score, Serie und Farbzähler.
 
 | Skill | Wirkung |
 | --- | --- |
-| **Genugtuung** | **Jeder gerutschte Stich** zahlt Basis-Score je Punkt Rückstand, den er gedreht hat. Je deutlicher du eigentlich verloren hättest, desto mehr zahlt er — der einzige Griff im Entwurf, der niedrige Karten wertvoll macht. |
+| **Genugtuung** | Die rote Haltung sammelt, wie viele Stiche sie gedreht hat. In ihrem **Nachklang** zahlt dann jeder Stich Basis-Score je gedrehtem Stich. |
 | **Rückhalt** | Nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. |
 | **Kehrtwende** | Ein gerutschter Stich gibt **Serienpunkte** und verlängert die Haltung um einen Stich. |
 
@@ -486,16 +486,41 @@ auf voll, mit Score, Serie und Farbzähler.
 > das Passiv schiebt eine Niederlage nur auf Gleichstand, ein gerutschter Sieg war also immer ein
 > Gleichstand — und der hat per Definition **Rückstand 0**. Sie liest deshalb **jeden** gerutschten
 > Stich; dann trägt die Niederlage ihren Rückstand bei und die Fantasie stimmt.
+>
+> **SUPERSEDED (§5.3, Owner):** Der Rückstand ist als Kennzahl ganz weg. Genugtuung zählt nur noch
+> *wie viele* Stiche gedreht wurden, nicht *wie deutlich* — damit fällt auch das Argument der
+> Korrektur oben weg, und mit ihm der einzige Griff im Entwurf, der niedrige Karten wertvoll machte.
 
 **Startwerte:**
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
+| **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
 | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
 | **Kehrtwende** · Serienpunkte je gerutschtem Stich | +1 | +2 | +3 | +4 |
 | **Kehrtwende** · Verlängerungen je Haltung | höchstens 3× | 4× | 6× | 10× |
 | **Kehrtwende** · Satz des Serien-Multiplikators, solange Rot klingt | — | — | — | +0,5 % je Serienpunkt |
+
+**Neudesign §5.3, Genugtuung (Owner):** *„Ändern in extra Score auf jeden Stich im Nachklang, für
+jeden gedrehten Stich während der Haltung. Und verdreifache die aktuellen Basis-Score-Werte."*
+(25/40/55/80 → **75/120/165/240**.)
+
+Sie hat damit **zwei Phasen**. Solange Rot aktiv ist, wird nur gezählt (`turns`); im **Nachklang**
+zahlt dann jeder Stich `Satz × gedrehte Stiche` Basis-Score. Die Haltung sammelt ihre Genugtuung an
+und holt sie sich, wenn sie schon abgelöst ist — das ist die Geste, und es ist der erste Skill der
+Fraktion, dessen Ertrag ausdrücklich *nach* seiner Haltung liegt.
+
+Der Zähler **überlebt die Ablösung** und fällt erst, wenn Rot gar nicht mehr klingt. Anders wäre er im
+Nachklang, der ihn auszahlen soll, schon auf 0. Er läuft im Nachklang weiter mit: dort gerutschte
+Stiche erhöhen ihn, der Nachklang zahlt sich also leicht selbst hoch.
+
+Basis-Score gibt es nur auf einem **Sieg**, wie bei Anklang — „jeder Stich" ist die Decke, nicht der
+Erwartungswert.
+
+**Größenordnung, nicht tariert.** Ein normaler Sieg hat 400 Basis-Score. Vier gedrehte Stiche und
+Episch sind `4 × 240 = 960` zusätzliche Basis **je Stich** des Nachklangs — mehr als das Doppelte
+eines Siegs, und das läuft durch den ganzen Multiplikator-Stapel. Dazu kommt, dass jeder Verlängerer
+den Nachklang länger macht. Das ist die Stelle, an der die rote Linie zuerst wegläuft.
 
 Kehrtwendes Deckel liegt bewusst **über** dem von Schwungrad (2/3/5/8), weil ihre Rate niedriger ist
 und sie strukturell nicht weglaufen kann (§6.5). Die beiden Deckel sind **getrennt**: „höchstens 10×"

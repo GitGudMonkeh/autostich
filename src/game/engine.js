@@ -27,7 +27,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
+  genugtuungScore, noteTurn, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -464,12 +464,13 @@ export function resolveTrick(state, rng) {
      NACH Patt, damit Patt weiter als erstes an die knappe Niederlage darf (dort wird sie ein ganzer Sieg statt
      eines Gleichstands). Als einziges der vier Passive wirkt sie PRO STICH und ist damit robust gegen jede
      Haltungslänge — der Prüfstein, an dem das alte Crit-Passiv gescheitert ist (§7).
-     `stanceSlid` merkt sich den Rutsch für Genugtuung (Basis-Score je Punkt Rückstand), Kehrtwende (Verlängerung)
-     und Rückhalt (Wert der nächsten Karte). Ein zum Gleichstand gerutschter Stich ist für ALLES keine Niederlage
-     mehr — Niederlagenserie, Schwachstellenanalyse, Revanche und Initiative laufen in einem roten Deck leer. */
-  let stanceSlid = false, stanceDeficit = 0, stanceSlidWin = false;
+     `stanceSlid` merkt sich den Rutsch für Genugtuung (zählt ihn für den Nachklang), Kehrtwende (Verlängerung
+     und Serienpunkte) und Rückhalt (Wert der nächsten Karte). Ein zum Gleichstand gerutschter Stich ist für ALLES
+     keine Niederlage mehr — Niederlagenserie, Schwachstellenanalyse, Revanche und Initiative laufen in einem
+     roten Deck leer. */
+  let stanceSlid = false, stanceSlidWin = false;
   if (stanceOn && stanceLift(stance)) {
-    if (lost) { stanceDeficit = oValue - pValue; lost = false; stanceSlid = true; }
+    if (lost) { lost = false; stanceSlid = true; }
     else if (!won) { won = true; stanceSlid = true; stanceSlidWin = true; }
   }
 
@@ -580,13 +581,12 @@ export function resolveTrick(state, rng) {
       // (§6.26: Lücke ist gestrichen — mit ihr der `gapped`-Weg. Dickicht und Verwachsung fassen kein Wachstum an,
       //  sie heben Faktoren und leben ganz in formations.js.)
     }
-    /* ---- Haltungen (§5.5): Genugtuung, die einzige Basis-Score-Quelle der Fraktion. Sie liest JEDEN gerutschten
-       Stich — je deutlicher du eigentlich verloren hättest, desto mehr zahlt sie; der einzige Griff im Entwurf, der
-       niedrige Karten wertvoll macht. Flat in die multiplizierte Basis, kein Direkt-Score.
-       (§3.1: Runde zahlt keinen Score mehr, sie verkürzt die Einklang-Leiste.) */
+    /* ---- Haltungen (§5.5): Genugtuung, die einzige Basis-Score-Quelle der Fraktion. Sie zahlt im NACHKLANG der
+       roten Haltung, je Stich, den diese Haltung gedreht hat — gesammelt wird, solange Rot aktiv ist. Flat in die
+       multiplizierte Basis, kein Direkt-Score. (§3.1: Runde zahlt keinen Score mehr, sie verkürzt die Leiste.) */
     let stanceFlat = 0;
     if (stanceOn) {
-      stanceFlat = genugtuungScore(skills, skillTiers, stanceDeficit) + anklangScore(stance, skills, skillTiers);
+      stanceFlat = genugtuungScore(stance, skills, skillTiers) + anklangScore(stance, skills, skillTiers);
       stanceBase += stanceFlat;
     }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf
@@ -947,6 +947,7 @@ export function resolveTrick(state, rng) {
      sich der Stau. */
   if (stanceOn) {
     if (stanceSlid) {
+      newStance = noteTurn(newStance); // Genugtuung: gezählt jetzt, ausgezahlt im Nachklang der roten Haltung
       newStance = extendStance(newStance, skills, skillTiers, "slid");
       /* Kehrtwendes zweite Hälfte (§5.5): der gerutschte Stich gibt Serienpunkte. NACH der Wertung dieses Stichs,
          wie Serienanker und Crit-Folge — er wirkt ab dem nächsten. Beide Rutscher zahlen: der gerutschte Sieg

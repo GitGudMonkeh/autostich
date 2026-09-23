@@ -69,6 +69,7 @@ export function initStance() {
     peakTicks: 0,                  // Stauung: Stiche, die die gelbe Haltung schon klingt (Hebel des Spitzen-Zuschlags)
     anchorSeg: null,               // Verankerung: Segment, in dem Grün zuletzt ausgelöst hat (null = nicht verankert)
     slid: false,                   // Rückhalt: hat der VORIGE Stich gerutscht?
+    turns: 0,                      // Genugtuung: gedrehte Stiche dieser roten Haltung (zahlt im Nachklang)
     switches: 0,                   // echte Haltungswechsel (Telemetrie/Sim)
     rounds: 0,                     // vollendete Runden im ganzen Lauf (Telemetrie/Sim)
   };
@@ -160,13 +161,19 @@ export function stanceScoreMult(st, skills, skillTiers) {
 
 /* ---- Ergebnis-Linie (rot) ---- */
 
-/* Genugtuung: Basis-Score je Punkt Rückstand, den ein gerutschter Stich gedreht hat. Liest JEDEN gerutschten
-   Stich, nicht nur den gerutschten Sieg — sonst zahlte sie nie: das Passiv schiebt eine Niederlage auf
-   Gleichstand, ein gerutschter Sieg war also immer ein Gleichstand, und der hat per Definition Rückstand 0. */
-export function genugtuungScore(skills, skillTiers, deficit) {
+/* Genugtuung (§5.3, Owner-Neudesign): zwei Phasen statt einer. Solange Rot AKTIV ist, wird nur gezählt, wie viele
+   Stiche es gedreht hat (`turns`). Im NACHKLANG zahlt dann jeder Stich Basis-Score je gedrehtem Stich — die Haltung
+   sammelt ihre Genugtuung an und holt sie sich, wenn sie schon abgelöst ist.
+   Vorher zahlte sie sofort, je Punkt Rückstand; der Rückstand ist als Kennzahl weg.
+   `turns` fällt, sobald Rot gar nicht mehr klingt (stanceTick), nicht schon bei der Ablösung — sonst stünde der
+   Zähler im Nachklang, der ihn auszahlen soll, bereits auf 0. */
+export const redEchoes = (st) => !!(st && st.active && st.stance !== "R" && (st.ring?.R || 0) > 0);
+export function genugtuungScore(st, skills, skillTiers) {
   const rate = stanceParam(skills, skillTiers, S.GENUGTUUNG, "score");
-  return rate && deficit > 0 ? rate * deficit : 0;
+  return rate && redEchoes(st) ? rate * (st.turns || 0) : 0;
 }
+// Ein gedrehter Stich, gemerkt für den Nachklang. Rot klingt hier immer (sonst hätte nichts gedreht).
+export const noteTurn = (st) => ({ ...st, turns: (st.turns || 0) + 1 });
 
 // Rückhalt: nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert.
 export const rueckhaltValue = (skills, skillTiers) =>
@@ -313,6 +320,8 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null, pos = 0, sl
   // mit ihr. „Erbt einmal" heißt EINE Stufe, nicht einen Stich (Lesart; §8 hält sie als Annahme fest).
   if (triggered && wonSuit === "G") next = { ...next, anchorSeg: Math.floor(pos / segmentSize) };
   if (!ringsNow(next, "G")) next = { ...next, anchorSeg: null };
+  // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, der Nachklang zahlt ihn ja erst aus.
+  if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
   const ended = before.filter((s) => !ringsNow(next, s));
   return { stance: next, switched, ended };
 }

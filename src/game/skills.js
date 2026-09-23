@@ -209,7 +209,9 @@ const HALTUNG = {
   verankerung:    [{ segments: 1 }, { segments: 2 }, { segments: 3 }, { segments: 8 }],
   // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
   // und sie strukturell nicht weglaufen kann (§6.5).
-  genugtuung:     [{ score: 25 }, { score: 40 }, { score: 55 }, { score: 80 }],
+  // §5.3 (Owner): Genugtuung zahlt nicht mehr sofort je Punkt Rückstand, sondern im NACHKLANG je gedrehtem Stich —
+  // und die Sätze sind verdreifacht (25/40/55/80 → 75/120/165/240).
+  genugtuung:     [{ score: 75 }, { score: 120 }, { score: 165 }, { score: 240 }],
   rueckhalt:      [{ value: 3 }, { value: 4 }, { value: 6 }, { value: 8 }],
   // §5.3 (Owner): Kehrtwende bekommt eine zweite, eigene Zahl — der gerutschte Stich gibt Serienpunkte. Die
   // Verlängerung allein war ein Körper, der nichts wiegt; die Serie ist die Achse, auf der ein gedrehter Stich
@@ -527,7 +529,7 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.verankerung, (r) => `Löst die grüne Haltung aus, erbt jede Karte ${r.segments >= 8 ? "aller Segmente" : r.segments === 1 ? "des aktuellen Segments" : `von ${de1(r.segments)} Segmenten`} einmal eine Überlappungs-Stufe.`) },
   // Ergebnis-Linie (rot)
   SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
-    ...tiered(HALTUNG.genugtuung, (r) => `Ein von der roten Haltung gerutschter Stich gibt +${r.score} Basis-Score je Punkt Rückstand, den er gedreht hat.`) },
+    ...tiered(HALTUNG.genugtuung, (r) => `Klingt die rote Haltung nach, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie gedreht hat.`) },
   SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
     ...tiered(HALTUNG.rueckhalt, (r) => `Nach einem gerutschten Stich kämpft die nächste Karte mit +${r.value} Wert.`) },
   SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
+  stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, redEchoes, rueckhaltValue, extendStance,
   carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
@@ -420,16 +420,39 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
 });
 
 describe("Haltungen — Ergebnis-Linie (rot)", () => {
-  it("SK_STANCE_10 Genugtuung liest JEDEN gerutschten Stich — ein gerutschter Sieg allein zahlte nichts (§5.5)", () => {
+  it("SK_STANCE_10 Genugtuung sammelt in der roten Haltung und zahlt im NACHKLANG (§5.3)", () => {
     const skills = [S.GENUGTUUNG], rate = T.genugtuung[0].score;
-    expect(genugtuungScore(skills, {}, 7)).toBe(7 * rate);
-    expect(genugtuungScore(skills, {}, 0)).toBe(0);            // ein gerutschter Gleichstand hat Rückstand 0
-    expect(genugtuungScore([], {}, 7)).toBe(0);
-    // In der Engine: die zum Gleichstand gerutschte Niederlage zahlt, obwohl sie kein Sieg ist — über den
-    // gerutschten Gleichstand, der ein Sieg wird. Ein Rückstand von 12 bei Deck 0 gegen 12.
-    const s = resolveTrick(run(st(), { deck: constDeck(6), oppDeck: constDeck(6), skills }), noCrit);
-    expect(s.lastTrick.result).toBe("win_tie");
-    expect(s.stanceBase).toBe(0);                              // Rückstand 0 → nichts
+    // Zwei Phasen: Rot aktiv → gezählt, aber nichts gezahlt. Rot nur noch im Nachklang → jeder Stich zahlt.
+    const active = st({ stance: "R", turns: 3 });
+    const echo = st({ stance: "B", ring: { R: 2 }, turns: 3 });
+    expect(redEchoes(active)).toBe(false);
+    expect(redEchoes(echo)).toBe(true);
+    expect(genugtuungScore(active, skills, {})).toBe(0);       // aktiv zahlt sie NICHT
+    expect(genugtuungScore(echo, skills, {})).toBe(3 * rate);
+    expect(genugtuungScore(echo, skills, { [S.GENUGTUUNG]: 3 })).toBe(3 * T.genugtuung[3].score);
+    expect(genugtuungScore(echo, [], {})).toBe(0);
+    expect(genugtuungScore(st({ stance: "B", ring: { R: 2 }, turns: 0 }), skills, {})).toBe(0); // nichts gedreht
+    // In der Engine: der gerutschte Stich zählt hoch und zahlt selbst noch nichts …
+    const one = resolveTrick(run(st(), { deck: constDeck(6), oppDeck: constDeck(6), skills }), noCrit);
+    expect(one.lastTrick.result).toBe("win_tie");
+    expect(one.stance.turns).toBe(1);
+    expect(one.stanceBase).toBe(0);
+    // … und im Nachklang zahlt jeder Stich, auch einer, der gar nichts dreht.
+    const paid = resolveTrick(run(st({ stance: "B", ring: { R: 2 }, turns: 4 }), { skills }), noCrit);
+    expect(paid.lastTrick.result).toBe("win");
+    expect(paid.stanceBase).toBe(4 * rate);
+    expect(paid.lastTrick.breakdown.flats).toBeGreaterThanOrEqual(4 * rate);
+  });
+  it("Genugtuungs Zähler überlebt die Ablösung und fällt erst, wenn Rot verklungen ist", () => {
+    // Die Ablösung DARF ihn nicht löschen — der Nachklang, der ihn auszahlt, kommt ja erst danach.
+    let s = st({ stance: "R", turns: 5, counts: { B: C.STANCE_THRESHOLD - 1 } });
+    s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;
+    expect(s.stance).toBe("B");
+    expect(ringsNow(s, "R")).toBe(true);
+    expect(s.turns).toBe(5);
+    for (let i = 0; i < C.STANCE_MIN_DURATION + 1; i++) s = stanceTick(s, [], {}, {}).stance;
+    expect(ringsNow(s, "R")).toBe(false);
+    expect(s.turns).toBe(0);
   });
   it("SK_STANCE_11 Rückhalt: nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert", () => {
     const skills = [S.RUECKHALT];
