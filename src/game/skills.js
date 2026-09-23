@@ -210,7 +210,9 @@ const HALTUNG = {
   // §5.3 (Owner): Kehrtwende bekommt eine zweite, eigene Zahl — der gerutschte Stich gibt Serienpunkte. Die
   // Verlängerung allein war ein Körper, der nichts wiegt; die Serie ist die Achse, auf der ein gedrehter Stich
   // tatsächlich etwas dreht.
-  kehrtwende:     [{ max: 3, streak: 1 }, { max: 4, streak: 2 }, { max: 6, streak: 3 }, { max: 10, streak: 4 }],
+  // Episch hebt zusätzlich den SATZ des Serien-Multiplikators (Owner: „ein kleines bisschen"). Der Satz, nicht das
+  // Ergebnis — der Deckel bei +150 % bleibt stehen, Episch erreicht ihn nur früher (Serie 60 statt 75).
+  kehrtwende:     [{ max: 3, streak: 1 }, { max: 4, streak: 2 }, { max: 6, streak: 3 }, { max: 10, streak: 4, streakStep: 0.005 }],
   // Rotation — wirkt über alle Haltungen. Beschleunigungs Boden geht NICHT auf 1: bei Schwelle 1 löst jede Farbe
   // mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7).
   // §5.3 (Owner): Anklang hatte keinen eigenen Körper — er verlängerte nur, wie lange etwas anderes gilt. Jetzt
@@ -525,7 +527,7 @@ export const SKILL_DEFS = {
   SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
     ...tiered(HALTUNG.rueckhalt, (r) => `Nach einem gerutschten Stich kämpft die nächste Karte mit +${r.value} Wert.`) },
   SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,
-    ...tiered(HALTUNG.kehrtwende, (r) => `Ein gerutschter Stich gibt +${r.streak} Serienpunkt${r.streak === 1 ? "" : "e"} und verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
+    ...tiered(HALTUNG.kehrtwende, (r) => `Ein gerutschter Stich gibt +${r.streak} Serienpunkt${r.streak === 1 ? "" : "e"} und verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.${r.streakStep ? ` Solange die rote Haltung klingt, zählt jeder Serienpunkt +${de(r.streakStep * 100)} % mehr auf den Serien-Multiplikator.` : ""}`) },
   // Rotation — wirkt über alle Haltungen
   SK_STANCE_13: { id: "SK_STANCE_13", name: "Anklang", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.anklang,
     ...tiered(HALTUNG.anklang, (r) => `Eine Haltung klingt ${r.duration} Stiche statt ${C.STANCE_MIN_DURATION} nach, und jeder dieser Stiche gibt +${r.score} Basis-Score.`) },

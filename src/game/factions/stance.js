@@ -177,6 +177,12 @@ export const rueckhaltValue = (skills, skillTiers) =>
 export const kehrtwendeStreak = (skills, skillTiers) =>
   stanceParam(skills, skillTiers, S.KEHRTWENDE, "streak") || 0;
 
+/* Kehrtwende Episch, dritte Zahl (Owner): der SATZ des Serien-Multiplikators steigt ein wenig. Sie hängt — anders
+   als die beiden anderen Hälften — an keinem einzelnen Stich, sondern an der klingenden roten Haltung, wie jedes
+   Passiv der Fraktion. Damit bleibt Grundrauschen der einzige Skill, der außerhalb seiner Haltung zahlt (§4.1). */
+export const kehrtwendeStreakStep = (st, skills, skillTiers) =>
+  (ringsNow(st, "R") ? stanceParam(skills, skillTiers, S.KEHRTWENDE, "streakStep") || 0 : 0);
+
 /* ---- Verlängerer ---- */
 
 /* Schwungrad (Crit) und Kehrtwende (Ergebnis) verlängern die AKTUELL aktive Haltung um einen Stich (§2), je mit

@@ -261,7 +261,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
-| | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× |
+| | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2* |
 | | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
@@ -446,6 +446,7 @@ auf voll, mit Score, Serie und Farbzähler.
 | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
 | **Kehrtwende** · Serienpunkte je gerutschtem Stich | +1 | +2 | +3 | +4 |
 | **Kehrtwende** · Verlängerungen je Haltung | höchstens 3× | 4× | 6× | 10× |
+| **Kehrtwende** · Satz des Serien-Multiplikators, solange Rot klingt | — | — | — | +0,5 % je Serienpunkt |
 
 Kehrtwendes Deckel liegt bewusst **über** dem von Schwungrad (2/3/5/8), weil ihre Rate niedriger ist
 und sie strukturell nicht weglaufen kann (§6.5). Die beiden Deckel sind **getrennt**: „höchstens 10×"
@@ -469,6 +470,27 @@ Die Punkte kommen **nach** der Wertung ihres Stichs, wie beim Serienanker und be
 wirken ab dem nächsten. Zu beachten: auf einem gerutschten Gleichstand steigt damit die *Siegesserie*,
 obwohl der Stich keiner ist. Das ist genau die Geste („eine Kehrtwende"), aber es ist die Stelle, an
 der ein Build mit großem Serien-Multiplikator zuerst wegläuft — Startwerte, nicht tariert.
+
+**Episch, dritte Zahl (Owner):** *„Episch soll außerdem den Serien-Multi erhöhen, ein kleines
+bisschen."* Gehoben wird der **Satz**, nicht das Ergebnis: jeder Serienpunkt zählt `+0,5 %` statt der
+`+2 %` aus `STREAK_BASE_STEP`. Der Deckel bei `+150 %` bleibt, wo er ist — der höhere Satz erreicht ihn
+nur früher (Serie 60 statt 75) und kann nie darüber hinaus. Die Wirkung ist damit **strukturell
+begrenzt**, ohne dass es dafür eine Sonderregel braucht.
+
+| Serie | ohne | mit |
+| --- | --- | --- |
+| 10 | ×1,20 | ×1,25 |
+| 25 | ×1,50 | ×1,63 |
+| 50 | ×2,00 | ×2,25 |
+| 60 | ×2,20 | ×2,50 *(Deckel)* |
+| ab 75 | ×2,50 | ×2,50 |
+
+**Angenommen, nicht entschieden:** der Owner hat keine Bedingung genannt. Gebaut ist sie als Passiv
+der roten Haltung — sie zahlt nur, **solange Rot klingt**, wie jeder andere Skill der Fraktion in
+seiner eigenen Haltung. Damit bleibt **Grundrauschen der einzige Skill, der außerhalb seiner Haltung
+wirkt** (§4.1). Soll sie stattdessen unbedingt gelten, ist das eine Zeile.
+
+`+0,5 %` ist ebenfalls Startwert — „ein kleines bisschen" ist ein Viertel des Grundsatzes.
 
 ---
 

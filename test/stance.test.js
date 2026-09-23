@@ -5,7 +5,8 @@ import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCou
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
   carryArmed, armCarry, spendCarry, banksNow, dischargeBank, stanceCycleEnd,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
-  anklangScore, extTotal, kehrtwendeStreak } from "../src/game/factions/stance.js";
+  anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
+import { streakBaseMult } from "../src/game/perks.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, overlapFactor, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -460,6 +461,23 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
     const noRed = resolveTrick(run(st({ stance: "B" }), { deck: constDeck(0), oppDeck: constDeck(12), winStreak: 4, skills }), noCrit);
     expect(noRed.lastTrick.result).toBe("loss");
     expect(noRed.winStreak).toBe(0);
+    /* Die dritte Zahl, nur EPISCH: der Satz des Serien-Multiplikators steigt, solange Rot klingt. Der Satz, nicht
+       das Ergebnis — der Deckel bleibt stehen, Episch erreicht ihn nur früher. */
+    const epic = { [S.KEHRTWENDE]: 3 };
+    const step = T.kehrtwende[3].streakStep;
+    expect(T.kehrtwende.slice(0, 3).some((r) => r.streakStep)).toBe(false); // keine der drei unteren Stufen
+    expect(kehrtwendeStreakStep(st(), skills, epic)).toBe(step);
+    expect(kehrtwendeStreakStep(st(), skills, {})).toBe(0);                 // Normal: kein Zusatz
+    expect(kehrtwendeStreakStep(st({ stance: "B" }), skills, epic)).toBe(0); // Rot klingt nicht → nichts
+    const below = 25, atCap = Math.ceil(C.STREAK_BASE_CAP / C.STREAK_BASE_STEP);
+    expect(streakBaseMult(below, step)).toBeGreaterThan(streakBaseMult(below));
+    expect(streakBaseMult(atCap, step)).toBe(streakBaseMult(atCap));        // über dem Deckel identisch
+    // In der Engine: derselbe Sieg, einmal mit und einmal ohne den epischen Zusatz.
+    const plain = resolveTrick(run(st(), { winStreak: below, skills }), noCrit);
+    const boost = resolveTrick(run(st(), { winStreak: below, skills, skillTiers: epic }), noCrit);
+    expect(plain.lastTrick.breakdown.streakMult).toBeCloseTo(streakBaseMult(below + 1), 6);
+    expect(boost.lastTrick.breakdown.streakMult).toBeCloseTo(streakBaseMult(below + 1, step), 6);
+    expect(boost.lastTrick.gained).toBeGreaterThan(plain.lastTrick.gained);
     const handover = stanceTick({ ...one.stance, counts: { ...one.stance.counts, Y: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "Y" }).stance;
     expect(handover.stance).toBe("Y");
     expect(handover.ring.R).toBe(C.STANCE_MIN_DURATION + 1);   // Mindestdauer plus die eine gesammelte Verlängerung
