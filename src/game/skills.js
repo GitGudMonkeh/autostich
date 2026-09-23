@@ -189,7 +189,9 @@ const HALTUNG = {
   // Score-Linie (gelb) — das Passiv ist der glatte Multiplikator; die Linie hat ihre Spannung in sich: das Passiv
   // belohnt, DRIN zu sein, Stauung belohnt, dass es ENDET.
   stauung:        [{ factor: 1.25 }, { factor: 1.4 }, { factor: 1.6 }, { factor: 2.0, cycleEnd: true }],
-  beharrlichkeit: [{ perTrick: 0.02 }, { perTrick: 0.03 }, { perTrick: 0.04 }, { perTrick: 0.06 }],
+  // §5.3 (Owner): alle vier Sätze ×10. Auf 0,02 war Campen eine Geste ohne Gewicht — die gelbe Haltung lebt
+  // typisch 4–7 Stiche, das waren +0,08…+0,42 auf einer Basis von ×1,4.
+  beharrlichkeit: [{ perTrick: 0.2 }, { perTrick: 0.3 }, { perTrick: 0.4 }, { perTrick: 0.6 }],
   mitklang:       [{ perStance: 0.15 }, { perStance: 0.25 }, { perStance: 0.35 }, { perStance: 0.5 }],
   // Crit-Linie (blau). Übertrag ist über die REICHWEITE gestaffelt, nicht über eine Sprungchance: mit einer Chance
   // von 50 → 100 % bewegte sich die Critrate nur von 60 auf 67 %, das wäre eine Leiter, die nichts tut (§5.2).

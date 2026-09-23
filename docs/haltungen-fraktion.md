@@ -251,7 +251,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | Linie | Skill · Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
 | **Score** (gelb) | **Stauung** · Zuschlag auf den Stau | ×1,25 | ×1,4 | ×1,6 | ×2,0 + *entlädt auch am Durchlauf-Ende* |
-| | **Beharrlichkeit** · je Stich Laufzeit | +0,02 | +0,03 | +0,04 | +0,06 |
+| | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
 | **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
 | | **Übertrag** · Reichweite des Übersprungs | 1 Stich | 2 | 3 | 4 |
@@ -285,7 +285,7 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Stauung** · Zuschlag auf den Stau | ×1,25 | ×1,4 | ×1,6 | ×2,0 + *der Stau entlädt sich auch am Durchlauf-Ende* |
-| **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,02 | +0,03 | +0,04 | +0,06 |
+| **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
 
 **Stauung und die Verlängerer beißen sich.** Stauung zahlt erst, wenn die Haltung *endet* — Schwungrad
@@ -297,10 +297,21 @@ am Durchlauf-Ende; auf den unteren Stufen bleibt die Falle bestehen und ist Absi
 *endet*. Und Beharrlichkeit/Mitklang sind ein Spiegelpaar — im Block-Build wächst Beharrlichkeit und
 Mitklang steht auf ×1, im bunten Build umgekehrt. Dieselbe Linie bedient beide Spielstile.
 
-**Warnung:** in einem harten Block-Build kann eine Haltung sehr lang laufen, potenziell einen ganzen
-Durchlauf. Beharrlichkeit hätte dann 30+ Schritte — auf Episch wären das +1,8, also ×3,2 zusätzlich.
-Das ist die Stelle, an der diese Linie wegläuft, falls sie wegläuft. Bewusst ohne Deckel, weil das
-Raster sagt: lieber niedrigere Werte als Deckel auf Rampen.
+**Neudesign §5.3 (Owner): alle vier Sätze ×10** (vorher `+0,02 / 0,03 / 0,04 / 0,06`). Auf den alten
+Werten war Campen eine Geste ohne Gewicht: die gelbe Haltung lebt typisch 4–7 Stiche, das waren
+`+0,08 … +0,42` auf einer Basis von `×1,4`. Was der Satz jetzt trägt:
+
+| Laufzeit | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| 5 Stiche | ×2,4 | ×2,9 | ×3,4 | ×4,4 |
+| 10 Stiche | ×3,4 | ×4,4 | ×5,4 | ×7,4 |
+| 20 Stiche | ×5,4 | ×7,4 | ×9,4 | ×13,4 |
+
+**Warnung, jetzt zehnmal so scharf:** in einem harten Block-Build kann eine Haltung sehr lang laufen,
+potenziell einen ganzen Durchlauf. Beharrlichkeit hätte dann 30+ Schritte — auf Episch `+18,0`, also
+`×19,4` statt der früheren `×3,2`. Das ist die Stelle, an der diese Linie wegläuft, falls sie
+wegläuft. Weiterhin bewusst ohne Deckel, weil das Raster sagt: lieber niedrigere Werte als Deckel auf
+Rampen — der Satz ist damit der einzige Regler, und er steht jetzt hoch.
 
 ### 5.2 · Crit-Linie — voll
 
