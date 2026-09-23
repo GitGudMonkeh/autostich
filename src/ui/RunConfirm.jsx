@@ -102,8 +102,12 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
   );
 }
 
-export function RestartConfirm({ onKeepPlaying, onRestart }) {
+/* `campaign` tauscht nur die Warnzeile. In der Kampagne wirft der Neustart nämlich nicht den LAUF
+   zurück, sondern die ganze Ebene (Owner 2026-09-22) — und das muss dastehen, bevor geklickt wird,
+   nicht danach. Ein eigener Dialog dafür wäre derselbe Dialog mit einem anderen Satz. */
+export function RestartConfirm({ onKeepPlaying, onRestart, campaign = false }) {
   const wide = useIsWide();
+  const help = t(campaign ? "app.restart.help.campaign" : "app.restart.help");
   /* #menu-rework M11 — the same step as the abort dialog above, and the comment sits above the
      `return` for the same reason (M11-F06). */
   return overlayPortal(
@@ -116,13 +120,13 @@ export function RestartConfirm({ onKeepPlaying, onRestart }) {
           <div className={wide ? "text-title-5 font-bold" : "text-body-lg-6 font-bold"}>{t("app.restart.title")}</div>
           {/* Auf dem Desktop steht die Warnung VOR den Knöpfen — es gibt kein Scrollen, also keinen Grund,
               die Bestätigung nach oben zu ziehen. */}
-          {wide && <div className="text-body-lg-5 opacity-70 mt-2.5">{t("app.restart.help")}</div>}
+          {wide && <div className="text-body-lg-5 opacity-70 mt-2.5">{help}</div>}
           {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
           <ActionBar pad={wide ? 6 : 5} bg={STICKY_HEAD_BG} className={wide ? "mt-5" : "mt-3"}>
             <ActionButton kind="secondary" flex onClick={onKeepPlaying}>{t("app.keepPlaying")}</ActionButton>
             <ActionButton kind="danger" flex className="rc-btn" onClick={onRestart}>{t("app.restart")}</ActionButton>
           </ActionBar>
-          {!wide && <div className="text-body-lg-5 opacity-70">{t("app.restart.help")}</div>}
+          {!wide && <div className="text-body-lg-5 opacity-70">{help}</div>}
         </div>
       </div>
     </div>

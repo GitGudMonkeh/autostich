@@ -3,6 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { PANEL_BG, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openBordersOf } from "../game/contracts.js"; // Durchlass: offene Segmentgrenzen aus der Auftrags-Beute
+import { formationGapOf } from "../game/campaign.js"; // Lückenschluss: dieselbe Erkennung wie im Motor, sonst zeigt die Vorschau anderes
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { familyDef, formationName, perkCat, rarityLabel, suitLabel } from "../i18n/labels.js"; // #sprache
 import { t as tr, fmtNum } from "../i18n/index.js"; // tr = Alias: `t` ist hier lokal der Formationstyp
@@ -45,7 +46,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
   const fmtStr = (x) => fmtNum(x.toFixed(2));
   const strengthOf = (fs) => (fs || []).reduce((sum, pf) => sum + ((pf.mult || 1) - 1), 0);
   const previewOn = ft.kind === "suits" && typeof tierDef.onPick === "function";
-  const strengthFor = (dk) => strengthOf(computeFormations(order, dk, state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}, null, null, openBordersOf(state)));
+  const strengthFor = (dk) => strengthOf(computeFormations(order, dk, state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}, null, null, openBordersOf(state), formationGapOf(state)));
   const curStrength = previewOn ? strengthFor(deck) : 0;
   const projStrength = (previewOn && ready) ? strengthFor(tierDef.onPick(deck, () => 0.5, { suits: sel })) : null;
 

@@ -19,6 +19,7 @@ import { computeFormations, formationPotential, openBorderInfo, FORMATION_TYPES 
 import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js";
 import * as CT from "./contracts.js"; // Zwischenaufgaben — nur aktiv, wenn der Lauf über „Aufträge" gestartet wurde
+import * as CP from "./campaign.js"; // Kampagne (docs/kampagne.md §11): Lauf-Konfiguration und Verlauf
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
@@ -93,8 +94,16 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
     return { phase: "architect", architect: { ...archAtEntry, phaseAnchor: archFpMap(archAtEntry), phaseHistory: [] } };
   }
   if (decision === "formation") {
-    const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null, bordersOf(s));
-    return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
+    /* Dieser Aufruf stand als einziger auf NEUN Argumenten: `bordersOf(s)` landete damit im
+       `plant`-Platz und die offenen Grenzen fielen still weg. Am allerersten Entscheidungspunkt
+       war das folgenlos (dort gibt es noch keine Beute-Grenzen), beim Ausrichten auf elf
+       Argumente aber genau die Sorte Fehler, die der Waechter in test/formations-gap.test.js
+       ab jetzt verhindert. */
+    const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null, plantBag(s), bordersOf(s), CP.formationGapOf(s));
+    // Schliesser (Kampagne): auch der allererste Entscheidungspunkt zieht sein Segment. Die
+    // uebrigen Aufstellphasen kommen aus der Engine (resolveTrick), nicht von hier.
+    return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations,
+             lockedSegment: CP.drawLockedSegment(s, rngAt(seed, "schliesser", s.cycle || 0)) };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
   // exp skill rework: der Dev-Run zeigt den flachen Voll-Katalog; sonst die zwei Türen (docs/skill-rework.md §1),
@@ -251,6 +260,8 @@ function contractStep(prev, next, rng = Math.random) {
 
   let contracts = c;
   let perPhase = null;
+  let doubleLoot = next.doubleLoot;   // Doppelwahl-Budget dieses Laufs; nur Stufe I zählt herunter
+  let campaign = next.campaign;       // dieselbe Stufe schreibt ihr Einlösen in den Kampagnen-Stand
   if (next.cycle > prev.cycle) {
     /* Zwei Segen zahlen JE PHASE statt einmal: Stiftung legt Münzen nach, Freilos füllt die
        Neuwurf-Pools wieder auf. Der Durchlaufwechsel ist die eine Stelle, die jede Phase sieht. */
@@ -274,9 +285,20 @@ function contractStep(prev, next, rng = Math.random) {
        vorher — der Stand ist sicher, nur die Auszahlung wartet. */
     if (activeWin && finished >= activeWin.to) {
       const won = CT.isFulfilled({ ...next, contractTally: tally }, active);
+      /* Doppelwahl: das Budget wird beim AUSLEGEN gezogen, nicht beim Wählen. Der Spieler sieht
+         damit von Anfang an „zwei Stücke", statt es erst nach der ersten Wahl zu erfahren — und
+         ein abgebrochener Lauf verbraucht den Gutschein trotzdem, was ehrlicher ist als ihn
+         zurückzugeben. Stufe I schreibt das Einlösen in den Kampagnen-Stand, weil sie ihn
+         überlebt; II und III haben ein unendliches Budget und ziehen nichts ab. */
+      const dbl = won && (next.doubleLoot || 0) > 0;
+      if (dbl && Number.isFinite(next.doubleLoot)) {
+        doubleLoot = next.doubleLoot - 1;
+        if (next.campaign) campaign = { ...next.campaign, double: { ...(next.campaign.double || {}), used: true } };
+      }
       contracts = { ...contracts, active: null,
                     done: won ? [...(contracts.done || []), active.taskId] : contracts.done || [],
-                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null };
+                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null,
+                    pendingLootTake: won ? (dbl ? 2 : 1) : 0 };
     }
     const win = CT.windowFor(finished + 1);
     /* Die Beute des alten Fensters und das Angebot des neuen fallen jetzt auf DIESELBE Grenze. Das
@@ -288,7 +310,7 @@ function contractStep(prev, next, rng = Math.random) {
                     usedTasks: [...new Set([...(contracts.usedTasks || []), ...offers.map((o) => o.taskId)])] };
     }
   }
-  return { ...next, ...(perPhase || {}), contractTally: tally, contracts };
+  return { ...next, ...(perPhase || {}), contractTally: tally, contracts, doubleLoot, campaign };
 }
 
 /* Eis-Neudesign: Gibt es überhaupt noch eine Zelle, die GLACIER_LOCK annehmen würde? Die Phase „glacier-target"
@@ -381,6 +403,18 @@ function dropSkill(state, skillId) {
     glacierBuffPending: ice ? state.glacierBuffPending : {}, glacierBuffActive: ice ? state.glacierBuffActive : {} };
 }
 
+/* Kampagne: das Laufende abrechnen — Schwelle geprueft, Kette fortgeschrieben, Auslage gestellt.
+   Sie haengt an BEIDEN Wegen ins Laufende (die Engine nach dem letzten Durchlauf, END_RUN beim
+   freiwilligen Beenden), und `settled` macht sie idempotent: ein zweiter Aufruf auf demselben
+   Gameover-State wuerde sonst ein zweites Mal werten. */
+const settleCampaign = (s) =>
+  (s && s.campaign && s.phase === "gameover" && !s.campaign.settled)
+    ? { ...s, campaign: { ...CP.settleRun(s.campaign, {
+          score: s.score || 0,
+          contracts: ((s.contracts && s.contracts.done) || []).length,
+        }), settled: true } }
+    : s;
+
 export function reducer(state, action) {
   switch (action.type) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
@@ -449,17 +483,30 @@ export function reducer(state, action) {
       // exp skill rework (Sim): `action.archetypes` narrows the offer pool to the named archetypes for this run — the
       // tuning of Feuer and Blitz measures in a world without Eis and Pflanze until those are reworked. null = open pool.
       const archPool = Array.isArray(action.archetypes) && action.archetypes.length ? [...action.archetypes] : null;
-      const sBase = { ...s, architect: { ...s.architect, maxCover: effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
+      /* Kampagne (docs/kampagne.md §11). Sie legt sich ÜBER die eben berechneten Werte, weil sie
+         dieselben Nähte benutzt, die die Wochen-Modifikatoren schon kennen: Archetyp-Pool,
+         Raritäts-Deckel, Aufstell-Energie, Baufeld und die gesperrten Bauzellen. Ohne
+         `action.campaign` bleibt der Lauf-Start unverändert — kein Zweig, keine Zahl. */
+      const camp = action.campaign && typeof action.campaign === "object" ? action.campaign : null;
+      const cUnlocked = Array.isArray(action.unlocked) ? action.unlocked : [];
+      const cSetup = camp ? CP.runSetup(camp, cUnlocked,
+        { energy: effEnergy, cover: effCover, coins: s.coins, positions: N_POS, rng: action.rng || Math.random }) : null;
+      const sBase = { ...s, architect: { ...s.architect, maxCover: cSetup ? cSetup.cover : effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
         rerollsPerk2: 0,
-        formationEnergyBase: effEnergy, unlockedArchetypes: archPool, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        formationEnergyBase: cSetup ? cSetup.energy : effEnergy,
+        unlockedArchetypes: cSetup ? cSetup.archetypes : archPool,
+        rareCap: cSetup ? cSetup.rareCap : effRareCap,
+        rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        ...(cSetup ? { campaign: camp, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder, doubleLoot: cSetup.doubleLoot } : {}),
         weekMods: weekModsState,
-        challengeBlockArch: [...new Set(wmBlockArch)],
+        challengeBlockArch: [...new Set([...wmBlockArch, ...(cSetup ? cSetup.blockCells : [])])],
         challengeBlockForm: [...new Set(wmBlockForm)] };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       /* Zwischenaufgaben: nur über den „Aufträge"-Knopf. Das erste Angebot liegt sofort aus — gewählt
          wird laut docs/zwischenaufgaben.md §3.1 nach der ersten Skill-Wahl, und genau dann ist der
          Start-Patch durch und der Spieler sieht den Aufsteller. */
-      const contractsOn = !!action.contracts;
+      // Im Kampagnenlauf entscheidet die Freischaltung, nicht der Knopf.
+      const contractsOn = cSetup ? cSetup.contracts : !!action.contracts;
       /* „Kein Angebot zweimal in einem Lauf" (§3.6) meint ALLE drei Aufsteller, nicht nur den
          angenommenen — sonst kann Fenster 2 genau die zwei zeigen, die man eben hat verfallen lassen.
          Deshalb wandern sie beim AUSLEGEN in `usedTasks`, nicht beim Annehmen. */
@@ -492,17 +539,30 @@ export function reducer(state, action) {
         active: { ...chosen, windowId: c.windowId } } };
     }
 
-    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die anderen zwei verfallen
+    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die übrigen verfallen
       const c = state.contracts;
       if (!state.contractsEnabled || !c || !(c.pendingLoot || []).length) return state;
       const piece = c.pendingLoot.find((p) => p.id === action.lootId && p.tier === action.tier);
       if (!piece) return state;
       const { pendingSkillPick, pendingBorderPick, ...patch } = CT.applyLoot(state, piece, action.rng || Math.random) || {};
+      /* Doppelwahl: `pendingLootTake` sagt, wie viele Griffe die Auslage noch hergibt. Bleibt einer
+         übrig UND liegt noch etwas da, bleibt die Auslage offen und verliert nur das genommene
+         Stück. Ein fehlendes Feld heißt „einer" — alte Spielstände und jeder Lauf ohne den Reward
+         laufen damit unverändert. */
+      const rest = c.pendingLoot.filter((p) => !(p.id === piece.id && p.tier === piece.tier));
+      const uebrig = Math.max(0, (c.pendingLootTake ?? 1) - 1);
+      const nochmal = uebrig > 0 && rest.length > 0;
       /* Vollendung bringt eine Auswahl statt einer Wirkung mit. Sie gehört in den Auftrags-Zustand,
-         nicht in den Lauf-Zustand — sonst müsste jeder andere Codepfad sie kennen. */
+         nicht in den Lauf-Zustand — sonst müsste jeder andere Codepfad sie kennen.
+         Bei zwei Griffen können BEIDE Stücke eine Nachwahl mitbringen. Die zweite darf die erste
+         nicht überschreiben, also werden die Zahlen ADDIERT: beide sind „wähle N davon", und zwei
+         offene Nachwahlen derselben Art sind eine über die Summe. */
+      const mergeRest = (alt, neu) => (!alt ? (neu || null) : !neu ? alt : { ...alt, rest: (alt.rest || 0) + (neu.rest || 0) });
+      const mergeCount = (alt, neu) => (!alt ? (neu || null) : !neu ? alt : { ...alt, count: (alt.count || 0) + (neu.count || 0) });
       return { ...state, ...patch,
-        contracts: { ...c, pendingLoot: null, pendingSkillPick: pendingSkillPick || null,
-                     pendingBorderPick: pendingBorderPick || null,
+        contracts: { ...c, pendingLoot: nochmal ? rest : null, pendingLootTake: nochmal ? uebrig : 0,
+                     pendingSkillPick: mergeRest(c.pendingSkillPick, pendingSkillPick),
+                     pendingBorderPick: mergeCount(c.pendingBorderPick, pendingBorderPick),
                      taken: [...(c.taken || []), { id: piece.id, tier: piece.tier }] } };
     }
 
@@ -522,7 +582,7 @@ export function reducer(state, action) {
       const next = { ...state, ...applied, contracts: { ...c, pendingBorderPick: null } };
       // Die Aufstellung sofort neu rechnen: eine offene Grenze ändert die Formationen dieser Runde.
       return { ...next, formations: computeFormations(next.playerOrder, next.deck, next.roles, next.perks, next.skills,
-        next.shop?.anchors || [], next.familyTiers, archOf(next), plantBag(next), bordersOf(next)) };
+        next.shop?.anchors || [], next.familyTiers, archOf(next), plantBag(next), bordersOf(next), CP.formationGapOf(next)) };
     }
 
     case "PICK_CONTRACT_SKILL": { // Vollendung: DER gewählte Skill wird episch, die übrigen steigen
@@ -543,7 +603,7 @@ export function reducer(state, action) {
 
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
-      return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
+      return (state.phase === "menu" || state.phase === "gameover") ? state : settleCampaign({ ...state, phase: "gameover" });
 
 
     /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;
@@ -686,7 +746,7 @@ export function reducer(state, action) {
 
     case "RESOLVE_TRICK": {
       const next = resolveTrick(state, action.rng);
-      return state.contractsEnabled ? contractStep(state, next, action.rng) : next;
+      return settleCampaign(state.contractsEnabled ? contractStep(state, next, action.rng) : next);
     }
 
     case "PICK_PERK": {
@@ -741,7 +801,7 @@ export function reducer(state, action) {
             { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize })
         : [];
       const formations = (def.redistribute || def.opfergang)
-        ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state))
+        ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state))
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
                ...spendLegendaryPerk(state), // Reliquiar wirkt genau auf DIESES Angebot
@@ -773,7 +833,7 @@ export function reducer(state, action) {
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "pick"));
         // [#229 N3] Formationen sofort neu berechnen (analog CONFIRM_TARGET) — sonst bis zum nächsten RESOLVE_TRICK stale.
         return { ...state, familyTiers, deck, roles, deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6: was der Eingriff je Karte TAT — der Verkauf zieht genau das ab
-          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state)),
+          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)),
           offer: null, phase: "play" };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
@@ -788,7 +848,7 @@ export function reducer(state, action) {
           const { familyTiers, deck, roles } = applyFamilyPick(
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
           return { ...state, familyTiers, deck, roles, deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6
-            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state)),
+            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)),
             offer: null, phase: "play" };
         }
         return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null } };
@@ -844,7 +904,7 @@ export function reducer(state, action) {
       const { familyTiers, deck, roles } = applyFamilyPick(
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
-      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
+      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
       const deckDeltas = withDeckDelta(state.deckDeltas, ft.familyId, deckDeltaOf(state.deck, deck)); // §3.6: C_SACRIFICE und die Farb-Stufen greifen hier ins Deck
       // Aufwertung (UPGRADE_FAMILY): zurück, wo der Kauf ausgelöst wurde, und ERST HIER bezahlen. Ein Pick
       // dagegen hat seinen Rundenplatz verbraucht und geht ins Spiel — daher die Adresse am familyTarget.
@@ -867,7 +927,7 @@ export function reducer(state, action) {
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state)), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)), phase: "play", targetPerk: null };
     }
 
     // (#267: PICK_STAT entfernt — es gibt keine Stat-Phase mehr.)
@@ -959,7 +1019,7 @@ export function reducer(state, action) {
       const perPick = schild ? G_SCHILD_PER_PICK : G_PER_PICK;
       const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick, schild) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth }, bordersOf(state));
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth }, bordersOf(state), CP.formationGapOf(state));
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, tendrils, formations,
                /* §3.6: kam dieser Skill aus dem Meisterhand-Bonus, merkt sich der Lauf, welcher es war —
                   der Verkauf des Perks nimmt ihn mit, und ohne Gedächtnis wäre er nicht wiederzufinden.
@@ -1019,7 +1079,7 @@ export function reducer(state, action) {
       const deck = state.deck, growth = state.growth || {};
       const lightning = (state.lightning && state.lightning.active)
         ? { ...state.lightning, maxCharge: maxChargeFor(skills, skillTiers) } : state.lightning;
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth }, bordersOf(state));
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth }, bordersOf(state), CP.formationGapOf(state));
       return { ...state, coins: (state.coins || 0) - buy.price, skillTiers, lightning, deck, growth, formations,
                glacierRoleTiers: iceRoleTiers(skills, skillTiers) };
     }
@@ -1049,7 +1109,7 @@ export function reducer(state, action) {
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "upgrade"));
         return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
           deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6: Stufe 2 kommt zu Stufe 1 DAZU
-          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state)) };
+          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)) };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
       if (!pt) return applyNow();
@@ -1063,7 +1123,7 @@ export function reducer(state, action) {
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "upgrade"));
           return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
             deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6
-            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state)) };
+            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)) };
         }
         return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null, ...back } };
       }
@@ -1086,7 +1146,7 @@ export function reducer(state, action) {
       if (!patch) return state;                                  // nicht gehalten oder gesperrt (Bauhütte/Meisterhand)
       const next = { ...state, ...patch };
       return { ...next, formations: computeFormations(next.playerOrder, next.deck, next.roles, next.perks, next.skills,
-        next.shop?.anchors || [], next.familyTiers, archOf(next), plantBag(next), bordersOf(next)) };
+        next.shop?.anchors || [], next.familyTiers, archOf(next), plantBag(next), bordersOf(next), CP.formationGapOf(next)) };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -1214,11 +1274,14 @@ export function reducer(state, action) {
       if (state.glacierLocked && (state.glacierLocked[i] || state.glacierLocked[j])) return state;
       // #301 C3: gesperrte Aufstell-Zellen sind fixiert — weder weg- noch hin-tauschbar (beide Endpunkte prüfen).
       if (state.challengeBlockForm && (state.challengeBlockForm.includes(i) || state.challengeBlockForm.includes(j))) return state;
+      // Schliesser (Kampagne): die fuenf Karten des festgesetzten Segments lassen sich nicht
+      // verschieben - weder weg noch hin, genau wie die gesperrten Zellen darueber.
+      if (CP.segmentLocked(state, i) || CP.segmentLocked(state, j)) return state;
       if ((state.formationEnergy || 0) <= 0) return state; // Tausch braucht Energie
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state)),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)),
                formationEnergy: state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, idA: cardA.id, idB: cardB.id }] };
     }
@@ -1253,7 +1316,7 @@ export function reducer(state, action) {
       const last = swaps.pop();
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state)),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)),
                formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
     }
     /* Münz-Ökonomie §3.2: einen zusätzlichen Tausch für DIESE Aufstellphase kaufen. Hebt die LAUFENDE
@@ -1274,7 +1337,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state)),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state), CP.formationGapOf(state)),
                // Gemeinsamer Helfer mit dem Phasen-Eintritt in der Engine (#179 E_TUNING · #369 Energie-Boden aus dem
                // Baum · Dev-Run-Energie) — vorher stand die Formel hier dupliziert und ohne `devEnergy`.
                // §3.2: gekaufte Energie überlebt das Zurücksetzen — sie ist bezahlt, das Zurücksetzen
