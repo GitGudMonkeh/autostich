@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
-  carryArmed, armCarry, spendCarry, banksNow, dischargeBank, stanceCycleEnd,
+  carryArmed, armCarry, spendCarry, banksNow, dischargeBank, addToBank, tickBank, stanceCycleEnd,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -258,6 +258,31 @@ describe("Haltungen — Score-Linie (gelb)", () => {
     const d = dischargeBank(st({ bank: 1000 }), skills, tiers);
     expect(d.payout).toBeCloseTo(1000 * T.stauung[0].factor, 6);
     expect(d.stance.bank).toBe(0);
+  });
+  it("Stauung: der GRÖSSTE gestaute Stich zahlt noch einmal — und sein Zuschlag wächst mit der Länge (§5.3)", () => {
+    const skills = [S.STAUUNG], tiers = {}, rate = T.stauung[0].peak;
+    // Der Stau merkt sich Summe und Spitze getrennt: zwei Stiche, der zweite ist der größere.
+    let s = addToBank(addToBank(st({ stance: "Y" }), 300), 700);
+    expect(s.bank).toBe(1000);
+    expect(s.bankBest).toBe(700);
+    // Ohne Laufzeit ist der Spitzen-Zuschlag 0 — er ist reine Dauer-Frucht, der Faktor allein bleibt.
+    expect(dischargeBank(s, skills, tiers).payout).toBeCloseTo(1000 * T.stauung[0].factor, 6);
+    // Mit Laufzeit: Faktor auf die Summe PLUS Satz × Länge auf die Spitze.
+    for (let i = 0; i < 6; i++) s = tickBank(s);
+    expect(s.bankTicks).toBe(6);
+    const d = dischargeBank(s, skills, tiers);
+    expect(d.payout).toBeCloseTo(1000 * T.stauung[0].factor + 700 * rate * 6, 6);
+    expect(d.stance.bankBest).toBe(0);                        // beide Zähler fallen mit dem Stau
+    expect(d.stance.bankTicks).toBe(0);
+    // Die Leiter staffelt den Satz, und „doppelt" (die erste Fassung der Idee) liegt auf jeder Stufe woanders.
+    expect(T.stauung.map((r) => r.peak)).toEqual([0.10, 0.15, 0.20, 0.30]);
+    expect(dischargeBank(s, skills, { [S.STAUUNG]: 3 }).payout)
+      .toBeCloseTo(1000 * T.stauung[3].factor + 700 * T.stauung[3].peak * 6, 6);
+    // In der Engine: die Länge zählt auch auf einer NIEDERLAGE hoch, sie verlängert die Haltung genauso.
+    const lost = resolveTrick(run(st({ stance: "Y" }), { deck: constDeck(0), oppDeck: constDeck(12), skills }), noCrit);
+    expect(lost.lastTrick.result).toBe("loss");
+    expect(lost.stance.bankTicks).toBe(1);
+    expect(lost.stance.bank).toBe(0);
   });
   it("Stauung Episch entlädt auch am Durchlauf-Ende — die Falle der unteren Stufen ist Absicht (§5.1)", () => {
     const skills = [S.STAUUNG];

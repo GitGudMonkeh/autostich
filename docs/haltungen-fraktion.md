@@ -250,7 +250,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 
 | Linie | Skill · Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
-| **Score** (gelb) | **Stauung** · Zuschlag auf den Stau | ×1,25 | ×1,4 | ×1,6 | ×2,0 + *entlädt auch am Durchlauf-Ende* |
+| **Score** (gelb) | **Stauung** · Zuschlag auf den Stau (dazu: Spitzen-Zuschlag je Stich Laufzeit) | ×1,25 · +10 % | ×1,4 · +15 % | ×1,6 · +20 % | ×2,0 · +30 % + *entlädt auch am Durchlauf-Ende* |
 | | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
 | **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
@@ -276,7 +276,7 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 
 | Skill | Wirkung |
 | --- | --- |
-| **Stauung** | Solange sie klingt, zahlen Siege nicht, sondern sammeln an; endet die Haltung, entlädt sich der Stau mit Zuschlag. |
+| **Stauung** | Solange sie klingt, zahlen Siege nicht, sondern sammeln an; endet die Haltung, entlädt sich der Stau mit Zuschlag. Der **größte** gestaute Stich zahlt zusätzlich, je länger die Haltung lief. |
 | **Beharrlichkeit** | Je Stich, den die Haltung schon läuft, steigt der Multiplikator. Campen zahlt. |
 | **Mitklang** | Der Multiplikator zählt je gleichzeitig klingender Haltung. Tanzen zahlt. |
 
@@ -285,8 +285,38 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Stauung** · Zuschlag auf den Stau | ×1,25 | ×1,4 | ×1,6 | ×2,0 + *der Stau entlädt sich auch am Durchlauf-Ende* |
+| **Stauung** · Spitzen-Zuschlag je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
 | **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
+
+**Neudesign §5.3 (Owner):** *„Der größte gestaute Stich zahlt doppelt — aber nicht doppelt, sondern
+skaliert mit der Länge der gelben Haltung. Je länger, desto größer der Bonus für den höchsten Stich."*
+
+Der Befund davor: der flache Faktor **staute nichts auf**. Ein gestauter Stich oder zwölf gaben
+denselben Zuschlag — der Skill hieß „Stau", aber nichts an ihm wuchs. Jetzt hat er zwei Teile:
+
+```text
+Auszahlung = Stau × Faktor  +  größter Einzelstich × Satz × Stiche Laufzeit
+```
+
+Der zweite Teil misst nicht die Summe, sondern die **Spitze**, und die Haltungslänge ist sein Hebel.
+„Doppelt" (die erste Fassung der Idee) liegt damit je Stufe bei **10 / 7 / 5 / 3** Stichen.
+
+Die Länge zählt auch auf **Niederlagen** hoch — sie verlängern die Haltung genauso. Im Code liegt sie
+als eigener Zähler (`bankTicks`) auf dem Stau, nicht als `ranFor.Y`: dieser Laufzeit-Zähler wird im
+selben Stich zurückgesetzt, in dem Gelb endet und entladen wird.
+
+**Zu beachten — dieselbe Achse wie Beharrlichkeit.** Beide lesen die Laufzeit der gelben Haltung. Sie
+sind trotzdem nicht dasselbe: Beharrlichkeit hebt den Multiplikator **jedes** Stichs, Stauung nur den
+**einen** größten. In einem Build mit beiden multiplizieren sie sich aber auf genau diesem Stich —
+Startwerte, nicht tariert.
+
+**Nachbarschaft zu Eis, heute NICHT wirksam.** Der Owner-Gedanke war, den Stau über einen Gletscher zu
+legen: der Bruch wäre der größte gestaute Stich. Im Code wird `glacierDirect` in `resolveTrick` erst
+**nach** dem Banking auf `score` addiert, der Bruch geht also am Stau vorbei und kann die Spitze nie
+stellen. Was wirkt, ist der andere Weg: `glacierWinMult` enthält `stanceMult`, die gelbe Haltung
+hebelt den Bruch also über ihren Multiplikator. Den Bruch *in* den Stau zu legen wäre eine eigene
+Änderung am Score-Fluss und ist **nicht entschieden**.
 
 **Stauung und die Verlängerer beißen sich.** Stauung zahlt erst, wenn die Haltung *endet* — Schwungrad
 (§5.2) und Kehrtwende (§5.5) sorgen dafür, dass sie es nicht tut. In einem Build mit beidem

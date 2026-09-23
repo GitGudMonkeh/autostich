@@ -27,7 +27,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank,
+  genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank, addToBank, tickBank,
   stanceCycleEnd, anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -808,7 +808,7 @@ export function resolveTrick(state, rng) {
        Schwungrad oder Kehrtwende endet die Haltung nicht, und der Score verschwindet in einem Stau, der nie
        aufgeht. Auf den unteren Stufen ist die Falle Absicht; Episch entlädt zwangsweise am Durchlauf-Ende. */
     if (stanceOn && banksNow(newStance, skills, skillTiers)) {
-      newStance = { ...newStance, bank: (newStance.bank || 0) + gained };
+      newStance = addToBank(newStance, gained); // Summe UND größter Einzelstich (§5.1: dessen Zuschlag wächst mit der Länge)
       gained = 0;
     }
     score += gained;
@@ -961,6 +961,9 @@ export function resolveTrick(state, rng) {
       if (kehr) { winStreak += kehr; if (winStreak > bestStreak) bestStreak = winStreak; }
     }
     if (wasCarried) newStance = spendCarry(newStance);
+    // Stauung: die Länge des Staus zählt VOR dem Takt hoch — sonst fehlte dem Spitzen-Zuschlag genau der Stich,
+    // in dem Gelb endet und entladen wird. Auch eine Niederlage zählt: sie verlängert die Haltung ebenso.
+    if (banksNow(newStance, skills, skillTiers)) newStance = tickBank(newStance);
     const tick = stanceTick(newStance, skills, skillTiers, {
       wonSuit: won ? pCard.suit : null, pos: actualPos, slid: stanceSlid, segmentSize: SEGMENT_SIZE,
     });

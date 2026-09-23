@@ -66,6 +66,8 @@ export function initStance() {
     level: 0,                      // Stufe: dauerhaft, der einzige Sammler der Fraktion (Score-Multiplikator)
     einklang: 0,                   // Telemetrie: wie oft die Leiste diesen Lauf voll war
     bank: 0,                       // Stauung: angesammelter Score der klingenden gelben Haltung
+    bankBest: 0,                   // Stauung: größter Einzelstich im Stau (sein Zuschlag skaliert mit bankTicks)
+    bankTicks: 0,                  // Stauung: Stiche, die der Stau schon baut
     anchorSeg: null,               // Verankerung: Segment, in dem Grün zuletzt ausgelöst hat (null = nicht verankert)
     slid: false,                   // Rückhalt: hat der VORIGE Stich gerutscht?
     switches: 0,                   // echte Haltungswechsel (Telemetrie/Sim)
@@ -228,11 +230,23 @@ export const spendCarry = (st) => (carryArmed(st) ? { ...st, carry: st.carry - 1
    verschwindet der Score in einem Stau, der nie aufgeht. */
 export const banksNow = (st, skills, skillTiers) =>
   ringsNow(st, "Y") && stanceParam(skills, skillTiers, S.STAUUNG, "factor") != null;
+/* §5.3 (Owner): dazu zahlt der GRÖSSTE gestaute Stich noch einmal, und dieser Zuschlag skaliert mit der Länge
+   der gelben Haltung — „je länger, desto größer der Bonus für den höchsten Stich". Deshalb liegen zwei weitere
+   Zahlen auf dem Stau: `bankBest` (der größte Einzelstich darin) und `bankTicks` (wie lange er schon baut).
+   `bankTicks` statt `ranFor.Y`, weil stanceTick den Laufzeit-Zähler im selben Stich zurücksetzt, in dem Gelb
+   endet — eine eigene Zahl ist EINE Quelle für beide Entlade-Stellen (Haltungsende und Durchlauf-Ende). */
 export function dischargeBank(st, skills, skillTiers) {
   const factor = stanceParam(skills, skillTiers, S.STAUUNG, "factor");
-  if (!st || !st.active || !factor || !(st.bank > 0)) return { stance: st, payout: 0 };
-  return { stance: { ...st, bank: 0 }, payout: st.bank * factor };
+  if (!st || !st.active || !factor) return { stance: st, payout: 0 };
+  const rate = stanceParam(skills, skillTiers, S.STAUUNG, "peak") || 0;
+  const payout = (st.bank || 0) * factor + (st.bankBest || 0) * rate * (st.bankTicks || 0);
+  return { stance: { ...st, bank: 0, bankBest: 0, bankTicks: 0 }, payout };
 }
+// Ein Stich, der in den Stau geht: Summe und größter Einzelstich wandern mit.
+export const addToBank = (st, gained) =>
+  ({ ...st, bank: (st.bank || 0) + gained, bankBest: Math.max(st.bankBest || 0, gained) });
+// Ein Stich, den der Stau mitzählt — auch eine Niederlage verlängert die Haltung und damit den Spitzen-Zuschlag.
+export const tickBank = (st) => ({ ...st, bankTicks: (st.bankTicks || 0) + 1 });
 
 /* ---- Rotation ---- */
 
