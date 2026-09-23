@@ -261,7 +261,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Verankerung** · Reichweite beim Auslösen | aktuelles Segment | + das folgende | die drei um die Position | alle acht |
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
 | | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
-| | **Kehrtwende** · Verlängerungen je Haltung | 3× | 4× | 6× | 10× |
+| | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2* |
 | | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
@@ -431,7 +431,7 @@ auf voll, mit Score, Serie und Farbzähler.
 | --- | --- |
 | **Genugtuung** | **Jeder gerutschte Stich** zahlt Basis-Score je Punkt Rückstand, den er gedreht hat. Je deutlicher du eigentlich verloren hättest, desto mehr zahlt er — der einzige Griff im Entwurf, der niedrige Karten wertvoll macht. |
 | **Rückhalt** | Nach einem gerutschten Stich kämpft die nächste Karte mit mehr Wert. |
-| **Kehrtwende** | Ein gerutschter Stich verlängert die Haltung um einen Stich. |
+| **Kehrtwende** | Ein gerutschter Stich gibt **Serienpunkte** und verlängert die Haltung um einen Stich. |
 
 > **Korrektur an Genugtuung.** Ursprünglich stand dort „ein gerutschter **Sieg**". Das zahlt nichts:
 > das Passiv schiebt eine Niederlage nur auf Gleichstand, ein gerutschter Sieg war also immer ein
@@ -444,12 +444,31 @@ auf voll, mit Score, Serie und Farbzähler.
 | --- | --- | --- | --- | --- |
 | **Genugtuung** · Basis-Score je Punkt Rückstand | 25 | 40 | 55 | 80 |
 | **Rückhalt** · Stichwert der nächsten Karte | +3 | +4 | +6 | +8 |
+| **Kehrtwende** · Serienpunkte je gerutschtem Stich | +1 | +2 | +3 | +4 |
 | **Kehrtwende** · Verlängerungen je Haltung | höchstens 3× | 4× | 6× | 10× |
 
 Kehrtwendes Deckel liegt bewusst **über** dem von Schwungrad (2/3/5/8), weil ihre Rate niedriger ist
-und sie strukturell nicht weglaufen kann (§6.5).
+und sie strukturell nicht weglaufen kann (§6.5). Die beiden Deckel sind **getrennt**: „höchstens 10×"
+ist Kehrtwendes eigener, nicht ein gemeinsamer — beide episch gehalten ergeben die 18 aus §6.5.
 
-**Warnung zu Kehrtwende** (§6.5).
+**Neudesign §5.3 (Owner):** *„Zusatz als Leiter: gerutschte Stiche geben +1, +2 usw. mehr Serie."*
+Die Verlängerung bleibt daneben bestehen; der Skill trägt jetzt **zwei** gestaffelte Zahlen.
+
+Der Grund: die Verlängerung allein war ein Körper, der nichts wiegt. Sie zahlt in **Dauer**, und Dauer
+ist bei Prisma die meistumkämpfte Währung (Leiste, Anklang, Schwungrad, Selbst-Auslösen zahlen alle
+dorthin). Die Serie ist dagegen die Achse, auf der ein gedrehter Stich tatsächlich etwas dreht, und
+sie ist im Mischbuild genauso wertvoll wie im Mono — anders als die Dauer.
+
+Sie liest **jeden** gerutschten Stich, wie Genugtuung:
+
+- die zum **Gleichstand** gehobene Niederlage gibt die Punkte **aus dem Stand** — ohne den Skill
+  rührt sich die Serie dort gar nicht (ein Gleichstand bricht sie nicht, hebt sie aber auch nicht);
+- der gerutschte **Sieg** gibt sie **zusätzlich** zu seinem eigenen Serienpunkt.
+
+Die Punkte kommen **nach** der Wertung ihres Stichs, wie beim Serienanker und bei der Crit-Folge — sie
+wirken ab dem nächsten. Zu beachten: auf einem gerutschten Gleichstand steigt damit die *Siegesserie*,
+obwohl der Stich keiner ist. Das ist genau die Geste („eine Kehrtwende"), aber es ist die Stelle, an
+der ein Build mit großem Serien-Multiplikator zuerst wegläuft — Startwerte, nicht tariert.
 
 ---
 

@@ -207,7 +207,10 @@ const HALTUNG = {
   // und sie strukturell nicht weglaufen kann (§6.5).
   genugtuung:     [{ score: 25 }, { score: 40 }, { score: 55 }, { score: 80 }],
   rueckhalt:      [{ value: 3 }, { value: 4 }, { value: 6 }, { value: 8 }],
-  kehrtwende:     [{ max: 3 }, { max: 4 }, { max: 6 }, { max: 10 }],
+  // §5.3 (Owner): Kehrtwende bekommt eine zweite, eigene Zahl — der gerutschte Stich gibt Serienpunkte. Die
+  // Verlängerung allein war ein Körper, der nichts wiegt; die Serie ist die Achse, auf der ein gedrehter Stich
+  // tatsächlich etwas dreht.
+  kehrtwende:     [{ max: 3, streak: 1 }, { max: 4, streak: 2 }, { max: 6, streak: 3 }, { max: 10, streak: 4 }],
   // Rotation — wirkt über alle Haltungen. Beschleunigungs Boden geht NICHT auf 1: bei Schwelle 1 löst jede Farbe
   // mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7).
   // §5.3 (Owner): Anklang hatte keinen eigenen Körper — er verlängerte nur, wie lange etwas anderes gilt. Jetzt
@@ -522,7 +525,7 @@ export const SKILL_DEFS = {
   SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
     ...tiered(HALTUNG.rueckhalt, (r) => `Nach einem gerutschten Stich kämpft die nächste Karte mit +${r.value} Wert.`) },
   SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,
-    ...tiered(HALTUNG.kehrtwende, (r) => `Ein gerutschter Stich verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
+    ...tiered(HALTUNG.kehrtwende, (r) => `Ein gerutschter Stich gibt +${r.streak} Serienpunkt${r.streak === 1 ? "" : "e"} und verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
   // Rotation — wirkt über alle Haltungen
   SK_STANCE_13: { id: "SK_STANCE_13", name: "Anklang", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.anklang,
     ...tiered(HALTUNG.anklang, (r) => `Eine Haltung klingt ${r.duration} Stiche statt ${C.STANCE_MIN_DURATION} nach, und jeder dieser Stiche gibt +${r.score} Basis-Score.`) },

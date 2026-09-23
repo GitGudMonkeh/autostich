@@ -171,6 +171,12 @@ export function genugtuungScore(skills, skillTiers, deficit) {
 export const rueckhaltValue = (skills, skillTiers) =>
   stanceParam(skills, skillTiers, S.RUECKHALT, "value") || 0;
 
+/* Kehrtwende, zweite Hälfte (§5.5, Owner): ein gerutschter Stich gibt zusätzliche Serienpunkte. Sie liest JEDEN
+   gerutschten Stich, wie Genugtuung — auch die zum Gleichstand gehobene Niederlage, die für die Serie sonst gar
+   nichts täte. Die Verlängerung (`max`) bleibt daneben bestehen, beide Zahlen sind gestaffelt. */
+export const kehrtwendeStreak = (skills, skillTiers) =>
+  stanceParam(skills, skillTiers, S.KEHRTWENDE, "streak") || 0;
+
 /* ---- Verlängerer ---- */
 
 /* Schwungrad (Crit) und Kehrtwende (Ergebnis) verlängern die AKTUELL aktive Haltung um einen Stich (§2), je mit

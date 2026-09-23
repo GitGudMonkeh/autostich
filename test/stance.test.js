@@ -5,7 +5,7 @@ import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCou
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
   carryArmed, armCarry, spendCarry, banksNow, dischargeBank, stanceCycleEnd,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
-  anklangScore, extTotal } from "../src/game/factions/stance.js";
+  anklangScore, extTotal, kehrtwendeStreak } from "../src/game/factions/stance.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, overlapFactor, anchorPositions, OVERLAP_BONUS, SEGMENT_SIZE } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -442,6 +442,24 @@ describe("Haltungen — Ergebnis-Linie (rot)", () => {
     const one = resolveTrick(run(st(), { deck: constDeck(0), oppDeck: constDeck(12), skills }), noCrit);
     expect(one.lastTrick.result).toBe("tie");
     expect(one.stance.ext.slid).toBe(1);
+    // Die zweite Hälfte (§5.3, Owner): derselbe Stich gibt Serienpunkte. Er ist eine Niederlage, die auf
+    // Gleichstand gehoben wurde — ohne den Skill rührt sich die Serie dort gar nicht.
+    expect(kehrtwendeStreak(skills, {})).toBe(T.kehrtwende[0].streak);
+    expect(kehrtwendeStreak(skills, { [S.KEHRTWENDE]: 3 })).toBe(T.kehrtwende[3].streak);
+    expect(kehrtwendeStreak([], {})).toBe(0);
+    const bare = resolveTrick(run(st(), { deck: constDeck(0), oppDeck: constDeck(12), winStreak: 4 }), noCrit);
+    expect(bare.winStreak).toBe(4);                            // Gleichstand allein bewegt die Serie nicht
+    const lifted = resolveTrick(run(st(), { deck: constDeck(0), oppDeck: constDeck(12), winStreak: 4, skills }), noCrit);
+    expect(lifted.winStreak).toBe(4 + T.kehrtwende[0].streak);
+    expect(lifted.bestStreak).toBeGreaterThanOrEqual(lifted.winStreak);
+    // Auch der gerutschte SIEG zahlt — dort zusätzlich zu seinem eigenen Serienpunkt.
+    const slidWin = resolveTrick(run(st(), { deck: constDeck(5), oppDeck: constDeck(5), winStreak: 4, skills }), noCrit);
+    expect(slidWin.lastTrick.result).toBe("win_tie");
+    expect(slidWin.winStreak).toBe(4 + 1 + T.kehrtwende[0].streak);
+    // Rot muss klingen, sonst rutscht nichts und die Serie bleibt, wo sie ist.
+    const noRed = resolveTrick(run(st({ stance: "B" }), { deck: constDeck(0), oppDeck: constDeck(12), winStreak: 4, skills }), noCrit);
+    expect(noRed.lastTrick.result).toBe("loss");
+    expect(noRed.winStreak).toBe(0);
     const handover = stanceTick({ ...one.stance, counts: { ...one.stance.counts, Y: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "Y" }).stance;
     expect(handover.stance).toBe("Y");
     expect(handover.ring.R).toBe(C.STANCE_MIN_DURATION + 1);   // Mindestdauer plus die eine gesammelte Verlängerung

@@ -28,7 +28,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
   genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank,
-  stanceCycleEnd, anklangScore } from "./factions/stance.js";
+  stanceCycleEnd, anklangScore, kehrtwendeStreak } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
@@ -950,7 +950,14 @@ export function resolveTrick(state, rng) {
      Übertrag verbraucht seine Reichweite pro Stich, gewonnen oder nicht. Endet Gelb mit diesem Stich, entlädt
      sich der Stau. */
   if (stanceOn) {
-    if (stanceSlid) newStance = extendStance(newStance, skills, skillTiers, "slid");
+    if (stanceSlid) {
+      newStance = extendStance(newStance, skills, skillTiers, "slid");
+      /* Kehrtwendes zweite Hälfte (§5.5): der gerutschte Stich gibt Serienpunkte. NACH der Wertung dieses Stichs,
+         wie Serienanker und Crit-Folge — er wirkt ab dem nächsten. Beide Rutscher zahlen: der gerutschte Sieg
+         zusätzlich zu seinem eigenen Punkt, die zum Gleichstand gehobene Niederlage aus dem Stand. */
+      const kehr = kehrtwendeStreak(skills, skillTiers);
+      if (kehr) { winStreak += kehr; if (winStreak > bestStreak) bestStreak = winStreak; }
+    }
     if (wasCarried) newStance = spendCarry(newStance);
     const tick = stanceTick(newStance, skills, skillTiers, {
       wonSuit: won ? pCard.suit : null, pos: actualPos, slid: stanceSlid, segmentSize: SEGMENT_SIZE,
