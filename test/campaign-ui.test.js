@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as CP from "../src/game/campaign.js";
 import { mio } from "../src/ui/campaignText.js";
+import { t } from "../src/i18n/index.js";
 import { CampaignTally, CampaignPick, CampaignWon, CampaignLost, CampaignTile, CampaignOverview, CampaignProgress } from "../src/ui/CampaignScreens.jsx";
 import { PASS_COLORS } from "../src/ui/campaignText.js";
 import { RestartConfirm } from "../src/ui/RunConfirm.jsx"; // die Warnung vor dem Kampagnen-Neustart
@@ -149,6 +150,21 @@ describe("Kampagne · Übersicht", () => {
     expect(h.match(/Miniboss/g) || [], "Lauf 2 und 3 stehen verdeckt").toHaveLength(2);
     expect(h).toContain("Endboss");
     expect(h, "der alte Platzhalter ist abgelöst").not.toContain("Unbekannt");
+  });
+
+  it("nennt Mini- und Endboss überall mit DEMSELBEN Wort", () => {
+    /* Zwei Schlüssel, weil zwei Schreibweisen gebraucht werden: der Bossblock am Lauf-Start trägt
+       ein Abzeichen in Versalien (die stehen im Katalog, `ty-badge` setzt keine), die Kachel trägt
+       Fließtext. Das WORT muss dasselbe sein — bis 2026-09-23 stand daneben „ZWISCHENBOSS" und
+       damit zwei Namen für dieselbe Sache auf einem Schirm. */
+    for (const art of ["mid", "end"]) {
+      const abzeichen = t(`campaign.boss.${art}`);
+      const kachel = t(`campaign.boss.kind.${art}`);
+      expect(abzeichen, `campaign.boss.${art} steht im Katalog`).not.toBe(`campaign.boss.${art}`);
+      expect(abzeichen).toBe(abzeichen.toUpperCase());
+      expect(abzeichen.toLowerCase(), `Abzeichen „${abzeichen}" und Kachel „${kachel}" sind zwei Wörter`)
+        .toBe(kachel.toLowerCase());
+    }
   });
 
   it("deckt mit jedem bestandenen Lauf einen Boss mehr auf", () => {

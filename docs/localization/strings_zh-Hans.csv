@@ -927,7 +927,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "campaign.boss.kind.mid","i18n","Miniboss","","Mini boss","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.konter","i18n","Der Konter","","The Counter","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.konter.text","i18n","Jeder gewonnene Stich macht den nächsten Gegner stärker. Eine Niederlage setzt den Aufschlag zurück auf null.","","Every trick you win makes the next opponent stronger. A loss resets the surcharge to zero.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"campaign.boss.mid","i18n","ZWISCHENBOSS","","MID BOSS","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"campaign.boss.mid","i18n","MINIBOSS","","MINI BOSS","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.schliesser","i18n","Der Schließer","","The Warden","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.schliesser.text","i18n","Vor jeder Aufstellphase wird eines der acht Aufstellsegmente festgesetzt. Die fünf Karten darin lassen sich nicht verschieben.","","Before every layout phase one of the eight layout segments is fixed. Its five cards cannot be moved.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.boss.schmarotzer","i18n","Der Schmarotzer","","The Parasite","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
