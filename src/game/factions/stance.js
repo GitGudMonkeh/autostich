@@ -133,19 +133,18 @@ export const stanceLevelMult = (st) => (st && st.active ? 1 + (st.level || 0) * 
 // Rot (Ergebnis): um wie viele Stufen der Ausgang steigt. Eine Stufe, solange Rot klingt — sonst keine.
 export const stanceLift = (st) => (ringsNow(st, "R") ? 1 : 0);
 
-/* Blau (Crit): STANCE_CRIT, solange Blau klingt — additiv auf das, was das Deck schon hat (§2). Klingt Blau
-   NICHT, zahlt Grundrauschen: der einzige Skill des Entwurfs, der außerhalb seiner eigenen Haltung wirkt
-   (§4.1). Beide schließen sich aus, sonst zahlte der Anti-Leerlauf-Skill ausgerechnet im Leerlauf doppelt. */
+/* Blau (Crit): STANCE_CRIT, solange Blau klingt — additiv auf das, was das Deck schon hat (§2).
+   §5.3 (Owner): Grundrauschen schließt sich damit NICHT mehr aus, sondern addiert sich. Es ist kein
+   Anti-Leerlauf-Skill mehr, sondern der Crit-Boden der Fraktion: er liegt in JEDER Haltung, und in Blau
+   liegt das Passiv obendrauf. Vorher war es entweder-oder. */
 export function stanceCrit(st, skills, skillTiers) {
   if (!st || !st.active) return 0;
-  if (ringsNow(st, "B")) return C.STANCE_CRIT;
-  return stanceParam(skills, skillTiers, S.GRUNDRAUSCHEN, "crit") || 0;
+  const passive = ringsNow(st, "B") ? C.STANCE_CRIT : 0;
+  return passive + (stanceParam(skills, skillTiers, S.GRUNDRAUSCHEN, "crit") || 0);
 }
-/* Grundrauschen Episch (§5.3, Owner): dazu ein Crit-MULTIPLIKATOR. Er hängt an derselben Bedingung wie der Rest
-   des Skills — nur, solange Blau NICHT klingt. Drinnen tragen das Passiv und Übertrags Rampe; draußen hatte Prisma
-   bisher Chance, aber nichts auf dem Multiplikator. Damit bleibt der Skill ganz der Anti-Leerlauf-Skill. */
+// Grundrauschen Episch (§5.3, Owner): dazu ein Crit-MULTIPLIKATOR, ebenfalls unabhängig von der Haltung.
 export function grundrauschenCritMult(st, skills, skillTiers) {
-  if (!st || !st.active || ringsNow(st, "B")) return 0;
+  if (!st || !st.active) return 0;
   return stanceParam(skills, skillTiers, S.GRUNDRAUSCHEN, "critMult") || 0;
 }
 

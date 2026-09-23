@@ -303,28 +303,33 @@ describe("Haltungen — Score-Linie (gelb)", () => {
 });
 
 describe("Haltungen — Crit-Linie (blau)", () => {
-  it("SK_STANCE_04 Grundrauschen: Crit-Chance AUSSERHALB der blauen Haltung — der Anti-Leerlauf-Skill (§4.1)", () => {
+  it("SK_STANCE_04 Grundrauschen: der Crit-Boden der Fraktion — gilt in JEDER Haltung und addiert sich (§5.3)", () => {
     const skills = [S.GRUNDRAUSCHEN];
-    expect(stanceCrit(st(), skills, {})).toBe(T.grundrauschen[0].crit);          // Rot klingt → Grundrauschen
-    expect(stanceCrit(st({ stance: "B" }), skills, {})).toBe(C.STANCE_CRIT);     // Blau klingt → das Passiv, nicht beides
-    expect(stanceCrit(st({ stance: "B" }), skills, {})).toBeGreaterThan(T.grundrauschen[3].crit);
-    /* Episch trägt zusätzlich einen Crit-MULTIPLIKATOR, unter derselben Bedingung: nur außerhalb von Blau (§5.3).
-       Er und Übertrags Rampe schließen sich damit gegenseitig aus — die eine wirkt drinnen, der andere draußen. */
+    // Ohne den Skill trägt nur das Passiv, und nur in Blau.
+    expect(stanceCrit(st(), [], {})).toBe(0);
+    expect(stanceCrit(st({ stance: "B" }), [], {})).toBe(C.STANCE_CRIT);
+    // Mit dem Skill: außerhalb von Blau sein Wert, IN Blau das Passiv PLUS sein Wert (vorher entweder-oder).
+    expect(stanceCrit(st(), skills, {})).toBe(T.grundrauschen[0].crit);
+    expect(stanceCrit(st({ stance: "B" }), skills, {})).toBeCloseTo(C.STANCE_CRIT + T.grundrauschen[0].crit, 6);
+    expect(stanceCrit(st({ stance: "R", ring: { B: 2 } }), skills, {})).toBeCloseTo(C.STANCE_CRIT + T.grundrauschen[0].crit, 6);
+    // Episch trägt zusätzlich einen Crit-MULTIPLIKATOR, ebenfalls unabhängig von der Haltung.
     const epic = { [S.GRUNDRAUSCHEN]: 3 };
     expect(T.grundrauschen.slice(0, 3).some((r) => r.critMult)).toBe(false); // keine der drei unteren Stufen
-    expect(grundrauschenCritMult(st(), skills, epic)).toBe(T.grundrauschen[3].critMult);
-    expect(grundrauschenCritMult(st({ stance: "B" }), skills, epic)).toBe(0);   // Blau klingt → nichts
-    expect(grundrauschenCritMult(st({ stance: "R", ring: { B: 2 } }), skills, epic)).toBe(0); // auch im Nachklang nicht
+    for (const s of [st(), st({ stance: "B" })])
+      expect(grundrauschenCritMult(s, skills, epic)).toBe(T.grundrauschen[3].critMult);
     expect(grundrauschenCritMult(st(), skills, {})).toBe(0);                    // Normal: kein Multiplikator
     expect(grundrauschenCritMult(st(), [], epic)).toBe(0);
-    // In der Engine, außerhalb von Blau: Normal crittet schon (die Chance reicht), trägt aber keinen
-    // Multiplikator — Episch legt genau seinen Zuschlag drauf.
-    const low = resolveTrick(run(st(), { skills }), zero);
-    const high = resolveTrick(run(st(), { skills, skillTiers: epic }), zero);
-    expect(low.lastTrick.isCrit).toBe(true);
-    expect(high.lastTrick.isCrit).toBe(true);
-    expect(low.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT, 6);
-    expect(high.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT + T.grundrauschen[3].critMult, 6);
+    expect(grundrauschenCritMult(initStance(), skills, epic)).toBe(0);          // Fraktion steht nicht
+    // In der Engine: Normal crittet schon (die Chance reicht), trägt aber keinen Multiplikator — Episch legt
+    // genau seinen Zuschlag drauf, und zwar auch IN der blauen Haltung.
+    for (const stance of [st(), st({ stance: "B" })]) {
+      const low = resolveTrick(run(stance, { skills }), zero);
+      const high = resolveTrick(run(stance, { skills, skillTiers: epic }), zero);
+      expect(low.lastTrick.isCrit).toBe(true);
+      expect(high.lastTrick.isCrit).toBe(true);
+      expect(low.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT, 6);
+      expect(high.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT + T.grundrauschen[3].critMult, 6);
+    }
   });
   it("SK_STANCE_05 Übertrag: jeder Crit der blauen Haltung hebt den Crit-MULTIPLIKATOR weiter (§5.3)", () => {
     const skills = [S.UEBERTRAG], step = T.uebertrag[0].step;

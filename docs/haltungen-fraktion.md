@@ -236,10 +236,11 @@ strukturell die meiste Zeit — dieselbe Form, an der Eis krankt (`skill-rework.
 den Partner die Hälfte, weil der Spieler es fallen lässt).
 
 **Stand dazu, ungeschönt:** nur die **Crit-Linie** trägt einen Skill, der außerhalb seiner Haltung
-wirkt (*Grundrauschen*). Score, Überlappung und Ergebnis haben keinen — die Kandidaten, die es
-gewesen wären (*Grundlast*, *Gefüge*, *Standhaft*), sind jeweils nicht gewählt worden. Ob das ein
-Problem ist, entscheidet sich daran, wie lang eine Haltung im typischen Lauf tatsächlich klingt; die
-drei Linien liegen sonst strukturell den größten Teil der Zeit still.
+wirkt (*Grundrauschen*) — seit §5.3 sogar völlig haltungsunabhängig. Score, Überlappung und Ergebnis
+haben keinen; die Kandidaten, die es gewesen wären (*Grundlast*, *Gefüge*, *Standhaft*), sind jeweils
+nicht gewählt worden. Ob das ein Problem ist, entscheidet sich daran, wie lang eine Haltung im
+typischen Lauf tatsächlich klingt; die drei Linien liegen sonst strukturell den größten Teil der Zeit
+still.
 
 ---
 
@@ -255,7 +256,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | **Score** (gelb) | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
 | | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
-| **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +12 % | +18 % | +26 % | +40 % + *Crit-Mult +0,5* |
+| **Crit** (blau) | **Grundrauschen** · Crit-Chance, in jeder Haltung | +12 % | +18 % | +26 % | +40 % + *Crit-Mult +0,5* |
 | | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
 | **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
@@ -359,7 +360,7 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 
 | Skill | Wirkung |
 | --- | --- |
-| **Grundrauschen** | Ein Teil der Chance gilt auch außerhalb der Haltung; Episch dazu ein Crit-Multiplikator. Der Anti-Leerlauf-Skill der Linie. |
+| **Grundrauschen** | Crit-Chance in **jeder** Haltung, zusätzlich zum Passiv; Episch dazu ein Crit-Multiplikator. Der Crit-Boden der Fraktion. |
 | **Übertrag** | Jeder Crit hebt den **Crit-Multiplikator** weiter, solange die Haltung klingt. Die Rampe fällt mit ihr. |
 | **Schwungrad** | Jeder Crit verlängert die laufende Haltung um einen Stich. |
 
@@ -367,8 +368,8 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Grundrauschen** · Crit-Chance außerhalb der Haltung | +12 % | +18 % | +26 % | +40 % |
-| **Grundrauschen** · Crit-Multiplikator außerhalb der Haltung | — | — | — | +0,5 |
+| **Grundrauschen** · Crit-Chance, in jeder Haltung | +12 % | +18 % | +26 % | +40 % |
+| **Grundrauschen** · Crit-Multiplikator, in jeder Haltung | — | — | — | +0,5 |
 | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | **Schwungrad** · Verlängerungen je Haltung | höchstens 2× | 3× | 5× | 8× |
 
@@ -378,11 +379,15 @@ erledigt statt als Sonderregel.
 **Neudesign §5.3, Grundrauschen (Owner):** *„Werte anheben und einen Crit-Multi on top für Episch."*
 Chance `8/12/17/25 %` → `12/18/26/40 %`, dazu auf Episch `+0,5` Crit-Multiplikator.
 
-**Angenommen, nicht gesagt:** der Multiplikator hängt an **derselben** Bedingung wie der Rest des
-Skills — er zahlt nur, solange Blau **nicht** klingt. Das hält den Skill ganz bei seiner Rolle als
-Anti-Leerlauf-Skill, und es ergänzt sich sauber mit Übertrag: dessen Rampe wirkt *in* Blau, dieser
-Zuschlag *außerhalb*. Die beiden schließen sich gegenseitig aus, statt sich zu stapeln. Soll er
-unbedingt gelten, ist das eine Zeile.
+**Und der Ausschluss ist weg** (Owner, Nachtrag): Grundrauschen schließt sich **nicht mehr** mit dem
+blauen Passiv aus. Beide Hälften — Chance und Multiplikator — gelten in **jeder** Haltung und addieren
+sich auf die 50 % des Passivs. Auf Episch heißt das `50 + 40 = 90 %` Crit-Chance, solange Blau klingt,
+sonst 40 %, und `+0,5` Crit-Multiplikator durchgehend.
+
+Damit ist Grundrauschen **kein Anti-Leerlauf-Skill mehr**, sondern der **Crit-Boden** der Fraktion.
+Der Name passt weiterhin: ein Rauschteppich, der immer liegt. Und der epische Multiplikator stapelt
+sich jetzt mit **Übertrags** Rampe, statt sich mit ihr auszuschließen — beide zusammen sind der
+Weglauf-Kandidat der blauen Linie (§6.4).
 
 **Neudesign §5.3, Übertrag (Owner):** *„Anstatt Crit-Chance würde ich gerne etwas anderes — eventuell
 hebt es den Crit-Multi an oder erhöht den Crit weiter."* Gewählt wurde die **Rampe**: jeder Crit der
@@ -613,6 +618,9 @@ begrenzt**, ohne dass es dafür eine Sonderregel braucht.
 der roten Haltung — sie zahlt nur, **solange Rot klingt**, wie jeder andere Skill der Fraktion in
 seiner eigenen Haltung. Damit bleibt **Grundrauschen der einzige Skill, der außerhalb seiner Haltung
 wirkt** (§4.1). Soll sie stattdessen unbedingt gelten, ist das eine Zeile.
+
+> **Nachtrag (§5.3):** Grundrauschen ist seither nicht mehr nur die *Ausnahme*, sondern ganz
+> haltungsunabhängig — es addiert sich auf das blaue Passiv, statt es zu ersetzen.
 
 `+0,5 %` ist ebenfalls Startwert — „ein kleines bisschen" ist ein Viertel des Grundsatzes.
 
