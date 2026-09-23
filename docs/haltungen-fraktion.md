@@ -255,7 +255,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | **Score** (gelb) | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
 | | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
 | | **Mitklang** · je zusätzlich klingender Haltung | +0,15 | +0,25 | +0,35 | +0,50 |
-| **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
+| **Crit** (blau) | **Grundrauschen** · Crit-Chance außerhalb der Haltung | +12 % | +18 % | +26 % | +40 % + *Crit-Mult +0,5* |
 | | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
 | **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
@@ -359,7 +359,7 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 
 | Skill | Wirkung |
 | --- | --- |
-| **Grundrauschen** | Ein Teil der Chance gilt auch außerhalb der Haltung. Der Anti-Leerlauf-Skill der Linie. |
+| **Grundrauschen** | Ein Teil der Chance gilt auch außerhalb der Haltung; Episch dazu ein Crit-Multiplikator. Der Anti-Leerlauf-Skill der Linie. |
 | **Übertrag** | Jeder Crit hebt den **Crit-Multiplikator** weiter, solange die Haltung klingt. Die Rampe fällt mit ihr. |
 | **Schwungrad** | Jeder Crit verlängert die laufende Haltung um einen Stich. |
 
@@ -367,12 +367,22 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Grundrauschen** · Crit-Chance außerhalb der Haltung | +8 % | +12 % | +17 % | +25 % |
+| **Grundrauschen** · Crit-Chance außerhalb der Haltung | +12 % | +18 % | +26 % | +40 % |
+| **Grundrauschen** · Crit-Multiplikator außerhalb der Haltung | — | — | — | +0,5 |
 | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | **Schwungrad** · Verlängerungen je Haltung | höchstens 2× | 3× | 5× | 8× |
 
 **Schwungrads Deckel ist der Stufenwert** — damit ist die Runaway-Rechnung aus §6.4 in der Tabelle
 erledigt statt als Sonderregel.
+
+**Neudesign §5.3, Grundrauschen (Owner):** *„Werte anheben und einen Crit-Multi on top für Episch."*
+Chance `8/12/17/25 %` → `12/18/26/40 %`, dazu auf Episch `+0,5` Crit-Multiplikator.
+
+**Angenommen, nicht gesagt:** der Multiplikator hängt an **derselben** Bedingung wie der Rest des
+Skills — er zahlt nur, solange Blau **nicht** klingt. Das hält den Skill ganz bei seiner Rolle als
+Anti-Leerlauf-Skill, und es ergänzt sich sauber mit Übertrag: dessen Rampe wirkt *in* Blau, dieser
+Zuschlag *außerhalb*. Die beiden schließen sich gegenseitig aus, statt sich zu stapeln. Soll er
+unbedingt gelten, ist das eine Zeile.
 
 **Neudesign §5.3, Übertrag (Owner):** *„Anstatt Crit-Chance würde ich gerne etwas anderes — eventuell
 hebt es den Crit-Multi an oder erhöht den Crit weiter."* Gewählt wurde die **Rampe**: jeder Crit der

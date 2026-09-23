@@ -27,7 +27,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, noteTurn, verankerungMult, rueckhaltValue, extendStance, noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
+  genugtuungScore, noteTurn, verankerungMult, rueckhaltValue, extendStance, noteCrit, uebertragMult, grundrauschenCritMult, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -596,7 +596,7 @@ export function resolveTrick(state, rng) {
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
                    + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCardR, skills, skillTiers) + overcritMult(rawCrit) // pCardR: Resonanz-Stapel (§7.25)
-                   + (stanceOn ? uebertragMult(stance, skills, skillTiers) : 0); // Übertrag (§5.2): die Rampe der blauen Haltung, eine Quelle unter vielen in derselben Summe
+                   + (stanceOn ? uebertragMult(stance, skills, skillTiers) + grundrauschenCritMult(stance, skills, skillTiers) : 0); // Haltungen (§5.2): Übertrags Rampe IN Blau, Grundrauschen Episch AUSSERHALB — sie schließen sich aus
     // (§7.42: Entladungs Episch-Extra hing hier als Crit-Mult-Verdopplung; mit dem Wechsel auf die Score-Achse zählt
     //  die Rampe stattdessen bei einem Crit doppelt — s. entladungScoreFor in den Flats unten.)
     // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird WEICH gedeckelt — bewusst NACH allen Additionen,

@@ -141,6 +141,13 @@ export function stanceCrit(st, skills, skillTiers) {
   if (ringsNow(st, "B")) return C.STANCE_CRIT;
   return stanceParam(skills, skillTiers, S.GRUNDRAUSCHEN, "crit") || 0;
 }
+/* Grundrauschen Episch (§5.3, Owner): dazu ein Crit-MULTIPLIKATOR. Er hängt an derselben Bedingung wie der Rest
+   des Skills — nur, solange Blau NICHT klingt. Drinnen tragen das Passiv und Übertrags Rampe; draußen hatte Prisma
+   bisher Chance, aber nichts auf dem Multiplikator. Damit bleibt der Skill ganz der Anti-Leerlauf-Skill. */
+export function grundrauschenCritMult(st, skills, skillTiers) {
+  if (!st || !st.active || ringsNow(st, "B")) return 0;
+  return stanceParam(skills, skillTiers, S.GRUNDRAUSCHEN, "critMult") || 0;
+}
 
 /* Gelb (Score): glatter Multiplikator, solange Gelb klingt, plus die beiden Skalierer der Linie. Beharrlichkeit
    und Mitklang sind ein Spiegelpaar (§5.1) — im Block-Build wächst die eine und die andere steht auf 0, im

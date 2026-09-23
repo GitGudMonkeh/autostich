@@ -196,7 +196,10 @@ const HALTUNG = {
   beharrlichkeit: [{ perTrick: 0.2 }, { perTrick: 0.3 }, { perTrick: 0.4 }, { perTrick: 0.6 }],
   mitklang:       [{ perStance: 0.15 }, { perStance: 0.25 }, { perStance: 0.35 }, { perStance: 0.5 }],
   // Crit-Linie (blau).
-  grundrauschen:  [{ crit: 0.08 }, { crit: 0.12 }, { crit: 0.17 }, { crit: 0.25 }],
+  // §5.3 (Owner): Werte angehoben (8/12/17/25 → 12/18/26/40) und Episch bekommt einen Crit-Multiplikator obendrauf.
+  // Der gilt unter DERSELBEN Bedingung wie der Rest des Skills — nur, solange Blau NICHT klingt: drinnen tragen das
+  // Passiv (50 %) und Übertrags Rampe, draußen hatte Prisma bisher Chance, aber keinen Multiplikator. STARTWERTE.
+  grundrauschen:  [{ crit: 0.12 }, { crit: 0.18 }, { crit: 0.26 }, { crit: 0.40, critMult: 0.5 }],
   // §5.3 (Owner): Übertrag arbeitet nicht mehr auf der Crit-CHANCE, sondern auf dem MULTIPLIKATOR — der Hebel, den
   // die blaue Linie sonst gar nicht hatte. `step` je Crit der Haltung; Größenordnung an Blitz geeicht (ein
   // Ionen-Stapel ist +0,15). STARTWERTE.
@@ -520,7 +523,7 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.mitklang, (r) => `Die gelbe Haltung zählt +${de(r.perStance)} Score-Multiplikator je zusätzlich klingender Haltung.`) },
   // Crit-Linie (blau)
   SK_STANCE_04: { id: "SK_STANCE_04", name: "Grundrauschen", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.grundrauschen,
-    ...tiered(HALTUNG.grundrauschen, (r) => `Klingt die blaue Haltung nicht, hast du trotzdem +${pct(r.crit)} % Crit-Chance.`) },
+    ...tiered(HALTUNG.grundrauschen, (r) => `Klingt die blaue Haltung nicht, hast du trotzdem +${pct(r.crit)} % Crit-Chance${r.critMult ? ` und +${de(r.critMult)} Crit-Multiplikator` : ""}.`) },
   SK_STANCE_05: { id: "SK_STANCE_05", name: "Übertrag", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.uebertrag,
     ...tiered(HALTUNG.uebertrag, (r) => `Solange die blaue Haltung klingt, hebt jeder Crit deinen Crit-Multiplikator um +${de(r.step)}. Verklingt sie, fällt der Zuschlag wieder auf 0.`) },
   SK_STANCE_06: { id: "SK_STANCE_06", name: "Schwungrad", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.schwungrad,

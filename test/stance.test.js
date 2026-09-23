@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, redEchoes, verankerungMult, greenEchoes, rueckhaltValue, extendStance,
+  stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, redEchoes, verankerungMult, greenEchoes, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
@@ -308,6 +308,23 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     expect(stanceCrit(st(), skills, {})).toBe(T.grundrauschen[0].crit);          // Rot klingt → Grundrauschen
     expect(stanceCrit(st({ stance: "B" }), skills, {})).toBe(C.STANCE_CRIT);     // Blau klingt → das Passiv, nicht beides
     expect(stanceCrit(st({ stance: "B" }), skills, {})).toBeGreaterThan(T.grundrauschen[3].crit);
+    /* Episch trägt zusätzlich einen Crit-MULTIPLIKATOR, unter derselben Bedingung: nur außerhalb von Blau (§5.3).
+       Er und Übertrags Rampe schließen sich damit gegenseitig aus — die eine wirkt drinnen, der andere draußen. */
+    const epic = { [S.GRUNDRAUSCHEN]: 3 };
+    expect(T.grundrauschen.slice(0, 3).some((r) => r.critMult)).toBe(false); // keine der drei unteren Stufen
+    expect(grundrauschenCritMult(st(), skills, epic)).toBe(T.grundrauschen[3].critMult);
+    expect(grundrauschenCritMult(st({ stance: "B" }), skills, epic)).toBe(0);   // Blau klingt → nichts
+    expect(grundrauschenCritMult(st({ stance: "R", ring: { B: 2 } }), skills, epic)).toBe(0); // auch im Nachklang nicht
+    expect(grundrauschenCritMult(st(), skills, {})).toBe(0);                    // Normal: kein Multiplikator
+    expect(grundrauschenCritMult(st(), [], epic)).toBe(0);
+    // In der Engine, außerhalb von Blau: Normal crittet schon (die Chance reicht), trägt aber keinen
+    // Multiplikator — Episch legt genau seinen Zuschlag drauf.
+    const low = resolveTrick(run(st(), { skills }), zero);
+    const high = resolveTrick(run(st(), { skills, skillTiers: epic }), zero);
+    expect(low.lastTrick.isCrit).toBe(true);
+    expect(high.lastTrick.isCrit).toBe(true);
+    expect(low.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT, 6);
+    expect(high.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT + T.grundrauschen[3].critMult, 6);
   });
   it("SK_STANCE_05 Übertrag: jeder Crit der blauen Haltung hebt den Crit-MULTIPLIKATOR weiter (§5.3)", () => {
     const skills = [S.UEBERTRAG], step = T.uebertrag[0].step;
