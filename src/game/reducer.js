@@ -632,7 +632,9 @@ export function reducer(state, action) {
       const b = a.buildings.find((x) => x.id === action.buildingId);
       if (!b) return state;
       const fam = archFamily(b.familyId);
-      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER) return state; // legendär/Maximalstufe → nicht ausbaubar
+      // Kampagnen-Deckel (Owner 2026-09-23): dieselbe Decke wie am Angebot. Gebäudestufen zählen ab 1,
+      // `rareCap` auch — hier braucht es keinen Versatz, anders als bei den Skills.
+      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER || b.tier + 1 > (state.rareCap || 4)) return state; // legendär/Maximalstufe/gedeckelt → nicht ausbaubar
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, tier: x.tier + 1 } : x));
       // #361-Folge: Aufwerten ist verbindlich (Hauptaktion) → KEIN Undo-Schritt.
       return { ...state, architect: { ...a, buildings, actedMain: true } };

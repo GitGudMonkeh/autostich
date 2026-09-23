@@ -91,6 +91,14 @@ function cappedPlacements(form, buildings, cap = MAX_COVER, blocked = []) {
     .filter((fp) => occN + fp.length <= cap && (!sperr || !fp.some((p) => sperr.has(p))));
 }
 const blockedOf = (s) => s.challengeBlockArch || [];
+/* Derselbe Riegel eine Ebene hoeher: der Reducer lehnt seit 2026-09-23 auch einen AUSBAU ueber dem
+   Kampagnen-Deckel ab. Ohne diesen Filter schlaegt die Greedy-Policy ihn wieder und wieder vor und
+   der Lauf dreht sich — dieselbe Falle wie bei den gesperrten Zellen, eine Aktion spaeter. */
+const upCapOf = (s) => Math.min(MAX_TIER, s.rareCap || MAX_TIER);
+const upgradablesOf = (s) => (s.architect.buildings || []).filter((b) => {
+  const f = familyDef(b.familyId);
+  return f && !f.legendary && b.tier < upCapOf(s);
+});
 
 // Beste Platzierung EINES Angebots: Primär Struktur-Fortschritt, sekundär value/target-Feinlage.
 function bestPlacementForOffer(s, fam, buildings, before, beforeScore, w) {
@@ -166,7 +174,7 @@ function bestSwapVictim(s, open, beforeScore, w) {
 function bestUpgrade(s) {
   const a = s.architect;
   const sf = structureFactorMap(coverSetOf(a.buildings)); // Struktur-Faktor je Zelle (>1 in vollen Strukturen)
-  const upgradable = a.buildings.filter((b) => { const f = familyDef(b.familyId); return f && !f.legendary && b.tier < MAX_TIER; });
+  const upgradable = upgradablesOf(s);
   if (!upgradable.length) return null;
   let best = null, bestW = -Infinity;
   for (const b of upgradable) {
@@ -229,7 +237,7 @@ function randomMain(s, rng) {
       return action;
     }
   }
-  const upgradable = a.buildings.filter((b) => { const f = familyDef(b.familyId); return f && !f.legendary && b.tier < MAX_TIER; });
+  const upgradable = upgradablesOf(s);
   if (upgradable.length) return { type: "ARCHITECT_UPGRADE", buildingId: upgradable[Math.floor(rng() * upgradable.length)].id };
   return null;
 }

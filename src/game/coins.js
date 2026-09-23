@@ -216,12 +216,19 @@ export const upgradePrice = (targetTier) => UPGRADE_PRICES[targetTier] || 0;
 // lohnt hineinzugehen, ohne dass der Knopf einen Preis nennt, der von der Auswahl abhängt.
 export const UPGRADE_FROM = Math.min(...UPGRADE_PRICES.filter((p) => p > 0));
 
-/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer. */
+/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer.
+
+   DREI Ausgänge, nicht zwei: `maxed` ist das Ende der Leiter, `locked` der Kampagnen-Deckel davor.
+   Sie auseinanderzuhalten kostet ein Feld und spart eine Lüge — „Höchste Stufe" an einem Skill auf
+   Selten wäre schlicht falsch, die Stufe darüber gibt es, sie ist nur noch nicht freigeschaltet.
+   Owner 2026-09-23: man soll nicht über Selten aufwerten können, bevor die Rarität offen ist.
+   `state.rareCap` ist 1-basiert (4 = kein Deckel), `tier`/`next` hier 0-basiert. */
 export function upgradeBuy(state = {}, tier = 0) {
   const next = (tier || 0) + 1;
-  if (next > MAX_SKILL_TIER) return { maxed: true, next: null, price: 0, can: false };
+  if (next > MAX_SKILL_TIER) return { maxed: true, locked: false, next: null, price: 0, can: false };
+  if (state.rareCap && next > state.rareCap - 1) return { maxed: false, locked: true, next: null, price: 0, can: false };
   const price = netto(state, upgradePrice(next));
-  return { maxed: false, next, price, can: (state.coins || 0) >= price };
+  return { maxed: false, locked: false, next, price, can: (state.coins || 0) >= price };
 }
 
 /* Dieselbe Leiter für PERKS (Owner 2026-09-08: „genauso wie Skills, gleiche Kosten").
@@ -234,7 +241,7 @@ export function upgradeBuy(state = {}, tier = 0) {
    Wer UPGRADE_PRICES anfasst, verschiebt beide. */
 export function familyUpgradeBuy(state = {}, tier = 0) {
   const buy = upgradeBuy(state, (tier || 0) - 1);
-  return buy.maxed ? buy : { ...buy, next: buy.next + 1 };
+  return buy.maxed || buy.locked ? buy : { ...buy, next: buy.next + 1 };   // beide tragen next: null
 }
 
 export const MAX_FAMILY_TIER = MAX_SKILL_TIER + 1;

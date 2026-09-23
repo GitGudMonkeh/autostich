@@ -669,9 +669,14 @@ export function applySkillPick(state, skillId, rest = 0) {
 function raiseBuildings(state, count) {
   const arch = state.architect;
   if (!arch || !Array.isArray(arch.buildings)) return null;
+  /* Derselbe Kampagnen-Deckel wie am Aufwert-Knopf (Owner 2026-09-23). Er gehört hierher, weil
+     Aufträge eine Freischaltung VOR der Rarität kommen: dazwischen liegt ein Lauf, in dem eine
+     Beute Gebäude über die offene Stufe gehoben hätte. Gebäudestufen und `rareCap` zählen beide
+     ab 1, also ohne Versatz. */
+  const deckel = Math.min(ARCH_MAX_TIER, state.rareCap || ARCH_MAX_TIER);
   const open = arch.buildings
     .map((b, i) => ({ i, tier: b.tier }))
-    .filter((x) => Number.isInteger(x.tier) && x.tier < ARCH_MAX_TIER)   // Legendäre tragen keine Stufe
+    .filter((x) => Number.isInteger(x.tier) && x.tier < deckel)          // Legendäre tragen keine Stufe
     .sort((a, b) => b.tier - a.tier);
   const lift = new Set((count === "all" ? open : open.slice(0, count)).map((x) => x.i));
   if (!lift.size) return null;

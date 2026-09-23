@@ -369,7 +369,11 @@ import { rerollPrice, energyPrice, coverPrice, energyBuy, coverBuy, upgradeBuy, 
 import { rerollOfferWith, liftDoorTiers, liftSkillTiers } from "../src/game/contracts.js";
 import { FORMATION_ENERGY as C_FORMATION_ENERGY } from "../src/game/constants.js";
 import { archetypeOf } from "../src/game/skills.js";
-import { familyDef, enumeratePlacements } from "../src/game/architect.js";
+import { familyDef, enumeratePlacements, upgradeInfo, ARCHITECT_FAMILIES } from "../src/game/architect.js";
+import { familyUpgradeBuy } from "../src/game/coins.js";
+import { LOOT_BY_ID, applyLoot } from "../src/game/contracts.js";
+// ARCHITECT_FAMILIES ist ein OBJEKT je id, kein Array — der Katalog wird hier als Liste gebraucht.
+const ARCH_FAMILIES = Object.values(ARCHITECT_FAMILIES);
 import { readFileSync } from "node:fs";
 
 /* Verdrahtung: nicht der geschriebene Schlüssel zählt, sondern die Zahl im Lauf-State. Die Lehre
@@ -1356,5 +1360,102 @@ describe("Fahnenrecht liegt in der echten Aufstellphase", () => {
     expect(b.formationEnergy - a.formationEnergy).toBe(CP.rewardValue("fahnenrecht", 3));
     // Und der Bremser zieht sie trotzdem ab: die beiden rechnen gegeneinander, nicht nacheinander.
     expect(a.formationEnergy).toBe(Math.max(0, C_FORMATION_ENERGY - 2));
+  });
+});
+
+/* ============================================================================
+   DER DECKEL GILT AUCH FÜR DAS AUFWERTEN (Owner 2026-09-23)
+
+   „Der Deckel regelt, was angeboten wird" war zu eng. Münzen kommen mit Sieg 2, die Rarität erst
+   mit Sieg 4 — dazwischen hätte man sich Sehr selten KAUFEN können, statt es zu würfeln. Owner:
+   auch zu. Es gibt vier Wege nach oben, und sie werden hier alle vier gemessen.
+
+   Hochspannung, der fünfte Kandidat, braucht keinen: sie ist ein LEGENDÄRER Skill, und unter
+   Stufe IV gibt es gar keine Legendären. Ebene 1 deckelt bei MAX_TIER_L1 = 3, also ist sie über
+   die ganze Ebene unerreichbar — nachgewiesen im Lauf-Test oben („bleibt unter Legendär").
+   ============================================================================ */
+describe("Rarität-Deckel · auch beim Aufwerten, nicht nur am Wurf", () => {
+  const deckel = CP.START_MAX_TIER;         // 2 = Selten, 1-basiert
+
+  it("sperrt den SKILL-Kauf über der offenen Stufe", () => {
+    const s = { phase: "levelup", coins: 99, rareCap: deckel, skills: ["SK_FIRE_01"],
+                skillTiers: { SK_FIRE_01: deckel - 1 }, familyTiers: {}, roles: {}, deck: {}, playerOrder: [], perks: [] };
+    expect(reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" }), "auf dem Deckel geht nichts mehr").toBe(s);
+    const drunter = { ...s, skillTiers: { SK_FIRE_01: deckel - 2 } };
+    expect(reducer(drunter, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" }), "darunter schon").not.toBe(drunter);
+  });
+
+  it("sperrt den PERK-Kauf über der offenen Stufe", () => {
+    // Familien zählen ab 1, Skills ab 0 — der Versatz ist der ganze Unterschied.
+    expect(familyUpgradeBuy({ coins: 99, rareCap: deckel }, deckel).locked, "auf dem Deckel gesperrt").toBe(true);
+    expect(familyUpgradeBuy({ coins: 99, rareCap: deckel }, deckel).next, "gesperrt trägt keine Zielstufe").toBe(null);
+    expect(familyUpgradeBuy({ coins: 99, rareCap: deckel }, deckel - 1).next, "darunter zeigt sie die nächste").toBe(deckel);
+    expect(familyUpgradeBuy({ coins: 99 }, deckel).locked, "ohne Kampagne kein Deckel").toBe(false);
+  });
+
+  it("sperrt den GEBÄUDE-Ausbau über der offenen Stufe", () => {
+    const fam = ARCH_FAMILIES.find((f) => !f.legendary && f.tierValue);
+    expect(fam, "eine stufenfähige Familie gibt es").toBeTruthy();
+    const s = (tier, rareCap) => ({ phase: "architect", rareCap,
+      architect: { actedMain: false, buildings: [{ id: "b1", familyId: fam.id, tier, footprint: [0] }], offers: [] } });
+    const aus = (st) => reducer(st, { type: "ARCHITECT_UPGRADE", buildingId: "b1" });
+    const drauf = s(deckel, deckel);
+    expect(aus(drauf), "auf dem Deckel").toBe(drauf);
+    const drunter = s(deckel - 1, deckel);
+    expect(aus(drunter), "darunter").not.toBe(drunter);
+    const ohne = s(deckel, 4);
+    expect(aus(ohne), "ohne Deckel").not.toBe(ohne);
+  });
+
+  it("nennt am Gebäude den Deckel als Grund, nicht die höchste Stufe", () => {
+    const fam = ARCH_FAMILIES.find((f) => !f.legendary && f.tierValue);
+    expect(upgradeInfo(fam, deckel, deckel)).toEqual({ can: false, reason: "locked" });
+    expect(upgradeInfo(fam, 4, deckel), "Stufe IV ist wirklich das Ende, nicht der Deckel").toEqual({ can: false, reason: "max" });
+    expect(upgradeInfo(fam, deckel).can, "ohne Übergabe unverändert").toBe(true);
+  });
+
+  it("hebt auch die Auftragsbeute Gebäude nicht über den Deckel", () => {
+    /* Aufträge schalten mit Sieg 3 frei, die Rarität mit Sieg 4 — dasselbe Fenster wie bei
+       Veredelung. Gemessen an den Stufen davor und danach. */
+    const fam = ARCH_FAMILIES.find((f) => !f.legendary && f.tierValue);
+    const bau = (tier) => ({ id: `b${tier}`, familyId: fam.id, tier, footprint: [tier] });
+    const beute = Object.values(LOOT_BY_ID).find((l) => (l.effects || []).some((e) => e && e.upgradeBuildings));
+    expect(beute, "es gibt eine Beute, die Gebäude hebt").toBeTruthy();
+    const stufe = (beute.effects || []).findIndex((e) => e && e.upgradeBuildings) + 1;
+
+    const lauf = (rareCap) => {
+      const s = { rareCap, architect: { buildings: [bau(1), bau(deckel)], offers: [] }, contracts: { active: true } };
+      const patch = applyLoot(s, { id: beute.id, tier: stufe, effect: beute.effects[stufe - 1] });
+      return (patch && patch.architect ? patch.architect.buildings : s.architect.buildings).map((b) => b.tier);
+    };
+    /* Die Beute hebt EIN Gebäude, und zwar das höchste. Mit Deckel fällt das höchste aus der Auswahl
+       und das niedrige steigt stattdessen; ohne Deckel steigt das höchste. Beides ist ein Schritt —
+       der Unterschied liegt darin, WELCHES, und genau daran ist der Deckel zu sehen. */
+    expect(lauf(deckel), "gedeckelt steigt das niedrige").toEqual([deckel, deckel]);
+    expect(lauf(4), "ohne Deckel steigt das höchste").toEqual([1, deckel + 1]);
+  });
+});
+
+/* Derselbe Riegel wie beim Wurf: ein Deckel, der eine Aufrufstelle nicht erreicht, fällt still aus.
+   Die Architektenoberfläche fragt an sieben Stellen nach dem Aufwert-Status. */
+describe("Rarität-Deckel · die Architektenoberfläche fragt überall über dieselbe Stelle", () => {
+  const src = readFileSync(new URL("../src/ui/ArchitectScreen.jsx", import.meta.url), "utf8");
+
+  it("ruft upgradeInfo nur noch im Helfer direkt auf", () => {
+    const direkt = [...src.matchAll(/upgradeInfo\(/g)].length;
+    const helfer = [...src.matchAll(/\bupInfo\(/g)].length;
+    expect(helfer, "der Helfer trägt die Abfragen").toBeGreaterThan(4);
+    // Zwei direkte Aufrufe: die beiden Zweige des Helfers selbst.
+    expect(direkt, `direkte upgradeInfo-Aufrufe: ${direkt} — einer davon umgeht den Deckel`).toBe(2);
+  });
+
+  it("und der Helfer reicht den Deckel durch", () => {
+    /* Der RUMPF des Helfers, nicht seine Schreibweise in einer Zeile: die erste Fassung dieses
+       Wächters brach, als `upInfo` in ein useCallback wanderte — ohne dass sich an der Sache etwas
+       geändert hätte. Genau die Ratsche, vor der AGENTS.md warnt. */
+    const von = src.indexOf("const upInfo =");
+    expect(von, "der Helfer steht da").toBeGreaterThan(-1);
+    const rumpf = src.slice(von, src.indexOf(";", src.indexOf("upgradeInfo(fam, tier)", von)));
+    expect(rumpf, `der Helfer ignoriert den Deckel: ${rumpf}`).toContain("state.rareCap");
   });
 });

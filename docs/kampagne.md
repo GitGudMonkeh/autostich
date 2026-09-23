@@ -1006,8 +1006,45 @@ Aufträge mit dem dritten Sieg, die Rarität erst mit dem vierten — dazwischen
 in dem eine Veredelung eine gedeckelte Stufe anheben konnte. `liftSkillTiers` liest den Deckel jetzt
 mit, und hebt weiterhin nur oder lässt liegen; senken kann sie nichts.
 
-**Offen, und eine Owner-Frage, keine technische.** Der Deckel regelt, was ANGEBOTEN wird. Aufwerten
-mit Münzen (`upgradeBuy`) und Hochspannung (`boostedTier`) heben eine Stufe, die der Spieler schon
-besitzt, und sind ungedeckelt — genau wie bei Perks. Münzen kommen mit Sieg 2, die Rarität mit Sieg
-4: dazwischen kann man sich „Sehr selten" also kaufen. Als Lesart „der Deckel gilt dem Wurf, nicht
-dem Ausbau" ist das stimmig; ob es so gewollt ist, entscheidet der Owner.
+### Der Deckel gilt auch dem Aufwerten (Owner 2026-09-23)
+
+Die Frage war: der Deckel regelt, was ANGEBOTEN wird — Aufwerten mit Münzen hebt eine Stufe, die man
+schon hat, und war ungedeckelt. Münzen kommen mit Sieg 2, die Rarität mit Sieg 4: dazwischen konnte
+man sich „Sehr selten" kaufen, statt es zu würfeln. **Owner: auch zu. Nicht über Selten aufwerten,
+bevor die Freischaltung da ist.**
+
+Es gab **vier** Wege nach oben, nicht einen:
+
+| Weg | Wo er jetzt deckelt |
+| --- | --- |
+| Skill aufwerten (Münzen) | `upgradeBuy` |
+| Perk aufwerten (Münzen) | über `upgradeBuy`, mit dem Versatz um eins (Familien zählen ab 1) |
+| Gebäude ausbauen (Hauptaktion) | `ARCHITECT_UPGRADE` + `upgradeInfo` für den Knopf |
+| Auftragsbeute „Aufstockung" | `raiseBuildings` |
+
+**Hochspannung braucht keinen.** Sie ist ein LEGENDÄRER Skill, und unter Stufe IV gibt es gar keine
+Legendären. Ebene 1 deckelt bei `MAX_TIER_L1 = 3`, also ist sie über die ganze Ebene unerreichbar —
+nachgewiesen, nicht vermutet: der Lauf-Test sammelt jedes Angebot eines ganzen Laufs und findet
+keins.
+
+**Drei Ausgänge statt zwei.** `upgradeBuy` unterscheidet jetzt `maxed` (Ende der Leiter) von `locked`
+(Deckel davor). Das kostet ein Feld und spart eine Lüge: „Höchste Stufe" an einem Skill auf Selten
+wäre schlicht falsch — die Stufe darüber gibt es, sie ist nur nicht freigeschaltet. Am Knopf steht
+deshalb „Noch nicht freigeschaltet", am Gebäude „diese Stufe ist noch nicht freigeschaltet".
+
+**Zwei Funde beim Bauen, beide derselben Bauart wie alles andere in dieser Runde:**
+
+**Die Aufwert-Knöpfe lasen einen abgespeckten State.** Beide riefen `upgradeBuy({ coins }, tier)`.
+Damit fiel nicht nur der neue Deckel heraus, sondern auch der Handelsbrief-Nachlass vom Tag zuvor:
+**der Knopf nannte den vollen Preis, der Reducer zog den ermäßigten ab.** Mein eigener Fix, einen Tag
+alt, und die Gegenprobe hatte ihn nicht erwischt, weil sie den Reducer maß und nicht den Knopf. Jetzt
+misst der Test beides an derselben Zahl.
+
+**Die Sim-Policy stallte wieder.** Derselbe Mechanismus wie bei den gesperrten Zellen, eine Aktion
+später: der Reducer lehnt einen Ausbau über dem Deckel ab, die Greedy-Policy schlägt ihn wieder vor.
+`upgradablesOf` filtert den Deckel jetzt mit. **Regel daraus: ein neuer Riegel im Reducer muss immer
+auch die Sim-Policy erreichen, sonst dreht sie sich.**
+
+Die Architektenoberfläche fragt an sieben Stellen nach dem Aufwert-Status. Sie gehen alle über einen
+Helfer (`upInfo`), und ein Wächter zählt nach, dass daneben nur die zwei Zweige des Helfers selbst
+`upgradeInfo` direkt rufen.
