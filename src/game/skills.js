@@ -188,10 +188,9 @@ export const PFLANZE_TIERS = PFLANZE;
 const HALTUNG = {
   // Score-Linie (gelb) — das Passiv ist der glatte Multiplikator; die Linie hat ihre Spannung in sich: das Passiv
   // belohnt, DRIN zu sein, Stauung belohnt, dass es ENDET.
-  // §5.3 (Owner): dazu zahlt der GRÖSSTE gestaute Stich noch einmal, und zwar skaliert mit der Länge der gelben
-  // Haltung. Der flache Faktor allein staute nichts auf — ein Stich oder zwölf gaben denselben Zuschlag. `peak` ist
-  // der Satz je Stich Laufzeit; „doppelt" (die erste Fassung der Idee) liegt damit bei 10/7/5/3 Stichen.
-  stauung:        [{ factor: 1.25, peak: 0.10 }, { factor: 1.4, peak: 0.15 }, { factor: 1.6, peak: 0.20 }, { factor: 2.0, peak: 0.30, cycleEnd: true }],
+  // §5.3 (Owner, zweite Runde): EINE Zahl. Der größte Sieg der gelben Haltung zahlt am Ende noch einmal, `peak` ist
+  // der Satz je Stich Laufzeit. Das Bunkern samt Faktor und Durchlauf-Ende-Extra ist gestrichen („macht zuviel").
+  stauung:        [{ peak: 0.10 }, { peak: 0.15 }, { peak: 0.20 }, { peak: 0.30 }],
   // §5.3 (Owner): alle vier Sätze ×10. Auf 0,02 war Campen eine Geste ohne Gewicht — die gelbe Haltung lebt
   // typisch 4–7 Stiche, das waren +0,08…+0,42 auf einer Basis von ×1,4.
   beharrlichkeit: [{ perTrick: 0.2 }, { perTrick: 0.3 }, { perTrick: 0.4 }, { perTrick: 0.6 }],
@@ -507,7 +506,7 @@ export const SKILL_DEFS = {
      Legendären: die werden nach der ersten Messung entworfen. Alle Zahlen sind STARTWERTE. */
   // Score-Linie (gelb)
   SK_STANCE_01: { id: "SK_STANCE_01", name: "Stauung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.stauung,
-    ...tiered(HALTUNG.stauung, (r) => `Solange die gelbe Haltung klingt, zahlen Siege nicht, sondern sammeln an. Endet sie, entlädt sich der Stau ×${de(r.factor)}. Dein größter gestauter Stich zahlt zusätzlich +${pct(r.peak)} % je Stich, den die Haltung geklungen hat.${r.cycleEnd ? " Am Ende eines Durchlaufs entlädt der Stau sich ebenfalls." : ""}`) },
+    ...tiered(HALTUNG.stauung, (r) => `Endet die gelbe Haltung, zahlt dein größter Sieg aus ihr noch einmal: +${pct(r.peak)} % je Stich, den die Haltung geklungen hat.`) },
   SK_STANCE_02: { id: "SK_STANCE_02", name: "Beharrlichkeit", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.beharrlichkeit,
     ...tiered(HALTUNG.beharrlichkeit, (r) => `Die gelbe Haltung zählt +${de(r.perTrick)} Score-Multiplikator je Stich, den sie schon klingt.`) },
   SK_STANCE_03: { id: "SK_STANCE_03", name: "Mitklang", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.mitklang,

@@ -27,8 +27,8 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
 import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, banksNow, dischargeBank, addToBank, tickBank,
-  stanceCycleEnd, anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
+  genugtuungScore, rueckhaltValue, extendStance, carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
+  anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
@@ -802,15 +802,9 @@ export function resolveTrick(state, rng) {
       perkDirect = cycleOpenScore * C.VABANQUE_MULT; vabanquePaid += 1; // vabanquePaid nur noch Telemetrie (kein Gate)
     }
     gained = gainedPreBet + perkDirect;
-    /* Haltungen, Stauung (§5.1): solange Gelb klingt, zahlt der Sieg NICHT — er sammelt an und entlädt sich mit
-       Zuschlag, wenn die Haltung endet. Die Linie hat damit ihre Spannung in sich: das Passiv belohnt, drin zu
-       sein, dieser Skill belohnt, dass es endet. Und er beißt sich mit den Verlängerern — in einem Build mit
-       Schwungrad oder Kehrtwende endet die Haltung nicht, und der Score verschwindet in einem Stau, der nie
-       aufgeht. Auf den unteren Stufen ist die Falle Absicht; Episch entlädt zwangsweise am Durchlauf-Ende. */
-    if (stanceOn && banksNow(newStance, skills, skillTiers)) {
-      newStance = addToBank(newStance, gained); // Summe UND größter Einzelstich (§5.1: dessen Zuschlag wächst mit der Länge)
-      gained = 0;
-    }
+    /* Haltungen, Stauung (§5.1): der Sieg zahlt normal — gemerkt wird nur, ob er der GRÖSSTE dieser gelben
+       Haltung ist. Er zahlt dann am Ende der Haltung noch einmal, skaliert mit ihrer Laufzeit. */
+    if (stanceOn && stauungOn(newStance, skills, skillTiers)) newStance = notePeak(newStance, gained);
     score += gained;
     // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu).
     // Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht; Blitz und Feuer haben keinen Direkt-Anteil.
@@ -961,15 +955,15 @@ export function resolveTrick(state, rng) {
       if (kehr) { winStreak += kehr; if (winStreak > bestStreak) bestStreak = winStreak; }
     }
     if (wasCarried) newStance = spendCarry(newStance);
-    // Stauung: die Länge des Staus zählt VOR dem Takt hoch — sonst fehlte dem Spitzen-Zuschlag genau der Stich,
-    // in dem Gelb endet und entladen wird. Auch eine Niederlage zählt: sie verlängert die Haltung ebenso.
-    if (banksNow(newStance, skills, skillTiers)) newStance = tickBank(newStance);
+    // Stauung: die Laufzeit zählt VOR dem Takt hoch — sonst fehlte dem Spitzen-Zuschlag genau der Stich, in dem
+    // Gelb endet und ausgezahlt wird. Auch eine Niederlage zählt: sie verlängert die Haltung ebenso.
+    if (stauungOn(newStance, skills, skillTiers)) newStance = tickPeak(newStance);
     const tick = stanceTick(newStance, skills, skillTiers, {
       wonSuit: won ? pCard.suit : null, pos: actualPos, slid: stanceSlid, segmentSize: SEGMENT_SIZE,
     });
     newStance = tick.stance;
     if (tick.ended.includes("Y")) {
-      const d = dischargeBank(newStance, skills, skillTiers);
+      const d = cashPeak(newStance, skills, skillTiers);
       newStance = d.stance;
       if (d.payout) { score += d.payout; gained += d.payout; stanceBase += d.payout; }
     }
@@ -1185,15 +1179,9 @@ export function resolveTrick(state, rng) {
         newGrowth = r.growth; deck = bloomAllIfFullGreen(skills, r.deck); growthTotal += r.total;
       }
     }
-    /* Haltungen (§5.1/§5.3): der Durchlaufende-Haken der Fraktion. Runde verrechnet die vollendeten Runden dieses
-       Durchlaufs zum Basis-Score-Bonus des NÄCHSTEN — dazwischen liegt die Aufstellungsphase, der Spieler kann
-       also darauf aufstellen. Stauung Episch entlädt hier zwangsweise, damit der Stau in einer nie endenden
-       Haltung nicht versickert. Die Auszahlung läuft wie Zinseszins/Echo in `cycleEndScore`. */
-    if (stanceOn) {
-      const r = stanceCycleEnd(newStance, skills, skillTiers);
-      newStance = r.stance;
-      if (r.payout) { score += r.payout; stanceBase += r.payout; if (lastTrick) { lastTrick.gained += r.payout; lastTrick.scoreGain += r.payout; } }
-    }
+    /* Haltungen: die Fraktion hat am Durchlauf-Ende nichts mehr zu tun (§5.1, zweites Stauungs-Neudesign — das
+       Bunkern ist weg, also auch der Zwangs-Entlade-Haken, der nur dessen Falle flickte). Leiste, Stufe und der
+       Spitzen-Zuschlag laufen über die Durchlauf-Grenze hinweg weiter; sie kennen keine. */
 
     // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
     // Dev-Run (Test-Layout): state.maxCycles setzt die Rundenzahl eines einzelnen Laufs frei (20..100); null → Bestand.

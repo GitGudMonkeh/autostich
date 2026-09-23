@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
   stanceLift, stanceCrit, stanceScoreMult, genugtuungScore, rueckhaltValue, extendStance,
-  carryArmed, armCarry, spendCarry, banksNow, dischargeBank, addToBank, tickBank, stanceCycleEnd,
+  carryArmed, armCarry, spendCarry, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, stanceOverlapOpts, stanceFormKeyOf, barLength, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
 import { streakBaseMult } from "../src/game/perks.js";
@@ -245,53 +245,39 @@ describe("Haltungen — die vier Passive (§3)", () => {
 });
 
 describe("Haltungen — Score-Linie (gelb)", () => {
-  it("SK_STANCE_01 Stauung: der Sieg zahlt nicht, er sammelt an — und entlädt sich mit Zuschlag, wenn Gelb endet", () => {
-    const skills = [S.STAUUNG], tiers = {};
-    const s0 = st({ stance: "Y" });
-    expect(banksNow(s0, skills, tiers)).toBe(true);
-    expect(banksNow(st(), skills, tiers)).toBe(false);        // Rot klingt, nicht Gelb
-    expect(banksNow(s0, [], tiers)).toBe(false);              // ohne den Skill zahlt der Sieg normal
-    const won = resolveTrick(run(s0, { skills }), noCrit);
-    expect(won.lastTrick.gained).toBe(0);                     // der Stich zahlt nichts
-    expect(won.score).toBe(0);
-    expect(won.stance.bank).toBeGreaterThan(0);
-    const d = dischargeBank(st({ bank: 1000 }), skills, tiers);
-    expect(d.payout).toBeCloseTo(1000 * T.stauung[0].factor, 6);
-    expect(d.stance.bank).toBe(0);
-  });
-  it("Stauung: der GRÖSSTE gestaute Stich zahlt noch einmal — und sein Zuschlag wächst mit der Länge (§5.3)", () => {
+  it("SK_STANCE_01 Stauung: der größte Sieg der gelben Haltung zahlt am Ende noch einmal, mit der Laufzeit skaliert", () => {
     const skills = [S.STAUUNG], tiers = {}, rate = T.stauung[0].peak;
-    // Der Stau merkt sich Summe und Spitze getrennt: zwei Stiche, der zweite ist der größere.
-    let s = addToBank(addToBank(st({ stance: "Y" }), 300), 700);
-    expect(s.bank).toBe(1000);
-    expect(s.bankBest).toBe(700);
-    // Ohne Laufzeit ist der Spitzen-Zuschlag 0 — er ist reine Dauer-Frucht, der Faktor allein bleibt.
-    expect(dischargeBank(s, skills, tiers).payout).toBeCloseTo(1000 * T.stauung[0].factor, 6);
-    // Mit Laufzeit: Faktor auf die Summe PLUS Satz × Länge auf die Spitze.
-    for (let i = 0; i < 6; i++) s = tickBank(s);
-    expect(s.bankTicks).toBe(6);
-    const d = dischargeBank(s, skills, tiers);
-    expect(d.payout).toBeCloseTo(1000 * T.stauung[0].factor + 700 * rate * 6, 6);
-    expect(d.stance.bankBest).toBe(0);                        // beide Zähler fallen mit dem Stau
-    expect(d.stance.bankTicks).toBe(0);
-    // Die Leiter staffelt den Satz, und „doppelt" (die erste Fassung der Idee) liegt auf jeder Stufe woanders.
+    const s0 = st({ stance: "Y" });
+    expect(stauungOn(s0, skills, tiers)).toBe(true);
+    expect(stauungOn(st(), skills, tiers)).toBe(false);        // Rot klingt, nicht Gelb
+    expect(stauungOn(s0, [], tiers)).toBe(false);              // ohne den Skill passiert nichts
+    // Nur die SPITZE zählt, die Summe interessiert nicht: der kleinere Stich lässt sie stehen.
+    let s = notePeak(notePeak(s0, 700), 300);
+    expect(s.peakBest).toBe(700);
+    // Ohne Laufzeit zahlt sie nichts — die Dauer IST der Hebel.
+    expect(cashPeak(s, skills, tiers).payout).toBe(0);
+    for (let i = 0; i < 6; i++) s = tickPeak(s);
+    expect(s.peakTicks).toBe(6);
+    const d = cashPeak(s, skills, tiers);
+    expect(d.payout).toBeCloseTo(700 * rate * 6, 6);
+    expect(d.stance.peakBest).toBe(0);                         // beide Zähler fallen mit der Auszahlung
+    expect(d.stance.peakTicks).toBe(0);
     expect(T.stauung.map((r) => r.peak)).toEqual([0.10, 0.15, 0.20, 0.30]);
-    expect(dischargeBank(s, skills, { [S.STAUUNG]: 3 }).payout)
-      .toBeCloseTo(1000 * T.stauung[3].factor + 700 * T.stauung[3].peak * 6, 6);
-    // In der Engine: die Länge zählt auch auf einer NIEDERLAGE hoch, sie verlängert die Haltung genauso.
+    expect(cashPeak(s, skills, { [S.STAUUNG]: 3 }).payout).toBeCloseTo(700 * T.stauung[3].peak * 6, 6);
+  });
+  it("Stauung bunkert NICHT mehr (§5.3): der Sieg zahlt normal, gemerkt wird nur die Spitze", () => {
+    const skills = [S.STAUUNG];
+    const bare = resolveTrick(run(st({ stance: "Y" })), noCrit);
+    const held = resolveTrick(run(st({ stance: "Y" }), { skills }), noCrit);
+    expect(held.lastTrick.gained).toBe(bare.lastTrick.gained); // derselbe Stich, derselbe Score
+    expect(held.score).toBe(bare.score);
+    expect(held.stance.peakBest).toBe(held.lastTrick.gained);  // … nur gemerkt
+    expect(held.stance).not.toHaveProperty("bank");            // der Stau selbst ist weg
+    // Die Laufzeit zählt auch auf einer NIEDERLAGE hoch, sie verlängert die Haltung genauso.
     const lost = resolveTrick(run(st({ stance: "Y" }), { deck: constDeck(0), oppDeck: constDeck(12), skills }), noCrit);
     expect(lost.lastTrick.result).toBe("loss");
-    expect(lost.stance.bankTicks).toBe(1);
-    expect(lost.stance.bank).toBe(0);
-  });
-  it("Stauung Episch entlädt auch am Durchlauf-Ende — die Falle der unteren Stufen ist Absicht (§5.1)", () => {
-    const skills = [S.STAUUNG];
-    const epic = { [S.STAUUNG]: 3 };
-    const r = stanceCycleEnd(st({ stance: "Y", bank: 500 }), skills, epic);
-    expect(r.payout).toBeCloseTo(500 * T.stauung[3].factor, 6);
-    expect(r.stance.bank).toBe(0);
-    // Normal: der Stau bleibt stehen, bis die Haltung endet.
-    expect(stanceCycleEnd(st({ stance: "Y", bank: 500 }), skills, {}).payout).toBe(0);
+    expect(lost.stance.peakTicks).toBe(1);
+    expect(lost.stance.peakBest).toBe(0);
   });
   it("SK_STANCE_02 Beharrlichkeit: der Multiplikator wächst je Stich Laufzeit — Campen zahlt", () => {
     const skills = [S.BEHARRLICHKEIT], per = T.beharrlichkeit[0].perTrick;
@@ -651,11 +637,19 @@ describe("Haltungen — die Leiste und die Stufe (§3.1)", () => {
     // Und das Episch-Extra hängt mit ab: „+2 Stiche" auf einen Moment der Länge null wäre ein Rechenfehler.
     if (C.STANCE_EINKLANG === 0) expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 })).toBe(0);
   });
-  it("Leiste und Stufe kennen keine Durchlauf-Grenze", () => {
-    const s = st({ bar: 3, level: 7 });
-    const end = stanceCycleEnd(s, [], {}).stance;
-    expect(end.bar).toBe(3);
-    expect(end.level).toBe(7);
+  it("Leiste, Stufe und der Spitzen-Zuschlag kennen keine Durchlauf-Grenze", () => {
+    /* Seit Stauung nicht mehr bunkert, hat die Fraktion am Durchlauf-Ende gar keinen Haken mehr — nichts wird
+       zwangsweise ausgezahlt und nichts zurückgesetzt. Die Gegenprobe steht hier, damit ein wieder eingebauter
+       Haken auffällt: ein ganzer Durchlauf über die Grenze hinweg lässt alle drei Zahlen stehen. */
+    const s = st({ bar: 3, level: 7, stance: "Y", peakBest: 900, peakTicks: 4 });
+    const last = run(s, { skills: [S.STAUUNG], pos: C.TRICKS_PER_CYCLE - 1, cycle: 1 });
+    const out = resolveTrick(last, noCrit);
+    expect(out.cycle).toBe(2);                                 // der Durchlauf ist wirklich zu Ende gegangen
+    expect(out.pos).toBe(0);
+    expect(out.stance.bar).toBe(3);
+    expect(out.stance.level).toBe(7);
+    expect(out.stance.peakTicks).toBe(5);                      // läuft weiter, statt am Durchlauf-Ende auszuzahlen
+    expect(out.stance.peakBest).toBeGreaterThanOrEqual(900);
   });
 });
 

@@ -65,9 +65,8 @@ export function initStance() {
     bar: 0,                        // Einklang-Leiste: füllt sich mit jedem echten Wechsel
     level: 0,                      // Stufe: dauerhaft, der einzige Sammler der Fraktion (Score-Multiplikator)
     einklang: 0,                   // Telemetrie: wie oft die Leiste diesen Lauf voll war
-    bank: 0,                       // Stauung: angesammelter Score der klingenden gelben Haltung
-    bankBest: 0,                   // Stauung: größter Einzelstich im Stau (sein Zuschlag skaliert mit bankTicks)
-    bankTicks: 0,                  // Stauung: Stiche, die der Stau schon baut
+    peakBest: 0,                   // Stauung: größter Sieg der klingenden gelben Haltung
+    peakTicks: 0,                  // Stauung: Stiche, die die gelbe Haltung schon klingt (Hebel des Spitzen-Zuschlags)
     anchorSeg: null,               // Verankerung: Segment, in dem Grün zuletzt ausgelöst hat (null = nicht verankert)
     slid: false,                   // Rückhalt: hat der VORIGE Stich gerutscht?
     switches: 0,                   // echte Haltungswechsel (Telemetrie/Sim)
@@ -224,37 +223,24 @@ export function armCarry(st, skills, skillTiers) {
 export const spendCarry = (st) => (carryArmed(st) ? { ...st, carry: st.carry - 1 } : st);
 
 /* ---- Stauung (Score-Linie) ----
-   Solange Gelb klingt, zahlen Siege nicht, sondern sammeln an; endet die Haltung, entlädt sich der Stau mit
-   Zuschlag. Episch entlädt zusätzlich am Durchlauf-Ende — auf den unteren Stufen bleibt die Falle bestehen und
-   ist Absicht (§5.1): Schwungrad und Kehrtwende sorgen dafür, dass die Haltung NICHT endet, und dann
-   verschwindet der Score in einem Stau, der nie aufgeht. */
-export const banksNow = (st, skills, skillTiers) =>
-  ringsNow(st, "Y") && stanceParam(skills, skillTiers, S.STAUUNG, "factor") != null;
-/* §5.3 (Owner): dazu zahlt der GRÖSSTE gestaute Stich noch einmal, und dieser Zuschlag skaliert mit der Länge
-   der gelben Haltung — „je länger, desto größer der Bonus für den höchsten Stich". Deshalb liegen zwei weitere
-   Zahlen auf dem Stau: `bankBest` (der größte Einzelstich darin) und `bankTicks` (wie lange er schon baut).
-   `bankTicks` statt `ranFor.Y`, weil stanceTick den Laufzeit-Zähler im selben Stich zurücksetzt, in dem Gelb
-   endet — eine eigene Zahl ist EINE Quelle für beide Entlade-Stellen (Haltungsende und Durchlauf-Ende). */
-export function dischargeBank(st, skills, skillTiers) {
-  const factor = stanceParam(skills, skillTiers, S.STAUUNG, "factor");
-  if (!st || !st.active || !factor) return { stance: st, payout: 0 };
-  const rate = stanceParam(skills, skillTiers, S.STAUUNG, "peak") || 0;
-  const payout = (st.bank || 0) * factor + (st.bankBest || 0) * rate * (st.bankTicks || 0);
-  return { stance: { ...st, bank: 0, bankBest: 0, bankTicks: 0 }, payout };
-}
-// Ein Stich, der in den Stau geht: Summe und größter Einzelstich wandern mit.
-export const addToBank = (st, gained) =>
-  ({ ...st, bank: (st.bank || 0) + gained, bankBest: Math.max(st.bankBest || 0, gained) });
-// Ein Stich, den der Stau mitzählt — auch eine Niederlage verlängert die Haltung und damit den Spitzen-Zuschlag.
-export const tickBank = (st) => ({ ...st, bankTicks: (st.bankTicks || 0) + 1 });
-
-/* ---- Rotation ---- */
-
-/* Durchlauf-Ende: nur noch Stauung Episch — der Stau entlädt sich auch hier, statt in einer nie endenden
-   Haltung zu versickern. Leiste und Stufe laufen über den Durchlauf hinweg weiter; sie kennen keine Grenze. */
-export function stanceCycleEnd(st, skills, skillTiers) {
-  if (!st || !st.active || !stanceParam(skills, skillTiers, S.STAUUNG, "cycleEnd")) return { stance: st, payout: 0 };
-  return dischargeBank(st, skills, skillTiers);
+   §5.3, zweites Neudesign (Owner: „der Skill macht zuviel"): das Bunkern ist WEG. Siege zahlen wieder normal.
+   Geblieben ist eine einzige Zahl — der größte Sieg der gelben Haltung zahlt am Ende noch einmal, und dieser
+   Zuschlag wächst mit der Laufzeit. Damit fällt auch das Durchlauf-Ende-Extra weg: es hat nur die Falle geflickt,
+   dass gebunkerter Score in einer nie endenden Haltung versickert — ohne Bunker gibt es nichts zu verlieren, der
+   Zuschlag wartet nur.
+   `peakTicks` statt `ranFor.Y`, weil stanceTick den Laufzeit-Zähler im selben Stich zurücksetzt, in dem Gelb
+   endet und ausgezahlt wird. */
+export const stauungOn = (st, skills, skillTiers) =>
+  ringsNow(st, "Y") && stanceParam(skills, skillTiers, S.STAUUNG, "peak") != null;
+// Ein Sieg, den die gelbe Haltung gesehen hat: nur die Spitze zählt, die Summe interessiert niemanden mehr.
+export const notePeak = (st, gained) => ({ ...st, peakBest: Math.max(st.peakBest || 0, gained) });
+// Ein Stich Laufzeit — auch eine Niederlage zählt, sie verlängert die Haltung genauso.
+export const tickPeak = (st) => ({ ...st, peakTicks: (st.peakTicks || 0) + 1 });
+// Gelb endet: der größte Sieg zahlt noch einmal, skaliert mit der Laufzeit. Beide Zähler fallen.
+export function cashPeak(st, skills, skillTiers) {
+  const rate = stanceParam(skills, skillTiers, S.STAUUNG, "peak");
+  if (!st || !st.active || !rate) return { stance: st, payout: 0 };
+  return { stance: { ...st, peakBest: 0, peakTicks: 0 }, payout: (st.peakBest || 0) * rate * (st.peakTicks || 0) };
 }
 
 /* ---- Der Takt: ein Stich weiter ----

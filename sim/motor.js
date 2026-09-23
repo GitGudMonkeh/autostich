@@ -128,7 +128,7 @@ export const STANCE_BUILDS = [
 
 export function stanceRun(seed, policy) {
   const a = { tricks: 0, ringSum: 0, ring: [0, 0, 0, 0, 0], rings: { R: 0, B: 0, G: 0, Y: 0 }, slid: 0, wins: 0,
-    formMultSum: 0, formWins: 0, stanceMultSum: 0, banked: 0, last: null };
+    formMultSum: 0, formWins: 0, stanceMultSum: 0, peak: 0, last: null };
   runOne(seed, policy, null, { onTrick: (s) => {
     a.last = s;
     const st = s.stance; if (!st || !st.active) return;
@@ -147,7 +147,7 @@ export function stanceRun(seed, policy) {
         if ((b.formBase || 1) > 1) a.formWins += 1;
       }
     }
-    a.banked = Math.max(a.banked, st.bank || 0);
+    a.peak = Math.max(a.peak, st.peakBest || 0);
   } }, { archetypes: ["stance"] });
   const s = a.last, st = s.stance || {}, cycles = Math.max(1, a.tricks / TPC);
   /* Wie SORTIERT liegt das Brett am Ende wirklich? Der Anteil gleichfarbiger Nachbarpaare (auf der Grundfarbe,
@@ -172,7 +172,7 @@ export function stanceRun(seed, policy) {
     slidShare: s.trickNo ? a.slid / s.trickNo : 0, critRate: s.wins ? s.crits / s.wins : 0,
     stanceMultMean: a.wins ? a.stanceMultSum / a.wins : 1,
     formMultMean: a.wins ? a.formMultSum / a.wins : 1, formWinShare: a.wins ? a.formWins / a.wins : 0,
-    baseShare: s.score ? (s.stanceBase || 0) / s.score : 0, rounds: st.rounds || 0, bankPeak: a.banked,
+    baseShare: s.score ? (s.stanceBase || 0) / s.score : 0, rounds: st.rounds || 0, peakBest: a.peak,
     einklang: st.einklang || 0, level: st.level || 0,
     held: s.skills.length,
   };
@@ -260,13 +260,13 @@ export function runMotor({ arg, seed0, write } = {}) {
         slidShare: mean(rs.map((r) => r.slidShare)), critRate: mean(rs.map((r) => r.critRate)),
         stanceMultMean: mean(rs.map((r) => r.stanceMultMean)), formMultMean: mean(rs.map((r) => r.formMultMean)),
         formWinShare: mean(rs.map((r) => r.formWinShare)), baseShare: mean(rs.map((r) => r.baseShare)),
-        rounds: mean(rs.map((r) => r.rounds)), bankPeak: median(rs.map((r) => r.bankPeak)), held: mean(rs.map((r) => r.held)),
+        rounds: mean(rs.map((r) => r.rounds)), peakBest: median(rs.map((r) => r.peakBest)), held: mean(rs.map((r) => r.held)),
         clashShare: mean(rs.map((r) => r.clashShare)),
         einklang: mean(rs.map((r) => r.einklang)), level: mean(rs.map((r) => r.level)),
       };
       payload.stance[name] = row;
       console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}  ${pct(row.winrate)}  ${row.switches.toFixed(0).padStart(6)}  ${row.tricksPerSwitch.toFixed(1).padStart(8)}   ${row.ringMean.toFixed(2).padStart(8)}   ${row.ringDist.map((x) => pct(x)).join(" ")}  ${pct(row.slidShare)}  ${pct(row.critRate)}  ${row.stanceMultMean.toFixed(2).padStart(5)}  ${row.formMultMean.toFixed(2).padStart(5)}  ${pct(row.formWinShare)}  ${pct(row.baseShare)}  ${row.rounds.toFixed(1).padStart(5)}`);
-      console.log(`    klingt je Farbe: rot ${pct(row.ringShare.R)} · blau ${pct(row.ringShare.B)} · grün ${pct(row.ringShare.G)} · gelb ${pct(row.ringShare.Y)}   ·  gleichfarbige Nachbarn ${pct(row.clashShare)} (Zufall 25 %)   (Ø ${row.held.toFixed(1)} Skills, Stau-Spitze ${fmt(row.bankPeak)})`);
+      console.log(`    klingt je Farbe: rot ${pct(row.ringShare.R)} · blau ${pct(row.ringShare.B)} · grün ${pct(row.ringShare.G)} · gelb ${pct(row.ringShare.Y)}   ·  gleichfarbige Nachbarn ${pct(row.clashShare)} (Zufall 25 %)   (Ø ${row.held.toFixed(1)} Skills, Stau-Spitze ${fmt(row.peakBest)})`);
       console.log(`    Einklang ${row.einklang.toFixed(1)}× je Lauf · Stufe am Ende ${row.level.toFixed(1)} → ×${(1 + row.level * C.STANCE_STEP).toFixed(2)} auf jeden Sieg`);
     }
     console.log(`  Lesart: „Ø klingend" = wie viele der vier Haltungen im Mittel gleichzeitig klingen (1 = nie Überlappung, 4 = dauernd alle).`);
