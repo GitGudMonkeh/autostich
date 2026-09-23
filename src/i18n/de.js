@@ -1723,7 +1723,7 @@ export default {
   "campaign.unlocks": "Freischaltungen",
   "campaign.unlocks.count": "{n} / {max}",
 
-  "campaign.boss.mid": "ZWISCHENBOSS",
+  "campaign.boss.mid": "MINIBOSS",
   "campaign.boss.kind.mid": "Miniboss",
   "campaign.boss.kind.end": "Endboss",
   "campaign.boss.end": "ENDBOSS",

@@ -1934,7 +1934,7 @@ export default {
   "campaign.unlocks": "Unlocks",
   "campaign.unlocks.count": "{n} / {max}",
 
-  "campaign.boss.mid": "MID BOSS",
+  "campaign.boss.mid": "MINI BOSS",
   "campaign.boss.kind.mid": "Mini boss",
   "campaign.boss.kind.end": "End boss",
   "campaign.boss.end": "END BOSS",
