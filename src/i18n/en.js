@@ -1990,13 +1990,8 @@ export default {
   "campaign.unlock.iceDeck.text": "Glacier, frost, avalanche.",
 
   "campaign.lost.title": "The campaign starts over.",
-  "campaign.lost.keep": "WHAT YOU KEEP",
-  "campaign.lost.lose": "WHAT IS GONE",
-  "campaign.lost.open": "{n} of {max} still to come.",
   "campaign.lost.again": "New campaign",
   "campaign.lost.menu": "To the menu",
-  "campaign.lost.wins_one": "{n} run won in this attempt.",
-  "campaign.lost.wins_other": "{n} runs won in this attempt.",
 
   "campaign.won.title": "TIER {level} COMPLETE",
   "campaign.won.fallen": "{boss} HAS FALLEN",

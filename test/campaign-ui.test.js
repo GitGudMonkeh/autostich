@@ -105,24 +105,27 @@ describe("Kampagne · Siegschirm kündigt keine Ebene an, die es nicht gibt", ()
   });
 });
 
-describe("Kampagne · Niederlage trennt Bleibendes von Verlorenem", () => {
-  const h = txt(html(CampaignLost, { campaign: camp({ run: 3, held: { sold: 2, lehen: 1 } }), score: 4_000_000, unlocked: CP.unlocksFor(2), onAgain: () => {}, onMenu: () => {} }));
-
-  it("stellt die permanenten Freischaltungen zu „das bleibt“", () => {
-    expect(h).toContain("DAS BEHÄLTST DU");
-    expect(h).toContain("Pflanzen-Deck");
-    expect(h).toContain("Münzen");
-    expect(h).toContain(`Noch ${CP.UNLOCK_IDS.length - 2} von ${CP.UNLOCK_IDS.length} offen.`);
-  });
-
-  it("stellt die gehaltenen Rewards zu „das ist weg“", () => {
-    expect(h).toContain("Sold");
-    expect(h).toContain("Lehen");
-  });
+describe("Kampagne · Niederlage nennt den verfehlten Lauf, sonst nichts", () => {
+  const h = txt(html(CampaignLost, { campaign: camp({ run: 3, held: { sold: 2, lehen: 1 } }), score: 4_000_000, onAgain: () => {}, onMenu: () => {} }));
 
   it("nennt Score und verfehlte Schwelle", () => {
     expect(h).toContain("4 Mio");
     expect(h).toContain(`von ${mio(CP.thresholdWith(camp({ run: 3 }), 3))} Mio nötig`);
+  });
+
+  it("führt weder Freischaltungen noch gehaltene Rewards auf", () => {
+    /* Owner 2026-09-23: die zwei Kästen sind weg. Die Freischaltungen stehen auf dem
+       Kampagnenschirm (`UnlockLadder`), und im Playtest trug jeder Kasten nur eine Zählzeile.
+       Geprüft an dem, was der Spieler LIEST — die Kampagne trägt hier bewusst zwei Rewards und
+       zwei Freischaltungen, damit der Test nicht an leeren Listen vorbeigreift. */
+    for (const raus of ["DAS BEHÄLTST DU", "DAS IST WEG", "Sold", "Lehen", "Pflanzen-Deck", "offen."]) {
+      expect(h, `„${raus}" steht noch auf dem Niederlagenschirm`).not.toContain(raus);
+    }
+  });
+
+  it("lässt die beiden Wege weiter stehen", () => {
+    expect(h).toContain("Neue Kampagne");
+    expect(h).toContain("Ins Menü");
   });
 });
 

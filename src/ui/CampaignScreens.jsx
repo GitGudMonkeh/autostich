@@ -445,10 +445,13 @@ export function CampaignUnlock({ id, unlocked = [], nextRun = 2, onNext }) {
   );
 }
 
-/* ---- Niederlage. Links steht, was BLEIBT, nicht was weg ist. ---- */
-export function CampaignLost({ campaign, score = 0, unlocked = [], onAgain, onMenu }) {
+/* ---- Niederlage: der verfehlte Lauf, sonst nichts.
+
+   Bis 2026-09-23 standen hier zwei Kästen, „das behältst du" (die Freischaltungen) und „das ist
+   weg" (die gehaltenen Rewards). Owner: brauchen wir nicht — die Freischaltungen stehen ohnehin auf
+   dem Kampagnenschirm, und im Playtest trugen beide Kästen nur je eine Zählzeile. ---- */
+export function CampaignLost({ campaign, score = 0, onAgain, onMenu }) {
   const c = campaign || CP.emptyCampaign();
-  const held = Object.keys(c.held || {});
   const run = c.run || 1;
   return (
     <Shell accent="red">
@@ -461,34 +464,6 @@ export function CampaignLost({ campaign, score = 0, unlocked = [], onAgain, onMe
           <div className="text-right">
             <div className="ty-num text-title" style={{ color: RED }}>{t("campaign.threshold", { n: mio(score) })}</div>
             <div className="text-meta opacity-70">{t("campaign.over.need", { n: mio(CP.thresholdWith(c, run)) })}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ border: `2px solid ${GOLD}`, background: "rgba(212,166,58,0.05)" }}>
-          <Head color={GOLD}>{t("campaign.lost.keep")}</Head>
-          <div className="flex flex-col gap-2">
-            {unlocked.map((id) => (
-              <div key={id} className="rounded-lg px-3 py-2 text-body"
-                   style={{ border: `1px solid ${GOLD}66`, color: GOLD }}>✓ {unlockName(id)}</div>
-            ))}
-          </div>
-          <div className="text-meta mt-auto pt-2" style={{ borderTop: "1px solid rgba(212,166,58,0.2)", color: "#a08a4a" }}>
-            {t("campaign.lost.open", { n: CP.UNLOCK_IDS.length - unlocked.length, max: CP.UNLOCK_IDS.length })}
-          </div>
-        </div>
-
-        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
-          <Head>{t("campaign.lost.lose")}</Head>
-          <div className="flex flex-col gap-2">
-            {held.map((id) => (
-              <div key={id} className="rounded-lg px-3 py-2 text-body line-through opacity-50"
-                   style={{ border: "1px solid rgba(255,255,255,0.08)" }}>{rewardName(id)}</div>
-            ))}
-          </div>
-          <div className="text-meta mt-auto pt-2 opacity-50" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-            {t("campaign.lost.wins", { count: run - 1, n: run - 1 })}
           </div>
         </div>
       </div>
