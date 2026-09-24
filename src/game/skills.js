@@ -551,7 +551,7 @@ export const SKILL_DEFS = {
   SK_STANCE_04: { id: "SK_STANCE_04", name: "Grundrauschen", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.grundrauschen,
     ...tiered(HALTUNG.grundrauschen, (r) => `Du hast +${pct(r.crit)} % Crit-Chance${r.critMult ? ` und +${de(r.critMult)} Crit-Multiplikator` : ""}, ganz gleich welche Haltung klingt.`) },
   SK_STANCE_05: { id: "SK_STANCE_05", name: "Übertrag", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.uebertrag,
-    ...tiered(HALTUNG.uebertrag, (r) => `Solange die blaue Haltung klingt, hebt jeder Crit deinen Crit-Multiplikator um +${de(r.step)}. Verklingt sie, fällt der Zuschlag wieder auf 0.`) },
+    ...tiered(HALTUNG.uebertrag, (r) => `Solange die blaue Haltung klingt, hebt jeder Crit deinen Crit-Multiplikator um +${de(r.step)}. Verklingt sie, bleibt die Hälfte des Zuschlags für die nächste blaue Haltung stehen.`) },
   SK_STANCE_06: { id: "SK_STANCE_06", name: "Schwungrad", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.schwungrad,
     ...tiered(HALTUNG.schwungrad, (r) => `Jeder Crit verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
   // Überlappungs-Linie (grün)
@@ -563,7 +563,7 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.verankerung, (r) => `Jede von Grün gezählte Formation gibt zusätzlich +${de(r.plus)} Score-Multiplikator.`) },
   // Ergebnis-Linie (rot)
   SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
-    ...tiered(HALTUNG.genugtuung, (r) => `Klingt die rote Haltung nach, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie gedreht hat.`) },
+    ...tiered(HALTUNG.genugtuung, (r) => `Solange die rote Haltung klingt, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie schon gedreht hat.`) },
   SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
     ...tiered(HALTUNG.rueckhalt, (r) => `Endet die rote Haltung, kämpfen deine nächsten ${r.cards} Karten mit +${r.value} Wert.`) },
   SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,

@@ -171,18 +171,17 @@ export function stanceScoreMult(st, skills, skillTiers) {
 
 /* ---- Ergebnis-Linie (rot) ---- */
 
-/* Genugtuung (§5.3, Owner-Neudesign): zwei Phasen statt einer. Solange Rot AKTIV ist, wird nur gezählt, wie viele
-   Stiche es gedreht hat (`turns`). Im NACHKLANG zahlt dann jeder Stich Basis-Score je gedrehtem Stich — die Haltung
-   sammelt ihre Genugtuung an und holt sie sich, wenn sie schon abgelöst ist.
-   Vorher zahlte sie sofort, je Punkt Rückstand; der Rückstand ist als Kennzahl weg.
-   `turns` fällt, sobald Rot gar nicht mehr klingt (stanceTick), nicht schon bei der Ablösung — sonst stünde der
-   Zähler im Nachklang, der ihn auszahlen soll, bereits auf 0. */
-export const redEchoes = (st) => !!(st && st.active && st.stance !== "R" && (st.ring?.R || 0) > 0);
+/* Genugtuung (§6.18, Owner): EIN Fenster statt zweier. Gezahlt wird, solange Rot überhaupt klingt — je Stich,
+   den diese rote Haltung schon gedreht hat. Der Nachklang zahlt weiter mit, er ist aber nicht mehr die Bedingung.
+   §6.16 hat die alte Fassung mit 0 von 6 Welten gemessen: sie brauchte einen gedrehten Stich IN der aktiven
+   Haltung und danach einen Nachklang, um überhaupt etwas zu zahlen — zwei enge Fenster hintereinander.
+   `turns` fällt weiterhin erst, wenn Rot gar nicht mehr klingt (stanceTick); der laufende Stich zählt noch nicht
+   mit, weil die Engine erst nach der Wertung `noteTurn` ruft („je Stich, den sie SCHON gedreht hat"). */
 export function genugtuungScore(st, skills, skillTiers) {
   const rate = stanceParam(skills, skillTiers, S.GENUGTUUNG, "score");
-  return rate && redEchoes(st) ? rate * (st.turns || 0) : 0;
+  return rate && ringsNow(st, "R") ? rate * (st.turns || 0) : 0;
 }
-// Ein gedrehter Stich, gemerkt für den Nachklang. Rot klingt hier immer (sonst hätte nichts gedreht).
+// Ein gedrehter Stich, gemerkt für die laufende rote Haltung. Rot klingt hier immer (sonst hätte nichts gedreht).
 export const noteTurn = (st) => ({ ...st, turns: (st.turns || 0) + 1 });
 
 /* Rückhalt (§5.3, Owner-Neudesign): nicht mehr EIN Stich nach jedem Rutscher, sondern ein Fenster NACH dem Ende
@@ -342,10 +341,12 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
      Stich, den sie zusammen klingen. `before` ist der Stand vor diesem Stich, also genau die Gegenprobe. */
   if (ringCount(next) === STANCE_SUITS.length && before.length < STANCE_SUITS.length)
     next = { ...next, level: next.level + 1, einklang: next.einklang + 1 };
-  // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, der Nachklang zahlt ihn ja erst aus.
+  // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, sie zahlt ihn ja weiter aus.
   if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
-  // Übertrags Rampe lebt so lange wie die blaue Haltung und fällt mit ihr (§5.2). Der Nachklang trägt sie noch.
-  if (!ringsNow(next, "B")) next = { ...next, critRamp: 0 };
+  /* Übertrags Rampe überlebt das Verklingen (§6.18, Owner): sie halbiert sich EINMAL an der Flanke, statt auf 0
+     zu fallen — die nächste blaue Haltung baut auf dem Rest auf. Nur an der Flanke: jeden Stich danach zu
+     halbieren wäre eine geometrische Bremse, kein Übertrag. Ausgezahlt wird weiterhin nur, solange Blau klingt. */
+  if (before.includes("B") && !ringsNow(next, "B")) next = { ...next, critRamp: Math.floor((next.critRamp || 0) / 2) };
   const ended = before.filter((s) => !ringsNow(next, s));
   /* Rückhalt (§5.3): endet die rote Haltung, kämpfen die nächsten `cards` Karten mit mehr Wert. Erst den
      laufenden Schutz abzählen, dann neu setzen — sonst verlöre ein frisch gesetztes Fenster noch im selben

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, redEchoes, stanceGreenMult, rueckhaltValue, extendStance,
+  stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, roundSwitches, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
@@ -358,14 +358,21 @@ describe("Haltungen — Crit-Linie (blau)", () => {
     expect(flat.lastTrick.breakdown.critMult).toBeCloseTo(C.CRIT_BASE_MULT, 6);
     expect(flat.stance.critRamp).toBe(1);
   });
-  it("Übertrags Rampe fällt, sobald Blau verklungen ist", () => {
+  it("Übertrags Rampe überlebt das Verklingen: einmal halbiert, dann steht sie (§6.18)", () => {
     let s = st({ stance: "B", critRamp: 4, counts: { G: C.STANCE_THRESHOLD - 1 } });
     s = stanceTick(s, [], {}, { wonSuit: "G" }).stance;
     expect(ringsNow(s, "B")).toBe(true);
-    expect(s.critRamp).toBe(4);                                 // der Nachklang trägt sie noch
+    expect(s.critRamp).toBe(4);                                 // der Nachklang trägt sie voll
     for (let i = 0; i < C.STANCE_MIN_DURATION + 1; i++) s = stanceTick(s, [], {}, {}).stance;
     expect(ringsNow(s, "B")).toBe(false);
-    expect(s.critRamp).toBe(0);
+    expect(s.critRamp).toBe(2);                                 // an der Flanke halbiert …
+    for (let i = 0; i < 5; i++) s = stanceTick(s, [], {}, {}).stance;
+    expect(s.critRamp).toBe(2);                                 // … und danach nicht weiter abgebaut
+    expect(uebertragMult(s, [S.UEBERTRAG], {})).toBe(0);        // gezahlt wird weiterhin nur, solange Blau klingt
+    // Die nächste blaue Haltung baut auf dem Rest auf — das ist der Sinn des Übertrags.
+    const back = noteCrit({ ...s, stance: "B" });
+    expect(back.critRamp).toBe(3);
+    expect(uebertragMult(back, [S.UEBERTRAG], {})).toBeCloseTo(3 * T.uebertrag[0].step, 9);
   });
   it("SK_STANCE_06 Schwungrad: jeder Crit verlängert die laufende Haltung — der Deckel IST der Stufenwert", () => {
     const skills = [S.SCHWUNGRAD];
@@ -473,24 +480,23 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
 });
 
 describe("Haltungen — Ergebnis-Linie (rot)", () => {
-  it("SK_STANCE_10 Genugtuung sammelt in der roten Haltung und zahlt im NACHKLANG (§5.3)", () => {
+  it("SK_STANCE_10 Genugtuung zahlt, solange Rot klingt — aktiv wie im Nachklang (§6.18)", () => {
     const skills = [S.GENUGTUUNG], rate = T.genugtuung[0].score;
-    // Zwei Phasen: Rot aktiv → gezählt, aber nichts gezahlt. Rot nur noch im Nachklang → jeder Stich zahlt.
+    // EIN Fenster statt zweier: die alte Fassung zahlte NUR im Nachklang und stand deshalb bei 0 von 6 Welten.
     const active = st({ stance: "R", turns: 3 });
     const echo = st({ stance: "B", ring: { R: 2 }, turns: 3 });
-    expect(redEchoes(active)).toBe(false);
-    expect(redEchoes(echo)).toBe(true);
-    expect(genugtuungScore(active, skills, {})).toBe(0);       // aktiv zahlt sie NICHT
-    expect(genugtuungScore(echo, skills, {})).toBe(3 * rate);
+    expect(genugtuungScore(active, skills, {})).toBe(3 * rate); // aktiv zahlt sie jetzt auch
+    expect(genugtuungScore(echo, skills, {})).toBe(3 * rate);   // und im Nachklang weiterhin
     expect(genugtuungScore(echo, skills, { [S.GENUGTUUNG]: 3 })).toBe(3 * T.genugtuung[3].score);
     expect(genugtuungScore(echo, [], {})).toBe(0);
     expect(genugtuungScore(st({ stance: "B", ring: { R: 2 }, turns: 0 }), skills, {})).toBe(0); // nichts gedreht
+    expect(genugtuungScore(st({ stance: "B", turns: 3 }), skills, {})).toBe(0);                 // Rot klingt gar nicht
     // In der Engine: der gerutschte Stich zählt hoch und zahlt selbst noch nichts …
     const one = resolveTrick(run(st(), { deck: constDeck(6), oppDeck: constDeck(6), skills }), noCrit);
     expect(one.lastTrick.result).toBe("win_tie");
     expect(one.stance.turns).toBe(1);
     expect(one.stanceBase).toBe(0);
-    // … und im Nachklang zahlt jeder Stich, auch einer, der gar nichts dreht.
+    // … und danach zahlt jeder Stich, auch einer, der gar nichts dreht.
     const paid = resolveTrick(run(st({ stance: "B", ring: { R: 2 }, turns: 4 }), { skills }), noCrit);
     expect(paid.lastTrick.result).toBe("win");
     expect(paid.stanceBase).toBe(4 * rate);
