@@ -218,9 +218,13 @@ const HALTUNG = {
   /* §6.16: die grüne Linie trägt nichts (+1 / +0 / −5 % mono). Doppelbindungs Normal hatte mit 0,41 den
      schlechtesten Stufen-Lift der ganzen Tabelle — die drei unteren Sprossen steigen, Episch deckt das Segment
      schon ganz ab. Übergriffs Fenster und Verankerungs Satz wachsen auf ganzer Breite. */
-  doppelbindung:  [{ cards: 2 }, { cards: 3 }, { cards: 4 }, { cards: 5 }],
+  /* §6.18, zweite Runde: Verankerung war mit +24 % mono und 6/6 Welten überschossen → Satz zurück auf etwa die
+     Mitte zwischen Start und erster Runde. Doppelbindung blieb mit −6 % die schlechteste Sprosse der Linie;
+     nur Episch steigt, und zwar über die fünf des nackten Segments hinaus — mit Übergriff ist das Fenster
+     9 bis 17 Karten breit, „alle" hieß dort bisher nur „die besten fünf davon". */
+  doppelbindung:  [{ cards: 2 }, { cards: 3 }, { cards: 4 }, { cards: 8 }],
   uebergriff:     [{ reach: 2 }, { reach: 3 }, { reach: 4 }, { reach: 6 }],
-  verankerung:    [{ plus: 0.08 }, { plus: 0.13 }, { plus: 0.20 }, { plus: 0.32 }],
+  verankerung:    [{ plus: 0.06 }, { plus: 0.10 }, { plus: 0.15 }, { plus: 0.25 }],
   // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
   // und sie strukturell nicht weglaufen kann (§6.5).
   // §5.3 (Owner): Genugtuung zahlt nicht mehr sofort je Punkt Rückstand, sondern im NACHKLANG je gedrehtem Stich —
@@ -238,7 +242,9 @@ const HALTUNG = {
   // Ergebnis — der Deckel bei +150 % bleibt stehen, Episch erreicht ihn nur früher (Serie 60 statt 75).
   // §6.16: im Trio −11 %, 2/6 Welten. Nur die Serienpunkte steigen — der Serien-Deckel (+150 %) begrenzt sie von
   // selbst, die Verlängerung `max` bleibt deshalb stehen.
-  kehrtwende:     [{ max: 3, streak: 2 }, { max: 4, streak: 3 }, { max: 6, streak: 4 }, { max: 10, streak: 6, streakStep: 0.005 }],
+  // §6.18, zweite Runde: gespalten — mono +19 %, über sechs Welten −10 %. Die Serienpunkte haben die Mono-Seite
+  // schon gehoben, also steigt nur noch `max`: mehr Haltungs-Laufzeit wirkt in jedem Build, nicht nur im reinen.
+  kehrtwende:     [{ max: 4, streak: 2 }, { max: 6, streak: 3 }, { max: 8, streak: 4 }, { max: 12, streak: 6, streakStep: 0.005 }],
   // Rotation — wirkt über alle Haltungen. Beschleunigungs Boden geht NICHT auf 1: bei Schwelle 1 löst jede Farbe
   // mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7).
   // §5.3 (Owner): Anklang hatte keinen eigenen Körper — er verlängerte nur, wie lange etwas anderes gilt. Jetzt

@@ -422,8 +422,9 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
       expect(stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: tier }), `Stufe ${tier}`)
         .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * (sumOf(f, 0, 5) + extra), 9);
     }
-    // Episch verdoppelt alle fünf — das ist genau die doppelte Summe.
-    expect(T.doppelbindung[3].cards).toBe(5);
+    // Episch verdoppelt mindestens das ganze nackte Segment — das ist genau die doppelte Summe. Eine Zahl
+    // darüber (§6.18) ändert daran nichts: `slice` deckelt, und sie greift erst in Übergriffs breiterem Fenster.
+    expect(T.doppelbindung[3].cards).toBeGreaterThanOrEqual(counts.length);
     expect(stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: 3 }))
       .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * 2 * sumOf(f, 0, 5), 9);
   });
