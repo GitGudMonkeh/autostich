@@ -954,7 +954,7 @@ Welt (einstellige Millionen), diese hier sind Mono-Läufe mit der Fraktion allei
 Skills. Und es ist die ZUFÄLLIGE Fraktions-Policy, nicht der kompetente Spieler — der liegt bei Prisma rund
 7 % darüber (§6.9).
 
-### 6.12 · Duos, Trios, Quartette — **gemessen**
+### 6.12 · Duos, Trios, Quartette — **gemessen** · SUPERSEDED IN PART (§6.15)
 
 Alle 10 Duos, alle 10 Trios und alle 5 Quartette, je 30 Seeds, Fraktions-Policy mit Slot-Split.
 Mono zum Bezug: Eis 133.157.074 · Blitz 104.205.158 · Pflanze 43.739.781 · Feuer 19.581.167 ·
@@ -1041,7 +1041,7 @@ Die Zahlen oben stammen deshalb aus festen Builds und einem doppelt so großen, 
 30-Seed-Vergleiche in §6.10 und §6.12 sind aus demselben Grund mit Vorsicht zu lesen** — die Rangfolge
 dort ist robust (die Abstände sind groß), einzelne Prozentangaben sind es nicht.
 
-### 6.14 · Die 15 Skills im Duo und Trio — **gemessen, groß**
+### 6.14 · Die 15 Skills im Duo und Trio — **gemessen, groß** · SUPERSEDED IN PART (§6.16)
 
 Sechs gemischte Welten, je eigener Seed-Bereich: **Prisma+Blitz · +Pflanze · +Eis** (Duos) und
 **+Blitz+Pflanze · +Blitz+Feuer · +Pflanze+Feuer** (Trios). Je Welt 600 Explore-Läufe, 120 Greedy-Läufe
@@ -1108,6 +1108,178 @@ keine Skills, die etwas entscheiden** — es hat vier Passive, eine Leiste und f
 
 Das ist kein Tarier-, sondern ein Entwurfsbefund, und er hängt an derselben Wurzel wie §6.12: solange
 die Passive bei einem Slot voll sind, gibt es keinen Grund, einen zweiten zu investieren.
+
+### 6.15 · Duos, Trios, Quartette nach dem Umbau — **gemessen**
+
+Nachfolger von §6.12, gleiche Methodik: 80 Seeds (1–80) statt 30, Fraktions-Policy mit Slot-Split,
+jeder Build bekommt genau seine Mitglieder ins Angebot (`--mode cross --world own`). Die fünf reinen
+Zeilen sind bitgleich mit der Balance-Messung derselben Sitzung — gleiche Seeds, gleiche Policy.
+
+Mono zum Bezug: Eis 154,6 · Blitz 85,0 · **Prisma 38,9** · Pflanze 33,9 · Feuer 26,1 (Mio Median).
+
+**Duos** — die vier Prisma-Paare belegen Platz 1, 2, 3 und 5:
+
+| # | Duo | Median | | # | Duo | Median |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | **Blitz+Prisma** | 76,4 | | 6 | Feuer+Blitz | 30,8 |
+| 2 | **Pflanze+Prisma** | 61,0 | | 7 | Feuer+Pflanze | 30,4 |
+| 3 | Feuer+Prisma | 36,5 | | 8 | Feuer+Eis | 26,4 |
+| 4 | Blitz+Pflanze | 34,7 | | 9 | Blitz+Eis | 25,4 |
+| 5 | Eis+Prisma | 33,9 | | 10 | Eis+Pflanze | 22,8 |
+
+**Trios** — die oberen drei enthalten alle Prisma; das beste ohne liegt auf Platz 4:
+
+| # | Trio | Median | | # | Trio | Median |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | **Feuer+Pflanze+Prisma** | 73,8 | | 6 | Blitz+Eis+Prisma | 31,0 |
+| 2 | Blitz+Pflanze+Prisma | 68,9 | | 7 | Feuer+Eis+Pflanze | 24,3 |
+| 3 | Feuer+Blitz+Prisma | 68,6 | | 8 | Feuer+Blitz+Eis | 22,3 |
+| 4 | Feuer+Blitz+Pflanze | 39,6 | | 9 | Blitz+Eis+Pflanze | 17,0 |
+| 5 | Eis+Pflanze+Prisma | 34,9 | | | | |
+
+**Quartette** — am Deckel des echten Spiels (`MAX_ARCHETYPES` = 4) ist „ohne Prisma" weiter das
+schwächste, und der Abstand ist größer geworden: 2,5× in §6.12, jetzt 4,5×.
+
+| Quartett | Median | §6.12 |
+| --- | --- | --- |
+| ohne Eis | **110,0** | 70,0 |
+| ohne Feuer | 52,3 | 47,2 |
+| ohne Blitz | 48,2 | 43,1 |
+| ohne Pflanze | 44,2 | 36,4 |
+| **ohne Prisma** | **24,6** | 27,8 |
+
+**Der Zuwachs als dritte Fraktion** zu einem bestehenden Duo, über alle sechs Duos ohne die jeweilige
+Fraktion:
+
+| Beimischung | Median | Spanne |
+| --- | --- | --- |
+| **+ Prisma** | **+76 %** | +22 % … +142 % |
+| + Blitz | +3 % | −25 % … +88 % |
+| + Feuer | +2 % | −12 % … +21 % |
+| + Pflanze | −3 % | −33 % … +102 % |
+| + Eis | −35 % | −59 % … −11 % |
+
+Die drei großen Ausreißer nach oben bei Blitz und Pflanze (+88 %, +102 %) sind genau die Zeilen, in
+denen das Basis-Duo schon Prisma enthielt — auch dort ist Prisma der Verstärker.
+
+#### Gegenprobe in der geteilten Welt
+
+Dieselben 80 Seeds mit `--world all`: alle fünf Fraktionen im selben Angebotstopf, die Policy filtert
+(so lief der historische Cross-Modus). Diese Welt bestraft Reinheit strukturell — ein reiner Build
+lehnt Angebote ab und hält nur ~8 statt 13 Skills, alle fünf reinen Zeilen fallen auf 11–19 Mio
+zusammen (Spread 1,67×) und der Zufallsspieler liegt mit 22,0 Mio über jedem von ihnen. Für
+Fraktions-Vergleiche taugt sie deshalb nicht. Für die Kombi-Frage ist sie eindeutig:
+
+**Alle 14 Prisma-Kombis liegen über jeder einzelnen Kombi ohne Prisma.** Beste ohne:
+Feuer+Blitz+Pflanze mit 28,9 Mio, Platz 15 von 25. Beste mit: Feuer+Blitz+Pflanze+Prisma, 86,8 Mio.
+
+Die Gesundheits-Kennzahl (bester Kombi-Floor ÷ bester reiner Member) steht dort bei **4,78×** gegen
+die Referenz ≈ 1,03×. **Ein Teil davon ist nicht Prisma:** die beste prismafreie Kombi liegt selbst
+schon bei 1,70×. Die Referenz stammt aus der Zeit vor dem Skill-Rework und aus einer
+Vier-Fraktionen-Welt; sie trägt die Richtung, nicht die Zahl.
+
+#### Was sich geändert hat — und was nicht
+
+**Mono ist repariert.** Prisma war in §6.11 mit 10,1 Mio Letzter im Feld; jetzt 38,9 Mio und Dritter,
+über Pflanze und Feuer.
+
+**Der Misch-Aufschlag ist unverändert.** §6.12 maß +41 % … +159 %, jetzt +22 % … +142 %. Das ist
+erwartbar: die Skill-Überarbeitung hebt, was die Skills tun — sie berührt nicht die Regel aus §2, dass
+alle vier Haltungen **ab dem ersten Skill** auf voller Stärke laufen. Ein Slot kauft weiter das ganze
+Passiv-Paket. **Die offene Frage aus §6.12 steht damit unverändert** (Passive fest oder mit der Zahl
+gehaltener Fraktions-Skills wachsend) — sie ist eine Entwurfsfrage, kein Zahlenregler.
+
+**Einschränkungen:** 80 Seeds tragen die Mediane, nicht die Decken. Blitz hat einen Ausreißer bei
+9,1 Mrd, Eis p90 bei 1,0 Mrd; die p90/p95-Spalten sind bei diesen Schwänzen nicht belastbar.
+
+### 6.16 · Die 15 Skills nach dem Umbau — **gemessen, groß**
+
+Nachfolger von §6.14, gleicher Schnitt: sechs gemischte Welten mit je eigenem Seed-Bereich —
+**Prisma+Blitz · +Pflanze · +Eis** (Duos) und **+Blitz+Pflanze · +Blitz+Feuer · +Pflanze+Feuer**
+(Trios), je 600 Explore-, 120 Greedy-Läufe und 15 gepaarte Ablationen. Dazu die Mono-Welt mit 1200
+Explore- und 200 Greedy-Läufen. Rund 19.500 Läufe. Die Welt bleibt breit, der Bericht ist auf Prisma
+verengt (`--only`).
+
+#### A · Der gierige Spieler nimmt jetzt auch die Skills
+
+| Welt | Ø Skills | davon Prisma | Anteil | §6.14 |
+| --- | --- | --- | --- | --- |
+| Prisma + Blitz | 12,7 | 5,8 | **46 %** | 27 % |
+| Prisma + Pflanze | 12,3 | 4,4 | 36 % | 25 % |
+| Prisma + Eis | 13,0 | 3,4 | 26 % | 15 % |
+| Prisma + Blitz + Pflanze | 11,2 | 3,7 | 33 % | 24 % |
+| Prisma + Blitz + Feuer | 12,8 | 3,5 | 28 % | 26 % |
+| Prisma + Pflanze + Feuer | 12,8 | 3,3 | 25 % | 17 % |
+
+Im Duo 22 % → **36 %**, im Trio 22 % → **29 %**. Der §6.14-Befund — „der kompetente Spieler schaltet
+die Fraktion mit zwei, drei Picks ein und gibt den Rest beim Partner aus" — ist nicht mehr der
+Normalfall.
+
+#### B · Vier Skills tragen jetzt ein Vorzeichen
+
+Median des Ablations-Effekts; `pos/6` = in wie vielen der sechs Welten der Skill positiv maß (bei
+reinem Rauschen wären 3 zu erwarten).
+
+| Skill | Halte | Duos | Trios | alle 6 | pos/6 | §6.14 |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Runde** | 44 % | 23 % | 38 % | **31 %** | **6/6** | −0 %, 2/6 |
+| **Beharrlichkeit** | 31 % | 6 % | 17 % | **15 %** | 5/6 | −4 %, 1/6 |
+| Schwungrad | 18 % | 4 % | 68 % | 10 % | 4/6 | +6 %, 4/6 |
+| **Anklang** | 47 % | 14 % | 9 % | **9 %** | 5/6 | −10 %, 2/6 |
+| Beschleunigung | 26 % | 1 % | 8 % | 4 % | 4/6 | +2 %, 4/6 |
+| **Mitklang** | 16 % | 5 % | 3 % | 4 % | **6/6** | −1 %, 3/6 |
+| Rückhalt | 18 % | 5 % | 1 % | 3 % | 4/6 | −1 %, 3/6 |
+| Grundrauschen | 29 % | 2 % | 1 % | 2 % | 4/6 | −2 %, 2/6 |
+| Stauung | 26 % | −1 % | 7 % | 1 % | 3/6 | −4 %, 2/6 |
+| Verankerung | 25 % | −0 % | 2 % | 1 % | 3/6 | −3 %, 2/6 |
+| Übergriff | 23 % | 2 % | −1 % | 0 % | 4/6 | −10 %, 3/6 |
+| Doppelbindung | 14 % | −3 % | 14 % | −1 % | 3/6 | **+7 %, 6/6** |
+| Genugtuung | 10 % | −2 % | −4 % | −3 % | 2/6 | −4 %, 1/6 |
+| Kehrtwende | 35 % | −1 % | −11 % | −6 % | 2/6 | −9 %, 1/6 |
+| Übertrag | 9 % | −2 % | −17 % | −8 % | 2/6 | −2 %, 3/6 |
+
+Vorher trug **ein** Skill ein sauberes Vorzeichen. Jetzt sind es vier: **Runde** und **Mitklang** 6/6,
+**Beharrlichkeit** und **Anklang** 5/6. Runde mit +31 % ist der erste Prisma-Skill überhaupt, der im
+Mischbuild etwas entscheidet.
+
+**Doppelbindung ist gekippt** — von 6/6 auf 3/6. Das ist die Rechnung für den grünen Umbau (§5.4): der
+alte Skill hob die Überlappungs-*Anzahl* und wirkte damit multiplikativ ins restliche Spiel hinein; der
+neue verdoppelt Segment-Zählungen und bleibt innerhalb des grünen Multiplikators. Genau die Achse, die
+§6.14 als „die einzige, auf der Prisma multiplikativ mit dem Rest zusammenwirkt" benannt hat, ist damit
+geschlossen — bewusst, und hier ist der Preis dafür.
+
+#### C · Mono: die Stufenleitern steigen
+
+Greedy-Median **202,3 Mio**, Siegquote 64 %, Ø 13,0 gehaltene Skills.
+
+| Skill | Halte | typ. | Flag | Stufen-Lift (N → S → SS → E) |
+| --- | --- | --- | --- | --- |
+| Beharrlichkeit | 90 % | **+48 %** | stark | 0,47 → 0,96 → 1,30 → **1,45** |
+| Anklang | 77 % | **+46 %** | stark | 0,57 → 0,65 → 1,12 → **2,25** |
+| Stauung | 94 % | **+35 %** | stark | 0,77 → 1,08 → 0,88 → **1,98** |
+| Runde | 91 % | +21 % | | 1,00 → 0,72 → 0,95 → **1,80** |
+| Schwungrad | 94 % | +12 % | | 0,82 → 0,99 → 1,31 → **1,32** |
+| Beschleunigung | 87 % | +11 % | | 0,66 → 1,05 → 1,14 → **1,49** |
+| Grundrauschen | 93 % | +6 % | | 0,91 → 0,91 → 1,02 → **2,20** |
+| Kehrtwende | 98 % | +4 % | | 0,98 → 1,11 → 0,83 → **1,32** |
+| Rückhalt | 90 % | +4 % | | 0,91 → 0,81 → 1,14 → **1,22** |
+| Doppelbindung | 61 % | +1 % | tot | 0,41 → 0,98 → 0,90 → **1,12** |
+| Übergriff | 63 % | −2 % | tot | 0,64 → 0,70 → 1,33 → **1,55** |
+| Mitklang | 90 % | −2 % | tot | 0,84 → 0,98 → 0,99 → 0,86 |
+| Verankerung | 84 % | −5 % | | 0,58 → 1,04 → 1,01 → **1,39** |
+| Übertrag | 99 % | −7 % | schadet | 0,96 → 0,92 → 1,28 → 1,15 |
+| Genugtuung | 97 % | −7 % | schadet | 0,94 → 1,00 → 1,16 → 1,06 |
+
+Bei **12 von 15** Skills ist Episch die höchste Stufe. Die drei Ausnahmen — Mitklang, Übertrag,
+Genugtuung — sind exakt die drei, die auch in der Ablation unten stehen.
+
+**Die Fraktion hängt jetzt am Können.** Mono mit der zufälligen Fraktions-Policy 38,9 Mio, mono mit dem
+gierigen Spieler **202,3 Mio** — Faktor 5,2. §6.11 maß an derselben Stelle +7 %.
+
+**Einschränkungen (dieselben wie §6.14, und sie gelten):** die Spanne je Welt reicht bei Rückhalt von
+−24 % bis +161 %, bei Genugtuung bis +516 %. Eine einzelne Welt sagt nichts; nur das Vorzeichen über
+sechs trägt. Wer aus „Duos" oder „Trios" eine einzelne Prozentzahl zitiert, zitiert Rauschen. Die
+Mono-Spalte ist mit 1200 Explore-Läufen die belastbarste.
 
 ---
 
