@@ -237,10 +237,11 @@ const HALTUNG = {
   // zahlen die Stiche im Fenster selbst. Der Satz ist flach, die Stufe ist die LÄNGE: 400 / 500 / 600 / 800 als
   // Decke, erreichbar nur mit lauter Siegen (Basis-Score gibt es nur auf einem Sieg).
   anklang:        [{ duration: 4, score: 100 }, { duration: 5, score: 100 }, { duration: 6, score: 100 }, { duration: 8, score: 100 }],
-  // §3.1: Runde ist der LEISTEN-VERKÜRZER geworden (Owner). Der alte Inhalt („alle vier getragen → Basis-Score im
-  // nächsten Durchlauf") sagte fast dasselbe wie die Einklang-Leiste selbst; so hat der Skill eine eigene Aufgabe.
-  // Ohne ihn ist die Leiste STANCE_BAR lang, jede Stufe kürzt sie — Episch zusätzlich längerer Einklang.
-  runde:          [{ bar: 8 }, { bar: 7 }, { bar: 6 }, { bar: 4, einklangPlus: 2 }],
+  /* §5.3 (Owner): die Leiste als Grundmechanik ist weg — Runde IST jetzt der Einklang. Nach `switches` echten
+     Wechseln klingen alle vier Haltungen gleichzeitig; Episch hält den Moment länger. Die Stufe hängt nicht mehr
+     am Skill, sondern am Zustand „alle vier klingen" (stance.js) — ein Build ohne Runde kann sie also durch
+     schnelles Rotieren auch erreichen, nur schwerer. STARTWERTE. */
+  runde:          [{ switches: 6 }, { switches: 5 }, { switches: 4 }, { switches: 3, duration: 5 }],
   beschleunigung: [{ step: 1, floor: 4 }, { step: 1, floor: 3 }, { step: 1, floor: 2 }, { step: 2, floor: 2 }],
 };
 export const HALTUNG_TIERS = HALTUNG;
@@ -550,7 +551,7 @@ export const SKILL_DEFS = {
   SK_STANCE_13: { id: "SK_STANCE_13", name: "Anklang", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.anklang,
     ...tiered(HALTUNG.anklang, (r) => `Eine Haltung klingt ${r.duration} Stiche statt ${C.STANCE_MIN_DURATION} nach, und jeder dieser Stiche gibt +${r.score} Basis-Score.`) },
   SK_STANCE_14: { id: "SK_STANCE_14", name: "Runde", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.runde,
-    ...tiered(HALTUNG.runde, (r) => `Die Leiste ist schon nach ${r.bar} Haltungswechseln voll statt nach ${C.STANCE_BAR}.${r.einklangPlus ? ` Der Einklang hält ${r.einklangPlus} Stiche länger.` : ""}`) },
+    ...tiered(HALTUNG.runde, (r) => `Nach je ${r.switches} Haltungswechseln klingen alle vier Haltungen ${r.duration ?? C.STANCE_EINKLANG} Stiche lang gleichzeitig.`) },
   SK_STANCE_15: { id: "SK_STANCE_15", name: "Beschleunigung", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.beschleunigung,
     ...tiered(HALTUNG.beschleunigung, (r) => `Jeder Haltungswechsel senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.`) },
 

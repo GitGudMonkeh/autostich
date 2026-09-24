@@ -172,27 +172,34 @@ nachrüstbar, ohne dass eine Regel sich ändert.
   Angenehmer Nebeneffekt: damit zählt die **Lage innerhalb des Segments** — eine Karte am Rand färbt
   nur nach innen, eine in der Mitte nach beiden Seiten.
 
-### 3.1 · Die Leiste und die Stufe — **gesetzt**
+### 3.1 · Der Einklang und die Stufe — **§5.3 neu gefasst**
 
 Die vier Passive sind flach: sie wirken je Stich, begrenzt, und bauen nichts auf. Genau daran lag die Fraktion
-Faktor 2 bis 14 unter dem Feld (§6.8 A). Der Sammler, der das behebt, steht bewusst **neben** den Haltungen und
-nicht in ihnen:
+Faktor 2 bis 14 unter dem Feld (§6.8 A). Der Sammler, der das behebt, hing bis §5.3 an einer eigenen **Leiste**
+(10 Wechsel → Einklang + Stufe). **Die Leiste ist weg** (Owner). An ihre Stelle tritt ein echter Spielzustand:
 
 ```
-1.  Jeder ECHTE Haltungswechsel füllt die Leiste um 1.
-    (Ein Selbst-Auslösen nicht — wie bei Beschleunigung auch.)
+1.  Klingen ALLE VIER Haltungen gleichzeitig  →  die STUFE steigt um 1.
+    Dauerhaft, für den Rest des Laufs. Als FLANKE: der Moment zählt,
+    in dem die vierte dazukommt, nicht jeder Stich, den sie zusammen klingen.
 
-2.  Voll  →  EINKLANG: alle vier Haltungen klingen gleichzeitig, für 3 Stiche.
-             Leiste auf 0.
-
-3.  Voll  →  und die STUFE steigt um 1. Dauerhaft, für den Rest des Laufs.
+2.  Erreichbar auf zwei Wegen:
+      a) schnell genug rotieren — drei Wechsel innerhalb einer Mindestdauer,
+      b) oder der Skill RUNDE: nach n echten Wechseln klingen alle vier
+         für einige Stiche gleichzeitig (§5.3).
 ```
 
 | | Grundwert | Regler |
 | --- | --- | --- |
-| Leiste voll bei | 10 Wechseln | **Runde** kürzt auf 8 / 7 / 6 / 4 (§5.3) |
-| Einklang dauert | 3 Stiche | Runde Episch: +2 |
+| Stufe steigt bei | alle vier klingen gleichzeitig | — die Bedingung selbst ist der Regler |
+| Einklang dauert | 3 Stiche | **Runde** Episch: 5 |
+| Runde zündet nach | — *(ohne den Skill nie)* | **Runde**: 6 / 5 / 4 / 3 Wechsel |
 | Stufe gibt | **×1,02** auf jeden Sieg-Score | der Satz je Stufe ist der Haupt-Regler |
+
+**Was der Tausch ändert.** Der Sammler ist nicht mehr automatisch: er gehört jetzt dem, der die Fraktion
+tatsächlich *spielt*. Ein Block-Build, der selten wechselt, bekommt ihn kaum noch; ein Tanz-Build bekommt ihn
+auch ohne Runde. **Zu beobachten:** ob die Stufe damit zu selten steigt — der Satz je Stufe (`STANCE_STEP`,
+0,02) war gegen eine Leiste geeicht, die alle 10 Wechsel voll war.
 
 **Der Einklang braucht keine eigene Mechanik.** „Alle vier klingen" heißt, in die vier Nachklang-Zähler zu
 schreiben, die es ohnehin gibt — keine neue Regel, kein neuer Zustand. Er hebt dabei nur an und kürzt nie:
@@ -208,7 +215,7 @@ Skill aufgefressen.
 am Klingen hängen, macht das keinen Unterschied; keiner hängt seit §5.3 noch am **Auslösen**. Zu beachten ist
 dafür etwas anderes: der Einklang lässt alle vier gleichzeitig klingen, ohne dass eine ABGELÖST wurde — die
 Nachklang-Skills (**Genugtuung**, **Verankerung**) prüfen deshalb auf „klingt, ist aber nicht aktiv" und nicht
-auf die Leiste.
+auf den Einklang selbst.
 
 ---
 
@@ -266,7 +273,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Rückhalt** · Karten nach dem Ende der Haltung · Stichwert | 6 · +4 | 7 · +4 | 8 · +4 | 10 · +6 |
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
-| | **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2* |
+| | **Runde** · Wechsel bis alle vier klingen · Dauer | 6 · 3 | 5 · 3 | 4 · 3 | 3 · 5 |
 | | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
 
 **Drei Leitern sind Deckel statt Rampen** — Schwungrad, Kehrtwende und Beschleunigungs Boden. Das ist
@@ -432,7 +439,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Skill | Wirkung |
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach — und jeder Stich in diesem Fenster gibt Basis-Score. |
-| **Runde** | Die Einklang-Leiste ist schon nach weniger Wechseln voll (§3.1) — der Lauf sammelt also schneller Stufen. |
+| **Runde** | Nach je n echten Wechseln klingen **alle vier** Haltungen gleichzeitig — und genau das hebt die Stufe (§3.1). |
 | **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. Schritt **und Boden** sind Stufenwerte. |
 
 **Startwerte:**
@@ -440,7 +447,8 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
-| **Runde** · Leiste voll nach … Wechseln (ohne: 10) | 8 | 7 | 6 | 4 + *Einklang +2 Stiche* |
+| **Runde** · echte Wechsel bis alle vier klingen | 6 | 5 | 4 | 3 |
+| **Runde** · Stiche, die sie gleichzeitig klingen | 3 | 3 | 3 | 5 |
 | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
 
 **Anklang hat mit §6.14 einen eigenen Körper bekommen** (Owner). Vorher verlängerte er nur, wie lange etwas
@@ -457,9 +465,17 @@ rund 57 % Siegquote bringt Episch also eher 450 als 800.
 dann klingen dauerhaft drei bis vier Haltungen (§6.7). Boden 2 macht die Rotation sehr schnell, ohne in
 diesen Zustand zu kippen.
 
-**Runde hat mit §3.1 eine neue Aufgabe bekommen** (Owner). Sie zahlte vorher Basis-Score für die vollendete
-Vier-Farben-Runde und sagte damit fast dasselbe wie die Einklang-Leiste selbst; jetzt **verkürzt sie die
-Leiste**. Die vollendete Runde bleibt als Zähler bestehen, aber nur noch als Telemetrie.
+**Neudesign §5.3, Runde (Owner):** *„Ja, Sammler, mit allen 4 klingen aber als Bedingung. Nach x (Leiter)
+Wechseln klingen alle 4 Haltungen gleichzeitig für x (Leiter für Episch) Stiche."*
+
+Runde ist damit **nicht mehr der Verkürzer einer Leiste, sondern der Einklang selbst** — die Leiste als
+Grundmechanik ist gestrichen (§3.1). Ohne den Skill zündet sie nie; wer sie nicht nimmt, erreicht den
+Einklang nur durch schnelles Rotieren. Die Stufe hängt nicht am Skill, sondern am Zustand, den er herstellt:
+das ist die Bedingung, die der Owner gesetzt hat.
+
+Der Skill trägt damit die dritte Fassung seiner Aufgabe: erst Basis-Score für die vollendete Vier-Farben-Runde,
+dann Leisten-Verkürzer, jetzt der Einklang. Die vollendete Runde bleibt als Zähler bestehen, aber nur noch als
+Telemetrie.
 
 **Die Linie ist damit durchgehend Tanz-Build.** Alle drei zahlen auf häufiges Wechseln, und sie verstärken
 sich gegenseitig: Beschleunigung erzeugt mehr Wechsel, Anklang lässt sie überlappen, Runde macht aus
@@ -884,7 +900,11 @@ Was daraus heraussticht:
   Mittelfeld der Paare, nicht darüber. Der Hebel („das Brett liest sich als ein grüner Farbblock, die
   Grundfarben bleiben bunt") existiert, trägt aber nicht weit genug, um etwas zu sprengen.
 
-### 6.11 · Die Leiste, gemessen — **gemessen**
+### 6.11 · Die Leiste, gemessen — **gemessen** · SUPERSEDED (§5.3)
+
+> Gemessen wurde die Leiste (10 Wechsel → Einklang + Stufe). Seit §5.3 gibt es sie nicht mehr: die Stufe hängt
+> am Zustand „alle vier klingen", und der Einklang kommt aus dem Skill *Runde*. Die Zahlen unten beschreiben
+> den alten Aufbau und sind nicht auf den neuen übertragbar.
 
 Dieselben 20 Seeds, feste Builds, vor und nach §3.1:
 

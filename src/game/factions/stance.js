@@ -62,9 +62,9 @@ export function initStance() {
     critRamp: 0,                   // Übertrag: Crits dieser blauen Haltung (je Schritt +Crit-Multiplikator)
     carried: [C.STANCE_START],     // Runde: Farben, die in dieser Runde schon getragen wurden
     echo: 0,                       // Anklang: Reststiche des Fensters NACH einem Haltungswechsel
-    bar: 0,                        // Einklang-Leiste: füllt sich mit jedem echten Wechsel
+    sinceRound: 0,                 // Runde: echte Wechsel seit dem letzten Einklang
     level: 0,                      // Stufe: dauerhaft, der einzige Sammler der Fraktion (Score-Multiplikator)
-    einklang: 0,                   // Telemetrie: wie oft die Leiste diesen Lauf voll war
+    einklang: 0,                   // Telemetrie: wie oft alle vier diesen Lauf gleichzeitig klangen (= Stufen)
     peakBest: 0,                   // Stauung: größter Sieg der klingenden gelben Haltung
     peakTicks: 0,                  // Stauung: Stiche, die die gelbe Haltung schon klingt (Hebel des Spitzen-Zuschlags)
     guard: 0,                      // Rückhalt: Restkarten, die nach dem Ende der roten Haltung mit mehr Wert kämpfen
@@ -111,20 +111,21 @@ export const minDuration = (skills, skillTiers) =>
 export const anklangScore = (st, skills, skillTiers) =>
   (st && st.active && (st.echo || 0) > 0 ? (stanceParam(skills, skillTiers, S.ANKLANG, "score") || 0) : 0);
 
-/* ---- Die Leiste und die Stufe (§3.1) ----
-   „Runde" verkürzt die Leiste: derselbe Lauf füllt sie öfter, also steigt die Stufe schneller. Der Skill hieß
-   vorher „alle vier getragen → Basis-Score im nächsten Durchlauf" und sagte damit fast dasselbe wie die Leiste
-   selbst — er hat mit ihr eine eigene Aufgabe bekommen (Owner).
+/* ---- Der Einklang und die Stufe (§3.1) ----
+   §5.3, Neudesign (Owner): die LEISTE ist weg. Der Sammler bleibt, aber seine Bedingung ist jetzt ein echter
+   Spielzustand statt eines Balkens — **klingen alle vier Haltungen gleichzeitig, steigt die Stufe um 1**. Das
+   kann jeder Build erreichen, der schnell genug rotiert (drei Wechsel innerhalb einer Mindestdauer); der Skill
+   *Runde* ist der zuverlässige Weg dorthin, nicht der einzige.
    Die Stufe ist ein glatter Multiplikator auf den Sieg-Score. EINE Zahl, EINE Lesart: die Alternative (jedes der
    vier Passive liest sie auf seine Weise) skalierte bei Rot und Grün holprig, und Rots Lesart wäre wortgleich mit
    dem Skill Genugtuung gewesen. */
-export const barLength = (skills, skillTiers) =>
-  stanceParam(skills, skillTiers, S.RUNDE, "bar") ?? C.STANCE_BAR;
-/* 0 schaltet den Einklang GANZ ab — samt dem Episch-Extra von Runde, denn „+2 Stiche" auf einen Moment der
-   Länge null ist keine Wirkung, sondern ein Rechenfehler. Der Haken trennt die zwei Hälften der vollen Leiste
-   (Moment gegen dauerhafte Stufe) und erlaubt damit die Ablation in §6.13. */
+// Wie viele ECHTE Wechsel Runde braucht, bis sie alle vier klingen lässt. Ohne den Skill: nie (null).
+export const roundSwitches = (skills, skillTiers) =>
+  stanceParam(skills, skillTiers, S.RUNDE, "switches") ?? null;
+/* 0 schaltet den Einklang GANZ ab und erlaubt damit die Ablation in §6.13 — samt Runde-Episch, denn eine längere
+   Dauer auf einem Moment der Länge null ist keine Wirkung, sondern ein Rechenfehler. */
 export const einklangDuration = (skills, skillTiers) =>
-  (C.STANCE_EINKLANG > 0 ? C.STANCE_EINKLANG + (stanceParam(skills, skillTiers, S.RUNDE, "einklangPlus") || 0) : 0);
+  (C.STANCE_EINKLANG > 0 ? (stanceParam(skills, skillTiers, S.RUNDE, "duration") ?? C.STANCE_EINKLANG) : 0);
 // Der Sammler: 1 ohne Stufe, danach linear. Kein Deckel — der Regler ist der Satz je Stufe (skill-rework.md §1).
 export const stanceLevelMult = (st) => (st && st.active ? 1 + (st.level || 0) * C.STANCE_STEP : 1);
 
@@ -305,20 +306,20 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
           ...next, stance: wonSuit, switches: next.switches + 1, ext: { crit: 0, slid: 0 }, carried,
           threshold: step ? Math.max(floor, next.threshold - step) : next.threshold,
         };
-        // Runde vollendet: alle vier Haltungen einmal getragen. Reine Telemetrie, seit die Leiste den Sammler trägt.
+        // Runde vollendet: alle vier Haltungen einmal getragen. Reine Telemetrie.
         if (next.carried.length >= STANCE_SUITS.length) next = { ...next, carried: [wonSuit], rounds: next.rounds + 1 };
-        /* Die Leiste (§3.1): jeder ECHTE Wechsel füllt sie um eins — ein Selbst-Auslösen nicht, wie bei
-           Beschleunigung auch. Ist sie voll, passiert beides auf einmal:
-             EINKLANG — alle vier Haltungen klingen `einklangDuration` Stiche lang gleichzeitig. Das braucht keine
-               eigene Mechanik, es schreibt in die vier Nachklang-Zähler. `Math.max` verkürzt dabei nie einen
-               längeren Nachklang, den ein Verlängerer eben erst gelegt hat.
-             STUFE — dauerhaft +1, für den Rest des Laufs. Der einzige Sammler der Fraktion. */
-        next = { ...next, bar: next.bar + 1 };
-        if (next.bar >= barLength(skills, skillTiers)) {
+        /* Runde (§5.3): jeder ECHTE Wechsel zählt — ein Selbst-Auslösen nicht, wie bei Beschleunigung auch. Nach
+           `switches` Wechseln klingen alle vier Haltungen gleichzeitig. Das braucht keine eigene Mechanik, es
+           schreibt in die vier Nachklang-Zähler; `Math.max` verkürzt dabei nie einen längeren Nachklang, den ein
+           Verlängerer eben erst gelegt hat. Die STUFE hängt nicht mehr hier, sondern am Zustand „alle vier
+           klingen" (unten) — ein Build ohne Runde kann sie also auch erreichen, nur schwerer. */
+        next = { ...next, sinceRound: (next.sinceRound || 0) + 1 };
+        const need = roundSwitches(skills, skillTiers);
+        if (need != null && next.sinceRound >= need) {
           const dur = einklangDuration(skills, skillTiers);
           const rung = { ...next.ring };
           if (dur > 0) for (const s of STANCE_SUITS) rung[s] = Math.max(rung[s] || 0, dur);
-          next = { ...next, bar: 0, level: next.level + 1, einklang: next.einklang + 1, ring: rung };
+          next = { ...next, sinceRound: 0, ring: rung };
         }
       }
     }
@@ -327,6 +328,11 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
   const ranFor = { ...next.ranFor };
   for (const s of STANCE_SUITS) ranFor[s] = ringsNow(next, s) ? (ranFor[s] || 0) + 1 : 0;
   next = { ...next, ranFor };
+  /* Der Sammler (§3.1, Owner): klingen alle vier Haltungen gleichzeitig, steigt die Stufe um 1 — dauerhaft, für
+     den Rest des Laufs. FLANKE, nicht Zustand: es zählt der Moment, in dem die vierte dazukommt, nicht jeder
+     Stich, den sie zusammen klingen. `before` ist der Stand vor diesem Stich, also genau die Gegenprobe. */
+  if (ringCount(next) === STANCE_SUITS.length && before.length < STANCE_SUITS.length)
+    next = { ...next, level: next.level + 1, einklang: next.einklang + 1 };
   // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, der Nachklang zahlt ihn ja erst aus.
   if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
   // Übertrags Rampe lebt so lange wie die blaue Haltung und fällt mit ihr (§5.2). Der Nachklang trägt sie noch.
