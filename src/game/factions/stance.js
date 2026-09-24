@@ -133,6 +133,13 @@ export const einklangDuration = (skills, skillTiers) =>
 
 // Rot (Ergebnis): um wie viele Stufen der Ausgang steigt. Eine Stufe, solange Rot klingt — sonst keine.
 export const stanceLift = (st) => (ringsNow(st, "R") ? 1 : 0);
+/* Runde (§6.20, Owner): der Einklang hat seit dem Wegfall der Stufe (§6.19) einen eigenen Körper — solange
+   alle vier klingen, GEWINNT jeder Stich. Das ist die rote Leiter zu Ende gedacht: sie hebt sonst eine Stufe,
+   hier so viele, wie der Ausgang braucht. Es hängt am SKILL, nicht am Zustand: die vier Passive trägt der
+   Einklang auch ohne Runde, den Moment selbst trägt sie. Der Aufschlag ist +1 auf dieselbe Leiter, damit
+   `stanceSlid` (Genugtuung, Kehrtwende, Rückhalt) wie bisher greift. */
+export const rundeLift = (st, skills, skillTiers) =>
+  (st && st.active && ringCount(st) === STANCE_SUITS.length && roundSwitches(skills, skillTiers) != null ? 1 : 0);
 
 /* Blau (Crit): STANCE_CRIT, solange Blau klingt — additiv auf das, was das Deck schon hat (§2).
    §5.3 (Owner): Grundrauschen schließt sich damit NICHT mehr aus, sondern addiert sich. Es ist kein

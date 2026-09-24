@@ -575,7 +575,7 @@ export const SKILL_DEFS = {
   SK_STANCE_13: { id: "SK_STANCE_13", name: "Anklang", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.anklang,
     ...tiered(HALTUNG.anklang, (r) => `Eine Haltung klingt ${r.duration} Stiche statt ${C.STANCE_MIN_DURATION} nach, und jeder dieser Stiche gibt +${r.score} Basis-Score.`) },
   SK_STANCE_14: { id: "SK_STANCE_14", name: "Runde", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.runde,
-    ...tiered(HALTUNG.runde, (r) => `Nach je ${r.switches} Haltungswechseln klingen alle vier Haltungen ${r.duration ?? C.STANCE_EINKLANG} Stiche lang gleichzeitig.`) },
+    ...tiered(HALTUNG.runde, (r) => `Nach je ${r.switches} Haltungswechseln klingen alle vier Haltungen ${r.duration ?? C.STANCE_EINKLANG} Stiche lang gleichzeitig. Solange sie es tun, gewinnst du jeden Stich.`) },
   SK_STANCE_15: { id: "SK_STANCE_15", name: "Beschleunigung", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.beschleunigung,
     ...tiered(HALTUNG.beschleunigung, (r) => `${r.every ? "Jeder zweite Haltungswechsel" : "Jeder Haltungswechsel"} senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.${r.echoPlus ? " Außerdem klingt jede Haltung einen Stich länger nach." : ""}`) },
 

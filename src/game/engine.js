@@ -26,7 +26,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // Haltungen (docs/haltungen-fraktion.md): vier Haltungen, eine je Farbe, gesteuert von den gewonnenen Stichen der
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
-import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceGreenMult,
+import { stanceTick, stanceLift, rundeLift, stanceCrit, stanceScoreMult, stanceGreenMult,
   genugtuungScore, noteTurn, rueckhaltValue, extendStance, noteCrit, uebertragMult, grundrauschenCritMult, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
@@ -459,9 +459,13 @@ export function resolveTrick(state, rng) {
      keine Niederlage mehr — Niederlagenserie, Schwachstellenanalyse, Revanche und Initiative laufen in einem
      roten Deck leer. */
   let stanceSlid = false, stanceSlidWin = false;
-  if (stanceOn && stanceLift(stance)) {
+  // §6.20: Runde legt im Einklang eine zweite Stufe auf dieselbe Leiter — aus „Niederlage → Gleichstand" wird
+  // damit „Niederlage → Sieg", also gewinnt dort jeder Stich. Eine Schleife, keine Sonderregel.
+  const stanceSteps = stanceOn ? stanceLift(stance) + rundeLift(stance, skills, skillTiers) : 0;
+  for (let i = 0; i < stanceSteps; i++) {
     if (lost) { lost = false; stanceSlid = true; }
     else if (!won) { won = true; stanceSlid = true; stanceSlidWin = true; }
+    else break;
   }
 
   // Sieg-Kontext VOR der Verzweigung — mit den Werten, die ein Sieg hätte (Serie +1, Siege +1). Der Sieg-Zweig

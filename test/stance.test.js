@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
+  stanceLift, rundeLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, roundSwitches, einklangDuration,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
@@ -636,6 +636,24 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     expect(s.ring.B).toBe(T.anklang[0].duration);
     expect(ringsNow(s, "B")).toBe(true);
     expect(ringCount(s)).toBe(3);                              // Rot klingt dank der längeren Dauer noch mit
+  });
+  it("SK_STANCE_14 Runde: solange alle vier klingen, GEWINNT jeder Stich (§6.20)", () => {
+    /* Seit die Stufe weg ist (§6.19) trägt der Einklang selbst den Ertrag: die rote Leiter hebt eine zweite
+       Stufe, aus „Niederlage → Gleichstand" wird „Niederlage → Sieg". Am SKILL, nicht am Zustand. */
+    const skills = [S.RUNDE];
+    const all4 = st({ stance: "R", ring: { B: 3, G: 3, Y: 3 } });
+    expect(ringCount(all4)).toBe(4);
+    expect(rundeLift(all4, skills, {})).toBe(1);
+    expect(rundeLift(all4, [], {})).toBe(0);              // ohne den Skill trägt der Zustand nur die vier Passive
+    expect(rundeLift(st(), skills, {})).toBe(0);          // und nur, wenn wirklich alle vier klingen
+    // Klare Niederlage (0 gegen 12): mit Runde ein Sieg, ohne sie der Gleichstand, den Rot allein schafft.
+    const lose = { deck: constDeck(0), oppDeck: constDeck(12) };
+    const on = resolveTrick(run(all4, { ...lose, skills }), noCrit);
+    const off = resolveTrick(run(all4, { ...lose, skills: [] }), noCrit);
+    expect(on.wins).toBe(1);
+    expect(on.lastTrick.gained).toBeGreaterThan(0);
+    expect(off.ties).toBe(1);
+    expect(off.lastTrick.gained).toBe(0);
   });
   it("SK_STANCE_14 Runde: nach n Wechseln klingen alle vier — OHNE den Skill passiert das nie von selbst (§5.3)", () => {
     expect(roundSwitches([], {})).toBeNull();                         // ohne den Skill: kein Einklang

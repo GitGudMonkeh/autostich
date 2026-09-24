@@ -196,12 +196,16 @@ Erreichbar auf zwei Wegen:
 | Einklang dauert | 3 Stiche | **Runde** Episch: 5 |
 | Runde zündet nach | — *(ohne den Skill nie)* | **Runde**: 7 / 6 / 5 / 4 Wechsel |
 | Einklang gibt | Rot **und** Blau **und** Gelb **und** Grün zugleich | die vier Grundwerte in §3 |
+| … mit dem Skill **Runde** | zusätzlich: **jeder Stich gewinnt** | §6.20 — eine zweite Stufe auf der roten Leiter |
 
 **Was der Tausch ändert.** Die Fraktion hat jetzt **gar keinen dauerhaften Sammler mehr** — kein Wert wächst
 über den Lauf. Alles, was Prisma tut, hängt daran, welche Haltung in diesem Stich klingt. Das macht den
 Einklang zum stärksten Moment der Fraktion statt zu einer Buchung, und es macht **Mitklang** und **Runde** zu
 den Skills, die ihn holen. **Gemessen (§6.19):** die Fraktion fällt nicht unter das Feld — sie fällt um 31 % und bleibt
-Dritte. Was bricht, ist die Rotations-Linie: **Runde** hat ohne die Stufe kein Ziel mehr und misst −4 %.
+Dritte. Was bricht, ist die Rotations-Linie: **Runde** hatte ohne die Stufe kein Ziel mehr und maß −4 %.
+**§6.20 (Owner) gibt dem Moment einen eigenen Körper:** solange alle vier klingen, hebt die rote Leiter eine
+zweite Stufe — aus „Niederlage → Gleichstand" wird „Niederlage → Sieg", also gewinnt dort jeder Stich. Das
+hängt am Skill, nicht am Zustand: die vier Passive trägt der Einklang auch ohne Runde.
 
 `STANCE_STEP` ist mit der Stufe entfallen, `stanceLevelMult` ebenso. Der Zähler `einklang` bleibt als reine
 Telemetrie (`--mode motor --arch stance`).
@@ -450,7 +454,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Skill | Wirkung |
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach — und jeder Stich in diesem Fenster gibt Basis-Score. |
-| **Runde** | Nach je n echten Wechseln klingen **alle vier** Haltungen gleichzeitig — alle vier Passive auf einmal (§3.1). |
+| **Runde** | Nach je n echten Wechseln klingen **alle vier** Haltungen gleichzeitig — und solange sie es tun, **gewinnt jeder Stich** (§6.20). |
 | **Beschleunigung** | Wechsel senken die Schwelle für den nächsten. Die Leiter ist das **Tempo**; Episch klingt dazu länger nach. |
 
 **Startwerte:**
