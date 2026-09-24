@@ -98,9 +98,12 @@ export const ringsNow = (st, suit) =>
   !!(st && st.active && (st.stance === suit || (st.ring?.[suit] || 0) > 0));
 export const ringCount = (st) => (st && st.active ? STANCE_SUITS.filter((s) => ringsNow(st, s)).length : 0);
 
-// Mindestdauer einer auslösenden Haltung — Anklang hebt sie, sonst der Grundwert.
+/* Mindestdauer einer auslösenden Haltung — Anklang setzt sie, sonst der Grundwert; Beschleunigung Episch legt
+   einen Stich obendrauf (§5.3). Da Anklangs Fenster genau so lang ist wie der Nachklang, verlängert das Episch-
+   Extra beides — gewollt, es ist dieselbe Zahl. */
 export const minDuration = (skills, skillTiers) =>
-  stanceParam(skills, skillTiers, S.ANKLANG, "duration") ?? C.STANCE_MIN_DURATION;
+  (stanceParam(skills, skillTiers, S.ANKLANG, "duration") ?? C.STANCE_MIN_DURATION)
+  + (stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "echoPlus") || 0);
 
 /* Anklang (§5.3): die Stiche NACH einem Haltungswechsel zahlen Basis-Score. Das Fenster ist genau so lang wie
    der Nachklang, den der Skill ohnehin verlängert — die Stufe ist also EINE Zahl, die beides steuert.
@@ -298,13 +301,18 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
         } };
         next = { ...next, echo: minDuration(skills, skillTiers) }; // Anklangs Fenster, aufgefrischt statt gestapelt
         const carried = next.carried.includes(wonSuit) ? next.carried : [...next.carried, wonSuit];
-        // Beschleunigung: jeder echte Wechsel senkt die Schwelle, bis auf den Boden der Stufe. Der Boden geht
-        // bewusst nicht auf 1 — dort löste jede Farbe mit ihrem ersten Sieg aus (§6.7).
+        /* Beschleunigung (§5.3): ein echter Wechsel senkt die Schwelle um `step` — auf der Normal-Stufe aber nur
+           JEDER ZWEITE (`every`). Der Boden geht bewusst nicht auf 1: dort löste jede Farbe mit ihrem ersten Sieg
+           aus, und es klängen dauerhaft drei bis vier Haltungen (§6.7). Er ist seit §5.3 auf allen Stufen gleich —
+           die Leiter staffelt das Tempo, nicht das Ziel. */
+        const nSwitch = next.switches + 1;
         const step = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "step") || 0;
+        const every = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "every") || 1;
         const floor = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "floor") ?? next.threshold;
+        const lowers = step && nSwitch % every === 0;
         next = {
-          ...next, stance: wonSuit, switches: next.switches + 1, ext: { crit: 0, slid: 0 }, carried,
-          threshold: step ? Math.max(floor, next.threshold - step) : next.threshold,
+          ...next, stance: wonSuit, switches: nSwitch, ext: { crit: 0, slid: 0 }, carried,
+          threshold: lowers ? Math.max(floor, next.threshold - step) : next.threshold,
         };
         // Runde vollendet: alle vier Haltungen einmal getragen. Reine Telemetrie.
         if (next.carried.length >= STANCE_SUITS.length) next = { ...next, carried: [wonSuit], rounds: next.rounds + 1 };

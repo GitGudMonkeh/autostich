@@ -242,7 +242,10 @@ const HALTUNG = {
      am Skill, sondern am Zustand „alle vier klingen" (stance.js) — ein Build ohne Runde kann sie also durch
      schnelles Rotieren auch erreichen, nur schwerer. STARTWERTE. */
   runde:          [{ switches: 6 }, { switches: 5 }, { switches: 4 }, { switches: 3, duration: 5 }],
-  beschleunigung: [{ step: 1, floor: 4 }, { step: 1, floor: 3 }, { step: 1, floor: 2 }, { step: 2, floor: 2 }],
+  /* §5.3 (Owner): die Leiter staffelt jetzt das TEMPO, nicht das Ziel — jeder zweite Wechsel −1, jeder −1,
+     jeder −2, Episch −2 plus einen Stich längeren Nachklang. Der Boden ist überall 2: er darf nicht auf 1, sonst
+     löst jede Farbe mit ihrem ersten Sieg aus (§6.7). Den Boden hat der Owner nicht genannt — ANGENOMMEN. */
+  beschleunigung: [{ step: 1, every: 2, floor: 2 }, { step: 1, floor: 2 }, { step: 2, floor: 2 }, { step: 2, floor: 2, echoPlus: 1 }],
 };
 export const HALTUNG_TIERS = HALTUNG;
 /* Stufentabellen der 15 Eis-Skills (§5.3) — dieselbe Form. Eis ist die letzte Fraktion, die Stufen bekommt; bis dahin
@@ -553,7 +556,7 @@ export const SKILL_DEFS = {
   SK_STANCE_14: { id: "SK_STANCE_14", name: "Runde", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.runde,
     ...tiered(HALTUNG.runde, (r) => `Nach je ${r.switches} Haltungswechseln klingen alle vier Haltungen ${r.duration ?? C.STANCE_EINKLANG} Stiche lang gleichzeitig.`) },
   SK_STANCE_15: { id: "SK_STANCE_15", name: "Beschleunigung", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.beschleunigung,
-    ...tiered(HALTUNG.beschleunigung, (r) => `Jeder Haltungswechsel senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.`) },
+    ...tiered(HALTUNG.beschleunigung, (r) => `${r.every ? "Jeder zweite Haltungswechsel" : "Jeder Haltungswechsel"} senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.${r.echoPlus ? " Außerdem klingt jede Haltung einen Stich länger nach." : ""}`) },
 
 };
 

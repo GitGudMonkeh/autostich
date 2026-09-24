@@ -274,11 +274,12 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | | **Runde** · Wechsel bis alle vier klingen · Dauer | 6 · 3 | 5 · 3 | 4 · 3 | 3 · 5 |
-| | **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
+| | **Beschleunigung** · Schwellen-Senkung je Wechsel (Boden 2) | jeder 2. −1 | −1 | −2 | −2 + *Nachklang +1* |
 
-**Drei Leitern sind Deckel statt Rampen** — Schwungrad, Kehrtwende und Beschleunigungs Boden. Das ist
-Absicht: die drei Runaway-Rechnungen aus §6 sind damit in der Stufentabelle erledigt statt als
-Sonderregel, so wie das Raster es vorzieht.
+**Zwei Leitern sind Deckel statt Rampen** — Schwungrad und Kehrtwende. Das ist Absicht: die Runaway-Rechnungen
+aus §6 sind damit in der Stufentabelle erledigt statt als Sonderregel, so wie das Raster es vorzieht.
+Beschleunigungs **Boden** ist seit §5.3 keine Leiter mehr, sondern auf allen Stufen 2 — er bleibt ein Deckel,
+nur eben ein fester.
 
 ### 5.1 · Score-Linie — voll
 
@@ -440,7 +441,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach — und jeder Stich in diesem Fenster gibt Basis-Score. |
 | **Runde** | Nach je n echten Wechseln klingen **alle vier** Haltungen gleichzeitig — und genau das hebt die Stufe (§3.1). |
-| **Beschleunigung** | Jeder Wechsel senkt die Schwelle für den nächsten. Schritt **und Boden** sind Stufenwerte. |
+| **Beschleunigung** | Wechsel senken die Schwelle für den nächsten. Die Leiter ist das **Tempo**; Episch klingt dazu länger nach. |
 
 **Startwerte:**
 
@@ -449,7 +450,9 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | **Runde** · echte Wechsel bis alle vier klingen | 6 | 5 | 4 | 3 |
 | **Runde** · Stiche, die sie gleichzeitig klingen | 3 | 3 | 3 | 5 |
-| **Beschleunigung** · Schritt · Boden der Schwelle | −1 · 4 | −1 · 3 | −1 · 2 | −2 · 2 |
+| **Beschleunigung** · Schwellen-Senkung je Wechsel | jeder 2. −1 | −1 | −2 | −2 |
+| **Beschleunigung** · Boden der Schwelle | 2 | 2 | 2 | 2 |
+| **Beschleunigung** · Nachklang jeder Haltung | — | — | — | +1 Stich |
 
 **Anklang hat mit §6.14 einen eigenen Körper bekommen** (Owner). Vorher verlängerte er nur, wie lange etwas
 anderes gilt — sein ganzer Wert war der Wert fremder Passive, und gemessen kam nichts dabei heraus. Jetzt
@@ -461,9 +464,22 @@ gestapelt** (sonst zahlte Hin-und-Her doppelt); der **Einklang zahlt nicht** (do
 ein Wechsel stattgefunden hat); und die Decke ist eine Decke — Basis-Score gibt es nur auf einem **Sieg**, bei
 rund 57 % Siegquote bringt Episch also eher 450 als 800.
 
-**Beschleunigungs Boden geht nicht auf 1**: bei Schwelle 1 löst jede Farbe mit ihrem ersten Sieg aus, und
-dann klingen dauerhaft drei bis vier Haltungen (§6.7). Boden 2 macht die Rotation sehr schnell, ohne in
-diesen Zustand zu kippen.
+**Neudesign §5.3, Beschleunigung (Owner):** *„Jeder zweite Haltungswechsel braucht 1 Stich weniger, jeder
+Haltungswechsel 1 Stich weniger, jeder Haltungswechsel 2 Stiche weniger, Episch 2 Stiche weniger und Nachklang
+1 Stich länger."*
+
+Die Leiter staffelt damit das **Tempo**, nicht mehr das Ziel: alle vier Stufen kommen am selben Boden an, nur
+verschieden schnell. Dazu bekommt Episch als einziger Rotations-Skill einen **längeren Nachklang** — und weil
+Anklangs Fenster genau so lang ist wie der Nachklang, verlängert dieselbe Zahl auch das. Gewollt: es ist
+dieselbe Zahl.
+
+**Angenommen, nicht gesagt:** den Boden hat der Owner nicht genannt. Er steht jetzt auf allen Stufen bei **2**.
+Er darf nicht auf 1: bei Schwelle 1 löst jede Farbe mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei
+bis vier Haltungen (§6.7). Boden 2 macht die Rotation sehr schnell, ohne in diesen Zustand zu kippen.
+
+**Gewicht, das sich nebenbei verschoben hat:** seit die Leiste weg ist (§3.1), hängt die Stufe an schneller
+Rotation. Beschleunigung ist damit der Skill, der den Sammler auch **ohne Runde** erreichbar macht — er hat an
+Bedeutung gewonnen, ohne dass sich eine seiner Zahlen dafür geändert hätte.
 
 **Neudesign §5.3, Runde (Owner):** *„Ja, Sammler, mit allen 4 klingen aber als Bedingung. Nach x (Leiter)
 Wechseln klingen alle 4 Haltungen gleichzeitig für x (Leiter für Episch) Stiche."*

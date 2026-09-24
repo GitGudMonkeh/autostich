@@ -665,6 +665,30 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     // Ein Selbst-Auslösen senkt NICHTS — nur echte Wechsel zählen (Owner).
     const self = stanceTick({ ...st(), counts: { R: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "R" }).stance;
     expect(self.threshold).toBe(C.STANCE_THRESHOLD);
+    /* §5.3: die Leiter staffelt das TEMPO. Normal senkt nur JEDEN ZWEITEN Wechsel, die übrigen jeden; der Boden
+       ist überall derselbe, also kommen alle Stufen am selben Ziel an, nur verschieden schnell. */
+    for (let t = 0; t < 4; t++) expect(T.beschleunigung[t].floor, `Stufe ${t}`).toBe(T.beschleunigung[0].floor);
+    const after = (tier, n) => {
+      let s = st();
+      for (let i = 0; i < n; i++) {
+        const c = STANCE_SUITS[(i + 1) % 4];
+        s = stanceTick({ ...s, counts: { ...s.counts, [c]: s.threshold - 1 } }, skills, { [S.BESCHLEUNIGUNG]: tier }, { wonSuit: c }).stance;
+      }
+      return s.threshold;
+    };
+    expect(after(0, 1)).toBe(C.STANCE_THRESHOLD);              // Normal: der erste Wechsel senkt noch nichts
+    expect(after(0, 2)).toBe(C.STANCE_THRESHOLD - 1);          // … erst der zweite
+    expect(after(1, 1)).toBe(C.STANCE_THRESHOLD - 1);          // Selten: jeder Wechsel
+    expect(after(2, 1)).toBe(C.STANCE_THRESHOLD - 2);          // Sehr selten: gleich zwei
+    expect(after(0, 12)).toBe(T.beschleunigung[0].floor);      // alle landen am selben Boden
+    expect(after(3, 12)).toBe(T.beschleunigung[3].floor);
+    // Episch klingt zusätzlich einen Stich länger nach — dieselbe Zahl trägt auch Anklangs Fenster.
+    expect(T.beschleunigung[3].echoPlus).toBe(1);
+    expect(minDuration(skills, { [S.BESCHLEUNIGUNG]: 3 })).toBe(C.STANCE_MIN_DURATION + T.beschleunigung[3].echoPlus);
+    expect(minDuration(skills, {})).toBe(C.STANCE_MIN_DURATION);
+    const long = stanceTick(st({ counts: { B: C.STANCE_THRESHOLD - 1 } }), skills, { [S.BESCHLEUNIGUNG]: 3 }, { wonSuit: "B" }).stance;
+    expect(long.ring.R).toBe(C.STANCE_MIN_DURATION + T.beschleunigung[3].echoPlus);
+    expect(long.echo).toBe(C.STANCE_MIN_DURATION + T.beschleunigung[3].echoPlus);
   });
 });
 
