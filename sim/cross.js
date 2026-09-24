@@ -1,6 +1,6 @@
-// Cross-Archetype-Diagnose (--mode cross): GEMISCHTE Builds (2–3 Fraktionen) vs. reine Fraktionen + Mix.
-// Nutzt die Multi-Target-factionPolicy (Slot-Split → 6 Slots: Paar 3+3, Tripel 2+2+2); alles außer der
-// Skill-Wahl läuft über die Random-Baseline → apfel-zu-apfel wie --mode balance.
+// Cross-Archetype-Diagnose (--mode cross): GEMISCHTE Builds (2–4 Fraktionen) vs. reine Fraktionen + Mix.
+// Nutzt die Multi-Target-factionPolicy (Slot-Split → 6 Slots: Paar 3+3, Tripel 2+2+2, Quartett 2+2+1+1);
+// alles außer der Skill-Wahl läuft über die Random-Baseline → apfel-zu-apfel wie --mode balance.
 //
 // KERN-KENNZAHL je Kombi: Floor(Median) ÷ Floor des BESTEN reinen Members ("vs.bReiner").
 //   ≈ 1,0  → Spezialisieren vs. Mischen bleibt gesund (Referenz vor Rework ≈ 1,03×).
@@ -20,11 +20,11 @@ const mean = (a) => a.reduce((t, v) => t + v, 0) / a.length;
 const quantile = (a, q) => { const s = [...a].sort((x, y) => x - y); const i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo); };
 const fmt = (n) => Math.round(n).toLocaleString("de-DE");
 
-const ARCHES = ["fire", "lightning", "ice", "plant"];
-const NAME  = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
-const SHORT = { fire: "Fe", lightning: "Bl", ice: "Ei", plant: "Pf" };
+const ARCHES = ["fire", "lightning", "ice", "plant", "stance"];
+const NAME  = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze", stance: "Prisma" };
+const SHORT = { fire: "Fe", lightning: "Bl", ice: "Ei", plant: "Pf", stance: "Pr" };
 
-// alle k-elementigen Teilmengen von arr (C(4,2)=6 Paare, C(4,3)=4 Tripel).
+// alle k-elementigen Teilmengen von arr (C(5,2)=10 Paare, C(5,3)=10 Tripel, C(5,4)=5 Quartette).
 function combos(arr, k) {
   if (k === 0) return [[]];
   if (k > arr.length) return [];
@@ -32,8 +32,9 @@ function combos(arr, k) {
   return [...combos(rest, k - 1).map((c) => [head, ...c]), ...combos(rest, k)];
 }
 
-function measure(policy, runs, seed0) {
-  const results = Array.from({ length: runs }, (_, i) => runOne(seed0 + i, policy));
+function measure(policy, runs, seed0, world = null) {
+  const opts = world ? { archetypes: world } : {};
+  const results = Array.from({ length: runs }, (_, i) => runOne(seed0 + i, policy, null, null, opts));
   const scores = results.map((r) => r.score);
   return {
     scores,
@@ -45,23 +46,31 @@ function measure(policy, runs, seed0) {
   };
 }
 
+/* --world own (Default) | all — aus welchem Topf zieht das Skill-Angebot?
+   „own": jeder Build bekommt GENAU seine Mitglieder ins Angebot (Mono 1, Paar 2, Tripel 3, Quartett 4). So lief
+   die Bestandsmessung in docs/haltungen-fraktion.md §6.11/§6.12, und nur so sind die Zeilen dort vergleichbar.
+   Jeder Build füllt seine Slots voll auf Ziel — verglichen wird der BUILD, nicht das Angebotsglück.
+   „all": alle fünf Fraktionen im Topf, die Policy filtert (die historische cross-Welt, damals mit vier).
+   Der Mix läuft IMMER im vollen Fünfer-Topf — er ist die unbiaste Referenz und hat keine Mitglieder. */
 export function runCross({ arg, seed0 } = {}) {
   const runs = Number((arg && arg("--runs", 120)) || 120);
   const wantDist = arg && arg("--dist", "");
-  console.log(`\n=== CROSS-ARCHETYPE (Multi-Target Slot-Split, ${runs} Runs, Seeds ${seed0}..${seed0 + runs - 1}) ===`);
+  const ownWorld = (arg && arg("--world", "own")) !== "all";
+  const worldFor = (members) => (ownWorld ? members : ARCHES);
+  console.log(`\n=== CROSS-ARCHETYPE (Multi-Target Slot-Split, ${runs} Runs, Seeds ${seed0}..${seed0 + runs - 1}, Angebot: ${ownWorld ? "eigene Mitglieder je Build" : "alle fünf Fraktionen"}) ===`);
 
-  // Alle 16 Builds messen: reine Fraktionen + Mix + Kombis (Paare, Tripel & der 4er-Quad) — gleiche Seeds.
-  // Der Quad (Fe+Bl+Ei+Pf) ist der BIASED, solver-gespielte 4-Fraktions-Build (Slot-Split ~2+2+1+1 über 6 Slots) —
-  // das gezielte Gegenstück zum unbiasten „Mix (Random)". Er misst die Quad-Synergie-Decke, die MAX_ARCHETYPES=4 im
-  // Live-Spiel überhaupt erst zulässt (die Paare/Tripel deckten das nicht ab → AP5-Gegenprobe).
+  // Alle 31 Builds messen: 5 reine Fraktionen + Mix + Kombis (10 Paare, 10 Tripel, 5 Quartette) — gleiche Seeds.
+  // Die Quartette sind die BIASED, solver-gespielten 4-Fraktions-Builds (Slot-Split ~2+2+1+1 über 6 Slots) — das
+  // gezielte Gegenstück zum unbiasten „Mix (Random)". Sie messen die Synergie-Decke, die MAX_ARCHETYPES=4 im
+  // Live-Spiel überhaupt erst zulässt; bei fünf Fraktionen ist jedes Quartett zugleich ein „ohne X".
   const pure = {};
-  for (const a of ARCHES) pure[a] = measure(factionPolicy(a), runs, seed0);
-  const mix = measure(randomPolicy(), runs, seed0);
+  for (const a of ARCHES) pure[a] = measure(factionPolicy(a), runs, seed0, worldFor([a]));
+  const mix = measure(randomPolicy(), runs, seed0, ARCHES);
   const mixFloor = mix.median;
   const pureFloorMax = (members) => Math.max(...members.map((a) => pure[a].median));
 
   const comboRows = [...combos(ARCHES, 2), ...combos(ARCHES, 3), ...combos(ARCHES, 4)]
-    .map((members) => ({ members, m: measure(factionPolicy(members), runs, seed0) }))
+    .map((members) => ({ members, m: measure(factionPolicy(members), runs, seed0, worldFor(members)) }))
     .map(({ members, m }) => ({ members, m, vsPure: m.median / pureFloorMax(members), vsMix: m.median / mixFloor }))
     .sort((a, b) => b.m.median - a.m.median);
 
@@ -76,7 +85,7 @@ export function runCross({ arg, seed0 } = {}) {
   }
   console.log(`  ${"Mix (Random)".padEnd(15)} ${fmt(mix.median).padStart(9)}  1,00×    —        ${fmt(mix.p90).padStart(9)} ${fmt(mix.p95).padStart(9)} ${(mix.winrate * 100).toFixed(1).padStart(5)}%`);
 
-  console.log(`\n  — Kombis (Paare 3+3 · Tripel 2+2+2 · Quad 2+2+1+1), nach Floor —`);
+  console.log(`\n  — Kombis (Paare 3+3 · Tripel 2+2+2 · Quartette 2+2+1+1), nach Floor —`);
   console.log(hdr);
   for (const { members, m, vsPure, vsMix } of comboRows) {
     const label = members.map((a) => SHORT[a]).join("+");
@@ -94,7 +103,7 @@ export function runCross({ arg, seed0 } = {}) {
   console.log(`  Top-Floor-Kombi:   ${topFloor.members.map((a) => SHORT[a]).join("+")} — ${fmt(topFloor.m.median)} (${topFloor.vsPure.toFixed(2)}× bReiner, ${topFloor.vsMix.toFixed(2)}× Mix)`);
   console.log(`  Top-Ceiling-Kombi: ${topCeil.members.map((a) => SHORT[a]).join("+")} — p90 ${fmt(topCeil.m.p90)} / p95 ${fmt(topCeil.m.p95)}`);
 
-  // Alle 15 Builds in EINE Liste (für Verteilungs-/Elite-Analyse).
+  // Alle Builds in EINE Liste (für Verteilungs-/Elite-Analyse).
   const all = [
     ...ARCHES.map((a) => ({ label: NAME[a], m: pure[a] })),
     { label: "Mix", m: mix },
