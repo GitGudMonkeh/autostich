@@ -246,7 +246,7 @@ export function runMotor({ arg, seed0, write } = {}) {
   }
   if (only.includes("stance")) {
     console.log(`\n=== MOTOR Haltungen — die Rotation im Lauf (${runs} Läufe, Seeds ${seed0}..${seed0 + runs - 1}, Welt nur Prisma) ===`);
-    console.log(`  Mechanismus: ${C.STANCE_THRESHOLD} gewonnene Stiche einer GRUNDFARBE wechseln die Haltung · Mindestdauer ${C.STANCE_MIN_DURATION} Stiche · Rot rutscht die Leiter · Blau +${Math.round(C.STANCE_CRIT * 100)} % Crit · Gelb ×${C.STANCE_SCORE_MULT} · Grün färbt ab`);
+    console.log(`  Mechanismus: ${C.STANCE_THRESHOLD} gewonnene Stiche einer GRUNDFARBE wechseln die Haltung · Mindestdauer ${C.STANCE_MIN_DURATION} Stiche · Rot rutscht die Leiter · Blau +${Math.round(C.STANCE_CRIT * 100)} % Crit · Gelb ×${C.STANCE_SCORE_MULT} · Grün +${C.STANCE_GREEN_PER_FORM} je Formation im Segment`);
     console.log(`  Build                  Median      Siegq.  Wechsel  Stiche/W.  Ø klingend   1 / 2 / 3 / 4 Haltungen           gerutscht  Crit   ×Gelb  ×Form  Form-Siege  Flat-Anteil  Runden`);
     payload.stance = {};
     for (const [name, make] of STANCE_BUILDS) {
@@ -270,7 +270,7 @@ export function runMotor({ arg, seed0, write } = {}) {
       console.log(`    Einklang ${row.einklang.toFixed(1)}× je Lauf · Stufe am Ende ${row.level.toFixed(1)} → ×${(1 + row.level * C.STANCE_STEP).toFixed(2)} auf jeden Sieg`);
     }
     console.log(`  Lesart: „Ø klingend" = wie viele der vier Haltungen im Mittel gleichzeitig klingen (1 = nie Überlappung, 4 = dauernd alle).`);
-    console.log(`  „gerutscht" = Anteil der Stiche, die die rote Leiter eine Stufe gehoben hat; „×Gelb" = Score-Faktor der gelben Haltung je Sieg; „×Form" = Formations-Faktor je Sieg (die grüne Haltung steckt darin).`);
+    console.log(`  „gerutscht" = Anteil der Stiche, die die rote Leiter eine Stufe gehoben hat; „×Gelb" = der ganze Fraktions-Faktor je Sieg (Gelb, Stufe UND Grün stecken seit §5.3 darin); „×Form" = Formations-Faktor je Sieg, den Grün nur noch ABLIEST.`);
     console.log(`  „Flat-Anteil" = Genugtuung + Runde + entladener Stau am Score; „Runden" = vollendete Vier-Farben-Runden je Lauf.`);
   }
   if (write) write(payload);
