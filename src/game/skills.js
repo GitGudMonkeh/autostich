@@ -190,13 +190,16 @@ const HALTUNG = {
   // belohnt, DRIN zu sein, Stauung belohnt, dass es ENDET.
   // §5.3 (Owner, zweite Runde): EINE Zahl. Der größte Sieg der gelben Haltung zahlt am Ende noch einmal, `peak` ist
   // der Satz je Stich Laufzeit. Das Bunkern samt Faktor und Durchlauf-Ende-Extra ist gestrichen („macht zuviel").
-  stauung:        [{ peak: 0.10 }, { peak: 0.15 }, { peak: 0.20 }, { peak: 0.30 }],
+  // §6.16: mono +35 % (drittstärkster) → −20 %. Die Auszahlung geht am Multiplikator vorbei direkt auf den Score.
+  stauung:        [{ peak: 0.08 }, { peak: 0.12 }, { peak: 0.16 }, { peak: 0.24 }],
   // §5.3 (Owner): alle vier Sätze ×10. Auf 0,02 war Campen eine Geste ohne Gewicht — die gelbe Haltung lebt
   // typisch 4–7 Stiche, das waren +0,08…+0,42 auf einer Basis von ×1,4.
-  beharrlichkeit: [{ perTrick: 0.2 }, { perTrick: 0.3 }, { perTrick: 0.4 }, { perTrick: 0.6 }],
+  // §6.16: stärkster Skill der Fraktion (mono +48 %, 5/6 Welten) → −25 %. Die Leiterform bleibt.
+  beharrlichkeit: [{ perTrick: 0.15 }, { perTrick: 0.22 }, { perTrick: 0.3 }, { perTrick: 0.45 }],
   // §5.3 (Owner): verdoppelt (0,15/0,25/0,35/0,5 → 0,3/0,5/0,7/1,0). Höchstens drei zusätzliche Haltungen klingen
   // je gleichzeitig, und drei gibt es nur im Einklang oder nach dichten Wechseln — der Satz trug entsprechend wenig.
-  mitklang:       [{ perStance: 0.3 }, { perStance: 0.5 }, { perStance: 0.7 }, { perStance: 1.0 }],
+  // §6.16: 6/6 Welten positiv, aber nur +4 %, und als einziger fällt Episch unter Sehr selten → +35 %.
+  mitklang:       [{ perStance: 0.4 }, { perStance: 0.65 }, { perStance: 0.9 }, { perStance: 1.4 }],
   // Crit-Linie (blau).
   // §5.3 (Owner): Werte angehoben (8/12/17/25 → 12/18/26/40), Episch bekommt einen Crit-Multiplikator obendrauf,
   // und der Ausschluss gegen das blaue Passiv ist weg — beides gilt jetzt in JEDER Haltung und addiert sich auf die
@@ -205,19 +208,26 @@ const HALTUNG = {
   // §5.3 (Owner): Übertrag arbeitet nicht mehr auf der Crit-CHANCE, sondern auf dem MULTIPLIKATOR — der Hebel, den
   // die blaue Linie sonst gar nicht hatte. `step` je Crit der Haltung; Größenordnung an Blitz geeicht (ein
   // Ionen-Stapel ist +0,15). STARTWERTE.
-  uebertrag:      [{ step: 0.10 }, { step: 0.15 }, { step: 0.20 }, { step: 0.30 }],
+  // §6.16: schwächster Skill der Fraktion (mono −7 %, 2/6 Welten) → verdoppelt. Er sitzt additiv vor dem
+  // Crit-Weichdeckel und teilt sich die Achse mit Grundrauschen, Präzision und Blitz — der Satz muss dagegen an.
+  uebertrag:      [{ step: 0.20 }, { step: 0.30 }, { step: 0.40 }, { step: 0.60 }],
   schwungrad:     [{ max: 2 }, { max: 3 }, { max: 5 }, { max: 8 }],
   /* Überlappungs-Linie (grün) — §5.3 komplett neu (Owner). Das Passiv ist jetzt eine Zahl: Summe der Formationen
      über das Fenster um die Siegposition, je Formation STANCE_GREEN_PER_FORM Score-Multiplikator. Die drei Skills
      greifen an drei verschiedenen Stellen derselben Rechnung an — Fenster, Zählung, Satz. Alles STARTWERTE. */
-  doppelbindung:  [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 5 }],
-  uebergriff:     [{ reach: 1 }, { reach: 2 }, { reach: 3 }, { reach: 5 }],
-  verankerung:    [{ plus: 0.05 }, { plus: 0.08 }, { plus: 0.12 }, { plus: 0.20 }],
+  /* §6.16: die grüne Linie trägt nichts (+1 / +0 / −5 % mono). Doppelbindungs Normal hatte mit 0,41 den
+     schlechtesten Stufen-Lift der ganzen Tabelle — die drei unteren Sprossen steigen, Episch deckt das Segment
+     schon ganz ab. Übergriffs Fenster und Verankerungs Satz wachsen auf ganzer Breite. */
+  doppelbindung:  [{ cards: 2 }, { cards: 3 }, { cards: 4 }, { cards: 5 }],
+  uebergriff:     [{ reach: 2 }, { reach: 3 }, { reach: 4 }, { reach: 6 }],
+  verankerung:    [{ plus: 0.08 }, { plus: 0.13 }, { plus: 0.20 }, { plus: 0.32 }],
   // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
   // und sie strukturell nicht weglaufen kann (§6.5).
   // §5.3 (Owner): Genugtuung zahlt nicht mehr sofort je Punkt Rückstand, sondern im NACHKLANG je gedrehtem Stich —
   // und die Sätze sind verdreifacht (25/40/55/80 → 75/120/165/240).
-  genugtuung:     [{ score: 75 }, { score: 120 }, { score: 165 }, { score: 240 }],
+  // §6.16: mono −7 %, 2/6 Welten → verdoppelt. `turns` fällt mit dem Ende von Rot, der Zähler wird also selten
+  // groß; der Satz je gedrehtem Stich muss das Fenster allein tragen.
+  genugtuung:     [{ score: 150 }, { score: 240 }, { score: 330 }, { score: 480 }],
   // §5.3 (Owner): kein Ein-Stich-Bonus nach jedem Rutscher mehr, sondern ein FENSTER nach dem Ende der roten
   // Haltung. Die Leiter ist die Zahl der Karten; Episch hebt zusätzlich den Wert (4 → 6).
   rueckhalt:      [{ cards: 6, value: 4 }, { cards: 7, value: 4 }, { cards: 8, value: 4 }, { cards: 10, value: 6 }],
@@ -226,18 +236,24 @@ const HALTUNG = {
   // tatsächlich etwas dreht.
   // Episch hebt zusätzlich den SATZ des Serien-Multiplikators (Owner: „ein kleines bisschen"). Der Satz, nicht das
   // Ergebnis — der Deckel bei +150 % bleibt stehen, Episch erreicht ihn nur früher (Serie 60 statt 75).
-  kehrtwende:     [{ max: 3, streak: 1 }, { max: 4, streak: 2 }, { max: 6, streak: 3 }, { max: 10, streak: 4, streakStep: 0.005 }],
+  // §6.16: im Trio −11 %, 2/6 Welten. Nur die Serienpunkte steigen — der Serien-Deckel (+150 %) begrenzt sie von
+  // selbst, die Verlängerung `max` bleibt deshalb stehen.
+  kehrtwende:     [{ max: 3, streak: 2 }, { max: 4, streak: 3 }, { max: 6, streak: 4 }, { max: 10, streak: 6, streakStep: 0.005 }],
   // Rotation — wirkt über alle Haltungen. Beschleunigungs Boden geht NICHT auf 1: bei Schwelle 1 löst jede Farbe
   // mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei bis vier Haltungen (§6.7).
   // §5.3 (Owner): Anklang hatte keinen eigenen Körper — er verlängerte nur, wie lange etwas anderes gilt. Jetzt
   // zahlen die Stiche im Fenster selbst. Der Satz ist flach, die Stufe ist die LÄNGE: 400 / 500 / 600 / 800 als
   // Decke, erreichbar nur mit lauter Siegen (Basis-Score gibt es nur auf einem Sieg).
-  anklang:        [{ duration: 4, score: 100 }, { duration: 5, score: 100 }, { duration: 6, score: 100 }, { duration: 8, score: 100 }],
+  // §6.16: mono +46 % (zweitstärkster) → Satz −25 %. Die LÄNGE bleibt die Stufe (Owner), sie füttert die ganze
+  // Fraktion; gekürzt wird nur, was der Skill selbst auszahlt.
+  anklang:        [{ duration: 4, score: 75 }, { duration: 5, score: 75 }, { duration: 6, score: 75 }, { duration: 8, score: 75 }],
   /* §5.3 (Owner): die Leiste als Grundmechanik ist weg — Runde IST jetzt der Einklang. Nach `switches` echten
      Wechseln klingen alle vier Haltungen gleichzeitig; Episch hält den Moment länger. Die Stufe hängt nicht mehr
      am Skill, sondern am Zustand „alle vier klingen" (stance.js) — ein Build ohne Runde kann sie also durch
      schnelles Rotieren auch erreichen, nur schwerer. STARTWERTE. */
-  runde:          [{ switches: 6 }, { switches: 5 }, { switches: 4 }, { switches: 3, duration: 5 }],
+  // §6.16: mit +31 % über 6/6 Welten der stärkste Skill im Mischbuild → jede Sprosse einen Wechsel teurer.
+  // Episch behält den längeren Moment; gedämpft wird die Frequenz, nicht der Moment.
+  runde:          [{ switches: 7 }, { switches: 6 }, { switches: 5 }, { switches: 4, duration: 5 }],
   /* §5.3 (Owner): die Leiter staffelt Tempo UND Ziel — jeder zweite Wechsel −1, jeder −1, jeder −2, Episch −2
      plus einen Stich längeren Nachklang; Boden 4/4/3/3 (Owner). Er geht bewusst nicht tiefer: bei Schwelle 1
      löste jede Farbe mit ihrem ersten Sieg aus, und es klängen dauerhaft drei bis vier Haltungen (§6.7). */

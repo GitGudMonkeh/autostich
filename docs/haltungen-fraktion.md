@@ -1,10 +1,10 @@
 # Haltungen — Fraktion 5 (Arbeitsdokument)
 
-> **Status: lebendes Dokument, gebaut und erstmals gemessen.** Der Mechanismus und die vier Passive sind vom
-> Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der Sim
-> (`--mode motor --arch stance`, `--mode skills --arch stance`); die Zahlen stehen in **§6.8** (der Mechanismus
-> im Lauf) und **§6.9** (die 15 Skills). **Nichts ist tariert** — alle Werte in §3 und §5 sind unverändert
-> Startwerte, und die Messung sagt, an welchen drei Stellen zuerst zu drehen ist (§10).
+> **Status: lebendes Dokument, gebaut, gemessen, erstmals tariert.** Der Mechanismus und die vier Passive sind
+> vom Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der Sim
+> (`--mode motor/skills/cross --arch stance`); die aktuellen Zahlen stehen in **§6.15** (Duos, Trios,
+> Quartette) und **§6.16** (die 15 Skills). **§6.17 ist die erste Tarierrunde** — elf Stufentabellen gedreht,
+> vier Skills unangetastet, **noch nicht nachgemessen**.
 >
 > Stand: 2026-09-22 · Basis: `origin/exp` · Vorgänger: `docs/fraktion-5-brainstorm.md` (die sechs
 > Richtungen und die Landkarte des freien Designraums; diese Fraktion ist keine davon, sondern ein
@@ -189,7 +189,7 @@ Faktor 2 bis 14 unter dem Feld (§6.8 A). Der Sammler, der das behebt, hing bis 
 | --- | --- | --- |
 | Stufe steigt bei | alle vier klingen gleichzeitig | — die Bedingung selbst ist der Regler |
 | Einklang dauert | 3 Stiche | **Runde** Episch: 5 |
-| Runde zündet nach | — *(ohne den Skill nie)* | **Runde**: 6 / 5 / 4 / 3 Wechsel |
+| Runde zündet nach | — *(ohne den Skill nie)* | **Runde**: 7 / 6 / 5 / 4 Wechsel |
 | Stufe gibt | **×1,02** auf jeden Sieg-Score | der Satz je Stufe ist der Haupt-Regler |
 
 **Was der Tausch ändert.** Der Sammler ist nicht mehr automatisch: er gehört jetzt dem, der die Fraktion
@@ -256,20 +256,20 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 
 | Linie | Skill · Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
-| **Score** (gelb) | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
-| | **Beharrlichkeit** · je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
-| | **Mitklang** · je zusätzlich klingender Haltung | +0,3 | +0,5 | +0,7 | +1,0 |
+| **Score** (gelb) | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +8 % | +12 % | +16 % | +24 % |
+| | **Beharrlichkeit** · je Stich Laufzeit | +0,15 | +0,22 | +0,3 | +0,45 |
+| | **Mitklang** · je zusätzlich klingender Haltung | +0,4 | +0,65 | +0,9 | +1,4 |
 | **Crit** (blau) | **Grundrauschen** · Crit-Chance, in jeder Haltung | +12 % | +18 % | +26 % | +40 % + *Crit-Mult +0,5* |
-| | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
+| | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,20 | +0,30 | +0,40 | +0,60 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
-| **Überlappung** (grün) | **Doppelbindung** · doppelt zählende Karten | 1 | 2 | 3 | alle 5 |
-| | **Übergriff** · Karten über jede Segmentgrenze hinaus | 1 | 2 | 3 | 5 |
-| | **Verankerung** · Zuschlag auf den Satz je Formation | +0,05 | +0,08 | +0,12 | +0,20 |
-| **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
+| **Überlappung** (grün) | **Doppelbindung** · doppelt zählende Karten | 2 | 3 | 4 | alle 5 |
+| | **Übergriff** · Karten über jede Segmentgrenze hinaus | 2 | 3 | 4 | 6 |
+| | **Verankerung** · Zuschlag auf den Satz je Formation | +0,08 | +0,13 | +0,20 | +0,32 |
+| **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 150 | 240 | 330 | 480 |
 | | **Rückhalt** · Karten nach dem Ende der Haltung · Stichwert | 6 · +4 | 7 · +4 | 8 · +4 | 10 · +6 |
-| | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
-| **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
-| | **Runde** · Wechsel bis alle vier klingen · Dauer | 6 · 3 | 5 · 3 | 4 · 3 | 3 · 5 |
+| | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +2 · 3× | +3 · 4× | +4 · 6× | +6 · 10× + *Serien-Satz +0,5 %* |
+| **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +75 Basis-Score) | 4 | 5 | 6 | 8 |
+| | **Runde** · Wechsel bis alle vier klingen · Dauer | 7 · 3 | 6 · 3 | 5 · 3 | 4 · 5 |
 | | **Beschleunigung** · Senkung je Wechsel · Boden | jeder 2. −1 · 4 | −1 · 4 | −2 · 3 | −2 · 3 + *Nachklang +1* |
 
 **Drei Leitern sind Deckel statt Rampen** — Schwungrad, Kehrtwende und Beschleunigungs Boden. Das ist
@@ -290,9 +290,9 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +10 % | +15 % | +20 % | +30 % |
-| **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,2 | +0,3 | +0,4 | +0,6 |
-| **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,3 | +0,5 | +0,7 | +1,0 |
+| **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +8 % | +12 % | +16 % | +24 % |
+| **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,15 | +0,22 | +0,3 | +0,45 |
+| **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,4 | +0,65 | +0,9 | +1,4 |
 
 **Neudesign §5.3 (Owner), in zwei Schritten.** Zuerst: *„Der größte gestaute Stich zahlt doppelt —
 aber nicht doppelt, sondern skaliert mit der Länge der gelben Haltung."* Dann, auf die gebaute
@@ -346,25 +346,31 @@ klingen höchstens **drei** zusätzliche Haltungen gleichzeitig, und drei gibt e
 direkt nach dichten Wechseln — der alte Satz trug entsprechend wenig. Was er jetzt trägt (Basis
 `×1,4`):
 
+**§6.16 hat noch einmal um 35 % angehoben** (`+0,3/0,5/0,7/1,0` → `+0,4/0,65/0,9/1,4`): 6 von 6 Welten
+positiv, aber nur +4 %, und als einziger Skill der Tabelle fiel Episch unter Sehr selten. Was er jetzt trägt:
+
 | zusätzlich klingend | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| 1 | ×1,7 | ×1,9 | ×2,1 | ×2,4 |
-| 2 | ×2,0 | ×2,4 | ×2,8 | ×3,4 |
-| 3 *(alle vier)* | ×2,3 | ×2,9 | ×3,5 | ×4,4 |
+| 1 | ×1,8 | ×2,05 | ×2,3 | ×2,8 |
+| 2 | ×2,2 | ×2,7 | ×3,2 | ×4,2 |
+| 3 *(alle vier)* | ×2,6 | ×3,35 | ×4,1 | ×5,6 |
 
 **Neudesign §5.3, Beharrlichkeit (Owner): alle vier Sätze ×10** (vorher `+0,02 / 0,03 / 0,04 / 0,06`). Auf den alten
 Werten war Campen eine Geste ohne Gewicht: die gelbe Haltung lebt typisch 4–7 Stiche, das waren
 `+0,08 … +0,42` auf einer Basis von `×1,4`. Was der Satz jetzt trägt:
 
+**§6.16 hat um 25 % zurückgenommen** (`+0,2/0,3/0,4/0,6` → `+0,15/0,22/0,3/0,45`): mit mono +48 % und
+5 von 6 Welten war er der stärkste Skill der Fraktion. Was der Satz jetzt trägt:
+
 | Laufzeit | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| 5 Stiche | ×2,4 | ×2,9 | ×3,4 | ×4,4 |
-| 10 Stiche | ×3,4 | ×4,4 | ×5,4 | ×7,4 |
-| 20 Stiche | ×5,4 | ×7,4 | ×9,4 | ×13,4 |
+| 5 Stiche | ×2,15 | ×2,5 | ×2,9 | ×3,65 |
+| 10 Stiche | ×2,9 | ×3,6 | ×4,4 | ×5,9 |
+| 20 Stiche | ×4,4 | ×5,8 | ×7,4 | ×10,4 |
 
 **Warnung, jetzt zehnmal so scharf:** in einem harten Block-Build kann eine Haltung sehr lang laufen,
-potenziell einen ganzen Durchlauf. Beharrlichkeit hätte dann 30+ Schritte — auf Episch `+18,0`, also
-`×19,4` statt der früheren `×3,2`. Das ist die Stelle, an der diese Linie wegläuft, falls sie
+potenziell einen ganzen Durchlauf. Beharrlichkeit hätte dann 30+ Schritte — auf Episch `+13,5`, also
+`×14,9` statt der früheren `×3,2`. Das ist die Stelle, an der diese Linie wegläuft, falls sie
 wegläuft. Weiterhin bewusst ohne Deckel, weil das Raster sagt: lieber niedrigere Werte als Deckel auf
 Rampen — der Satz ist damit der einzige Regler, und er steht jetzt hoch.
 
@@ -384,7 +390,7 @@ Passiv: durchgehend 50 % Crit-Chance, solange sie klingt.
 | --- | --- | --- | --- | --- |
 | **Grundrauschen** · Crit-Chance, in jeder Haltung | +12 % | +18 % | +26 % | +40 % |
 | **Grundrauschen** · Crit-Multiplikator, in jeder Haltung | — | — | — | +0,5 |
-| **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
+| **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,20 | +0,30 | +0,40 | +0,60 |
 | **Schwungrad** · Verlängerungen je Haltung | höchstens 2× | 3× | 5× | 8× |
 
 **Schwungrads Deckel ist der Stufenwert** — damit ist die Runaway-Rechnung aus §6.4 in der Tabelle
@@ -442,8 +448,8 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
-| **Runde** · echte Wechsel bis alle vier klingen | 6 | 5 | 4 | 3 |
+| **Anklang** · Nachklang-Stiche (je +75 Basis-Score) | 4 | 5 | 6 | 8 |
+| **Runde** · echte Wechsel bis alle vier klingen | 7 | 6 | 5 | 4 |
 | **Runde** · Stiche, die sie gleichzeitig klingen | 3 | 3 | 3 | 5 |
 | **Beschleunigung** · Schwellen-Senkung je Wechsel | jeder 2. −1 | −1 | −2 | −2 |
 | **Beschleunigung** · Boden der Schwelle | 4 | 4 | 3 | 3 |
@@ -451,13 +457,13 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 
 **Anklang hat mit §6.14 einen eigenen Körper bekommen** (Owner). Vorher verlängerte er nur, wie lange etwas
 anderes gilt — sein ganzer Wert war der Wert fremder Passive, und gemessen kam nichts dabei heraus. Jetzt
-zahlen die Stiche im Fenster selbst: **+100 Basis-Score je Stich**, also 400 / 500 / 600 / **800** als Decke.
-Der Satz ist flach, die STUFE ist die Länge.
+zahlen die Stiche im Fenster selbst: **+75 Basis-Score je Stich** (§6.16: von 100 gekürzt, mono +46 % und
+damit zweitstärkster), also 300 / 375 / 450 / **600** als Decke. Der Satz ist flach, die STUFE ist die Länge.
 
 Drei Dinge, die die Regel festlegt: das Fenster wird bei einem zweiten Wechsel **aufgefrischt, nicht
 gestapelt** (sonst zahlte Hin-und-Her doppelt); der **Einklang zahlt nicht** (dort klingen alle vier, ohne dass
 ein Wechsel stattgefunden hat); und die Decke ist eine Decke — Basis-Score gibt es nur auf einem **Sieg**, bei
-rund 57 % Siegquote bringt Episch also eher 450 als 800.
+rund 57 % Siegquote bringt Episch also eher 340 als 600.
 
 **Neudesign §5.3, Beschleunigung (Owner):** *„Jeder zweite Haltungswechsel braucht 1 Stich weniger, jeder
 Haltungswechsel 1 Stich weniger, jeder Haltungswechsel 2 Stiche weniger, Episch 2 Stiche weniger und Nachklang
@@ -518,9 +524,9 @@ Bonus = 1 + Satz × Summe der Formationen im Fenster um die Siegposition
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | *(Passiv)* · Satz je gezählter Formation | — | — | — | `+0,1` fest |
-| **Doppelbindung** · doppelt zählende Karten | 1 | 2 | 3 | alle 5 |
-| **Übergriff** · Karten über jede Segmentgrenze hinaus | 1 | 2 | 3 | 5 |
-| **Verankerung** · Zuschlag auf den Satz | +0,05 | +0,08 | +0,12 | +0,20 |
+| **Doppelbindung** · doppelt zählende Karten | 2 | 3 | 4 | alle 5 |
+| **Übergriff** · Karten über jede Segmentgrenze hinaus | 2 | 3 | 4 | 6 |
+| **Verankerung** · Zuschlag auf den Satz | +0,08 | +0,13 | +0,20 | +0,32 |
 
 **Neudesign §5.3 (Owner):** *„Ich halte es für ein bisschen zu kompliziert zu verstehen. Vielleicht eher
 sowas wie: abhängig von der Anzahl an Formationen pro Karte in dem Segment gibt es einen Bonus auf den
@@ -585,10 +591,10 @@ auf voll, mit Score, Serie und Farbzähler.
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
+| **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 150 | 240 | 330 | 480 |
 | **Rückhalt** · Karten nach dem Ende der Haltung | 6 | 7 | 8 | 10 |
 | **Rückhalt** · Stichwert dieser Karten | +4 | +4 | +4 | +6 |
-| **Kehrtwende** · Serienpunkte je gerutschtem Stich | +1 | +2 | +3 | +4 |
+| **Kehrtwende** · Serienpunkte je gerutschtem Stich | +2 | +3 | +4 | +6 |
 | **Kehrtwende** · Verlängerungen je Haltung | höchstens 3× | 4× | 6× | 10× |
 | **Kehrtwende** · Satz des Serien-Multiplikators, solange Rot klingt | — | — | — | +0,5 % je Serienpunkt |
 
@@ -1280,6 +1286,38 @@ gierigen Spieler **202,3 Mio** — Faktor 5,2. §6.11 maß an derselben Stelle +
 −24 % bis +161 %, bei Genugtuung bis +516 %. Eine einzelne Welt sagt nichts; nur das Vorzeichen über
 sechs trägt. Wer aus „Duos" oder „Trios" eine einzelne Prozentzahl zitiert, zitiert Rauschen. Die
 Mono-Spalte ist mit 1200 Explore-Läufen die belastbarste.
+
+### 6.17 · Die erste Tarierrunde — **gedreht, nicht gemessen**
+
+Owner: *„Balancing, um alle Skills etwas näher zusammenzuziehen — schwache buffen, stärkere etwas
+nerfen, wo sinnvoll möglich."* Gedreht wurde ausschließlich an der Stufentabelle (`HALTUNG` in
+`src/game/skills.js`); keine Regel, kein Mechanismus, kein Passiv hat sich geändert.
+
+| Skill | vorher | jetzt | warum |
+| --- | --- | --- | --- |
+| **Beharrlichkeit** | +0,2 / 0,3 / 0,4 / 0,6 | **+0,15 / 0,22 / 0,3 / 0,45** | −25 %. Stärkster der Fraktion (mono +48 %, 5/6). |
+| **Anklang** *(Satz)* | je +100 | **je +75** | −25 %. Zweitstärkster (mono +46 %). Die Länge bleibt die Stufe. |
+| **Stauung** | +10 / 15 / 20 / 30 % | **+8 / 12 / 16 / 24 %** | −20 %. Mono +35 %; zahlt am Multiplikator vorbei. |
+| **Runde** *(Wechsel)* | 6 / 5 / 4 / 3 | **7 / 6 / 5 / 4** | Stärkster im Mischbuild (+31 %, 6/6). Gedämpft wird die Frequenz, nicht der Moment. |
+| **Übertrag** | +0,10 / 0,15 / 0,20 / 0,30 | **+0,20 / 0,30 / 0,40 / 0,60** | ×2. Schwächster (mono −7 %, 2/6). |
+| **Genugtuung** | 75 / 120 / 165 / 240 | **150 / 240 / 330 / 480** | ×2. Mono −7 %, 2/6. |
+| **Verankerung** | +0,05 / 0,08 / 0,12 / 0,20 | **+0,08 / 0,13 / 0,20 / 0,32** | +60 %. Mono −5 %. |
+| **Mitklang** | +0,3 / 0,5 / 0,7 / 1,0 | **+0,4 / 0,65 / 0,9 / 1,4** | +35 %. 6/6, aber nur +4 %; einziger Skill, dessen Episch unter Sehr selten lag. |
+| **Kehrtwende** *(Serie)* | +1 / 2 / 3 / 4 | **+2 / 3 / 4 / 6** | Im Trio −11 %. Nur die Serienpunkte — der Serien-Deckel begrenzt sie selbst. |
+| **Übergriff** | 1 / 2 / 3 / 5 | **2 / 3 / 4 / 6** | Grün trägt nichts (mono −2 %). |
+| **Doppelbindung** | 1 / 2 / 3 / 5 | **2 / 3 / 4 / 5** | Normal hatte mit Lift 0,41 die schlechteste Sprosse der Tabelle; Episch deckt das Segment schon ganz ab. |
+
+**Unangetastet:** Schwungrad, Beschleunigung, Grundrauschen, Rückhalt — sie lagen zwischen +4 % und
++12 % und damit ohnehin in der Mitte, die die anderen jetzt suchen.
+
+**Zwei Leitern-Wächter sind zu Form-Wächtern geworden.** `test/stance.test.js` pinnte Stauungs Sätze
+und Anklangs Decke als absolute Zahlen fest — beides fiel bei der Tarierung um. Sie prüfen jetzt, was
+sich bei einer Tarierung *nicht* ändern darf: Stauungs Leiter steigt streng, und bei Anklang ist der
+Satz auf allen vier Stufen gleich, während die Länge steigt. Gegengeprobt — beide Wächter fallen, wenn
+man die Naht absichtlich bricht.
+
+**Nicht gemessen.** Die Zahlen oben sind aus §6.15/§6.16 abgeleitet, nicht nachgerechnet. Ob die
+Spanne wirklich enger geworden ist, sagt erst ein erneuter Lauf derselben sieben Welten.
 
 ---
 

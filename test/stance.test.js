@@ -264,7 +264,8 @@ describe("Haltungen — Score-Linie (gelb)", () => {
     expect(d.payout).toBeCloseTo(700 * rate * 6, 6);
     expect(d.stance.peakBest).toBe(0);                         // beide Zähler fallen mit der Auszahlung
     expect(d.stance.peakTicks).toBe(0);
-    expect(T.stauung.map((r) => r.peak)).toEqual([0.10, 0.15, 0.20, 0.30]);
+    // Die Leiter steigt streng — die Zahlen sind tarierbar (§6.16), die Richtung ist es nicht.
+    expect(T.stauung.every((r, i) => i === 0 || r.peak > T.stauung[i - 1].peak)).toBe(true);
     expect(cashPeak(s, skills, { [S.STAUUNG]: 3 }).payout).toBeCloseTo(700 * T.stauung[3].peak * 6, 6);
   });
   it("Stauung bunkert NICHT mehr (§5.3): der Sieg zahlt normal, gemerkt wird nur die Spitze", () => {
@@ -610,8 +611,10 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     const w = resolveTrick(run(st({ echo: 3 }), { skills }), noCrit);
     expect(w.lastTrick.breakdown.flats).toBe(rate);
     expect(w.stanceBase).toBe(rate);
-    // Die Decke ist Dauer × Satz — erreichbar nur mit lauter Siegen, Basis-Score gibt es sonst nicht.
-    expect(T.anklang[3].duration * T.anklang[3].score).toBe(800);
+    // Die Decke ist Dauer × Satz, erreichbar nur mit lauter Siegen. Die STUFE ist die Dauer (Owner, §5.3):
+    // der Satz steht auf allen vier gleich, die Länge steigt streng. Die Höhe selbst ist tarierbar (§6.16).
+    expect(new Set(T.anklang.map((r) => r.score)).size).toBe(1);
+    expect(T.anklang.every((r, i) => i === 0 || r.duration > T.anklang[i - 1].duration)).toBe(true);
     const lost = resolveTrick(run(st({ echo: 3 }), { skills, deck: constDeck(0), oppDeck: constDeck(12) }), noCrit);
     expect(lost.stanceBase).toBe(0);
   });
