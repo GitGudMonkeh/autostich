@@ -207,16 +207,12 @@ const HALTUNG = {
   // Ionen-Stapel ist +0,15). STARTWERTE.
   uebertrag:      [{ step: 0.10 }, { step: 0.15 }, { step: 0.20 }, { step: 0.30 }],
   schwungrad:     [{ max: 2 }, { max: 3 }, { max: 5 }, { max: 8 }],
-  // Überlappungs-Linie (grün).
-  doppelbindung:  [{ types: 1 }, { types: 2 }, { types: 3 }, { types: 4 }],
-  // §5.3 (Owner): Übergriff öffnet ALLE Segmentgrenzen, solange Grün klingt — das ist die Geste, und sie hängt an
-  // keiner Stufe. Gestaffelt ist der Überlappungsbonus. Die Leiter liegt unter Verwachsung (0.4/0.7/1/1.4), weil
-  // Übergriff die offenen Grenzen obendrauf bekommt; beide addieren auf denselben `overlapPlus`.
-  uebergriff:     [{ bonus: 0.3 }, { bonus: 0.4 }, { bonus: 0.55 }, { bonus: 0.7 }],
-  // §5.3 (Owner, komplett ersetzt): Verankerung ändert keine Geometrie mehr. Im Nachklang der grünen Haltung gibt
-  // jeder Stich einen Multiplikator-Zuschlag je Formation an seiner Siegposition. Die Leiter spiegelt Mitklang —
-  // dieselbe „je X"-Form, und der Owner hat ausdrücklich keine Zahlen gesetzt: STARTWERTE für die Sim.
-  verankerung:    [{ perForm: 0.15 }, { perForm: 0.25 }, { perForm: 0.35 }, { perForm: 0.50 }],
+  /* Überlappungs-Linie (grün) — §5.3 komplett neu (Owner). Das Passiv ist jetzt eine Zahl: Summe der Formationen
+     über das Fenster um die Siegposition, je Formation STANCE_GREEN_PER_FORM Score-Multiplikator. Die drei Skills
+     greifen an drei verschiedenen Stellen derselben Rechnung an — Fenster, Zählung, Satz. Alles STARTWERTE. */
+  doppelbindung:  [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 5 }],
+  uebergriff:     [{ reach: 1 }, { reach: 2 }, { reach: 3 }, { reach: 5 }],
+  verankerung:    [{ plus: 0.05 }, { plus: 0.08 }, { plus: 0.12 }, { plus: 0.20 }],
   // Ergebnis-Linie (rot). Kehrtwendes Deckel liegt bewusst ÜBER dem von Schwungrad, weil ihre Rate niedriger ist
   // und sie strukturell nicht weglaufen kann (§6.5).
   // §5.3 (Owner): Genugtuung zahlt nicht mehr sofort je Punkt Rückstand, sondern im NACHKLANG je gedrehtem Stich —
@@ -538,11 +534,11 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.schwungrad, (r) => `Jeder Crit verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
   // Überlappungs-Linie (grün)
   SK_STANCE_07: { id: "SK_STANCE_07", name: "Doppelbindung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.doppelbindung,
-    ...tiered(HALTUNG.doppelbindung, (r) => `Eine Karte zählt für die Überlappung in ${r.types === 4 ? "jedem" : `bis zu ${de1(r.types)}`} Formationstyp${r.types === 4 || r.types === 1 ? "" : "en"} doppelt.`) },
+    ...tiered(HALTUNG.doppelbindung, (r) => `Grün zählt die ${r.cards >= 5 ? "Karten deines Segments alle" : `${de1(r.cards)} dichteste${r.cards === 1 ? "" : "n"} Karte${r.cards === 1 ? "" : "n"} deines Segments`} doppelt.`) },
   SK_STANCE_08: { id: "SK_STANCE_08", name: "Übergriff", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.uebergriff,
-    ...tiered(HALTUNG.uebergriff, (r) => `Klingt die grüne Haltung, zählen alle Segmentgrenzen als offen. Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um ${de(r.bonus)} höher.`) },
+    ...tiered(HALTUNG.uebergriff, (r) => `Grün zählt zusätzlich ${de1(r.reach)} Karte${r.reach === 1 ? "" : "n"} jenseits jeder Segmentgrenze mit.`) },
   SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.verankerung,
-    ...tiered(HALTUNG.verankerung, (r) => `Klingt die grüne Haltung nach, zählt jeder Stich +${de(r.perForm)} Score-Multiplikator je Formation an seiner Siegposition.`) },
+    ...tiered(HALTUNG.verankerung, (r) => `Jede von Grün gezählte Formation gibt zusätzlich +${de(r.plus)} Score-Multiplikator.`) },
   // Ergebnis-Linie (rot)
   SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
     ...tiered(HALTUNG.genugtuung, (r) => `Klingt die rote Haltung nach, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie gedreht hat.`) },

@@ -482,11 +482,10 @@ export const STANCE_STEP     = envNum("SIM_STANCE_STEP", 0.02);   // Score-Multi
 // Grundwerte der vier Passive (§3, Owner). Sie stehen und skalieren NICHT mit der Zahl gehaltener Skills.
 export const STANCE_CRIT         = envNum("SIM_STANCE_CRIT", 0.5);       // Blau: Crit-Chance, solange sie klingt — additiv, kein Mindestwert
 export const STANCE_SCORE_MULT   = envNum("SIM_STANCE_SCORE_MULT", 1.4); // Gelb: glatter Multiplikator auf den Sieg-Score
-export const STANCE_BLEED        = envNum("SIM_STANCE_BLEED", 1);        // Grün: Überlappungs-Stufen, die die Nachbarkarte im Segment erbt
-/* Überlappungsleiter über der bestehenden Decke (OVERLAP_BONUS endet bei 4 → ×3). Doppelbindung ist laut §5.4 „der
-   einzige Weg über die ×3-Decke"; wohin die Leiter dort läuft, steht nirgends. Lineare Fortsetzung (+1 je Stufe)
-   als STARTWERT — die Alternative (+1,5 wie der Schritt 3→4) läuft geometrisch weg. NICHT vom Owner entschieden. */
-export const STANCE_OVERLAP_OVER = envNum("SIM_STANCE_OVERLAP_OVER", 1); // Zuwachs je Überlappungs-Stufe über 4
+/* Grün (§3, §5.3 Neufassung): kein Abfärben mehr, keine Geometrie. Gewinnt eine Karte, werden die Formationen
+   ALLER Karten ihres Segments summiert (eine Karte in 3 Formationen zählt 3) und je Formation zahlt der Stich
+   diesen Satz auf den Score-Multiplikator. Typische Summen liegen bei 4–9, das sind ×1,4 bis ×1,9. STARTWERT. */
+export const STANCE_GREEN_PER_FORM = envNum("SIM_STANCE_GREEN_PER_FORM", 0.1);
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

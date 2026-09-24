@@ -26,8 +26,8 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // Haltungen (docs/haltungen-fraktion.md): vier Haltungen, eine je Farbe, gesteuert von den gewonnenen Stichen der
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
-import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceOverlapOpts, stanceFormKeyOf,
-  genugtuungScore, noteTurn, verankerungMult, rueckhaltValue, extendStance, noteCrit, uebertragMult, grundrauschenCritMult, stauungOn, notePeak, tickPeak, cashPeak,
+import { stanceTick, stanceLift, stanceCrit, stanceScoreMult, stanceGreenMult,
+  genugtuungScore, noteTurn, rueckhaltValue, extendStance, noteCrit, uebertragMult, grundrauschenCritMult, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -159,7 +159,7 @@ export function resolveTrick(state, rng) {
     brandPending = {}, brandActive = {}, forged = {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
     tendrils = {}, // Pflanze (§6.26 Ranken): berankte Gegnerkarten je oppCard.id — ein grüner Sieg rankt, ein Sieg darauf erntet
     growth = {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
-    stance = null, stanceBase = 0, stanceFormKey = null, // Haltungen: Substate · Eigen-Score-Kanal · Geometrie-Schlüssel der zwischengespeicherten Formationen
+    stance = null, stanceBase = 0, // Haltungen: Substate und Eigen-Score-Kanal
 
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
@@ -220,23 +220,17 @@ export function resolveTrick(state, rng) {
   const archState = architectEnabled ? architect : null; // Architekt nur aktiv, wenn das Flag gesetzt ist (im Spiel default an)
   // Architekt-Precompute je Durchlauf (stabil): value-/score-Effekte + Struktur-Faktor je Position (target einmal bestimmt).
   let archPreNow = architectPre;
-  /* Haltungen, grün (§3/§9): die einzige Fraktions-Mechanik, die die Formations-GEOMETRIE ändert statt einer Zahl.
-     `computeFormations` läuft sonst einmal je Durchlauf und hält — hier hängt das Brett aber an der klingenden
-     Haltung, die mitten im Durchlauf wechselt. `stanceFormKey` fasst alles zusammen, was die Geometrie verändert:
-     ändert er sich, wird neu gelesen, sonst nicht. Ein Wechsel, der Grün gar nicht berührt, kostet damit nichts. */
+  /* Haltungen: §5.3 hat Grüns Geometrie gestrichen — keine Haltung biegt mehr die Erkennung. `computeFormations`
+     läuft damit wieder EINMAL je Durchlauf und hält; das Brett bei jedem grün berührenden Wechsel neu zu lesen
+     (samt `stanceFormKey`, der das steuerte) entfällt ersatzlos. Grün liest das Brett jetzt nur noch ab. */
   const stanceOn = !!(stance && stance.active && (activeArchetypes || []).includes("stance"));
-  const stanceOpts = stanceOn ? stanceOverlapOpts(stance, skills, skillTiers) : null;
-  const stanceKey = stanceFormKeyOf(stanceOpts);
-  let newStanceFormKey = stanceFormKey;
   /* EIN Weg, das Brett zu lesen — beide Aufrufstellen (Durchlauf-Beginn hier, Formationsphase am Ende) gehen
      hierdurch. `deck`/`growthArg` werden bewusst spät gelesen — am Durchlauf-Ende steht der Pflanzen-Stand
      dieses Stichs schon drin. */
-  const readBoard = (o, growthArg) =>
-    computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: growthArg }, CT.openBordersOf(state), o || null);
-  if (stanceOn && pos !== 0 && stanceKey !== stanceFormKey) { formations = readBoard(stanceOpts, growth); newStanceFormKey = stanceKey; }
+  const readBoard = (growthArg) =>
+    computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: growthArg }, CT.openBordersOf(state));
   if (pos === 0) {
-    formations = readBoard(stanceOpts, growth);
-    newStanceFormKey = stanceKey;
+    formations = readBoard(growth);
     // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
     // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
     // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
@@ -721,11 +715,10 @@ export function resolveTrick(state, rng) {
     /* Haltungen, gelb (§3): glatter Multiplikator auf den Sieg-Score, solange Gelb klingt — dazu Beharrlichkeit
        (je Stich Laufzeit) und Mitklang (je zusätzlich klingender Haltung). Ein eigener Faktor wie der Feuer-Stack,
        KEINE zweite Achse auf einer fremden Ressource (§7.51: zwei Achsen an derselben Ressource ergaben den
-       kubischen Weglauf). Blau wirkt über den Crit, Grün über die Geometrie in formMult — bis auf Verankerung,
-       die seit §5.3 hier sitzt: im NACHKLANG von Grün ein Zuschlag je Formation an der Siegposition. Sie steht im
-       selben Faktor, weil sie eine Zahl ist und keine Geometrie; das Brett muss dafür nicht neu gelesen werden. */
+       kubischen Weglauf). Blau wirkt über den Crit; GRÜN sitzt seit §5.3 ebenfalls hier, als Zahl statt als
+       Geometrie: Summe der Formationen über das Fenster um die Siegposition, mal dem Satz. */
     const stanceMult = stanceOn
-      ? stanceScoreMult(stance, skills, skillTiers) * verankerungMult(stance, skills, skillTiers, activeFormationCount(posForm))
+      ? stanceScoreMult(stance, skills, skillTiers) * stanceGreenMult(stance, formations, actualPos, skills, skillTiers)
       : 1;
     /* §7.51 (Owner): Blitz hat KEINEN eigenen Faktor im Produkt. Der Crit-Multiplikator ist die Multiplikator-Achse
        der Fraktion — jeder Stapel zahlt über ION_CRIT_MULT_PER_STACK dorthin. §7.43 hatte daneben `lightMult`
@@ -1282,11 +1275,7 @@ export function resolveTrick(state, rng) {
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
-        // Haltungen: die Formationsphase zeigt das Brett, auf dem der nächste Durchlauf beginnt — also mit der
-        // Geometrie der dann klingenden Haltung, sonst driftet Anzeige gegen Motor.
-        const stOptsNext = stanceOn ? stanceOverlapOpts(newStance, skills, skillTiers) : null;
-        formations = readBoard(stOptsNext, newGrowth);
-        newStanceFormKey = stanceFormKeyOf(stOptsNext);
+        formations = readBoard(newGrowth);
       }
     }
   }
@@ -1338,7 +1327,7 @@ export function resolveTrick(state, rng) {
     brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte
     tendrils: newTendrils, // Pflanze (§6.26): die berankten Gegnerkarten
     growth: newGrowth, // Pflanze (§6.2): Wachstum je Karte (grün/blühend liegen als Flag auf der Karte)
-    stance: newStance, stanceBase, stanceFormKey: newStanceFormKey, // Haltungen: Substate · Eigen-Score-Kanal · Geometrie-Schlüssel der Formationen
+    stance: newStance, stanceBase, // Haltungen: Substate und Eigen-Score-Kanal
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
   };

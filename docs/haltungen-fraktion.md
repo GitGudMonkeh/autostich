@@ -129,7 +129,7 @@ und zusammen decken sie die Score-Pipeline ab.
 | --- | --- | --- | --- | --- |
 | **Rot** | Ergebnis | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. | eine Stufe |
 | **Blau** | Crit | die Spitze | Durchgehend Crit-Chance, solange sie klingt. | **+50 %** |
-| **Grün** | Überlappung | die Formations-Geometrie | Die Überlappung färbt ab: die Nachbarkarte **innerhalb des Segments** erbt eine Stufe. | +1 Stufe |
+| **Grün** | Überlappung | den Sieg-Score | Die Formationen **aller Karten des Segments** werden summiert; je Formation zahlt der Stich mehr. | +0,1 je Formation |
 | **Gelb** | Score | den Basis-Score | Glatter Multiplikator. | **×1,4** |
 
 Die vier Grundwerte **stehen und skalieren nicht** mit der Zahl gehaltener Skills (Owner). Gelbs ×1,4
@@ -154,9 +154,9 @@ nachrüstbar, ohne dass eine Regel sich ändert.
 - Sie landet auf Blitz' Achse, **verpufft dort aber nicht**: die Systemregel wandelt jeden Punkt
   Crit-Chance über 100 % in +0,01× Crit-Multiplikator. Ein Blitz-Deck bekommt aus den 50 Punkten also
   Multiplikator statt Chance.
-- **Das Überlappungs-Passiv tut auf einer formationslosen Karte nichts.** Der Bonus beginnt erst bei
-  zwei Formationen (`2 → ×1,5 · 3 → ×2 · 4 → ×3`); eine Karte von 0 auf 1 gehoben bleibt bei ×1 und
-  hat auch keinen eigenen Formationsfaktor.
+- **Grün zahlt auch auf einer formationslosen Siegkarte** — gezählt wird das Segment, nicht die
+  Karte. Das ist seit §5.3 so und war beim alten Abfärben umgekehrt (dort brauchte die Nachbarschaft
+  Formationen, die Karte selbst nicht).
 - **Ein gerutschter Sieg zahlt voll** — dieselben 400 Basis-Score wie ein erkämpfter (Owner). Rot ist
   damit nicht nur ein Sicherheitsnetz, sondern selbst eine Score-Quelle, und braucht dafür keine
   Sonderregel. **Der Nebeneffekt ohne Zahl:** eine zum Gleichstand gerutschte Niederlage ist für
@@ -164,13 +164,9 @@ nachrüstbar, ohne dass eine Regel sich ändert.
   laufen in einem roten Deck leer.
 - **Ergebnis** ist als einzige gegen jede Haltungslänge robust: sie wirkt pro Stich und braucht keine
   Dauer. Das war der Prüfstein, an dem das alte Crit-Passiv gescheitert ist (§7).
-- **Die Segmentbindung des Abfärbens ist eine bewusste Einschränkung, keine geerbte.** „Die
-  Nachbarkarte erbt" ist von sich aus positionsbezogen, und Positionen kennen keine Segmente — ohne
-  die ausdrückliche Klausel liefe das Abfärben über jede Grenze, und der Skill *Übergriff* (§5.4),
-  der genau sie aufhebt, hätte die Hälfte seiner Wirkung schon geschenkt bekommen.
-  Sie muss deshalb im Spielertext des Passivs stehen, nicht nur hier (Owner).
-  Angenehmer Nebeneffekt: damit zählt die **Lage innerhalb des Segments** — eine Karte am Rand färbt
-  nur nach innen, eine in der Mitte nach beiden Seiten.
+- **Grüns Fenster ist das Segment der Siegposition, nicht die Karte.** Jede Position desselben
+  Segments gibt denselben Bonus — *wo* du im Segment gewinnst, ist gleichgültig, *wie dicht* das
+  Segment ist, entscheidet alles. Nur **Übergriff** weitet das Fenster über die Grenzen hinaus.
 
 ### 3.1 · Der Einklang und die Stufe — **§5.3 neu gefasst**
 
@@ -266,9 +262,9 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | **Crit** (blau) | **Grundrauschen** · Crit-Chance, in jeder Haltung | +12 % | +18 % | +26 % | +40 % + *Crit-Mult +0,5* |
 | | **Übertrag** · Crit-Multiplikator je Crit der Haltung | +0,10 | +0,15 | +0,20 | +0,30 |
 | | **Schwungrad** · Verlängerungen je Haltung | 2× | 3× | 5× | 8× |
-| **Überlappung** (grün) | **Doppelbindung** · Formationstypen | 1 | 2 | 3 | alle 4 |
-| | **Übergriff** · Zuschlag auf den Überlappungsbonus (dazu: alle Grenzen offen) | +0,3 | +0,4 | +0,55 | +0,7 |
-| | **Verankerung** · Score-Multiplikator im Nachklang, je Formation | +0,15 | +0,25 | +0,35 | +0,50 |
+| **Überlappung** (grün) | **Doppelbindung** · doppelt zählende Karten | 1 | 2 | 3 | alle 5 |
+| | **Übergriff** · Karten über jede Segmentgrenze hinaus | 1 | 2 | 3 | 5 |
+| | **Verankerung** · Zuschlag auf den Satz je Formation | +0,05 | +0,08 | +0,12 | +0,20 |
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 75 | 120 | 165 | 240 |
 | | **Rückhalt** · Karten nach dem Ende der Haltung · Stichwert | 6 · +4 | 7 · +4 | 8 · +4 | 10 · +6 |
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
@@ -502,68 +498,64 @@ Stelle, an der der Tanz-Build zum ersten Mal etwas zurückbekommt (§6.11).
 **Warnung:** eine Linie, die immer wirkt, wird auch immer genommen. Bei zwei Türen à drei Skills
 könnte Rotation die vier Haltungslinien systematisch verdrängen. Beim Bau des Angebots mitdenken.
 
-### 5.4 · Überlappungs-Linie — voll
+### 5.4 · Überlappungs-Linie — **§5.3 komplett neu**
 
-Passiv: die Überlappung färbt ab, die Nachbarkarte **innerhalb des Segments** erbt eine Stufe.
+Passiv: gewinnt eine Karte, werden die Formationen **aller fünf Karten ihres Segments** summiert (eine
+Karte in drei Formationen zählt drei). Je gezählter Formation zahlt der Stich `+0,1` Score-Multiplikator.
 
-| Skill | Wirkung |
+```text
+Bonus = 1 + Satz × Summe der Formationen im Fenster um die Siegposition
+```
+
+| Skill | Greift an … |
 | --- | --- |
-| **Doppelbindung** | Eine Karte darf in zwei Formationen desselben Typs liegen. Der einzige Weg über die ×3-Decke, weil es sonst nur vier Typen gibt — hebt die *Anzahl*, nicht den *Wert*. |
-| **Übergriff** | Solange Grün klingt, zählen **alle** Segmentgrenzen als offen. Dazu ein Zuschlag auf den Überlappungsbonus. |
-| **Verankerung** | Im **Nachklang** der Haltung zählt jeder Stich einen Score-Multiplikator je Formation an seiner Siegposition. |
+| **Doppelbindung** | der **Zählung** — die *n* dichtesten Karten des Fensters zählen doppelt. |
+| **Übergriff** | dem **Fenster** — es reicht *n* Karten über jede Segmentgrenze hinaus. |
+| **Verankerung** | dem **Satz** — jede gezählte Formation gibt zusätzlich +*n* Score-Multiplikator. |
 
 **Startwerte:**
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Doppelbindung** · für wie viele Formationstypen | 1 | 2 | 3 | alle 4 |
-| **Übergriff** · Zuschlag auf den Überlappungsbonus | +0,3 | +0,4 | +0,55 | +0,7 |
-| **Verankerung** · Score-Multiplikator im Nachklang, je Formation | +0,15 | +0,25 | +0,35 | +0,50 |
+| *(Passiv)* · Satz je gezählter Formation | — | — | — | `+0,1` fest |
+| **Doppelbindung** · doppelt zählende Karten | 1 | 2 | 3 | alle 5 |
+| **Übergriff** · Karten über jede Segmentgrenze hinaus | 1 | 2 | 3 | 5 |
+| **Verankerung** · Zuschlag auf den Satz | +0,05 | +0,08 | +0,12 | +0,20 |
 
-**Neudesign §5.3 (Owner):** *„Stiche während grün aktiv ist oder nachklingt zählen, als wären alle
-Segmentgrenzen offen. Als Leiter: der Überlappbonus wird größer."* Die alte Fassung staffelte die
-**Anzahl** der Grenzen (1 / 2 / 3 / alle) und traf damit auf der Normal-Stufe neben jedem anderen
-Grenzöffner gar nichts. Jetzt ist die **Geste** unbedingt — Grün klingt, alle Grenzen sind offen, für
-die Erkennung wie fürs Abfärben — und gestaffelt ist der **Zuschlag**. Beides zusammen wirkt sowohl
-auf der Naht (Formationen und Abfärben laufen über die Grenze) als auch überall sonst (jede
-Mehrfach-Überlappung ist mehr wert), und der Skill hat damit auf jedem Brett einen Körper.
+**Neudesign §5.3 (Owner):** *„Ich halte es für ein bisschen zu kompliziert zu verstehen. Vielleicht eher
+sowas wie: abhängig von der Anzahl an Formationen pro Karte in dem Segment gibt es einen Bonus auf den
+Stich. Viele Formationen = größerer Bonus."*
 
-Der Zuschlag liegt **absolut** auf dem Überlappungsfaktor — dieselbe Achse und dieselbe Rechnung wie
-Pflanzes **Verwachsung**, die Stelle im Code ist `overlapPlus` in `formations.js`.
+**Das alte Passiv — das Abfärben — ist ersatzlos gestrichen.** Es lautete: *„eine Karte, die in
+mindestens einer Formation liegt, gibt jedem ihrer beiden Nachbarn eine Überlappungs-Stufe — innerhalb
+des Segments, es sei denn, die Grenze dazwischen ist offen."* Vier Klauseln für eine Regel, dazu drei
+Nebenwirkungen, die man erst beim Nachrechnen sieht (der Empfänger braucht selbst keine Formation; es
+färbt in beide Richtungen; die Lage im Segment entscheidet).
 
-**Zu beachten, nicht entschieden:** Übergriff und **Verwachsung** (`0,4 / 0,7 / 1 / 1,4`) **addieren
-sich** auf derselben Achse. Ein Prisma-Pflanze-Build, der beide episch hält, steht bei `+2,1` auf
-einem Faktor, dessen Basis `1,5` (zwei Formationen) ist — das ist die Stelle, an der diese Paarung
-zuerst wegläuft. Übergriffs Leiter liegt deshalb **bewusst unter** der von Verwachsung: er bekommt
-die offenen Grenzen zusätzlich, ohne dafür zu zahlen. Startwerte, nicht tariert.
+**Was der Tausch bringt:**
 
-**Nachbarschaft zu Pflanze, weiterhin:** **Wurzelgeflecht** (Legendär) hebt die *Anzahl*, **Spalier**
-(SK_PLANT_03) öffnet Segmentgrenzen. Spalier, Segmentarbeit (Perk-Familie E) und Durchlass
-(Auftragsbeute) überschneiden sich mit Übergriffs Grenz-Hälfte — anders als vorher bleibt ihm daneben
-aber der Zuschlag, er ist also nie ein toter Skill-Platz.
+- **Eine Zahl statt einer Geometrie.** Der Spieler zählt ab, was auf dem Brett steht.
+- **Grün ändert die Formationserkennung nicht mehr.** Damit fällt die teuerste Naht der Fraktion weg:
+  `computeFormations` lief bisher bei *jedem* Haltungswechsel neu, der Grün berührte, gesteuert über
+  einen eigenen Geometrie-Schlüssel (`stanceFormKey`). Beides ist gelöscht; das Brett wird wieder
+  einmal je Durchlauf gelesen.
+- **Die Überlappungsleiter endet wieder bei 4** (`×3`). Ihre lineare Fortsetzung darüber
+  (`STANCE_OVERLAP_OVER`) gab es nur, weil die Haltungen die Anzahl über die Decke hoben — jetzt kann
+  das nichts mehr, und sie ist entfallen.
+- **Die drei Skills greifen an drei verschiedenen Stellen derselben Rechnung an**, statt alle drei an
+  der Geometrie: Fenster, Zählung, Satz.
 
-**Neudesign §5.3, Verankerung (Owner):** *„Komplett ändern. Im Nachklang bekommen nachklingende Stiche
-einen Bonus auf Multi, abhängig von der Anzahl der Formationen, die auf ihnen liegen. Leiter ist der
-Bonus."*
+**Entschieden (Owner): gezählt werden ALLE Formationen**, auch die, die an dieser Karte nichts zahlen
+(die erste Karte eines Laufs trägt Faktor 1). „In wie vielen Formationen liegt die Karte" ist die Zahl,
+die auf dem Brett steht; jede Ausnahme holt die Kompliziertheit zurück, die der Umbau loswerden sollte.
 
-Die alte Fassung (Überlappungs-Stufen für ganze Segmente beim **Auslösen** der grünen Haltung) ist
-ersatzlos gestrichen, samt `anchorSeg` im Zustand und `anchorPositions` in `formations.js`. **Sie
-ändert damit keine Geometrie mehr** — das tun nur noch das Abfärben, Doppelbindung und Übergriff.
+**Hingenommen (Owner): Prisma verliert die Verbindung zur Pflanze.** Das Überlappungs-System
+(`×1,5 / ×2 / ×3`) bleibt, aber Grün füttert es nicht mehr. Damit ist die Stelle weg, an der Übergriff
+und Pflanzes **Verwachsung** sich auf derselben Achse (`overlapPlus`) stapelten — die Warnung von
+gestern erledigt sich, aber auch die Synergie. `overlapPlus` hat jetzt nur noch eine Quelle.
 
-Sie ist stattdessen der Gegenpol zu **Genugtuung**: dieselbe Zwei-Phasen-Form (aktiv sammeln, im
-Nachklang zahlen), nur auf Grün statt Rot und **multiplikativ statt flach**. Der Zuschlag liegt in
-`stanceMult`, nicht in `formMult` — sie ist eine Zahl, keine Geometrie, und das Brett muss dafür nicht
-neu gelesen werden.
-
-Gezählt wird `activeFormationCount`: die **zahlenden** Formationen der Siegposition — dieselbe Zahl,
-die der Stich anzeigt und die Brennpunkt, Feuerlinie und Spannungsfeld lesen. Die *erste* Karte eines
-Laufs trägt Faktor 1 und zählt deshalb nicht mit; das ist die Konvention des Spiels und nicht eine
-eigene Lesart dieses Skills.
-
-**Zahlen sind reine Startwerte** (Owner ausdrücklich: *„Balancing muss dann über die Sim gemacht
-werden, keine Ahnung, was aktuell hier zu stark oder zu schwach ist"*). Die Leiter
-(`+0,15 / 0,25 / 0,35 / 0,50`) war die von **Mitklang**, weil beide dieselbe „je X"-Form haben —
-Mitklang ist seither verdoppelt (§5.1), Verankerung steht noch auf den alten Werten.
+**Alle Zahlen sind Startwerte.** Bei typischen Summen von 4–9 liegt das Passiv allein bei `×1,4` bis
+`×1,9`. Der Satz ist der Haupt-Regler und gehört in die Sim, nicht in eine Schätzung.
 
 ### 5.5 · Ergebnis-Linie — voll
 
@@ -773,9 +765,9 @@ epischen Skills aus zwei Linien erreichbar.
 
 ### 6.6 · Der Stapel
 
-Überlappung, Crit und Score multiplizieren **denselben Stich**: das Abfärben hebt den
-Formations-Multiplikator, der Score-Multiplikator liegt darauf, und der Crit multipliziert den
-fertigen Stapel. Drei Faktoren hintereinander auf derselben Karte.
+Überlappung, Crit und Score multiplizieren **denselben Stich**. Seit §5.3 liegen Grün und Gelb
+allerdings im SELBEN Faktor (`stanceMult`) und addieren sich dort nicht, sondern multiplizieren sich:
+Gelbs glatter Multiplikator mal Grüns Segment-Dichte. Der Crit multipliziert den fertigen Stapel.
 
 Die Blitz-Notizen haben für diese Form einen Namen und eine Narbe (`skill-rework.md` §7.46,
 „kubischer Weglauf" — dort waren es zwei Achsen an derselben Ressource). **Ergebnis** ist der
@@ -1208,9 +1200,10 @@ Naht hat:
 | Serie halten | `engine.js` — `streakNoReset` |
 | Überlappungs-Stufen | `formations.js` — `OVERLAP_BONUS` |
 
-**Der eine echte Eingriff:** `computeFormations` läuft heute **einmal je Durchlauf** (`pos === 0`) und
-hält dann. Überlappungs-Abfärben und alles, was die Geometrie mitten im Durchlauf ändert, verlangt ein
-Neurechnen bei jedem Haltungswechsel. Der Owner hat das ausdrücklich freigegeben.
+**Der eine echte Eingriff — seit §5.3 hinfällig:** `computeFormations` läuft **einmal je Durchlauf**
+(`pos === 0`) und hält dann. Das alte grüne Abfärben bog die Geometrie mitten im Durchlauf und verlangte
+ein Neurechnen bei jedem Haltungswechsel (der Owner hatte das freigegeben). Mit dem neuen Passiv liest
+Grün das Brett nur noch ab — der Eingriff ist zurückgebaut, `stanceFormKey` gelöscht.
 
 Dazu wie bei jeder neuen Fraktion: `reducer.js` (`activeArchetypes`), `progression.js`
 (`deckUnlock`-Knoten — **Achtung, Migrationsfalle:** `RANKED_ARCHETYPES` leitet sich daraus ab und

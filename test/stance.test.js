@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, redEchoes, verankerungMult, greenEchoes, rueckhaltValue, extendStance,
+  stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, redEchoes, stanceGreenMult, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
-  stanceTick, stanceOverlapOpts, stanceFormKeyOf, roundSwitches, einklangDuration, stanceLevelMult,
+  stanceTick, roundSwitches, einklangDuration, stanceLevelMult,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
 import { streakBaseMult } from "../src/game/perks.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { computeFormations, overlapFactor, OVERLAP_BONUS } from "../src/game/formations.js";
+import { computeFormations, overlapFactor, segmentFormCounts, OVERLAP_BONUS } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 
@@ -207,35 +207,37 @@ describe("Haltungen — die vier Passive (§3)", () => {
     expect(y.lastTrick.breakdown.base).toBe(B);
     expect(y.lastTrick.breakdown.flats).toBe(0);
   });
-  it("Grün: die Nachbarkarte INNERHALB des Segments erbt eine Überlappungs-Stufe", () => {
-    // Zwei Segmente, EINE Formation: die Wiederholung 7/7 auf 3 und 4, am Rand von Segment 0. Alle übrigen Werte
-    // sind so gewählt, dass sie nichts bilden (kein Lauf, kein Zickzack, keine Gleichheit) — sonst misst man das
-    // Abfärben gegen ein Brett, das selbst schon voller Formationen steckt.
-    const plain = computeFormations(order10(), board10());
-    const green = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1 });
-    expect(plain[3].formations).toHaveLength(1);
-    expect(plain[5].formations).toHaveLength(1);
-    // 3 und 4 färben sich gegenseitig an: eine Formation + eine geerbte Stufe = Überlappung ×1,5.
-    expect(green[3].mult).toBeCloseTo(plain[3].mult * OVERLAP_BONUS[2], 6);
-    expect(green[4].mult).toBeCloseTo(plain[4].mult * OVERLAP_BONUS[2], 6);
-    // Die Segmentbindung hält: 4 und 5 liegen nebeneinander, aber in verschiedenen Segmenten — sie erben je nur
-    // von ihrem eigenen Nachbarn, nicht voneinander. Beide stehen deshalb auf zwei Stufen, nicht auf drei.
-    expect(green[5].mult).toBeCloseTo(plain[5].mult * OVERLAP_BONUS[2], 6);
-    // Gegenprobe, dass die Bindung eine echte Klausel ist: fällt sie (Übergriff öffnet alle Grenzen), erben 4 und 5
-    // über die Naht hinweg und stehen auf drei Stufen. 3 liegt mitten im Segment und ändert sich dadurch nicht.
-    const over = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, allBorders: true });
-    expect(over[4].mult).toBeCloseTo(plain[4].mult * OVERLAP_BONUS[3], 6);
-    expect(over[5].mult).toBeCloseTo(plain[5].mult * OVERLAP_BONUS[3], 6);
-    expect(over[3].mult).toBe(green[3].mult);
+  it("Grün: die Summe der Formationen im Segment — keine Geometrie mehr (§5.3)", () => {
+    /* board10: Wiederholung 7/7 auf 3|4 und 3/3 auf 5|6, dazu ein Wechsel. Segment 0 = Positionen 0–4,
+       Segment 1 = 5–9. Das Passiv zählt die Formationen ALLER fünf Karten des Segments der Siegposition. */
+    const forms = computeFormations(order10(), board10());
+    const perCard = forms.map((p) => p.formations.length);
+    const seg0 = perCard.slice(0, 5).reduce((x, y) => x + y, 0);
+    const seg1 = perCard.slice(5).reduce((x, y) => x + y, 0);
+    expect(seg0).toBeGreaterThan(0);
+    expect(segmentFormCounts(forms, 2)).toEqual(perCard.slice(0, 5));   // das Segment der Position
+    expect(segmentFormCounts(forms, 7)).toEqual(perCard.slice(5));
+    // Der Multiplikator: 1 + Satz × Summe. Jede Position desselben Segments gibt dasselbe.
+    const green = st({ stance: "G" });
+    for (const pos of [0, 2, 4]) expect(stanceGreenMult(green, forms, pos, [], {})).toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg0, 9);
+    for (const pos of [5, 9]) expect(stanceGreenMult(green, forms, pos, [], {})).toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg1, 9);
+    // Klingt Grün nicht, ist es 1 — und das Brett rechnet ohnehin für alle gleich.
+    expect(stanceGreenMult(st(), forms, 2, [], {})).toBe(1);
+    expect(stanceGreenMult(st({ stance: "B", ring: { G: 2 } }), forms, 2, [], {})).toBeGreaterThan(1); // Nachklang zählt
   });
-  it("das Abfärben tut auf einer formationslosen Karte nichts — der Bonus beginnt erst bei zwei (§3)", () => {
+  it("Grün ändert die Formationserkennung NICHT mehr — computeFormations kennt keine Haltung", () => {
+    /* Gegenprobe zum gestrichenen Abfärben: der frühere 11. Parameter trug die Haltungs-Geometrie. Wird er
+       heute noch übergeben, ändert er nichts — es gibt keine Stelle mehr, die ihn liest. */
+    const a = computeFormations(order10(), board10());
+    const b = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null,
+      { bleed: 1, allBorders: true, doubleBind: 4, overlapPlus: 2 });
+    expect(b.map((p) => p.mult)).toEqual(a.map((p) => p.mult));
+    // Und die Überlappungsleiter endet wieder bei 4 — nichts hebt die Anzahl mehr darüber.
     expect(overlapFactor(0)).toBe(1);
     expect(overlapFactor(1)).toBe(1);
     expect(overlapFactor(2)).toBe(OVERLAP_BONUS[2]);
     expect(overlapFactor(4)).toBe(OVERLAP_BONUS[4]);
-    // Über der Decke von vier läuft die Leiter linear weiter (Startwert, §5.4).
-    expect(overlapFactor(5)).toBeCloseTo(OVERLAP_BONUS[4] + C.STANCE_OVERLAP_OVER, 6);
-    expect(overlapFactor(7)).toBeCloseTo(OVERLAP_BONUS[4] + 3 * C.STANCE_OVERLAP_OVER, 6);
+    expect(overlapFactor(7)).toBe(OVERLAP_BONUS[4]);
   });
   it("die Grundwerte skalieren NICHT mit der Zahl gehaltener Skills (Owner)", () => {
     const many = [S.MITKLANG, S.BEHARRLICHKEIT, S.ANKLANG, S.RUNDE, S.GENUGTUUNG];
@@ -406,66 +408,65 @@ describe("Haltungen — Crit-Linie (blau)", () => {
 });
 
 describe("Haltungen — Überlappungs-Linie (grün)", () => {
-  it("SK_STANCE_07 Doppelbindung hebt die ANZAHL, nicht den Wert — der einzige Weg über die ×3-Decke", () => {
-    const opts = stanceOverlapOpts(st({ stance: "G" }), [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: 3 });
-    expect(opts.doubleBind).toBe(T.doppelbindung[3].types);
-    // Ohne den Skill bleibt die Zahl 0 (keine Doppelzählung).
-    expect(stanceOverlapOpts(st({ stance: "G" }), [], {}).doubleBind).toBe(0);
-    const deck = constDeck(3).map((c, i) => ({ ...c, value: i < 2 ? 7 : i, baseRank: i < 2 ? 7 : i }));
-    const one = computeFormations(identity(), deck, {}, [], [], [], {}, null, null, null, { bleed: 1 });
-    const two = computeFormations(identity(), deck, {}, [], [], [], {}, null, null, null, { bleed: 1, doubleBind: 4 });
-    expect(two[0].mult).toBeGreaterThan(one[0].mult);
+  const forms = () => computeFormations(order10(), board10());
+  const green = () => st({ stance: "G" });
+  const sumOf = (f, from, to) => f.slice(from, to).reduce((x, p) => x + p.formations.length, 0);
+
+  it("SK_STANCE_07 Doppelbindung: die dichtesten Karten des Fensters zählen doppelt", () => {
+    const f = forms(), counts = segmentFormCounts(f, 2);
+    const top = [...counts].sort((x, y) => y - x);
+    for (let tier = 0; tier < 4; tier++) {
+      const n = T.doppelbindung[tier].cards;
+      const extra = top.slice(0, n).reduce((x, y) => x + y, 0);
+      expect(stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: tier }), `Stufe ${tier}`)
+        .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * (sumOf(f, 0, 5) + extra), 9);
+    }
+    // Episch verdoppelt alle fünf — das ist genau die doppelte Summe.
+    expect(T.doppelbindung[3].cards).toBe(5);
+    expect(stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: 3 }))
+      .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * 2 * sumOf(f, 0, 5), 9);
   });
-  it("SK_STANCE_08 Übergriff öffnet ALLE Grenzen, solange Grün klingt — gestaffelt ist der Zuschlag", () => {
-    const opts = stanceOverlapOpts(st({ stance: "G" }), [S.UEBERGRIFF], {});
-    expect(opts.allBorders).toBe(true);
-    expect(opts.overlapPlus).toBe(T.uebergriff[0].bonus);
-    // Ohne den Skill bleiben die Grenzen zu und der Zuschlag bei 0 — die Geste hängt an keiner Stufe, der Zuschlag schon.
-    const bare = stanceOverlapOpts(st({ stance: "G" }), [], {});
-    expect(bare.allBorders).toBe(false);
-    expect(bare.overlapPlus).toBe(0);
-    expect(stanceOverlapOpts(st({ stance: "G" }), [S.UEBERGRIFF], { [S.UEBERGRIFF]: 3 }).overlapPlus).toBe(T.uebergriff[3].bonus);
-    /* Das Abfärben über die Naht: auf board10 liegen zwei Wiederholungen Rücken an Rücken an Grenze 0 (3/4 und 5/6).
-       Ohne Übergriff färbt 4 nicht auf 5 und 5 nicht auf 4 — beide stehen auf Stufe 2. Mit Übergriff auf Stufe 3. */
-    const shut = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1 });
-    const open = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, allBorders: true });
-    for (const k of [4, 5]) expect(open[k].mult / shut[k].mult).toBeCloseTo(overlapFactor(3) / overlapFactor(2));
-    // Die Positionen, die ohnehin im Segment bleiben, ändern sich nicht: Übergriff wirkt genau an der Naht.
-    for (const k of [3, 6]) expect(open[k].mult).toBeCloseTo(shut[k].mult);
-    // Der Zuschlag liegt ABSOLUT auf dem Überlappungsfaktor — dieselbe Achse wie Pflanzes Verwachsung.
-    const plus = computeFormations(order10(), board10(), {}, [], [], [], {}, null, null, null, { bleed: 1, overlapPlus: 0.5 });
-    expect(plus[3].mult / shut[3].mult).toBeCloseTo((overlapFactor(2) + 0.5) / overlapFactor(2));
+  it("SK_STANCE_08 Übergriff: das Fenster reicht über die Segmentgrenzen hinaus", () => {
+    const f = forms();
+    // Segment 0 ist 0–4. Reichweite n nimmt n Karten jenseits JEDER Grenze mit; nach links ist das Brett zu Ende.
+    expect(segmentFormCounts(f, 2, 1)).toEqual(f.slice(0, 6).map((p) => p.formations.length));
+    expect(segmentFormCounts(f, 2, 3)).toEqual(f.slice(0, 8).map((p) => p.formations.length));
+    expect(segmentFormCounts(f, 7, 2)).toEqual(f.slice(3, 10).map((p) => p.formations.length)); // beidseitig
+    for (let tier = 0; tier < 4; tier++) {
+      const reach = T.uebergriff[tier].reach;
+      const to = Math.min(10, 5 + reach);
+      expect(stanceGreenMult(green(), f, 2, [S.UEBERGRIFF], { [S.UEBERGRIFF]: tier }), `Stufe ${tier}`)
+        .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * sumOf(f, 0, to), 9);
+    }
+    // Jede Stufe ist mindestens so gut wie die darunter (das Fenster wächst nur).
+    for (let tier = 1; tier < 4; tier++)
+      expect(T.uebergriff[tier].reach, `Stufe ${tier}`).toBeGreaterThan(T.uebergriff[tier - 1].reach);
   });
-  it("SK_STANCE_09 Verankerung: im NACHKLANG von Grün ein Zuschlag je Formation an der Siegposition (§5.3)", () => {
-    const skills = [S.VERANKERUNG], rate = T.verankerung[0].perForm;
-    const active = st({ stance: "G" });
-    const echo = st({ stance: "R", ring: { G: 2 } });
-    expect(greenEchoes(active)).toBe(false);
-    expect(greenEchoes(echo)).toBe(true);
-    expect(verankerungMult(active, skills, {}, 3)).toBe(1);      // aktiv zahlt sie NICHT
-    expect(verankerungMult(echo, skills, {}, 3)).toBeCloseTo(1 + 3 * rate, 6);
-    expect(verankerungMult(echo, skills, {}, 0)).toBe(1);        // keine Formation → nichts
-    expect(verankerungMult(echo, [], {}, 3)).toBe(1);
-    expect(verankerungMult(echo, skills, { [S.VERANKERUNG]: 3 }, 3)).toBeCloseTo(1 + 3 * T.verankerung[3].perForm, 6);
-    // Sie ändert KEINE Geometrie mehr: die Überlappungs-Optionen kennen sie nicht.
-    expect(Object.keys(stanceOverlapOpts(st({ stance: "G" }), skills, {}))).not.toContain("anchor");
+  it("SK_STANCE_09 Verankerung: hebt den SATZ je gezählter Formation", () => {
+    const f = forms(), sum = sumOf(f, 0, 5);
+    for (let tier = 0; tier < 4; tier++)
+      expect(stanceGreenMult(green(), f, 2, [S.VERANKERUNG], { [S.VERANKERUNG]: tier }), `Stufe ${tier}`)
+        .toBeCloseTo(1 + (C.STANCE_GREEN_PER_FORM + T.verankerung[tier].plus) * sum, 9);
+    // Sie ändert am Fenster und an der Zählung nichts — nur am Satz.
+    expect(segmentFormCounts(f, 2)).toEqual(segmentFormCounts(f, 2, 0));
   });
-  it("Verankerung in der Engine: derselbe Stich, einmal mit klingendem grünem Nachklang und einmal ohne", () => {
-    /* Position 4 ist die ZWEITE Karte der Wiederholung 7/7 und damit die einzige dort, die eine ZAHLENDE Formation
-       trägt (die erste Karte eines Laufs hat Faktor 1). Genau die zählt `activeFormationCount` — dieselbe Zahl, die
-       der Stich anzeigt und die Brennpunkt/Feuerlinie lesen; Verankerung liest bewusst keine andere. */
-    const skills = [S.VERANKERUNG], rate = T.verankerung[0].perForm;
-    const board = { deck: board10(), oppDeck: constDeck(0), playerOrder: order10(), oppOrder: order10(), pos: 4 };
-    const bare = resolveTrick(run(st({ stance: "R", ring: { G: 2 } }), board), noCrit);
-    const held = resolveTrick(run(st({ stance: "R", ring: { G: 2 } }), { ...board, skills }), noCrit);
-    const forms = bare.lastTrick.breakdown.formBase;
-    expect(forms).toBeGreaterThan(1);                            // die Position trägt wirklich eine Formation
-    expect(held.lastTrick.breakdown.stanceMult / bare.lastTrick.breakdown.stanceMult).toBeCloseTo(1 + rate, 6);
-    expect(held.lastTrick.gained).toBeGreaterThan(bare.lastTrick.gained);
-    // Grün AKTIV statt im Nachklang: derselbe Stich zahlt den Zuschlag nicht.
-    const green = resolveTrick(run(st({ stance: "G" }), { ...board, skills }), noCrit);
-    const greenBare = resolveTrick(run(st({ stance: "G" }), board), noCrit);
-    expect(green.lastTrick.breakdown.stanceMult).toBeCloseTo(greenBare.lastTrick.breakdown.stanceMult, 6);
+  it("die drei grünen Skills greifen an drei verschiedenen Stellen derselben Rechnung an", () => {
+    const f = forms();
+    const only = (id, tier) => stanceGreenMult(green(), f, 2, [id], { [id]: tier });
+    const base = stanceGreenMult(green(), f, 2, [], {});
+    for (const id of [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG]) expect(only(id, 0), id).toBeGreaterThan(base);
+    // Zusammen mehr als jeder für sich — Fenster, Zählung und Satz multiplizieren sich nicht, sie greifen ineinander.
+    const all = stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG], {});
+    for (const id of [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG]) expect(all, id).toBeGreaterThan(only(id, 0));
+  });
+  it("Grün in der Engine: derselbe Stich, einmal mit klingendem Grün und einmal ohne", () => {
+    const board = { deck: board10(), oppDeck: constDeck(0), playerOrder: order10(), oppOrder: order10(), pos: 0 };
+    const off = resolveTrick(run(st(), board), noCrit);                 // Rot klingt
+    const on = resolveTrick(run(st({ stance: "G" }), board), noCrit);
+    const sum = sumOf(computeFormations(order10(), board10()), 0, 5);
+    expect(on.lastTrick.breakdown.stanceMult / off.lastTrick.breakdown.stanceMult)
+      .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * sum, 6);
+    expect(on.lastTrick.gained).toBeGreaterThan(off.lastTrick.gained);
   });
 });
 
@@ -791,12 +792,16 @@ describe("Haltungen — Engine-Integration", () => {
     const bare = resolveTrick(run(st({ counts: { R: C.STANCE_THRESHOLD - 1 } }), { deck: suitDeck(12, "R"), oppDeck: suitDeck(0, "B") }), noCrit);
     expect(bare.stance.counts).toEqual(s.stance.counts);
   });
-  it("ein Haltungswechsel liest das Brett neu, wenn er die Geometrie ändert — und sonst nicht", () => {
-    expect(stanceFormKeyOf(null)).toBe("");
-    const green = stanceOverlapOpts(st({ stance: "G" }), [], {});
-    expect(stanceFormKeyOf(green)).not.toBe("");
-    // Zwei Haltungen ohne Grün ergeben denselben Schlüssel → kein Neurechnen.
-    expect(stanceFormKeyOf(stanceOverlapOpts(st(), [], {}))).toBe(stanceFormKeyOf(stanceOverlapOpts(st({ stance: "B" }), [], {})));
+  it("kein Haltungswechsel liest das Brett mehr neu — die Fraktion biegt keine Geometrie (§5.3)", () => {
+    /* Bis §5.3 hing das Brett an der klingenden Haltung und wurde bei jedem grün berührenden Wechsel neu
+       gelesen (`stanceFormKey`). Beides ist weg. Die Gegenprobe: dieselbe Aufstellung liefert dieselben
+       Formationen, ganz gleich welche Haltung steht — und der Zustand trägt keinen Schlüssel mehr. */
+    const board = { deck: board10(), oppDeck: constDeck(0), playerOrder: order10(), oppOrder: order10(), pos: 0 };
+    const seen = STANCE_SUITS.map((c) => resolveTrick(run(st({ stance: c }), board), noCrit));
+    for (const s1 of seen) {
+      expect(s1.formations.map((p) => p.mult)).toEqual(seen[0].formations.map((p) => p.mult));
+      expect(s1).not.toHaveProperty("stanceFormKey");
+    }
   });
   it("ein voller Lauf mit der Fraktion kommt durch, rotiert und bleibt deterministisch", async () => {
     const { runOne } = await import("../sim/run.js");

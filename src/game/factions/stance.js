@@ -1,5 +1,6 @@
 import * as C from "../constants.js";
 import { SKILL_DEFS, isLegendarySkill, boostedTier } from "../skills.js";
+import { segmentFormCounts } from "../formations.js";
 
 /* ============================================================
    HALTUNGEN — Fraktionsmodul (Arbeitstitel „Prisma", docs/haltungen-fraktion.md). Reine Logik: kein React,
@@ -357,37 +358,26 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
   return { stance: next, switched, ended };
 }
 
-/* ---- Überlappung (grün) — die Geometrie, die formations.js braucht ----
-   Das Abfärben ist von sich aus positionsbezogen, und Positionen kennen keine Segmente; die Segmentbindung ist
-   deshalb eine ausdrückliche Klausel, keine geerbte (§3). Ohne sie liefe das Abfärben über jede Grenze und der
-   Skill Übergriff hätte nichts zu tun. Angenehmer Nebeneffekt: die LAGE im Segment zählt — eine Karte am Rand
-   färbt nur nach innen, eine in der Mitte nach beiden Seiten.
+/* ---- Grün: die Dichte des Segments (§3, §5.3 Neufassung) ----
+   Das alte Passiv (Abfärben auf die Nachbarkarte) ist gestrichen — es war die einzige Fraktions-Mechanik, die
+   die Formations-GEOMETRIE bog, und damit die teuerste Naht der Fraktion (Brett-Neulesen bei jedem Wechsel,
+   der Grün berührt) und die am schwersten zu erklärende Regel (Owner). An seiner Stelle EINE Zahl:
 
-   Übergriff hebt die Bindung ganz auf, solange Grün klingt (§5.4). Verankerung steht seit §5.3 nicht mehr hier:
-   sie ändert keine Geometrie mehr, sondern zahlt im Nachklang einen Multiplikator (s. u.). */
-export function stanceOverlapOpts(st, skills, skillTiers) {
-  if (!ringsNow(st, "G")) return null;
-  return {
-    bleed: C.STANCE_BLEED,
-    // Übergriff (§5.4, Owner): solange Grün klingt, zählt das Brett, als wären ALLE Segmentgrenzen offen —
-    // ohne Stufe und ohne Auswahl. Die Stufe sitzt stattdessen auf dem Überlappungsbonus selbst.
-    allBorders: held(skills, S.UEBERGRIFF),
-    overlapPlus: stanceParam(skills, skillTiers, S.UEBERGRIFF, "bonus") || 0,
-    doubleBind: stanceParam(skills, skillTiers, S.DOPPELBINDUNG, "types") || 0,
-  };
-}
-// Der Schlüssel, an dem die Engine erkennt, dass das Brett neu gelesen werden muss. Alles, was die Geometrie
-// verändert, steckt darin — und nur das: ein Wechsel, der Grün nicht berührt, rechnet nichts neu.
-export const stanceFormKeyOf = (opts) =>
-  (opts ? `${opts.bleed}|${opts.allBorders ? 1 : 0}|${opts.overlapPlus}|${opts.doubleBind}` : "");
+     Bonus = 1 + Satz × Summe der Formationen über das Fenster um die Siegposition
 
-/* Verankerung (§5.3, Owner-Neudesign): im NACHKLANG der grünen Haltung bekommt jeder Stich einen Zuschlag auf
-   seinen Multiplikator, je Formation an seiner Siegposition. Die Leiter ist der Satz je Formation.
-   Sie ändert damit keine Geometrie mehr (vorher: Überlappungs-Stufen beim Auslösen) und ist der Gegenpol zu
-   Genugtuung: dieselbe Zwei-Phasen-Form, nur auf Grün und multiplikativ statt flach.
-   Gezählt wird `activeFormationCount` — dieselbe Zahl, die der Stich anzeigt und die Brennpunkt/Feuerlinie lesen. */
-export const greenEchoes = (st) => !!(st && st.active && st.stance !== "G" && (st.ring?.G || 0) > 0);
-export function verankerungMult(st, skills, skillTiers, formCount) {
-  const rate = stanceParam(skills, skillTiers, S.VERANKERUNG, "perForm");
-  return rate && formCount > 0 && greenEchoes(st) ? 1 + rate * formCount : 1;
+   Das Fenster ist das Segment der Siegposition. Die drei Skills greifen an drei verschiedenen Stellen an:
+     Übergriff     — weitet das FENSTER über die Segmentgrenzen hinaus (`reach` Positionen je Seite)
+     Doppelbindung — die `cards` dichtesten Karten des Fensters zählen DOPPELT
+     Verankerung   — hebt den SATZ je gezählter Formation
+   Gezählt werden alle Einträge, auch die mit Faktor 1 (Owner) — s. segmentFormCounts. */
+export function stanceGreenMult(st, formations, pos, skills, skillTiers) {
+  if (!ringsNow(st, "G")) return 1;
+  const counts = segmentFormCounts(formations || [], pos, stanceParam(skills, skillTiers, S.UEBERGRIFF, "reach") || 0);
+  let sum = counts.reduce((a, b) => a + b, 0);
+  const dbl = stanceParam(skills, skillTiers, S.DOPPELBINDUNG, "cards") || 0;
+  // Doppelbindung: die dichtesten Karten ein zweites Mal. `slice` nach absteigender Sortierung — mehr Karten als
+  // im Fenster zu verdoppeln ist harmlos, slice deckelt selbst.
+  if (dbl) sum += [...counts].sort((a, b) => b - a).slice(0, dbl).reduce((a, b) => a + b, 0);
+  const rate = C.STANCE_GREEN_PER_FORM + (stanceParam(skills, skillTiers, S.VERANKERUNG, "plus") || 0);
+  return sum > 0 ? 1 + rate * sum : 1;
 }

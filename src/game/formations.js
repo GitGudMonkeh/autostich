@@ -19,7 +19,7 @@
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
 import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP,
-  BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE, STANCE_OVERLAP_OVER } from "./constants.js";
+  BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE } from "./constants.js";
 import { P, plantParam, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
@@ -111,15 +111,26 @@ function escalatingFactor(ordinal, base) {
 }
 // Überlappungsbonus je Anzahl Formationen auf einer Karte (#95): 2→×1,5, 3→×2, 4→×3.
 export const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
-/* Die Leiter endete bei 4, weil es nur vier Formationstypen gibt. Die Haltungen heben die ANZAHL über diese Decke
-   (Abfärben, Doppelbindung — docs/haltungen-fraktion.md §5.4), also braucht sie eine Fortsetzung.
-   Linear (+STANCE_OVERLAP_OVER je Stufe) als STARTWERT; die Alternative, den Schritt 3→4 (+1,5) fortzuschreiben,
-   läuft geometrisch weg. NICHT vom Owner entschieden — die erste Stelle, an der beim Tarieren zu drehen ist. */
+/* Die Leiter endet bei 4, weil es nur vier Formationstypen gibt. Sie hatte bis §5.3 eine lineare Fortsetzung
+   darüber, weil die Haltungen die ANZAHL über die Decke hoben (Abfärben, Doppelbindung). Seit Grün keine
+   Geometrie mehr ändert, kann die Anzahl 4 nicht mehr überschreiten — die Fortsetzung ist ersatzlos weg. */
 export function overlapFactor(count) {
   const c = Math.max(0, Math.floor(count));
-  if (c < 2) return 1;
-  if (c <= 4) return OVERLAP_BONUS[c];
-  return OVERLAP_BONUS[4] + (c - 4) * STANCE_OVERLAP_OVER;
+  return c < 2 ? 1 : OVERLAP_BONUS[Math.min(c, 4)];
+}
+/* Grün (§3, §5.3): wie viele Formationen liegen auf den Karten um `pos`? Gezählt wird das Segment der Position,
+   mit `reach` (Übergriff) zusätzlich so viele Positionen über beide Segmentgrenzen hinaus. Zurück kommt die Zahl
+   je Karte — die Summe bildet der Aufrufer, weil Doppelbindung die dichtesten Karten kennen muss.
+   Gezählt werden ALLE Einträge, auch die mit Faktor 1 (Owner): „in wie vielen Formationen liegt die Karte" ist
+   die Zahl, die auf dem Brett steht; jede Ausnahme holt die Kompliziertheit zurück, die §5.3 loswerden wollte. */
+export function segmentFormCounts(formations, pos, reach = 0) {
+  const n = formations.length;
+  const seg = Math.floor(pos / SEGMENT_SIZE);
+  const from = Math.max(0, seg * SEGMENT_SIZE - reach);
+  const to = Math.min(n - 1, (seg + 1) * SEGMENT_SIZE - 1 + reach);
+  const out = [];
+  for (let k = from; k <= to; k++) out.push((formations[k]?.formations || []).length);
+  return out;
 }
 export const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40; // [#Pass4: Farbblock 1,30→1,35] [#161 FB-5: Treppe/Wechsel 1,25→1,35/1,40 — schwerer zu bauen, daher stärker belohnt (≥ Farbblock)]
 
@@ -261,14 +272,12 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null, stanceOpts = null) {
+/* Haltungen: §5.3 hat die grüne Geometrie ersatzlos gestrichen. Grün liest jetzt nur noch AB, wie viele
+   Formationen um die Siegposition liegen (segmentFormCounts oben) — die Erkennung selbst rührt es nicht mehr
+   an. Damit hängt `computeFormations` an keiner Haltung mehr und läuft wieder einmal je Durchlauf. */
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
-  /* Haltungen (docs/haltungen-fraktion.md §3/§5.4): die grüne Haltung ändert als einzige Fraktions-Mechanik die
-     Formations-GEOMETRIE statt einer Zahl. `stanceOpts` = { bleed, allBorders, overlapPlus, doubleBind } und ist
-     null, sobald Grün nicht klingt — dann rechnet unten alles wie vorher. Übergriff läuft über
-     dieselbe `lootBorders`-Naht wie Durchlass und Spalier: solange Grün klingt, sind ALLE Grenzen offen. */
-  const st = stanceOpts && stanceOpts.bleed ? stanceOpts : null;
   // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
   // Stufe je Skill und das Wachstum je Karte (Wildwuchs braucht die Rangfolge). Ohne das Bündel
   // (Aufrufer ohne Pflanze, Tests) rechnet alles wie vorher.
@@ -333,9 +342,6 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const segInfo = openSegmentInfo(familyTiers);
   const spalierBorders = spalierOpenBorders(cards, skills, pTiers);
   const lootBorders = openBorders instanceof Set ? new Set(openBorders) : new Set(openBorders || []);
-  // Übergriff (§5.4): dieselbe Naht wie Durchlass, aber ohne Auswahl — solange Grün klingt, sind ALLE Grenzen
-  // offen. Das gilt für die Erkennung wie fürs Abfärben, denn beide fragen `canExtendSeg`.
-  if (st && st.allBorders) for (let b = 0; b * SEGMENT_SIZE < n - SEGMENT_SIZE; b++) lootBorders.add(b);
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
     || spalierBorders.has((k + 1) / SEGMENT_SIZE - 1) // Pflanze Spalier: grün gesäumte Grenze offen
     || lootBorders.has((k + 1) / SEGMENT_SIZE - 1)    // Durchlass (Auftrags-Beute): gewählte Grenze offen
@@ -486,38 +492,15 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Verwachsung (Pflanze, §6.26): hebt den Überlappungsbonus um einen ABSOLUTEN Betrag — der Zwei-Formations-Sieg
   // gewinnt damit relativ am meisten (×1,5 → ×1,75 sind +17 %, ×3 → ×3,25 nur +8 %), und dort liegen 38 % der Siege.
   // Prozentual würde die Spitze aufgeblasen, in der die Konzentration der Fraktion ohnehin sitzt (§6.22 C).
-  /* Überlappungs-Zuschlag, ABSOLUT auf den Faktor. Zwei Quellen addieren sich: Pflanzes Verwachsung und
-     Übergriff (dessen Stufe hier sitzt, §5.4). Wer beide hält, stapelt auf derselben Achse — gewollt, aber
-     die Stelle, an der ein Prisma-Pflanze-Build zuerst wegläuft. */
-  const overlapPlus = (plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0) + ((st && st.overlapPlus) || 0);
-  /* Haltungen, grün (§3): das Abfärben. Eine Karte, die in mindestens einer Formation liegt, gibt ihrer
-     NACHBARKARTE eine Überlappungs-Stufe — innerhalb des Segments, es sei denn, die Grenze dazwischen ist offen
-     (`canExtendSeg`, dieselbe Frage, die auch ein Lauf stellt). Die Segmentbindung ist eine ausdrückliche Klausel,
-     keine geerbte: „die Nachbarkarte erbt" ist von sich aus positionsbezogen, und Positionen kennen keine
-     Segmente. Nebeneffekt, gewollt: die LAGE im Segment zählt — eine Karte am Rand färbt nur nach innen.
-     Dazu die beiden Skills, die die ANZAHL heben statt den Wert: Doppelbindung (eine Karte zählt in bis zu
-     `doubleBind` Typen doppelt). Verankerung steht seit §5.3 nicht mehr hier — sie zahlt einen Multiplikator im
-     Nachklang statt Überlappungs-Stufen beim Auslösen. */
-  const extraOverlap = new Array(n).fill(0);
-  if (st) {
-    for (let k = 0; k < n; k++) {
-      if (!out[k].formations.length) continue;
-      if (k + 1 < n && canExtendSeg(k)) extraOverlap[k + 1] += st.bleed;
-      if (k - 1 >= 0 && canExtendSeg(k - 1)) extraOverlap[k - 1] += st.bleed;
-    }
-    if (st.doubleBind) for (let k = 0; k < n; k++) {
-      const types = [...new Set(out[k].formations.map((f) => f.type))];
-      extraOverlap[k] += Math.min(types.length, st.doubleBind);
-    }
-  }
-  /* Die Basis-Anzahl bleibt bei 4 GEDECKELT, wie seit #95 — es gibt vier Formationstypen, und Wurzelgeflecht
-     kann eine Karte jeder Formation ihres Segments beitreten lassen, also mehr als vier Einträge erzeugen. Nur
-     die Haltungs-Stufen (Abfärben, Doppelbindung) legen darüber hinaus: sie sind laut §5.4 der
-     einzige Weg über die ×3-Decke. Ohne Haltungen ist `extraOverlap` überall 0 und diese Zeile rechnet exakt
-     wie vorher. */
+  // Überlappungs-Zuschlag, ABSOLUT auf den Faktor. Seit §5.3 hat er nur noch EINE Quelle: Pflanzes Verwachsung.
+  // (Übergriff saß bis dahin hier mit drauf; Grün ändert die Erkennung nicht mehr.)
+  const overlapPlus = plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0;
+  /* Die Anzahl bleibt bei 4 GEDECKELT, wie seit #95 — es gibt vier Formationstypen, und Wurzelgeflecht kann
+     eine Karte jeder Formation ihres Segments beitreten lassen, also mehr als vier Einträge erzeugen. Seit §5.3
+     gibt es keine Quelle mehr, die darüber hinaus legt (die Haltungen taten das). */
   for (let k = 0; k < n; k++) {
     const p = out[k];
-    const c = Math.min(p.formations.length, 4) + extraOverlap[k];
+    const c = Math.min(p.formations.length, 4);
     if (c >= 2) p.mult *= overlapFactor(c) + overlapPlus;
   }
 
