@@ -250,9 +250,12 @@ const HALTUNG = {
   // §5.3 (Owner): Anklang hatte keinen eigenen Körper — er verlängerte nur, wie lange etwas anderes gilt. Jetzt
   // zahlen die Stiche im Fenster selbst. Der Satz ist flach, die Stufe ist die LÄNGE: 400 / 500 / 600 / 800 als
   // Decke, erreichbar nur mit lauter Siegen (Basis-Score gibt es nur auf einem Sieg).
-  // §6.16: mono +46 % (zweitstärkster) → Satz −25 %. Die LÄNGE bleibt die Stufe (Owner), sie füttert die ganze
-  // Fraktion; gekürzt wird nur, was der Skill selbst auszahlt.
-  anklang:        [{ duration: 4, score: 75 }, { duration: 5, score: 75 }, { duration: 6, score: 75 }, { duration: 8, score: 75 }],
+  /* §6.16: mono +46 % → Satz 100 → 75. Ohne Wirkung: §6.18 maß ihn danach bei +58 %, weil sein Gewicht die DAUER
+     ist, nicht die Auszahlung — sie verlängert die Laufzeit aller vier Haltungen und wächst deshalb mit allem mit,
+     was die Fraktion sonst gewinnt. Owner: nerfen. 4/5/6/7 ist die härteste mögliche Dauer-Leiter: der Boden kann
+     nicht unter 4 (bei STANCE_MIN_DURATION = 3 hieße eine Stufe „klingt 3 statt 3 nach"), und vier verschiedene
+     Stufen müssen es bleiben. Deshalb geht der Satz mit herunter, obwohl er allein wenig trägt. */
+  anklang:        [{ duration: 4, score: 50 }, { duration: 5, score: 50 }, { duration: 6, score: 50 }, { duration: 7, score: 50 }],
   /* §5.3 (Owner): die Leiste als Grundmechanik ist weg — Runde IST jetzt der Einklang. Nach `switches` echten
      Wechseln klingen alle vier Haltungen gleichzeitig; Episch hält den Moment länger. Die Stufe hängt nicht mehr
      am Skill, sondern am Zustand „alle vier klingen" (stance.js) — ein Build ohne Runde kann sie also durch

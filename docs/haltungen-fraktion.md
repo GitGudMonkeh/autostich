@@ -268,7 +268,7 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | **Ergebnis** (rot) | **Genugtuung** · Basis-Score im Nachklang, je gedrehtem Stich | 150 | 240 | 330 | 480 |
 | | **Rückhalt** · Karten nach dem Ende der Haltung · Stichwert | 6 · +4 | 7 · +4 | 8 · +4 | 10 · +6 |
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +2 · 3× | +3 · 4× | +4 · 6× | +6 · 10× + *Serien-Satz +0,5 %* |
-| **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +75 Basis-Score) | 4 | 5 | 6 | 8 |
+| **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +50 Basis-Score) | 4 | 5 | 6 | 7 |
 | | **Runde** · Wechsel bis alle vier klingen · Dauer | 7 · 3 | 6 · 3 | 5 · 3 | 4 · 5 |
 | | **Beschleunigung** · Senkung je Wechsel · Boden | jeder 2. −1 · 4 | −1 · 4 | −2 · 3 | −2 · 3 + *Nachklang +1* |
 
@@ -448,7 +448,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 
 | Kennwert | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
-| **Anklang** · Nachklang-Stiche (je +75 Basis-Score) | 4 | 5 | 6 | 8 |
+| **Anklang** · Nachklang-Stiche (je +50 Basis-Score) | 4 | 5 | 6 | 7 |
 | **Runde** · echte Wechsel bis alle vier klingen | 7 | 6 | 5 | 4 |
 | **Runde** · Stiche, die sie gleichzeitig klingen | 3 | 3 | 3 | 5 |
 | **Beschleunigung** · Schwellen-Senkung je Wechsel | jeder 2. −1 | −1 | −2 | −2 |
@@ -457,13 +457,14 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 
 **Anklang hat mit §6.14 einen eigenen Körper bekommen** (Owner). Vorher verlängerte er nur, wie lange etwas
 anderes gilt — sein ganzer Wert war der Wert fremder Passive, und gemessen kam nichts dabei heraus. Jetzt
-zahlen die Stiche im Fenster selbst: **+75 Basis-Score je Stich** (§6.16: von 100 gekürzt, mono +46 % und
-damit zweitstärkster), also 300 / 375 / 450 / **600** als Decke. Der Satz ist flach, die STUFE ist die Länge.
+zahlen die Stiche im Fenster selbst: **+50 Basis-Score je Stich**, also 200 / 250 / 300 / **350** als Decke.
+Der Satz ist flach, die STUFE ist die Länge. (§6.16 kürzte den Satz von 100 auf 75 — wirkungslos, §6.18 maß
+danach +58 %. Erst §6.18 zweite Runde hat die DAUER angefasst, 8 → 7, und den Satz noch einmal mitgenommen.)
 
 Drei Dinge, die die Regel festlegt: das Fenster wird bei einem zweiten Wechsel **aufgefrischt, nicht
 gestapelt** (sonst zahlte Hin-und-Her doppelt); der **Einklang zahlt nicht** (dort klingen alle vier, ohne dass
 ein Wechsel stattgefunden hat); und die Decke ist eine Decke — Basis-Score gibt es nur auf einem **Sieg**, bei
-rund 57 % Siegquote bringt Episch also eher 340 als 600.
+rund 57 % Siegquote bringt Episch also eher 200 als 350.
 
 **Neudesign §5.3, Beschleunigung (Owner):** *„Jeder zweite Haltungswechsel braucht 1 Stich weniger, jeder
 Haltungswechsel 1 Stich weniger, jeder Haltungswechsel 2 Stiche weniger, Episch 2 Stiche weniger und Nachklang
