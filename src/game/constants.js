@@ -470,15 +470,13 @@ export const STANCE_THRESHOLD    = envNum("SIM_STANCE_THRESHOLD", 5);    // gewo
    der Stiche nur EINE Haltung klingen und vier der fünfzehn Skills leerlaufen (§6.8.1). */
 export const STANCE_MIN_DURATION = envNum("SIM_STANCE_MIN_DURATION", 3); // Stiche, die eine abgelöste Haltung nachklingt (Owner: „mal mit 3 starten")
 export const STANCE_START        = "R";                                  // der Lauf startet in Rot, Zähler 0 (Owner) — fest, nicht gewürfelt
-/* EINKLANG und STUFE (§3.1, Owner). §5.3: die Leiste ist weg. Der Sammler hängt jetzt an einem echten
-   Spielzustand — klingen alle VIER Haltungen gleichzeitig, steigt die STUFE um eins, dauerhaft. Erreichbar ist
-   das durch schnelles Rotieren (drei Wechsel innerhalb einer Mindestdauer) oder zuverlässig über den Skill
-   „Runde", der nach n Wechseln alle vier klingen lässt.
-   Die Stufe ist der einzige Sammler der Fraktion — ein glatter Multiplikator auf den Sieg-Score, EINE Zahl mit
-   EINER Lesart (Owner: „das Spiel ist schon kompliziert genug").
-   Der Einklang selbst braucht keine eigene Mechanik: er schreibt in die vier Nachklang-Zähler, die es gibt. */
+/* EINKLANG (§3.1, Owner). §5.3: die Leiste ist weg. §6.19: die STUFE ist es auch — der dauerhafte Sammler, der
+   als glatter Multiplikator auf JEDEM Sieg-Score lag, ist ersatzlos gestrichen. Geblieben ist der Zustand:
+   klingen alle VIER Haltungen gleichzeitig, wirken alle vier Passive zugleich, und zwar nur so lange.
+   Erreichbar durch schnelles Rotieren (drei Wechsel innerhalb einer Mindestdauer) oder zuverlässig über den
+   Skill „Runde", der nach n Wechseln alle vier klingen lässt.
+   Der Einklang braucht keine eigene Mechanik: er schreibt in die vier Nachklang-Zähler, die es ohnehin gibt. */
 export const STANCE_EINKLANG = envNum("SIM_STANCE_EINKLANG", 3);  // Stiche, die Runde alle vier klingen lässt (0 = Ablation)
-export const STANCE_STEP     = envNum("SIM_STANCE_STEP", 0.02);   // Score-Multiplikator je Stufe (STARTWERT, ungemessen)
 // Grundwerte der vier Passive (§3, Owner). Sie stehen und skalieren NICHT mit der Zahl gehaltener Skills.
 export const STANCE_CRIT         = envNum("SIM_STANCE_CRIT", 0.5);       // Blau: Crit-Chance, solange sie klingt — additiv, kein Mindestwert
 export const STANCE_SCORE_MULT   = envNum("SIM_STANCE_SCORE_MULT", 1.4); // Gelb: glatter Multiplikator auf den Sieg-Score

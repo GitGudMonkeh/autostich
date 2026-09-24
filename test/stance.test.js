@@ -4,7 +4,7 @@ import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
   stanceLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
-  stanceTick, roundSwitches, einklangDuration, stanceLevelMult,
+  stanceTick, roundSwitches, einklangDuration,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
 import { streakBaseMult } from "../src/game/perks.js";
 import { resolveTrick } from "../src/game/engine.js";
@@ -88,7 +88,6 @@ describe("Haltungen — der Mechanismus (§2)", () => {
     expect(stanceLift(off)).toBe(0);
     expect(stanceCrit(off, [S.GRUNDRAUSCHEN], {})).toBe(0);
     expect(stanceScoreMult(off, [], {})).toBe(1);
-    expect(stanceLevelMult(off)).toBe(1);
   });
   it("der Lauf startet in Rot mit Zähler 0; die aktive Haltung klingt immer, die anderen nicht", () => {
     const s = st();
@@ -707,7 +706,7 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
   });
 });
 
-describe("Haltungen — der Einklang und die Stufe (§3.1)", () => {
+describe("Haltungen — der Einklang (§3.1)", () => {
   it("jeder ECHTE Wechsel zählt für Runde, ein Selbst-Auslösen nicht", () => {
     let s = st({ counts: { B: C.STANCE_THRESHOLD - 1 } });
     s = stanceTick(s, [], {}, { wonSuit: "B" }).stance;
@@ -717,28 +716,28 @@ describe("Haltungen — der Einklang und die Stufe (§3.1)", () => {
     expect(s.sinceRound).toBe(1);
     expect(s.switches).toBe(1);
   });
-  it("die STUFE hängt daran, dass alle vier klingen — nicht an Runde, und sie zählt als FLANKE", () => {
-    /* Der Sammler gehört seit §5.3 keinem Skill mehr: wer schnell genug rotiert, bekommt ihn auch ohne Runde.
-       Hier drei Wechsel dicht hintereinander, sodass die Nachklänge stehen bleiben. */
+  it("der EINKLANG hängt daran, dass alle vier klingen — nicht an Runde, und er zählt als FLANKE", () => {
+    /* Der Moment gehört seit §5.3 keinem Skill mehr: wer schnell genug rotiert, bekommt ihn auch ohne Runde.
+       Hier drei Wechsel dicht hintereinander, sodass die Nachklänge stehen bleiben. Seit §6.19 hängt daran
+       kein dauerhafter Multiplikator mehr — gezählt wird die Flanke trotzdem, als Telemetrie. */
     let s = st();
     for (let i = 0; i < 3; i++) {
       const c = STANCE_SUITS[(i + 1) % 4];
       s = stanceTick({ ...s, counts: { ...s.counts, [c]: s.threshold - 1 } }, [], {}, { wonSuit: c }).stance;
     }
     expect(ringCount(s)).toBe(4);
-    expect(s.level).toBe(1);                                 // ohne jeden Skill
-    expect(s.einklang).toBe(1);
+    expect(s.einklang).toBe(1);                              // ohne jeden Skill
     /* FLANKE: ein weiterer Stich, in dem alle vier WEITER klingen, gibt KEINE zweite Stufe. Die Nachklänge
        werden dafür künstlich hochgesetzt — sonst fiele der älteste in genau diesem Stich aus und die Probe
        würde den Zustand gar nicht halten. */
     const held = stanceTick({ ...s, ring: { R: 5, B: 5, G: 5, Y: 5 } }, [], {}, {}).stance;
     expect(ringCount(held)).toBe(4);
-    expect(held.level).toBe(1);
-    // Alles klingt aus, die Stufe bleibt.
+    expect(held.einklang).toBe(1);
+    // Alles klingt aus, der Zähler bleibt stehen.
     let out = held;
     for (let i = 0; i < C.STANCE_MIN_DURATION + 2; i++) out = stanceTick(out, [], {}, {}).stance;
     expect(ringCount(out)).toBe(1);
-    expect(out.level).toBe(1);
+    expect(out.einklang).toBe(1);
   });
   it("der Einklang verkürzt keinen längeren Nachklang — er hebt nur an", () => {
     // Blau klingt noch 20 Stiche (ein Verlängerer hat zugelegt). Runde steht kurz vor dem Zünden; der nächste
@@ -754,37 +753,35 @@ describe("Haltungen — der Einklang und die Stufe (§3.1)", () => {
     expect(s.ring.Y).toBe(einklangDuration(skills, {}));           // hatte nichts: Einklang-Dauer, sonst 0
     expect(ringCount(s)).toBe(C.STANCE_EINKLANG > 0 ? 4 : 3);      // ohne Moment klingt Gelb nicht mit
   });
-  it("die Stufe ist ein glatter Multiplikator auf JEDEN Stich — auch ohne klingendes Gelb", () => {
-    expect(stanceLevelMult(st({ level: 0 }))).toBe(1);
-    expect(stanceLevelMult(st({ level: 10 }))).toBeCloseTo(1 + 10 * C.STANCE_STEP, 9);
-    // Rot klingt, Gelb nicht — die Stufe zahlt trotzdem.
-    expect(stanceScoreMult(st({ level: 10 }), [], {})).toBeCloseTo(1 + 10 * C.STANCE_STEP, 9);
-    // Mit klingendem Gelb multipliziert sie auf dessen Faktor.
-    expect(stanceScoreMult(st({ stance: "Y", level: 10 }), [], {}))
-      .toBeCloseTo(C.STANCE_SCORE_MULT * (1 + 10 * C.STANCE_STEP), 9);
-    // In der Engine landet sie im Stich.
-    const s = resolveTrick(run(st({ level: 20 })), noCrit);
-    expect(s.lastTrick.breakdown.stanceMult).toBeCloseTo(1 + 20 * C.STANCE_STEP, 9);
+  it("die gelbe Linie zahlt NUR, solange Gelb klingt — die Stufe ist raus (§6.19)", () => {
+    /* Vor §6.19 stand hier ein dauerhafter Sammler, der auf JEDEN Sieg-Score zahlte, auch ohne klingendes Gelb.
+       Der Wächter prüft jetzt die Gegeneigenschaft: außerhalb von Gelb hat die Linie keinen Faktor mehr. */
+    expect(stanceScoreMult(st(), [], {})).toBe(1);                  // Rot klingt, Gelb nicht
+    expect(stanceScoreMult(st({ stance: "B" }), [], {})).toBe(1);
+    expect(stanceScoreMult(st({ stance: "Y" }), [], {})).toBeCloseTo(C.STANCE_SCORE_MULT, 9);
+    // Und ein Lauf voller Einklänge legt nichts Dauerhaftes an — der Zähler ist reine Telemetrie.
+    const s = resolveTrick(run(st({ einklang: 20 })), noCrit);
+    expect(s.lastTrick.breakdown.stanceMult).toBe(1);
   });
-  it("der Einklang ist abschaltbar, die Stufe bleibt — der Messhaken für die Ablation (§6.13)", () => {
+  it("der Einklang ist abschaltbar — der Messhaken für die Ablation (§6.13)", () => {
     // Der Haken hängt an der Konstante; hier wird nur geprüft, dass die Leseregel ihn sauber trennt:
-    // Dauer 0 heißt kein Moment — und ohne Moment klingen nie vier, also steigt auch die Stufe nicht.
+    // Dauer 0 heißt kein Moment — und ohne Moment klingen nie alle vier."
     expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 }))
       .toBe(C.STANCE_EINKLANG > 0 ? T.runde[3].duration : 0);
     // Und die epische Dauer hängt mit ab: eine längere Dauer auf einem Moment der Länge null wäre ein Rechenfehler.
     if (C.STANCE_EINKLANG === 0) expect(einklangDuration([S.RUNDE], { [S.RUNDE]: 3 })).toBe(0);
   });
-  it("Runde-Zähler, Stufe und der Spitzen-Zuschlag kennen keine Durchlauf-Grenze", () => {
+  it("Runde-Zähler, Einklang-Zähler und der Spitzen-Zuschlag kennen keine Durchlauf-Grenze", () => {
     /* Seit Stauung nicht mehr bunkert, hat die Fraktion am Durchlauf-Ende gar keinen Haken mehr — nichts wird
        zwangsweise ausgezahlt und nichts zurückgesetzt. Die Gegenprobe steht hier, damit ein wieder eingebauter
        Haken auffällt: ein ganzer Durchlauf über die Grenze hinweg lässt alle drei Zahlen stehen. */
-    const s = st({ sinceRound: 3, level: 7, stance: "Y", peakBest: 900, peakTicks: 4 });
+    const s = st({ sinceRound: 3, einklang: 7, stance: "Y", peakBest: 900, peakTicks: 4 });
     const last = run(s, { skills: [S.STAUUNG], pos: C.TRICKS_PER_CYCLE - 1, cycle: 1 });
     const out = resolveTrick(last, noCrit);
     expect(out.cycle).toBe(2);                                 // der Durchlauf ist wirklich zu Ende gegangen
     expect(out.pos).toBe(0);
     expect(out.stance.sinceRound).toBe(3);
-    expect(out.stance.level).toBe(7);
+    expect(out.stance.einklang).toBe(7);
     expect(out.stance.peakTicks).toBe(5);                      // läuft weiter, statt am Durchlauf-Ende auszuzahlen
     expect(out.stance.peakBest).toBeGreaterThanOrEqual(900);
   });

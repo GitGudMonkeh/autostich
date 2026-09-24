@@ -64,8 +64,7 @@ export function initStance() {
     carried: [C.STANCE_START],     // Runde: Farben, die in dieser Runde schon getragen wurden
     echo: 0,                       // Anklang: Reststiche des Fensters NACH einem Haltungswechsel
     sinceRound: 0,                 // Runde: echte Wechsel seit dem letzten Einklang
-    level: 0,                      // Stufe: dauerhaft, der einzige Sammler der Fraktion (Score-Multiplikator)
-    einklang: 0,                   // Telemetrie: wie oft alle vier diesen Lauf gleichzeitig klangen (= Stufen)
+    einklang: 0,                   // Telemetrie: wie oft alle vier diesen Lauf gleichzeitig klangen
     peakBest: 0,                   // Stauung: größter Sieg der klingenden gelben Haltung
     peakTicks: 0,                  // Stauung: Stiche, die die gelbe Haltung schon klingt (Hebel des Spitzen-Zuschlags)
     guard: 0,                      // Rückhalt: Restkarten, die nach dem Ende der roten Haltung mit mehr Wert kämpfen
@@ -130,9 +129,6 @@ export const roundSwitches = (skills, skillTiers) =>
    Dauer auf einem Moment der Länge null ist keine Wirkung, sondern ein Rechenfehler. */
 export const einklangDuration = (skills, skillTiers) =>
   (C.STANCE_EINKLANG > 0 ? (stanceParam(skills, skillTiers, S.RUNDE, "duration") ?? C.STANCE_EINKLANG) : 0);
-// Der Sammler: 1 ohne Stufe, danach linear. Kein Deckel — der Regler ist der Satz je Stufe (skill-rework.md §1).
-export const stanceLevelMult = (st) => (st && st.active ? 1 + (st.level || 0) * C.STANCE_STEP : 1);
-
 /* ---- Die vier Passive ---- */
 
 // Rot (Ergebnis): um wie viele Stufen der Ausgang steigt. Eine Stufe, solange Rot klingt — sonst keine.
@@ -157,16 +153,16 @@ export function grundrauschenCritMult(st, skills, skillTiers) {
    und Mitklang sind ein Spiegelpaar (§5.1) — im Block-Build wächst die eine und die andere steht auf 0, im
    bunten Build umgekehrt. Dieselbe Linie bedient beide Spielstile. Ohne klingendes Gelb: 1. */
 export function stanceScoreMult(st, skills, skillTiers) {
-  // Die Stufe wirkt auf JEDEN Stich, nicht nur auf den gelben — sie ist der Sammler der Fraktion, nicht ein Teil
-  // der gelben Haltung. Deshalb steht sie außerhalb der Gelb-Prüfung.
-  const level = stanceLevelMult(st);
-  if (!ringsNow(st, "Y")) return level;
+  /* §6.19 (Owner): die STUFE ist raus. Sie war der einzige dauerhafte Sammler der Fraktion und lag als glatter
+     Multiplikator auf JEDEM Sieg-Score — auch ohne klingendes Gelb. Damit zahlt die gelbe Linie jetzt nur noch,
+     solange Gelb klingt, und der Einklang wirkt allein über das, was er ohnehin tut: alle vier Passive zugleich. */
+  if (!ringsNow(st, "Y")) return 1;
   let m = C.STANCE_SCORE_MULT;
   const per = stanceParam(skills, skillTiers, S.BEHARRLICHKEIT, "perTrick");
   if (per) m += per * (st.ranFor?.Y || 0);
   const mit = stanceParam(skills, skillTiers, S.MITKLANG, "perStance");
   if (mit) m += mit * Math.max(0, ringCount(st) - 1);
-  return m * level;
+  return m;
 }
 
 /* ---- Ergebnis-Linie (rot) ---- */
@@ -336,11 +332,11 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
   const ranFor = { ...next.ranFor };
   for (const s of STANCE_SUITS) ranFor[s] = ringsNow(next, s) ? (ranFor[s] || 0) + 1 : 0;
   next = { ...next, ranFor };
-  /* Der Sammler (§3.1, Owner): klingen alle vier Haltungen gleichzeitig, steigt die Stufe um 1 — dauerhaft, für
-     den Rest des Laufs. FLANKE, nicht Zustand: es zählt der Moment, in dem die vierte dazukommt, nicht jeder
-     Stich, den sie zusammen klingen. `before` ist der Stand vor diesem Stich, also genau die Gegenprobe. */
+  /* Der Einklang (§3.1, §6.19): klingen alle vier Haltungen gleichzeitig, wirken alle vier Passive zugleich.
+     Seit §6.19 zählt die Flanke nur noch — die Stufe, die hier stand, ist raus (Owner). FLANKE, nicht Zustand:
+     es zählt der Moment, in dem die vierte dazukommt. `before` ist der Stand vor diesem Stich. */
   if (ringCount(next) === STANCE_SUITS.length && before.length < STANCE_SUITS.length)
-    next = { ...next, level: next.level + 1, einklang: next.einklang + 1 };
+    next = { ...next, einklang: next.einklang + 1 };
   // Genugtuungs Zähler lebt so lange wie die rote Haltung — Ablösung reicht nicht, sie zahlt ihn ja weiter aus.
   if (!ringsNow(next, "R")) next = { ...next, turns: 0 };
   /* Übertrags Rampe überlebt das Verklingen (§6.18, Owner): sie halbiert sich EINMAL an der Flanke, statt auf 0

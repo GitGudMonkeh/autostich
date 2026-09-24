@@ -168,50 +168,58 @@ nachrüstbar, ohne dass eine Regel sich ändert.
   Segments gibt denselben Bonus — *wo* du im Segment gewinnst, ist gleichgültig, *wie dicht* das
   Segment ist, entscheidet alles. Nur **Übergriff** weitet das Fenster über die Grenzen hinaus.
 
-### 3.1 · Der Einklang und die Stufe — **§5.3 neu gefasst**
+### 3.1 · Der Einklang — **§6.19 neu gefasst**
 
 Die vier Passive sind flach: sie wirken je Stich, begrenzt, und bauen nichts auf. Genau daran lag die Fraktion
-Faktor 2 bis 14 unter dem Feld (§6.8 A). Der Sammler, der das behebt, hing bis §5.3 an einer eigenen **Leiste**
-(10 Wechsel → Einklang + Stufe). **Die Leiste ist weg** (Owner). An ihre Stelle tritt ein echter Spielzustand:
+Faktor 2 bis 14 unter dem Feld (§6.8 A). Der Sammler, der das beheben sollte, hing bis §5.3 an einer eigenen
+**Leiste** (10 Wechsel → Einklang + Stufe), danach an einem Spielzustand: klingen alle vier gleichzeitig, steigt
+eine dauerhafte **Stufe**.
+
+**§6.19 (Owner): die Stufe ist raus.** Ersatzlos. Sie war ein glatter Multiplikator auf *jeden* Sieg-Score —
+auch dann, wenn gar keine gelbe Haltung klang — und damit der Posten, der die Fraktion als Beimischung so
+wertvoll machte, ohne dass ein einziger Skill dafür nötig war (§6.15, §6.18). Geblieben ist der **Zustand**:
 
 ```
-1.  Klingen ALLE VIER Haltungen gleichzeitig  →  die STUFE steigt um 1.
-    Dauerhaft, für den Rest des Laufs. Als FLANKE: der Moment zählt,
-    in dem die vierte dazukommt, nicht jeder Stich, den sie zusammen klingen.
+Klingen ALLE VIER Haltungen gleichzeitig, wirken alle vier Passive zugleich
+ — und zwar nur so lange. Nichts davon bleibt danach stehen.
 
-2.  Erreichbar auf zwei Wegen:
-      a) schnell genug rotieren — drei Wechsel innerhalb einer Mindestdauer,
-      b) oder der Skill RUNDE: nach n echten Wechseln klingen alle vier
-         für einige Stiche gleichzeitig (§5.3).
+Erreichbar auf zwei Wegen:
+  a) schnell genug rotieren — drei Wechsel innerhalb einer Mindestdauer,
+  b) oder der Skill RUNDE: nach n echten Wechseln klingen alle vier
+     für einige Stiche gleichzeitig (§5.3).
 ```
 
 | | Grundwert | Regler |
 | --- | --- | --- |
-| Stufe steigt bei | alle vier klingen gleichzeitig | — die Bedingung selbst ist der Regler |
+| Einklang entsteht bei | alle vier klingen gleichzeitig | — die Bedingung selbst ist der Regler |
 | Einklang dauert | 3 Stiche | **Runde** Episch: 5 |
 | Runde zündet nach | — *(ohne den Skill nie)* | **Runde**: 7 / 6 / 5 / 4 Wechsel |
-| Stufe gibt | **×1,02** auf jeden Sieg-Score | der Satz je Stufe ist der Haupt-Regler |
+| Einklang gibt | Rot **und** Blau **und** Gelb **und** Grün zugleich | die vier Grundwerte in §3 |
 
-**Was der Tausch ändert.** Der Sammler ist nicht mehr automatisch: er gehört jetzt dem, der die Fraktion
-tatsächlich *spielt*. Ein Block-Build, der selten wechselt, bekommt ihn kaum noch; ein Tanz-Build bekommt ihn
-auch ohne Runde. **Zu beobachten:** ob die Stufe damit zu selten steigt — der Satz je Stufe (`STANCE_STEP`,
-0,02) war gegen eine Leiste geeicht, die alle 10 Wechsel voll war.
+**Was der Tausch ändert.** Die Fraktion hat jetzt **gar keinen dauerhaften Sammler mehr** — kein Wert wächst
+über den Lauf. Alles, was Prisma tut, hängt daran, welche Haltung in diesem Stich klingt. Das macht den
+Einklang zum stärksten Moment der Fraktion statt zu einer Buchung, und es macht **Mitklang** und **Runde** zu
+den Skills, die ihn holen. **Zu beobachten:** ob die Fraktion ohne Sammler wieder unter das Feld fällt — der
+Grund, aus dem der Sammler 2026-09 überhaupt eingeführt wurde, steht in §6.8 A und ist nicht widerlegt.
+
+`STANCE_STEP` ist mit der Stufe entfallen, `stanceLevelMult` ebenso. Der Zähler `einklang` bleibt als reine
+Telemetrie (`--mode motor --arch stance`).
 
 **Der Einklang braucht keine eigene Mechanik.** „Alle vier klingen" heißt, in die vier Nachklang-Zähler zu
 schreiben, die es ohnehin gibt — keine neue Regel, kein neuer Zustand. Er hebt dabei nur an und kürzt nie:
 ein längerer Nachklang, den ein Verlängerer eben gelegt hat, bleibt stehen.
 
-**Die Stufe hat EINE Lesart** (Owner: „das Spiel ist schon kompliziert genug"): ein glatter Multiplikator auf
-jeden Sieg-Score, unabhängig davon, welche Haltung klingt. Die Alternative — jedes der vier Passive liest die
-Stufe auf seine Weise — ist verworfen: bei Rot und Grün skaliert sie holprig, und Rots Lesart („Score je
-gerutschtem Stich") wäre wortgleich mit dem Skill **Genugtuung** gewesen. Das Passiv hätte seinen eigenen
-Skill aufgefressen.
+> **SUPERSEDED (§6.19):** *Die Stufe hatte EINE Lesart* (Owner: „das Spiel ist schon kompliziert genug") — ein
+> glatter Multiplikator auf jeden Sieg-Score, unabhängig davon, welche Haltung klingt. Die Alternative, dass
+> jedes der vier Passive die Stufe auf seine Weise liest, war schon damals verworfen: bei Rot und Grün skaliert
+> sie holprig, und Rots Lesart („Score je gerutschtem Stich") wäre wortgleich mit **Genugtuung** gewesen. Seit
+> §6.19 ist die Stufe ganz weg; der Absatz bleibt als Begründung stehen, falls ein Sammler zurückkommt.
 
 **Offen (Annahme):** der Einklang lässt die Haltungen *klingen*, er *löst sie nicht aus*. Für die Skills, die
 am Klingen hängen, macht das keinen Unterschied; keiner hängt seit §5.3 noch am **Auslösen**. Zu beachten ist
-dafür etwas anderes: der Einklang lässt alle vier gleichzeitig klingen, ohne dass eine ABGELÖST wurde — die
-Nachklang-Skills (**Genugtuung**, **Verankerung**) prüfen deshalb auf „klingt, ist aber nicht aktiv" und nicht
-auf den Einklang selbst.
+dafür etwas anderes: der Einklang lässt alle vier gleichzeitig klingen, ohne dass eine ABGELÖST wurde.
+**Verankerung** prüft deshalb auf „klingt, ist aber nicht aktiv" und nicht auf den Einklang selbst;
+**Genugtuung** prüft seit §6.18 nur noch, ob Rot überhaupt klingt.
 
 ---
 
@@ -441,7 +449,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | Skill | Wirkung |
 | --- | --- |
 | **Anklang** | Die vorige Haltung klingt länger nach — und jeder Stich in diesem Fenster gibt Basis-Score. |
-| **Runde** | Nach je n echten Wechseln klingen **alle vier** Haltungen gleichzeitig — und genau das hebt die Stufe (§3.1). |
+| **Runde** | Nach je n echten Wechseln klingen **alle vier** Haltungen gleichzeitig — alle vier Passive auf einmal (§3.1). |
 | **Beschleunigung** | Wechsel senken die Schwelle für den nächsten. Die Leiter ist das **Tempo**; Episch klingt dazu länger nach. |
 
 **Startwerte:**
@@ -479,9 +487,10 @@ Gewollt: es ist dieselbe Zahl.
 bis vier Haltungen (§6.7). Mit 3 als tiefstem Wert bleibt die Rotation schnell, ohne in diesen Zustand zu
 kippen — und sie liegt bewusst höher als die frühere Fassung (4/3/2/2).
 
-**Gewicht, das sich nebenbei verschoben hat:** seit die Leiste weg ist (§3.1), hängt die Stufe an schneller
-Rotation. Beschleunigung ist damit der Skill, der den Sammler auch **ohne Runde** erreichbar macht — er hat an
-Bedeutung gewonnen, ohne dass sich eine seiner Zahlen dafür geändert hätte.
+**Gewicht, das sich nebenbei verschoben hat:** seit die Leiste weg ist (§3.1), hängt der Einklang an schneller
+Rotation. Beschleunigung ist damit der Skill, der ihn auch **ohne Runde** erreichbar macht — er hat an
+Bedeutung gewonnen, ohne dass sich eine seiner Zahlen dafür geändert hätte. (§6.19 hat die Stufe gestrichen,
+die daran hing; der Moment selbst ist geblieben.)
 
 **Neudesign §5.3, Runde (Owner):** *„Ja, Sammler, mit allen 4 klingen aber als Bedingung. Nach x (Leiter)
 Wechseln klingen alle 4 Haltungen gleichzeitig für x (Leiter für Episch) Stiche."*
@@ -497,7 +506,7 @@ Telemetrie.
 
 **Die Linie ist damit durchgehend Tanz-Build.** Alle drei zahlen auf häufiges Wechseln, und sie verstärken
 sich gegenseitig: Beschleunigung erzeugt mehr Wechsel, Anklang lässt sie überlappen, Runde macht aus
-denselben Wechseln mehr Stufen. Für den Block-Build steht in dieser Linie nichts — und gemessen ist das die
+denselben Wechseln mehr Einklänge. Für den Block-Build steht in dieser Linie nichts — und gemessen ist das die
 Stelle, an der der Tanz-Build zum ersten Mal etwas zurückbekommt (§6.11).
 
 **Warnung zu Beschleunigung** (§6.7).

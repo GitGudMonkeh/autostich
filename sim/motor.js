@@ -173,7 +173,7 @@ export function stanceRun(seed, policy) {
     stanceMultMean: a.wins ? a.stanceMultSum / a.wins : 1,
     formMultMean: a.wins ? a.formMultSum / a.wins : 1, formWinShare: a.wins ? a.formWins / a.wins : 0,
     baseShare: s.score ? (s.stanceBase || 0) / s.score : 0, rounds: st.rounds || 0, peakBest: a.peak,
-    einklang: st.einklang || 0, level: st.level || 0,
+    einklang: st.einklang || 0,
     held: s.skills.length,
   };
 }
@@ -262,15 +262,15 @@ export function runMotor({ arg, seed0, write } = {}) {
         formWinShare: mean(rs.map((r) => r.formWinShare)), baseShare: mean(rs.map((r) => r.baseShare)),
         rounds: mean(rs.map((r) => r.rounds)), peakBest: median(rs.map((r) => r.peakBest)), held: mean(rs.map((r) => r.held)),
         clashShare: mean(rs.map((r) => r.clashShare)),
-        einklang: mean(rs.map((r) => r.einklang)), level: mean(rs.map((r) => r.level)),
+        einklang: mean(rs.map((r) => r.einklang)),
       };
       payload.stance[name] = row;
       console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}  ${pct(row.winrate)}  ${row.switches.toFixed(0).padStart(6)}  ${row.tricksPerSwitch.toFixed(1).padStart(8)}   ${row.ringMean.toFixed(2).padStart(8)}   ${row.ringDist.map((x) => pct(x)).join(" ")}  ${pct(row.slidShare)}  ${pct(row.critRate)}  ${row.stanceMultMean.toFixed(2).padStart(5)}  ${row.formMultMean.toFixed(2).padStart(5)}  ${pct(row.formWinShare)}  ${pct(row.baseShare)}  ${row.rounds.toFixed(1).padStart(5)}`);
       console.log(`    klingt je Farbe: rot ${pct(row.ringShare.R)} · blau ${pct(row.ringShare.B)} · grün ${pct(row.ringShare.G)} · gelb ${pct(row.ringShare.Y)}   ·  gleichfarbige Nachbarn ${pct(row.clashShare)} (Zufall 25 %)   (Ø ${row.held.toFixed(1)} Skills, Stau-Spitze ${fmt(row.peakBest)})`);
-      console.log(`    Einklang ${row.einklang.toFixed(1)}× je Lauf · Stufe am Ende ${row.level.toFixed(1)} → ×${(1 + row.level * C.STANCE_STEP).toFixed(2)} auf jeden Sieg`);
+      console.log(`    Einklang ${row.einklang.toFixed(1)}× je Lauf (alle vier klingen gleichzeitig — seit §6.19 ohne dauerhafte Stufe)`);
     }
     console.log(`  Lesart: „Ø klingend" = wie viele der vier Haltungen im Mittel gleichzeitig klingen (1 = nie Überlappung, 4 = dauernd alle).`);
-    console.log(`  „gerutscht" = Anteil der Stiche, die die rote Leiter eine Stufe gehoben hat; „×Gelb" = der ganze Fraktions-Faktor je Sieg (Gelb, Stufe UND Grün stecken seit §5.3 darin); „×Form" = Formations-Faktor je Sieg, den Grün nur noch ABLIEST.`);
+    console.log(`  „gerutscht" = Anteil der Stiche, die die rote Leiter eine Stufe gehoben hat; „×Gelb" = der ganze Fraktions-Faktor je Sieg (Gelb UND Grün stecken darin); „×Form" = Formations-Faktor je Sieg, den Grün nur noch ABLIEST.`);
     console.log(`  „Flat-Anteil" = Genugtuung + Runde + entladener Stau am Score; „Runden" = vollendete Vier-Farben-Runden je Lauf.`);
   }
   if (write) write(payload);
