@@ -163,12 +163,14 @@ export function stanceScoreMult(st, skills, skillTiers) {
   /* §6.19 (Owner): die STUFE ist raus. Sie war der einzige dauerhafte Sammler der Fraktion und lag als glatter
      Multiplikator auf JEDEM Sieg-Score — auch ohne klingendes Gelb. Damit zahlt die gelbe Linie jetzt nur noch,
      solange Gelb klingt, und der Einklang wirkt allein über das, was er ohnehin tut: alle vier Passive zugleich. */
-  if (!ringsNow(st, "Y")) return 1;
-  let m = C.STANCE_SCORE_MULT;
+  /* §6.20 (Owner): Mitklang zählt in JEDER Haltung, nicht nur in Gelb. Er gehört der Überlappung, nicht der
+     Farbe — und die Überlappung ist das, worauf Runde und Beschleunigung hinspielen. */
+  const mit = stanceParam(skills, skillTiers, S.MITKLANG, "perStance");
+  const overlap = mit && st && st.active ? mit * Math.max(0, ringCount(st) - 1) : 0;
+  if (!ringsNow(st, "Y")) return 1 + overlap;
+  let m = C.STANCE_SCORE_MULT + overlap;
   const per = stanceParam(skills, skillTiers, S.BEHARRLICHKEIT, "perTrick");
   if (per) m += per * (st.ranFor?.Y || 0);
-  const mit = stanceParam(skills, skillTiers, S.MITKLANG, "perStance");
-  if (mit) m += mit * Math.max(0, ringCount(st) - 1);
   return m;
 }
 

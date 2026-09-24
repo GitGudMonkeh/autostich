@@ -295,6 +295,13 @@ describe("Haltungen — Score-Linie (gelb)", () => {
     const three = st({ stance: "Y", ring: { R: 2, B: 1, G: 0, Y: 0 } });
     expect(ringCount(three)).toBe(3);
     expect(stanceScoreMult(three, skills, {})).toBeCloseTo(C.STANCE_SCORE_MULT + 2 * per, 6);
+    /* §6.20: er zählt in JEDER Haltung. Ohne Gelb gibt es keinen Grundfaktor, der Zuschlag steht aber. */
+    const noY = st({ stance: "R", ring: { B: 2, G: 1 } });
+    expect(ringsNow(noY, "Y")).toBe(false);
+    expect(ringCount(noY)).toBe(3);
+    expect(stanceScoreMult(noY, skills, {})).toBeCloseTo(1 + 2 * per, 6);
+    expect(stanceScoreMult(noY, [], {})).toBe(1);              // ohne den Skill bleibt es bei 1
+    expect(stanceScoreMult(st({ stance: "R" }), skills, {})).toBe(1); // eine klingt → kein Zuschlag
   });
   it("Beharrlichkeit und Mitklang sind ein Spiegelpaar: im Block-Build zahlt die eine, im bunten die andere", () => {
     const block = st({ stance: "Y", ranFor: { R: 0, B: 0, G: 0, Y: 20 } });                 // lange allein

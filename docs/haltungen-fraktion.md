@@ -297,7 +297,7 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 | --- | --- |
 | **Stauung** | Endet die Haltung, zahlt der **größte** Sieg aus ihr noch einmal — umso mehr, je länger sie lief. |
 | **Beharrlichkeit** | Je Stich, den die Haltung schon läuft, steigt der Multiplikator. Campen zahlt. |
-| **Mitklang** | Der Multiplikator zählt je gleichzeitig klingender Haltung. Tanzen zahlt. |
+| **Mitklang** | Der Multiplikator zählt je gleichzeitig klingender Haltung — in jeder Haltung (§6.20). Tanzen zahlt. |
 
 **Startwerte:**
 
@@ -305,7 +305,7 @@ Passiv: glatter Multiplikator auf den Basis-Score.
 | --- | --- | --- | --- | --- |
 | **Stauung** · Zuschlag auf den größten Sieg, je Stich Laufzeit | +8 % | +12 % | +16 % | +24 % |
 | **Beharrlichkeit** · Multiplikator je Stich Laufzeit | +0,15 | +0,22 | +0,3 | +0,45 |
-| **Mitklang** · Multiplikator je zusätzlich klingender Haltung | +0,4 | +0,65 | +0,9 | +1,4 |
+| **Mitklang** · Multiplikator je zusätzlich klingender Haltung *(in jeder Haltung, §6.20)* | +0,4 | +0,65 | +0,9 | +1,4 |
 
 **Neudesign §5.3 (Owner), in zwei Schritten.** Zuerst: *„Der größte gestaute Stich zahlt doppelt —
 aber nicht doppelt, sondern skaliert mit der Länge der gelben Haltung."* Dann, auf die gebaute

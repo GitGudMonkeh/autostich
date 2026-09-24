@@ -549,7 +549,7 @@ export const SKILL_DEFS = {
   SK_STANCE_02: { id: "SK_STANCE_02", name: "Beharrlichkeit", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.beharrlichkeit,
     ...tiered(HALTUNG.beharrlichkeit, (r) => `Die gelbe Haltung zählt +${de(r.perTrick)} Score-Multiplikator je Stich, den sie schon klingt.`) },
   SK_STANCE_03: { id: "SK_STANCE_03", name: "Mitklang", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.mitklang,
-    ...tiered(HALTUNG.mitklang, (r) => `Die gelbe Haltung zählt +${de(r.perStance)} Score-Multiplikator je zusätzlich klingender Haltung.`) },
+    ...tiered(HALTUNG.mitklang, (r) => `Du zählst +${de(r.perStance)} Score-Multiplikator je zusätzlich klingender Haltung.`) },
   // Crit-Linie (blau)
   SK_STANCE_04: { id: "SK_STANCE_04", name: "Grundrauschen", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.grundrauschen,
     ...tiered(HALTUNG.grundrauschen, (r) => `Du hast +${pct(r.crit)} % Crit-Chance${r.critMult ? ` und +${de(r.critMult)} Crit-Multiplikator` : ""}, ganz gleich welche Haltung klingt.`) },
