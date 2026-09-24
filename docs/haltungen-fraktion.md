@@ -4,7 +4,8 @@
 > sind vom Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der
 > Sim (`--mode motor/skills/cross --arch stance`); die Ausgangsmessung steht in **§6.15** (Duos, Trios,
 > Quartette) und **§6.16** (die 15 Skills), die Tarierschleife in **§6.17** (was gedreht wurde) und **§6.18**
-> (was dabei herauskam, Runde für Runde gemessen). Fünf Punkte sind offen, sie stehen am Ende von §6.18.
+> (was dabei herauskam, Runde für Runde gemessen). **§6.19 misst den Wegfall der Stufe** (Owner). Die offenen
+> Punkte stehen am Ende von §6.18 und §6.19 C.
 >
 > Stand: 2026-09-22 · Basis: `origin/exp` · Vorgänger: `docs/fraktion-5-brainstorm.md` (die sechs
 > Richtungen und die Landkarte des freien Designraums; diese Fraktion ist keine davon, sondern ein
@@ -199,8 +200,8 @@ Erreichbar auf zwei Wegen:
 **Was der Tausch ändert.** Die Fraktion hat jetzt **gar keinen dauerhaften Sammler mehr** — kein Wert wächst
 über den Lauf. Alles, was Prisma tut, hängt daran, welche Haltung in diesem Stich klingt. Das macht den
 Einklang zum stärksten Moment der Fraktion statt zu einer Buchung, und es macht **Mitklang** und **Runde** zu
-den Skills, die ihn holen. **Zu beobachten:** ob die Fraktion ohne Sammler wieder unter das Feld fällt — der
-Grund, aus dem der Sammler 2026-09 überhaupt eingeführt wurde, steht in §6.8 A und ist nicht widerlegt.
+den Skills, die ihn holen. **Gemessen (§6.19):** die Fraktion fällt nicht unter das Feld — sie fällt um 31 % und bleibt
+Dritte. Was bricht, ist die Rotations-Linie: **Runde** hat ohne die Stufe kein Ziel mehr und misst −4 %.
 
 `STANCE_STEP` ist mit der Stufe entfallen, `stanceLevelMult` ebenso. Der Zähler `einklang` bleibt als reine
 Telemetrie (`--mode motor --arch stance`).
@@ -1409,6 +1410,79 @@ Anklang stellt. Zwei Skills, ein Regler.
 **Einschränkungen, unverändert seit §6.16:** die Mono-Spalte (1200 Explore-, 200 gepaarte Läufe) trägt;
 die Sechs-Welten-Spalte trägt nur im Vorzeichen. Einzelne Weltwerte reichen in Runde 4 von −74 % bis
 +59 %. Wer daraus eine einzelne Prozentzahl zitiert, zitiert Rauschen.
+
+### 6.19 · Die Stufe raus — **gemessen**
+
+Owner: *„Stufe raus aus dem Passive und nochmal messen."* Gestrichen wurde der dauerhafte Sammler —
+`stanceLevelMult`, das Zustandsfeld `level`, die Konstante `STANCE_STEP`. Er lag als glatter Multiplikator
+auf **jedem** Sieg-Score, auch ohne klingendes Gelb. Geblieben ist der Einklang als Zustand: klingen alle
+vier gleichzeitig, wirken alle vier Passive zugleich, und nur so lange. Gemessen wie Runde 4, gleiche Seeds.
+
+#### A · Die Stufe trug den Spezialisten, nicht die Beimischung
+
+| | mit Stufe | ohne Stufe |
+| --- | --- | --- |
+| Prisma mono | 69,1 Mio | **47,8 Mio** (−31 %) |
+| Blitz+Prisma | 81,4 | 69,7 (−14 %) |
+| Pflanze+Prisma | 66,6 | 56,5 (−15 %) |
+| bestes Quartett (Fe+Bl+Pf+Pr) | 98,1 | 90,1 (−8 %) |
+| Zuwachs als dritte Fraktion (Median) | +79 % | **+58 %** |
+| bester Mischbuild ÷ bester reiner Member | **1,16×** | **1,50×** |
+
+Der Zugang erklärt es: die Stufe entstand aus schnellem Rotieren, und das leistet nur ein Build mit Runde,
+Beschleunigung und Anklang — also einer mit 13 Prisma-Skills. Im Duo hält Prisma 3 bis 6 Skills, Runde oft
+gar nicht. **Die Stufe war eine Spezialisten-Belohnung, kein Splash-Bonus.** Die Vermutung, sie sei der
+Posten, der Prisma als Partner wertvoll macht, ist damit widerlegt: der Aufschlag fällt nur von +79 % auf
++58 %, die reine Fraktion um fast ein Drittel. Die Kennzahl aus §6.15/§6.18 steigt deshalb **zurück** auf
+1,50× — Prisma rutscht wieder Richtung „schwach allein, stark als Beimischung".
+
+#### B · Im Mono bricht die Rotations-Linie, im Mischbuild nicht
+
+| Skill | Mono mit | Mono ohne | 6 Welten mit | 6 Welten ohne |
+| --- | --- | --- | --- | --- |
+| **Runde** | +36 % | **−4 %** | 14 % | 10 % |
+| **Beharrlichkeit** | +30 % | **−2 %** | 15 % | 7 % |
+| **Beschleunigung** | +21 % | **−1 %** | 14 % | 1 % |
+| **Genugtuung** | +25 % | **−0 %** | −16 % | −12 % |
+| **Verankerung** | +17 % | **0 %** | 3 % | 10 % |
+| Schwungrad | +30 % | +6 % | 3 % | 9 % |
+| Kehrtwende | +32 % | +19 % | −1 % | −9 % |
+| Anklang | +47 % | +46 % | 7 % | 13 % |
+| Übertrag | +24 % | +23 % | −1 % | −1 % |
+| Übergriff | +9 % | +17 % | 12 % | 8 % |
+| Grundrauschen | +7 % | +17 % | −3 % | 5 % |
+| Stauung | +12 % | +17 % | 1 % | 1 % |
+| Rückhalt | −0 % | −6 % | −8 % | 5 % |
+| Mitklang | +5 % | +1 % | 6 % | 4 % |
+| Doppelbindung | −1 % | +0 % | 2 % | −2 % |
+
+**Runde ist tot.** Ihre einzige Wirkung ist, den Einklang auszulösen — und dessen einziger bleibender Ertrag
+war die Stufe. Sie kostet jetzt einen Slot und misst −4 %. Beschleunigung und Mitklang, die beiden anderen,
+die auf den Moment hinspielen, stehen bei −1 % und +1 %.
+
+**Anklang und Übertrag stehen unverändert** (+46 %, +23 %): beide zahlen direkt in die vier Passive, nicht
+über den Sammler. Übergriff, Grundrauschen und Stauung *steigen* sogar — im kleineren Kuchen wiegt ihr
+Stück mehr.
+
+| | mit Stufe | ohne Stufe |
+| --- | --- | --- |
+| Mono: sd ÷ Mittel | **0,70** | **1,54** |
+| Mono: Mittel | 20 % | 9 % |
+| 6 Welten: sd | 8,4 Pp | **6,7 Pp** |
+| Skills mit sauberem Vorzeichen (0/6 oder 6/6) | Runde 6/6 · Rückhalt 0/6 | Anklang 6/6 · Verankerung 6/6 · Beharrlichkeit 6/6 |
+
+**Im Mischbuild ist der Wegfall unproblematisch** — die Streuung über die sechs Welten sinkt sogar (8,4 →
+6,7 Pp), kein Skill steht mehr bei 0/6, Rückhalt erholt sich von 0/6 auf 4/6. **Im reinen Build kostet er
+die Hälfte der Tarierarbeit**: die relative Streuung, die §6.17/§6.18 von 1,24 auf 0,70 gedrückt hatten,
+steht wieder bei 1,54, und der Greedy-Median fällt von 323 auf 179 Mio.
+
+#### C · Was daraus folgt
+
+**Der Einklang hat keinen eigenen Ertrag mehr.** Solange er nur „alle vier Passive für drei Stiche" heißt,
+haben Runde, Beschleunigung und Mitklang kein Ziel, auf das sie hinspielen. Das ist eine Entwurfsfrage und
+keine Zahl: entweder der Moment bekommt einen eigenen Körper, oder die drei Skills brauchen ein anderes.
+
+Die Entscheidung selbst ist gesetzt; §3.1 ist entsprechend neu gefasst. Hier steht nur, was sie kostet.
 
 ---
 
