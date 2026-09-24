@@ -1,10 +1,10 @@
 # Haltungen — Fraktion 5 (Arbeitsdokument)
 
-> **Status: lebendes Dokument, gebaut, gemessen, erstmals tariert.** Der Mechanismus und die vier Passive sind
-> vom Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der Sim
-> (`--mode motor/skills/cross --arch stance`); die aktuellen Zahlen stehen in **§6.15** (Duos, Trios,
-> Quartette) und **§6.16** (die 15 Skills). **§6.17 ist die erste Tarierrunde** — elf Stufentabellen gedreht,
-> vier Skills unangetastet, **noch nicht nachgemessen**.
+> **Status: lebendes Dokument, gebaut, gemessen, in vier Runden tariert.** Der Mechanismus und die vier Passive
+> sind vom Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der
+> Sim (`--mode motor/skills/cross --arch stance`); die Ausgangsmessung steht in **§6.15** (Duos, Trios,
+> Quartette) und **§6.16** (die 15 Skills), die Tarierschleife in **§6.17** (was gedreht wurde) und **§6.18**
+> (was dabei herauskam, Runde für Runde gemessen). Fünf Punkte sind offen, sie stehen am Ende von §6.18.
 >
 > Stand: 2026-09-22 · Basis: `origin/exp` · Vorgänger: `docs/fraktion-5-brainstorm.md` (die sechs
 > Richtungen und die Landkarte des freien Designraums; diese Fraktion ist keine davon, sondern ein
@@ -1318,7 +1318,88 @@ Satz auf allen vier Stufen gleich, während die Länge steigt. Gegengeprobt — 
 man die Naht absichtlich bricht.
 
 **Nicht gemessen.** Die Zahlen oben sind aus §6.15/§6.16 abgeleitet, nicht nachgerechnet. Ob die
-Spanne wirklich enger geworden ist, sagt erst ein erneuter Lauf derselben sieben Welten.
+Spanne wirklich enger geworden ist, sagt erst ein erneuter Lauf derselben sieben Welten — §6.18.
+
+### 6.18 · Vier Tarierrunden, jede gemessen — **gemessen**
+
+Owner-Schleife: drehen, messen, weiterdrehen. Jede Runde lief über dieselben sieben Welten und dieselben
+Seeds wie §6.16 (Mono 1200/200, sechs Mischwelten je 600/120 plus 15 gepaarte Ablationen) und dazu
+`--mode cross` über 80 Seeds. Rund 80.000 Läufe insgesamt.
+
+#### Was jede Runde gedreht hat
+
+| Runde | Änderung |
+| --- | --- |
+| **1** (§6.17) | Elf Stufentabellen: vier herunter (Beharrlichkeit, Anklang-Satz, Stauung, Runde), sieben herauf. |
+| **2** | Die drei Zahlenfälle: Verankerung zurück (+60 % war überschossen), Doppelbindung Episch 5 → 8, Kehrtwendes `max` 3/4/6/10 → 4/6/8/12. |
+| **3** | Die zwei Strukturfälle (Owner). **Übertrag:** die Rampe halbiert sich an der Flanke, statt auf 0 zu fallen. **Genugtuung:** ein Fenster statt zweier — gezahlt wird, solange Rot klingt, nicht erst im Nachklang. |
+| **4** | **Anklang** gedrosselt: Dauer 4/5/6/8 → 4/5/6/7, Satz 75 → 50. |
+
+#### Was dabei herauskam
+
+| Stand | Mono-Spanne | sd | Abstand 1. → 2. | 6-Welten-Spanne | sd | sauberes Vorzeichen |
+| --- | --- | --- | --- | --- | --- | --- |
+| vorher (§6.16) | −7 % … 48 % | 17,7 | 2 Pp | −8 % … 31 % | 9,1 | Runde 6/6 · Mitklang 6/6 |
+| Runde 1 | −6 % … 46 % | 13,1 | 23 Pp | −13 % … 23 % | 10,4 | 4× 6/6 · **Genugtuung 0/6** · **Übertrag 0/6** |
+| Runde 3 | −5 % … 58 % | 14,7 | **37 Pp** | −5 % … 78 % | 19,6 | Runde 6/6 · Verankerung 6/6 · **Genugtuung 0/6** |
+| **Runde 4** | **−1 % … 47 %** | **13,7** | **11 Pp** | **−16 % … 15 %** | **8,4** | Runde 6/6 · **Rückhalt 0/6** |
+
+**Der Abstand von der Spitze zum Zweitbesten ist die aussagekräftigste Spalte.** Er sagt, ob ein Skill
+weggelaufen ist. Runde 3 stand bei 37 Punkten (Anklang +58 % gegen Runde +21 %), Runde 4 bei 11. In den
+sechs Mischwelten ist die Streuung von 19,6 auf 8,4 Prozentpunkte gefallen.
+
+**Die Fraktion ist dabei um 78 % gewachsen** — das war nicht das Ziel, sondern der Preis dafür, dass die
+sieben Buffs schwerer wogen als die vier Nerfs:
+
+| Stand | Prisma mono (Fraktions-Policy) | bester Mischbuild ÷ bester reiner Member |
+| --- | --- | --- |
+| vorher | 38,9 Mio | 1,90× |
+| Runde 1 | 56,5 Mio | 1,48× |
+| Runde 2 | 58,4 Mio | 1,23× |
+| Runde 3 | 70,3 Mio | 1,29× |
+| **Runde 4** | **69,1 Mio** | **1,16×** |
+
+Die zweite Spalte ist der Nebengewinn: die Kennzahl aus §6.15 stand bei 1,90× und liegt jetzt bei
+**1,16×** (gesund ≈ 1,0, Referenz vor dem Rework 1,03×). **Prisma als Pflicht-Beimischung ist damit
+erstmals fast entschärft** — nicht weil das Mischen schwächer wurde, sondern weil die reine Fraktion
+aufgeholt hat. Die Entwurfsfrage aus §6.12 (Passive voll ab dem ersten Skill) ist davon unberührt.
+
+#### Drei Befunde, die die Schleife geliefert hat
+
+**Ein Hebel kann am falschen Ende sitzen.** Anklangs Satz von 100 auf 75 (Runde 1) bewegte den
+gemessenen Wert um **null** — sein Gewicht ist die Dauer, die die Laufzeit aller vier Haltungen
+verlängert und deshalb mit allem mitwächst, was die Fraktion sonst gewinnt. Erst der Dauer-Nerf in
+Runde 4 hat ihn eingefangen. 4/5/6/7 ist dabei die härteste mögliche Leiter: der Boden kann nicht unter
+4 (bei `STANCE_MIN_DURATION` = 3 hieße eine Stufe „klingt 3 statt 3 nach") und vier verschiedene Stufen
+müssen es bleiben.
+
+**Eine Zahl kann eine Bedingung nicht heilen.** Übertrag und Genugtuung standen nach der Verdopplung in
+Runde 1 bei **0 von 6** Welten — schlechter als vorher. Übertrags Umbau (Runde 3) hat gewirkt: mono
+−4 % → +24 %, im Mischbuild 0/6 → 3/6. Genugtuungs Umbau hat nur die Mono-Seite gehoben (−4 % → +25 %)
+und im Mischbuild nichts geändert (0/6 → 1/6, Median −16 %) — dort ist Rot zu selten die laufende
+Haltung. **Das ist die eine Anpassung dieser Schleife, die nicht gelandet ist.**
+
+**Runde hängt an Anklang.** In Runde 3 maß Runde +78 % über 6 von 6 Welten; nach dem Anklang-Nerf
++14 %, weiterhin 6/6. Sie ist der Einklang-Auslöser, und der Einklang skaliert mit der Laufzeit, die
+Anklang stellt. Zwei Skills, ein Regler.
+
+#### Offen
+
+- **Rückhalt** steht neu bei **0 von 6** (Median −8 %, Spanne −22 % … −2 %) — er ist mitgerutscht, ohne
+  dass jemand ihn angefasst hat.
+- **Genugtuung** bleibt im Mischbuild ungelöst (1/6).
+- **Doppelbindung** ist mit −1 % mono weiter die schwächste Sprosse der grünen Linie, obwohl zweimal
+  erhöht.
+- **Beharrlichkeit** ist eine Owner-Frage, keine Zahlenfrage: mono +30 %, im Mischbuild +15 % bei 5/6.
+  Welche der beiden Welten der Maßstab ist, entscheidet, ob hier überhaupt etwas zu tun ist.
+- **Ein Messfehler, offen benannt:** Runde 2 ist nur teilweise erhalten. Drei der neun Läufe starteten,
+  nachdem die Quelldateien für Runde 3 schon bearbeitet waren, und haben gemischten Code geladen. Die
+  Skill-Verteilung für Runde 2 allein gibt es deshalb nicht; die Faktionszeile oben stammt aus dem
+  `cross`-Lauf, der vor den Änderungen fertig war.
+
+**Einschränkungen, unverändert seit §6.16:** die Mono-Spalte (1200 Explore-, 200 gepaarte Läufe) trägt;
+die Sechs-Welten-Spalte trägt nur im Vorzeichen. Einzelne Weltwerte reichen in Runde 4 von −74 % bis
++59 %. Wer daraus eine einzelne Prozentzahl zitiert, zitiert Rauschen.
 
 ---
 
