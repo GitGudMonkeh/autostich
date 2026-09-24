@@ -605,9 +605,12 @@ export function resolveTrick(state, rng) {
     // wandelte, ist gestrichen; was über dem Deckel liegt, verfällt wieder.)
     critMultiplier = C.softCritMult(critMultiplier);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
-    /* Haltungen: der Crit hebt Übertrags Rampe und dreht das Schwungrad (§5.2). Beide hängen an der klingenden
-       blauen Haltung — die Rampe prüft das im Modul, der Verlängerer trifft die AKTIVE Haltung. Die Rampe steigt
-       NACH `critMultiplier` oben: der auslösende Crit zahlt noch mit dem alten Stand. */
+    /* Haltungen: der Crit hebt Übertrags Rampe und dreht das Schwungrad (§5.2). Die beiden hängen an
+       VERSCHIEDENEN Bedingungen, obwohl sie hier in derselben Zeile stehen:
+         Übertrag  — nur, solange BLAU klingt (`noteCrit` prüft das im Modul).
+         Schwungrad — jeder Crit, egal welche Haltung klingt, und er verlängert die AKTIVE (§6.5, Owner:
+                      „ein Verlängerer verlängert immer die aktuell aktive Haltung, nicht seine eigene").
+       Die Rampe steigt NACH `critMultiplier` oben: der auslösende Crit zahlt noch mit dem alten Stand. */
     if (stanceOn && isCrit) {
       newStance = noteCrit(newStance);
       newStance = extendStance(newStance, skills, skillTiers, "crit");
