@@ -303,8 +303,8 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
         const carried = next.carried.includes(wonSuit) ? next.carried : [...next.carried, wonSuit];
         /* Beschleunigung (§5.3): ein echter Wechsel senkt die Schwelle um `step` — auf der Normal-Stufe aber nur
            JEDER ZWEITE (`every`). Der Boden geht bewusst nicht auf 1: dort löste jede Farbe mit ihrem ersten Sieg
-           aus, und es klängen dauerhaft drei bis vier Haltungen (§6.7). Er ist seit §5.3 auf allen Stufen gleich —
-           die Leiter staffelt das Tempo, nicht das Ziel. */
+           aus, und es klängen dauerhaft drei bis vier Haltungen (§6.7). Die Leiter staffelt beides: das Tempo
+           (`step`/`every`) und das Ziel (`floor`). */
         const nSwitch = next.switches + 1;
         const step = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "step") || 0;
         const every = stanceParam(skills, skillTiers, S.BESCHLEUNIGUNG, "every") || 1;

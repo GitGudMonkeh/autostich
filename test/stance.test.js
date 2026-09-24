@@ -665,9 +665,13 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     // Ein Selbst-Auslösen senkt NICHTS — nur echte Wechsel zählen (Owner).
     const self = stanceTick({ ...st(), counts: { R: C.STANCE_THRESHOLD - 1 } }, skills, {}, { wonSuit: "R" }).stance;
     expect(self.threshold).toBe(C.STANCE_THRESHOLD);
-    /* §5.3: die Leiter staffelt das TEMPO. Normal senkt nur JEDEN ZWEITEN Wechsel, die übrigen jeden; der Boden
-       ist überall derselbe, also kommen alle Stufen am selben Ziel an, nur verschieden schnell. */
-    for (let t = 0; t < 4; t++) expect(T.beschleunigung[t].floor, `Stufe ${t}`).toBe(T.beschleunigung[0].floor);
+    /* §5.3: die Leiter staffelt Tempo UND Ziel. Normal senkt nur JEDEN ZWEITEN Wechsel, die übrigen jeden; der
+       Boden sinkt von 4 auf 3. Keine Stufe ist schlechter als die darunter — weder im Tempo noch im Ziel. */
+    for (let t = 1; t < 4; t++) {
+      expect(T.beschleunigung[t].floor, `Stufe ${t}`).toBeLessThanOrEqual(T.beschleunigung[t - 1].floor);
+      expect(T.beschleunigung[t].step / (T.beschleunigung[t].every || 1), `Stufe ${t}`)
+        .toBeGreaterThanOrEqual(T.beschleunigung[t - 1].step / (T.beschleunigung[t - 1].every || 1));
+    }
     const after = (tier, n) => {
       let s = st();
       for (let i = 0; i < n; i++) {
@@ -680,7 +684,7 @@ describe("Haltungen — Rotation (wirkt über alle)", () => {
     expect(after(0, 2)).toBe(C.STANCE_THRESHOLD - 1);          // … erst der zweite
     expect(after(1, 1)).toBe(C.STANCE_THRESHOLD - 1);          // Selten: jeder Wechsel
     expect(after(2, 1)).toBe(C.STANCE_THRESHOLD - 2);          // Sehr selten: gleich zwei
-    expect(after(0, 12)).toBe(T.beschleunigung[0].floor);      // alle landen am selben Boden
+    expect(after(0, 12)).toBe(T.beschleunigung[0].floor);      // jede Stufe landet auf ihrem eigenen Boden
     expect(after(3, 12)).toBe(T.beschleunigung[3].floor);
     // Episch klingt zusätzlich einen Stich länger nach — dieselbe Zahl trägt auch Anklangs Fenster.
     expect(T.beschleunigung[3].echoPlus).toBe(1);

@@ -274,12 +274,11 @@ jeweiligen Linie darunter; hier die Leitern auf einen Blick:
 | | **Kehrtwende** · Serienpunkte je gerutschtem Stich (dazu: Verlängerungen je Haltung) | +1 · 3× | +2 · 4× | +3 · 6× | +4 · 10× + *Serien-Satz +0,5 %* |
 | **Rotation** (alle) | **Anklang** · Nachklang-Stiche (je +100 Basis-Score) | 4 | 5 | 6 | 8 |
 | | **Runde** · Wechsel bis alle vier klingen · Dauer | 6 · 3 | 5 · 3 | 4 · 3 | 3 · 5 |
-| | **Beschleunigung** · Schwellen-Senkung je Wechsel (Boden 2) | jeder 2. −1 | −1 | −2 | −2 + *Nachklang +1* |
+| | **Beschleunigung** · Senkung je Wechsel · Boden | jeder 2. −1 · 4 | −1 · 4 | −2 · 3 | −2 · 3 + *Nachklang +1* |
 
-**Zwei Leitern sind Deckel statt Rampen** — Schwungrad und Kehrtwende. Das ist Absicht: die Runaway-Rechnungen
-aus §6 sind damit in der Stufentabelle erledigt statt als Sonderregel, so wie das Raster es vorzieht.
-Beschleunigungs **Boden** ist seit §5.3 keine Leiter mehr, sondern auf allen Stufen 2 — er bleibt ein Deckel,
-nur eben ein fester.
+**Drei Leitern sind Deckel statt Rampen** — Schwungrad, Kehrtwende und Beschleunigungs Boden. Das ist
+Absicht: die drei Runaway-Rechnungen aus §6 sind damit in der Stufentabelle erledigt statt als
+Sonderregel, so wie das Raster es vorzieht.
 
 ### 5.1 · Score-Linie — voll
 
@@ -451,7 +450,7 @@ Wirkt über alle Haltungen. Trägt vermutlich auch den Kernskill, weil das Raste
 | **Runde** · echte Wechsel bis alle vier klingen | 6 | 5 | 4 | 3 |
 | **Runde** · Stiche, die sie gleichzeitig klingen | 3 | 3 | 3 | 5 |
 | **Beschleunigung** · Schwellen-Senkung je Wechsel | jeder 2. −1 | −1 | −2 | −2 |
-| **Beschleunigung** · Boden der Schwelle | 2 | 2 | 2 | 2 |
+| **Beschleunigung** · Boden der Schwelle | 4 | 4 | 3 | 3 |
 | **Beschleunigung** · Nachklang jeder Haltung | — | — | — | +1 Stich |
 
 **Anklang hat mit §6.14 einen eigenen Körper bekommen** (Owner). Vorher verlängerte er nur, wie lange etwas
@@ -468,14 +467,14 @@ rund 57 % Siegquote bringt Episch also eher 450 als 800.
 Haltungswechsel 1 Stich weniger, jeder Haltungswechsel 2 Stiche weniger, Episch 2 Stiche weniger und Nachklang
 1 Stich länger."*
 
-Die Leiter staffelt damit das **Tempo**, nicht mehr das Ziel: alle vier Stufen kommen am selben Boden an, nur
-verschieden schnell. Dazu bekommt Episch als einziger Rotations-Skill einen **längeren Nachklang** — und weil
-Anklangs Fenster genau so lang ist wie der Nachklang, verlängert dieselbe Zahl auch das. Gewollt: es ist
-dieselbe Zahl.
+Die Leiter staffelt damit **Tempo und Ziel**: das Tempo über `−1 jeder zweite / −1 / −2 / −2`, das Ziel über
+den Boden **4 / 4 / 3 / 3** (Owner). Dazu bekommt Episch als einziger Rotations-Skill einen **längeren
+Nachklang** — und weil Anklangs Fenster genau so lang ist wie der Nachklang, verlängert dieselbe Zahl auch das.
+Gewollt: es ist dieselbe Zahl.
 
-**Angenommen, nicht gesagt:** den Boden hat der Owner nicht genannt. Er steht jetzt auf allen Stufen bei **2**.
-Er darf nicht auf 1: bei Schwelle 1 löst jede Farbe mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei
-bis vier Haltungen (§6.7). Boden 2 macht die Rotation sehr schnell, ohne in diesen Zustand zu kippen.
+**Der Boden geht nicht auf 1**: dort löst jede Farbe mit ihrem ersten Sieg aus, und dann klingen dauerhaft drei
+bis vier Haltungen (§6.7). Mit 3 als tiefstem Wert bleibt die Rotation schnell, ohne in diesen Zustand zu
+kippen — und sie liegt bewusst höher als die frühere Fassung (4/3/2/2).
 
 **Gewicht, das sich nebenbei verschoben hat:** seit die Leiste weg ist (§3.1), hängt die Stufe an schneller
 Rotation. Beschleunigung ist damit der Skill, der den Sammler auch **ohne Runde** erreichbar macht — er hat an

@@ -242,10 +242,10 @@ const HALTUNG = {
      am Skill, sondern am Zustand „alle vier klingen" (stance.js) — ein Build ohne Runde kann sie also durch
      schnelles Rotieren auch erreichen, nur schwerer. STARTWERTE. */
   runde:          [{ switches: 6 }, { switches: 5 }, { switches: 4 }, { switches: 3, duration: 5 }],
-  /* §5.3 (Owner): die Leiter staffelt jetzt das TEMPO, nicht das Ziel — jeder zweite Wechsel −1, jeder −1,
-     jeder −2, Episch −2 plus einen Stich längeren Nachklang. Der Boden ist überall 2: er darf nicht auf 1, sonst
-     löst jede Farbe mit ihrem ersten Sieg aus (§6.7). Den Boden hat der Owner nicht genannt — ANGENOMMEN. */
-  beschleunigung: [{ step: 1, every: 2, floor: 2 }, { step: 1, floor: 2 }, { step: 2, floor: 2 }, { step: 2, floor: 2, echoPlus: 1 }],
+  /* §5.3 (Owner): die Leiter staffelt Tempo UND Ziel — jeder zweite Wechsel −1, jeder −1, jeder −2, Episch −2
+     plus einen Stich längeren Nachklang; Boden 4/4/3/3 (Owner). Er geht bewusst nicht tiefer: bei Schwelle 1
+     löste jede Farbe mit ihrem ersten Sieg aus, und es klängen dauerhaft drei bis vier Haltungen (§6.7). */
+  beschleunigung: [{ step: 1, every: 2, floor: 4 }, { step: 1, floor: 4 }, { step: 2, floor: 3 }, { step: 2, floor: 3, echoPlus: 1 }],
 };
 export const HALTUNG_TIERS = HALTUNG;
 /* Stufentabellen der 15 Eis-Skills (§5.3) — dieselbe Form. Eis ist die letzte Fraktion, die Stufen bekommt; bis dahin
