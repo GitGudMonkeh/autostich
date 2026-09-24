@@ -1076,3 +1076,44 @@ zweiten Score an).
 Laufende. Die Kette über mehrere Läufe hat niemand gespielt — und genau dort sass der Fehler. Dieselbe
 Lehre wie im Methodenwechsel oben, eine Ebene höher: nicht nur die Zahl eines Laufs messen, sondern
 den Übergang zwischen zweien.
+
+### Das Feldzeichen und die tote Achse (Owner-Fund 2026-09-24)
+
+Owner-Frage zum Wirkungstext „Die Achse Perks zahlt dauerhaft 20 % mehr": unverständlich. Die
+Nachfrage hat zwei getrennte Fehler freigelegt.
+
+**Der Text log um etwa das Dreifache.** Gehoben wird nicht der Multiplikator, sondern nur sein
+Anteil über ×1 (`1 + (factor - 1) * (1 + x)`). Nachgerechnet mit Stufe II (20 %):
+
+| Multiplikator | wird zu | Score real |
+| --- | --- | --- |
+| ×1,00 | ×1,00 | +0 % |
+| ×1,50 | ×1,60 | +6,7 % |
+| ×2,00 | ×2,20 | +10 % |
+| ×3,00 | ×3,40 | +13,3 % |
+
+Die Mechanik bleibt, sie ist richtig: multiplizierte man den Faktor selbst, bekäme ein Stich ohne
+Crit einen Crit-Bonus geschenkt, obwohl er bei ×1,00 steht. Der Text heißt jetzt „Was dein
+{Multiplikator} über ×1 hinaus bringt, zählt {v} % mehr", und „Achse" ist ganz verschwunden: der
+Spieler liest diese Dinge überall sonst als **Multiplikatoren** (die Leiste heißt so, die Glieder
+heißen Serie · Perks · Form · Crit). Jede Achse trägt dafür eine zusammengesetzte Form
+(`campaign.axis.<id>.mult`) — „Perks-Multiplikator" und „Serie-Multiplikator" liest niemand gern.
+
+**Der schwerere Fehler: eine der neun Achsen konnte auf Ebene 1 gar nichts tun.** Der
+Perk-Multiplikator speist sich ausschließlich aus fünf **legendären** Perks (Taktschlag ×2,5,
+Henker ×2, Opfergang ×1,8, Hochseil ×1,45, Monochrom); Familien tragen nichts bei. Legendäre Perks
+schalten mit Stufe IV frei (`perks.js`: `maxTier < 4` filtert sie raus), und Ebene 1 deckelt bei
+`MAX_TIER_L1 = 3` — auch mit allen fünf Freischaltungen. Gemessen über sechs Läufe: **null
+legendäre Perks angeboten, `perkMult` konstant ×1,00.** Der Pool wird gleichverteilt gewürfelt,
+also war **jedes neunte Feldzeichen wertlos**, ohne dass man es dem Angebot ansah.
+
+`axesFor(unlocked)` würfelt jetzt nur noch, was der Lauf-Aufbau überhaupt zulässt. Die Grenze liegt
+bewusst am **Aufbau**, nicht am Spielverlauf: eine Achse, die der Spieler nicht bespielt, ist seine
+Sache — eine, die es im Lauf gar nicht gibt, wäre eine Wette ohne Gegenwert. Drei hängen am Aufbau
+(`perk` an der Stufe IV, `fire` und `plant` an ihrer Fraktion im Pool), sechs an nichts:
+Formationskern und Nachhall sind normale Familien der Stufen 1–4, der Architekt läuft auch in der
+Kampagne.
+
+**Noch offen:** ob die Achse `plant` im Spiel wirklich erreichbar ist, sobald das Deck
+freigeschaltet ist. In den Messungen blieb sie auf ×1,00, aber die Test-Policy nimmt selten
+Pflanzen-Skills — das ist ein Werkzeug-Artefakt und kein Befund, und es ist nicht nachgemessen.

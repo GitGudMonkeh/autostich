@@ -1560,3 +1560,77 @@ describe("Kampagnen-Kette · jeder Lauf wird abgerechnet, nicht nur der erste", 
     expect(zwei.campaign.scores, "ein zweiter Aufruf haengt keinen zweiten Score an").toEqual([9_000_000]);
   });
 });
+
+/* ============================================================================
+   KEINE ACHSE, DIE NICHTS TUN KANN (Owner 2026-09-23)
+
+   Das Feldzeichen würfelt seine Achse. Eine davon war auf Ebene 1 ein garantierter Blindgänger:
+   der Perk-Multiplikator speist sich AUSSCHLIESSLICH aus fünf legendären Perks (Henker,
+   Taktschlag, Opfergang, Hochseil, Monochrom), Familien tragen nichts bei — und legendäre Perks
+   schalten erst mit Stufe IV frei, während Ebene 1 bei 3 deckelt. Jedes neunte Feldzeichen war
+   damit wertlos, ohne dass man es dem Angebot ansah.
+
+   Gemessen wird die Achse im echten Lauf, nicht die Liste: dass `perkMult` über einen ganzen Lauf
+   auf ×1,00 steht, ist der Grund — dass sie nicht mehr gewürfelt wird, die Folge.
+   ============================================================================ */
+describe("Feldzeichen · würfelt keine Achse, die im Lauf nichts bewirken kann", () => {
+  it("nimmt den Perk-Multiplikator heraus, solange Legendäre gesperrt sind", () => {
+    for (const wins of [0, 1, 2, 3, 4, 5]) {
+      const unl = CP.unlocksFor(wins);
+      expect(CP.maxTierFor(unl), `Ebene 1 bleibt bei ${wins} Siegen unter Stufe IV`).toBeLessThan(4);
+      expect(CP.axesFor(unl), `bei ${wins} Siegen`).not.toContain("perk");
+    }
+    // Gegenprobe: ohne Deckel ist die Achse wieder dabei — sonst prüfte der Test nur eine leere Liste.
+    expect(CP.axesFor([]).length).toBeGreaterThan(4);
+    expect(CP.MULT_AXES).toContain("perk");
+  });
+
+  it("nimmt eine Fraktion heraus, die im Lauf gar nicht vorkommt", () => {
+    const ohne = CP.axesFor([]);                       // nur Blitz und Feuer
+    expect(ohne, "Feuer ist ein Startdeck").toContain("fire");
+    expect(ohne, "Pflanze ist noch nicht freigeschaltet").not.toContain("plant");
+    expect(CP.axesFor(CP.unlocksFor(1)), "mit dem Pflanzen-Deck kommt sie dazu").toContain("plant");
+  });
+
+  it("lässt alles stehen, was der Aufbau nicht sperrt", () => {
+    // Formationskern und Nachhall sind normale Familien, der Architekt läuft auch in der Kampagne.
+    for (const a of ["streak", "form", "core", "afterglow", "architect", "crit"]) {
+      expect(CP.axesFor([]), a).toContain(a);
+    }
+  });
+
+  it("würfelt über viele Angebote nie eine gesperrte Achse", () => {
+    /* Der Filter muss am WURF ankommen, nicht nur in der Liste stehen — dieselbe Falle wie beim
+       Raritäts-Deckel. 400 Auslagen, und keine einzige trägt eine tote Achse. */
+    const gesehen = new Set();
+    for (let n = 0; n < 400; n++) {
+      const rng = makeRng(n);
+      for (const o of CP.rollOffers(rng, { held: {}, tier: 2, unlocked: CP.unlocksFor(4) })) {
+        if (o.axis) gesehen.add(o.axis);
+      }
+    }
+    expect(gesehen.size, "es wurden überhaupt Achsen gewürfelt").toBeGreaterThan(3);
+    expect([...gesehen].filter((a) => !CP.axesFor(CP.unlocksFor(4)).includes(a)),
+           `gewürfelt wurde: ${[...gesehen].sort().join(", ")}`).toEqual([]);
+    expect(gesehen.has("perk"), "der Blindgänger ist weg").toBe(false);
+  });
+
+  it("der Grund, nachgemessen: der Perk-Multiplikator bleibt auf Ebene 1 bei 1", () => {
+    /* Die Begründung des Filters, an der Zahl statt am Katalog. Ein ganzer Lauf mit allen
+       Freischaltungen: kein legendärer Perk im Angebot, also bleibt der Multiplikator ×1,00. */
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(3);
+    let s = reducer(null, { type: "START_RUN", rng, seed: 3, architect: true, unlocked: CP.UNLOCK_IDS,
+      campaign: { ...CP.emptyCampaign(), bosses: ["bremser", "x", "y"] } });
+    let guard = 0, hoechster = 1, legendaer = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error("kein Fortschritt");
+      for (const o of s.offer || []) { const id = typeof o === "string" ? o : o && o.familyId; if (typeof id === "string" && id.startsWith("L_")) legendaer++; }
+      const b = s.lastTrick && s.lastTrick.breakdown;
+      if (b && typeof b.perkMult === "number") hoechster = Math.max(hoechster, b.perkMult);
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    expect(legendaer, "Ebene 1 bietet keine legendären Perks an").toBe(0);
+    expect(hoechster, "also steht der Perk-Multiplikator den ganzen Lauf auf 1").toBe(1);
+  });
+});

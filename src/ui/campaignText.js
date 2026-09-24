@@ -30,6 +30,10 @@ export const unlockName = (id) => (id ? t(`campaign.unlock.${id}`) : "");
 export const unlockText = (id) => (id ? t(`campaign.unlock.${id}.text`) : "");
 
 export const axisName = (axis) => (axis ? t(`campaign.axis.${axis}`) : "");
+/* Dieselbe Achse als zusammengesetztes Wort. „Perks-Multiplikator" und „Serie-Multiplikator" liest
+   niemand gern, also trägt jede Achse ihre eigene Form statt eines angeklebten Suffixes. Die kurze
+   Form steht weiter allein auf der Marke im Angebot. */
+export const axisMultName = (axis) => (axis ? t(`campaign.axis.${axis}.mult`) : "");
 
 export const rewardName = (id) => (id ? t(`campaign.reward.${id}`) : "");
 
@@ -38,7 +42,7 @@ export const rewardName = (id) => (id ? t(`campaign.reward.${id}`) : "");
 export function rewardText(id, tier, axis = null) {
   if (!id) return "";
   const v = CP.rewardValue(id, tier);
-  return t(`campaign.reward.${id}.text`, { v: v == null ? "" : v, axis: axisName(axis) });
+  return t(`campaign.reward.${id}.text`, { v: v == null ? "" : v, axis: axisMultName(axis) });
 }
 
 /* Millionen mit einer Nachkommastelle, wie sie überall in der Kampagne stehen (5 / 10 / 15 / 25).

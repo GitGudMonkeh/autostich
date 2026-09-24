@@ -550,3 +550,35 @@ describe("Aufwerten · Knopf und Reducer lesen dieselbe Zahl", () => {
     expect(reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" })).not.toBe(s);
   });
 });
+
+describe("Feldzeichen · der Wirkungstext sagt, was wirklich passiert", () => {
+  /* „Die Achse Perks zahlt dauerhaft 20 % mehr" war zweifach falsch (Owner 2026-09-23): „Achse" ist
+     ein Wort, das der Spieler nirgends sonst liest (die Leiste heisst „Multiplikatoren"), und
+     gehoben wird nicht der Multiplikator, sondern nur sein Anteil über ×1. Aus ×1,50 wird ×1,60,
+     also real +6,7 % Score und nicht +20 %. */
+  const angebot = (axis) => txt(html(CampaignPick, {
+    campaign: camp({ run: 2 }), offers: [{ id: "feldzeichen", tier: 2, upgrade: false, axis }], onTake: () => {} }));
+
+  it("nennt den Multiplikator beim Namen und die Grenze ×1", () => {
+    const h = angebot("crit");
+    expect(h).toContain("Crit-Multiplikator");
+    expect(h).toContain("×1");
+    expect(h, "das alte Wort steht nirgends mehr").not.toContain("Achse");
+  });
+
+  it("setzt für jede Achse eine lesbare Zusammensetzung ein", () => {
+    // Ohne eigene Form stuende hier „Perks-Multiplikator" und „Serie-Multiplikator".
+    expect(angebot("perk")).toContain("Perk-Multiplikator");
+    expect(angebot("streak")).toContain("Serien-Multiplikator");
+    expect(angebot("plant")).toContain("Pflanzen-Multiplikator");
+    for (const a of CP.MULT_AXES) {
+      const wort = t(`campaign.axis.${a}.mult`);
+      expect(wort, `${a} hat keine zusammengesetzte Form`).not.toBe(`campaign.axis.${a}.mult`);
+      expect(angebot(a), `${a} steht nicht im Text`).toContain(wort);
+    }
+  });
+
+  it("trägt die Zahl der gewürfelten Stufe", () => {
+    expect(angebot("crit")).toContain(`${CP.rewardValue("feldzeichen", 2)} %`);
+  });
+});

@@ -186,6 +186,30 @@ export const REWARD_BY_ID = Object.fromEntries(REWARDS.map((r) => [r.id, r]));
    chosen by the player (owner 2026-09-22) — which makes the reward a bet. */
 export const MULT_AXES = ["streak", "perk", "form", "core", "afterglow", "architect", "crit", "fire", "plant"];
 
+/* Welche davon in DIESEM Lauf ueberhaupt etwas tun KOENNEN (Owner 2026-09-23: „Achse raus, wenn sie
+   nichts tun kann"). Die Grenze liegt am Lauf-Aufbau, nicht am Spielverlauf: eine Achse, die der
+   Spieler nicht bespielt, ist seine Sache — eine, die es im Lauf gar nicht gibt, waere eine Wette
+   ohne Gegenwert.
+
+   Drei haengen am Aufbau, sechs nicht:
+     perk   speist sich AUSSCHLIESSLICH aus fuenf legendaeren Perks (Henker, Taktschlag, Opfergang,
+            Hochseil, Monochrom) — Familien tragen nichts bei. Legendaere Perks schalten mit Stufe IV
+            frei (perks.js `maxTier < 4`), und Ebene 1 deckelt bei MAX_TIER_L1 = 3. Die Achse ist
+            dort also GARANTIERT wirkungslos: gemessen ueber sechs Laeufe blieb sie auf x1,00, und
+            kein einziger legendaerer Perk wurde angeboten.
+     fire   braucht Feuer-Skills, plant braucht Pflanzen-Skills — also die jeweilige Fraktion im Pool.
+   streak, form, core, afterglow, architect und crit haengen an nichts, was der Aufbau sperrt:
+   Formationskern und Nachhall sind normale Familien (Stufen 1..4), der Architekt laeuft auch in der
+   Kampagne. */
+export function axesFor(unlocked = []) {
+  const decks = decksFor(unlocked);
+  return MULT_AXES.filter((a) => {
+    if (a === "perk") return maxTierFor(unlocked) >= 4;
+    if (a === "fire" || a === "plant") return decks.includes(a);
+    return true;
+  });
+}
+
 export const rewardValue = (id, tier) => {
   const r = REWARD_BY_ID[id];
   return r ? r.values[Math.max(0, Math.min(r.values.length - 1, tier - 1))] : null;
@@ -233,12 +257,13 @@ export function canOffer(held, id, tier, unlocked = []) {
 
 export function rollOffers(rng = Math.random, { held = {}, tier = 1, unlocked = [], count = OFFERS_PER_PICK } = {}) {
   const pool = REWARDS.filter((r) => canOffer(held, r.id, tier, unlocked)).map((r) => r.id);
+  const achsen = axesFor(unlocked);   // nur, was in diesem Lauf etwas bewirken kann
   const out = [];
   while (out.length < count && pool.length) {
     const i = Math.floor(rng() * pool.length) % pool.length;
     const id = pool.splice(i, 1)[0];
     const offer = { id, tier, upgrade: (held || {})[id] != null };
-    if (REWARD_BY_ID[id].rolls === "multAxis") offer.axis = MULT_AXES[Math.floor(rng() * MULT_AXES.length) % MULT_AXES.length];
+    if (REWARD_BY_ID[id].rolls === "multAxis") offer.axis = achsen[Math.floor(rng() * achsen.length) % achsen.length];
     out.push(offer);
   }
   return out;
