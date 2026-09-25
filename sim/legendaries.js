@@ -15,7 +15,7 @@ import { dirname } from "node:path";
 import { runOne } from "./run.js";
 import { newMemory } from "./memory.js";
 import { greedyPolicy, buildValueTable, valueTableRows, valueTableFromRows } from "./policies/greedy.js";
-import { atDoors } from "./policies/random.js";
+import { atDoors, canAddSkill } from "./policies/random.js";
 import { robustDelta } from "./eval.js";
 import { SKILL_LIST, SKILL_DEFS, archetypeOf } from "../src/game/skills.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
@@ -33,7 +33,7 @@ export const middleSkillPhase = (schedule = DECISION_SCHEDULE) => Math.ceil(skil
    Phase `at` das Legendäre auf den ersten Platz von Tür 1 — die Stufe des ersetzten Skills fällt weg, Legendäre haben
    keine. Die umhüllte Policy öffnet dort Tür 1 und nimmt das Legendäre; danach spielt sie wieder wie zuvor. */
 export function legendaryInjection(id, at, policy) {
-  let phase = 0, injected = false, pending = false, alreadyHeld = false;
+  let phase = 0, injected = false, pending = false, alreadyHeld = false, blocked = false;
   const hooks = {
     beforeAct(s) {
       if (!atDoors(s)) return s;
@@ -56,12 +56,19 @@ export function legendaryInjection(id, at, policy) {
       if (pending) {
         if (atDoors(s)) return { type: "CHOOSE_DOOR", index: 0 };
         pending = false; // die Türstufe ist vorbei — nehmen, wenn es im Angebot liegt, sonst weiter wie gewohnt
-        if (s.phase === "levelup" && s.skillOffer && s.skillOffer.includes(id) && !s.skills.includes(id)) return { type: "PICK_SKILL", skillId: id, rng };
+        /* `canAddSkill` statt nur „liegt im Angebot": bei FÜNF Fraktionen in der Welt kann der Bau schon vier
+           Archetypen halten, und dann lehnt der Reducer den Pick ab — die Action brächte keinen Fortschritt und
+           runOne würfe. Dieser Lauf bleibt dann Zug für Zug der Basislauf (Δ 0) und wird als `blocked` gezählt,
+           damit die Quote im Bericht steht statt still zu verschwinden. */
+        if (s.phase === "levelup" && s.skillOffer && s.skillOffer.includes(id) && !s.skills.includes(id)) {
+          if (canAddSkill(s, id)) return { type: "PICK_SKILL", skillId: id, rng };
+          blocked = true;
+        }
       }
       return policy.act(s, rng, mem);
     },
   };
-  return { hooks, policy: wrapped, result: () => ({ injected, alreadyHeld }) };
+  return { hooks, policy: wrapped, result: () => ({ injected, alreadyHeld, blocked }) };
 }
 
 export function computeLegendaries({ seed0 = 1, exploreRuns = 600, runs = 150, arch = ["fire", "lightning"], at = null, c = 1.4, solveFormations = true, tableFile = null, log = null } = {}) {
@@ -99,14 +106,16 @@ export function computeLegendaries({ seed0 = 1, exploreRuns = 600, runs = 150, a
   const ids = SKILL_LIST.filter((s) => s.legendary && arch.includes(s.archetype)).map((s) => s.id);
   const baseScores = base.map((r) => r.score);
   const rows = ids.map((id) => {
-    const deltas = [], ratios = [], scores = [];
-    let injected = 0, alreadyHeld = 0, heldAtEnd = 0;
+    const deltas = [], ratios = [], scores = [], takeable = [];
+    let injected = 0, alreadyHeld = 0, heldAtEnd = 0, blocked = 0;
     for (let i = 0; i < runs; i++) {
       const inj = legendaryInjection(id, phase, greedy());
       const r = runOne(evalSeed0 + i, inj.policy, null, inj.hooks, opts);
       const st = inj.result();
       if (st.injected) injected += 1;
       if (st.alreadyHeld) alreadyHeld += 1;
+      if (st.blocked) blocked += 1;
+      takeable.push(!st.blocked);
       if (r.build.skills.includes(id)) heldAtEnd += 1;
       scores.push(r.score);
       deltas.push(r.score - baseScores[i]);
@@ -116,8 +125,13 @@ export function computeLegendaries({ seed0 = 1, exploreRuns = 600, runs = 150, a
     return {
       id, name: SKILL_DEFS[id].name, arch: archetypeOf(id),
       injectedRate: injected / runs, alreadyHeldRate: alreadyHeld / runs, heldAtEndRate: heldAtEnd / runs,
+      blockedRate: blocked / runs, // Archetyp-Deckel erreicht: der Pick war nicht legal, der Lauf bleibt der Basislauf
       naturalRate: base.filter((r) => r.build.skills.includes(id)).length / runs, // im Basislauf ohnehin gehalten (natürlich gewürfelt)
       score: stats(scores), lift: mean(scores) / (mean(baseScores) || 1), marginal: robustDelta(deltas, ratios),
+      /* Zweite Lesart: nur die Läufe, in denen der Pick überhaupt legal war. Ein gesperrter Lauf ist Zug für Zug
+         der Basislauf und trägt Δ 0 — bei 38 % Sperrquote (Eis in der Fünfer-Welt) sitzt der Median dann in der
+         Nullmasse und misst den Deckel statt das Legendäre. Beide Spalten stehen im Bericht. */
+      marginalTaken: robustDelta(deltas.filter((_, i) => takeable[i]), ratios.filter((_, i) => takeable[i])),
     };
   });
   rows.sort((a, b) => b.marginal.median - a.marginal.median);
@@ -139,12 +153,14 @@ export function runLegendaries({ arg, seed0, c, f, write }) {
   const pct = (x) => `${(x * 100).toFixed(0)} %`;
   console.log(`\n=== LEGENDÄRE ${res.arch.map((a) => NAME[a] || a).join(" / ")} — in Skill-Phase ${res.at} von ${res.skillPhases} (Runde ${res.round}) bekommen; explore ${res.exploreRuns}, gierig ${res.runs} Läufe (Seeds ${res.evalSeed0}..${res.evalSeed0 + res.runs - 1}), gepaart ===`);
   console.log(`  Basis (ohne Eingriff): Median ${fmt(res.baseScore.median)}  Mean ${fmt(res.baseScore.mean)}  p90 ${fmt(res.baseScore.p90)}`);
-  console.log(`  ${"Legendär".padEnd(16)} ${"Frak.".padEnd(6)} ${"Median-Δ".padStart(12)}  ${"typ.".padStart(6)}  ${"besser in".padStart(9)}  ${"Median mit".padStart(12)}  ${"Lift".padStart(5)}  ${"gehalten".padStart(8)}  ${"ohnehin".padStart(7)}`);
+  console.log(`  ${"Legendär".padEnd(16)} ${"Frak.".padEnd(6)} ${"Median-Δ".padStart(12)}  ${"typ.".padStart(6)}  ${"besser in".padStart(9)}  ${"Median mit".padStart(12)}  ${"Lift".padStart(5)}  ${"gehalten".padStart(8)}  ${"ohnehin".padStart(7)}  ${"gesperrt".padStart(8)}  ${"typ.|frei".padStart(9)}`);
   for (const r of res.rows) {
     const m = r.marginal;
-    console.log(`  ${r.name.padEnd(16)} ${(NAME[r.arch] || r.arch).padEnd(6)} ${fmt(m.median).padStart(12)}  ${`${m.pctEffect >= 0 ? "+" : ""}${(m.pctEffect * 100).toFixed(0)} %`.padStart(6)}  ${pct(m.winRate).padStart(9)}  ${fmt(r.score.median).padStart(12)}  ${r.lift.toFixed(2).padStart(5)}  ${pct(r.heldAtEndRate).padStart(8)}  ${pct(r.naturalRate).padStart(7)}`);
+    console.log(`  ${r.name.padEnd(16)} ${(NAME[r.arch] || r.arch).padEnd(6)} ${fmt(m.median).padStart(12)}  ${`${m.pctEffect >= 0 ? "+" : ""}${(m.pctEffect * 100).toFixed(0)} %`.padStart(6)}  ${pct(m.winRate).padStart(9)}  ${fmt(r.score.median).padStart(12)}  ${r.lift.toFixed(2).padStart(5)}  ${pct(r.heldAtEndRate).padStart(8)}  ${pct(r.naturalRate).padStart(7)}  ${pct(r.blockedRate).padStart(8)}  ${`${r.marginalTaken.pctEffect >= 0 ? "+" : ""}${(r.marginalTaken.pctEffect * 100).toFixed(0)} %`.padStart(9)}`);
   }
   console.log(`  Lesart: „Median-Δ" = Score mit dem Legendären minus derselbe Seed ohne (gepaart); „typ." = typischer multiplikativer Effekt; „besser in" = Anteil der Seeds mit Gewinn;`);
+  console.log(`  „gesperrt" = Anteil der Läufe, in denen der Archetyp-Deckel (MAX_ARCHETYPES) den Pick verhinderte — dort bleibt der Lauf der Basislauf, Δ 0;`);
+  console.log(`  „typ.|frei" = derselbe typische Effekt, aber NUR über die Läufe, in denen der Pick legal war. Bei hoher Sperrquote ist das die belastbarere Spalte.`);
   console.log(`  „gehalten" = das Legendäre steht am Laufende im Build (Eingriff + natürlich); „ohnehin" = der Basislauf hatte es schon ohne Eingriff.`);
   write(res);
 }
