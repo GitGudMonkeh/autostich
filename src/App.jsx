@@ -1030,7 +1030,6 @@ function AutostichGame() {
      hier steht nur, was danach mit dem STAND passiert: speichern, Freischaltung buchen, das
      nächste Panel zeigen. Die Trennung ist Absicht — der Reducer kennt weder localStorage noch
      das Profil, und die Kette überlebt den Lauf-State. */
-  const campUnlocked = useMemo(() => CP.unlocksOf(campaign), [campaign]);
 
   function openCampaign() {
     const c = campaign || CP.startCampaign();
@@ -1408,24 +1407,26 @@ function AutostichGame() {
           unberührt, und die Kette läuft über vier Läufe hinweg. z-30 liegt über dem Endscreen (z-20),
           der darunter stehen bleibt: der Lauf ist normal gewertet, nur nicht der letzte Bildschirm. */}
       {campScreen === "overview" && campaign && (
-        <CampaignOverview campaign={campaign} unlocked={campUnlocked}
+        <CampaignOverview campaign={campaign}
           onStart={() => setCampScreen("boss")} onGiveUp={giveUpCampaign} onReset={resetCampaign} />
       )}
       {campScreen === "boss" && campaign && (
         <CampaignBoss campaign={campaign} onStart={campaignRun} />
       )}
       {campScreen === "unlock" && campaign && (
-        <CampaignUnlock id={campUnlock} unlocked={campUnlocked} nextStep={campaign.step}
+        <CampaignUnlock id={campUnlock} nextStep={campaign.step}
           onNext={() => { setCampUnlock(null); setCampScreen("overview"); }} />
       )}
-      {/* Verfehlt: dieselbe Stufe noch einmal. Kein „Aufgeben" hier — die Kampagne ist nicht vorbei. */}
+      {/* Verfehlt: dieselbe Stufe noch einmal. Kein „Aufgeben" hier — die Kampagne ist nicht vorbei.
+          Zurücksetzen schon: wer an einer Stufe hängen bleibt, soll die Leiter von hier aus neu
+          anfangen können, ohne erst über die Übersicht zu gehen (Owner 2026-09-25). */}
       {campScreen === "failed" && campaign && (
         <CampaignFailed campaign={campaign} score={campaign.lastScore || 0}
-          onAgain={() => setCampScreen("overview")}
+          onAgain={() => setCampScreen("overview")} onReset={resetCampaign}
           onMenu={() => closeCampaign()} />
       )}
       {campScreen === "won" && campaign && (
-        <CampaignWon campaign={campaign} unlocked={campUnlocked}
+        <CampaignWon campaign={campaign}
           onNext={() => { clearCampaign(); setCampaign(null); closeCampaign(); }} />
       )}
 

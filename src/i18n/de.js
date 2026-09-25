@@ -1014,7 +1014,7 @@ export default {
   "app.restart.title": "Wirklich neustarten?",
   "app.restart": "Neustarten",
   "app.restart.help": "Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.",
-  "app.restart.help.campaign": "In der Kampagne kostet der Neustart nur diesen Versuch: dieselbe Stufe beginnt von vorn, deine Freischaltungen bleiben.",
+  "app.restart.help.campaign": "In der Kampagne kostet der Neustart nur diesen Versuch: dieselbe Stufe beginnt von vorn.",
 
   /* ---- Steuerleiste (Controls) ---- */
   "controls.options": "⚙ Optionen",
@@ -1707,7 +1707,7 @@ export default {
   "campaign.title": "Kampagne · Stufe {n} von {max}",
   "campaign.step": "Stufe {n}",
   "campaign.bar.cleared": "Geschafft",
-  "campaign.boss.grants": "Bestehen schaltet frei: {name}",
+  "campaign.boss.grants": "Belohnung: {name}",
   "campaign.failed.title": "Stufe {n} noch einmal.",
   "campaign.failed.again": "Stufe {n} wiederholen",
   "campaign.failed.menu": "Ins Menü",
@@ -1716,15 +1716,11 @@ export default {
   "campaign.bar.threshold": "Schwelle",
   "campaign.bar.progress": "{a} / {b} Mio",
   "campaign.threshold": "{n} Mio",
-  "campaign.reached": "{n} Mio erreicht",
-  "campaign.now": "JETZT",
   "campaign.start": "Stufe {n} starten",
   "campaign.giveUp": "Kampagne aufgeben",
   "campaign.giveUp.sure": "Wirklich aufgeben?",
   "campaign.reset": "Kampagne zurücksetzen",
   "campaign.reset.sure": "Alles zurück auf null?",
-  "campaign.unlocks": "Freischaltungen",
-  "campaign.unlocks.count": "{n} / {max}",
 
   "campaign.boss.mid": "MINIBOSS",
   "campaign.boss.kind.mid": "Miniboss",

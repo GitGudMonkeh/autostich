@@ -26,13 +26,22 @@ const GOLD = PHASE_ACCENTS.gold.c;
 const RED = PHASE_ACCENTS.red.c;
 const GREEN = PHASE_ACCENTS.green.c;
 const VIOLET = PHASE_ACCENTS.violet.c;
-const MUTED = "#6e6e7a";
+/* Nicht das #6e6e7a der übrigen Panels: auf der Kartenfläche kommt es auf 3,6:1 und die
+   Kleinschrift dieser Schirme steht bei 9 px. Dieser Ton liegt bei 5,4:1 (Mobil-Pass 2026-09-25). */
+const MUTED = "#8f8f9c";
 
 /* Die Schale portalt selbst, nicht ihre Aufrufer: EIN Vollbild-Kasten, EINE Naht.
-   Warum überhaupt: overlayPortal.jsx, Wächter: test/overlay-nesting.test.js. */
+   Warum überhaupt: overlayPortal.jsx, Wächter: test/overlay-nesting.test.js.
+
+   `max-h-[95dvh] overflow-y-auto` trugen ALLE anderen Overlays des Spiels und diese eine nicht.
+   Gerechnet kommt die Leiter auf rund 600 px, und auf einem Handy bleiben nach der Browserleiste
+   etwa 660: es passte knapp und schnitt auf einem kleineren Gerät ab, ohne Weg zum Scrollen.
+   Die Innenkante ist auf dem Handy 16 px und erst ab `sm` 24 — bei 390 px Breite frassen 24 plus
+   der Aussenrand sonst 80 px der Zeile. */
 const Shell = ({ accent = "gold", children }) => overlayPortal(
-  <div className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "rgba(10,10,14,0.82)" }}>
-    <div className="w-full max-w-3xl rounded-2xl p-6" style={phaseCard(PHASE_ACCENTS[accent] || PHASE_ACCENTS.gold)}>
+  <div className="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4" style={{ background: "rgba(10,10,14,0.82)" }}>
+    <div className="w-full max-w-3xl rounded-2xl p-4 sm:p-6 max-h-[95dvh] overflow-y-auto"
+         style={phaseCard(PHASE_ACCENTS[accent] || PHASE_ACCENTS.gold)}>
       {children}
     </div>
   </div>
@@ -140,58 +149,131 @@ const KillButton = ({ armed, onArm, onFire, label, sure, color }) => (
   </button>
 );
 
-/* ---- Übersicht: die ganze Leiter auf einmal ---- */
-export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, onReset = null }) {
+/* ---- Die Leiter selbst (Owner-Entscheid „B", Mobil-Pass 2026-09-25).
+
+   Eine geschaffte oder kommende Stufe ist eine schmale Sprosse an einer durchgehenden Linie; die
+   AKTUELLE ist eine Karte mit der Schwelle gross und dem Startknopf darin. Der Grund ist die
+   Handybreite: entschieden wird über genau eine Stufe, und zwischen fünf gleich grossen Zeilen
+   stand sie gleichberechtigt.
+
+   Auf einer kommenden Sprosse treffen ZWEI Sorten Information aufeinander, und sie sind optisch
+   getrennt statt mit einem Punkt verbunden (Owner-Entscheid „c"): die Boss-ART ist ein Platzhalter
+   für den verdeckten Namen und steht klein und grau, die BELOHNUNG ist das Ziel der Stufe und steht
+   in Gold. Verbunden gelesen ergab „Miniboss · Sehr selten" einen Namen, den es nicht gibt.
+
+   `final` ist der Siegschirm: dort ist jede Sprosse geschafft, also steht rechts nur noch der
+   erreichte Score (ein „/ Schwelle" zeigt ein Ziel, das hinter einem liegt — dieselbe Regel wie in
+   der Schwellen-Leiste oben), und der Endboss behält sein Violett, statt im Grün der vier davor zu
+   verschwinden. ---- */
+const CHIP_INK = "#141018";   // eine dunkle Tinte für alle drei Chipfarben statt drei Sondertönen
+
+/* „Belohnung: <Name>", Name in Gold. Der Satz wird am PLATZHALTER geteilt, nicht mit
+   `{ name: "" }` abgeschnitten: so darf `{name}` im Katalog auch mitten im Satz stehen, ohne dass
+   die zweite Hälfte still verschwindet. Ohne Variablen gibt `t()` die Vorlage unverändert zurück. */
+const Grants = ({ id }) => {
+  const [pre, post = ""] = t("campaign.boss.grants").split("{name}");
+  return <>{pre}<span style={{ color: GOLD, fontWeight: 500 }}>{unlockName(id)}</span>{post}</>;
+};
+
+const Rung = ({ rung, state, score = null, line, final = false }) => {
+  const done = state === "done";
+  const end = isEndBoss(rung.boss);
+  const col = done ? (final && end ? VIOLET : GREEN) : end ? VIOLET : MUTED;
+  return (
+    <div className="relative flex items-center gap-3 py-1">
+      <span className="ty-num text-meta flex-none w-6 h-6 rounded-full flex items-center justify-center"
+            style={done ? { background: col, color: CHIP_INK, boxShadow: `0 0 0 4px ${line}` }
+                        : { border: `1px solid ${col}77`, color: col, background: line }}>
+        {rung.step}
+      </span>
+      {done ? (
+        <span className="flex-1 min-w-0 text-meta truncate" style={{ color: final ? "#b9b9c4" : col }}>
+          {bossName(rung.boss)}
+        </span>
+      ) : (
+        <span className="flex-1 min-w-0 flex items-baseline gap-2 overflow-hidden">
+          <span className="text-micro flex-none" style={{ color: col }}>
+            {t(end ? "campaign.boss.kind.end" : "campaign.boss.kind.mid")}
+          </span>
+          <span className="text-meta truncate" style={{ color: GOLD }}>{unlockName(rung.unlock)}</span>
+        </span>
+      )}
+      <span className={`ty-num-sm flex-none ${final ? "text-body-lg font-bold" : "text-meta"}`} style={{ color: col }}>
+        {!done || score == null ? t("campaign.threshold", { n: mio(rung.threshold) })
+          : final ? t("campaign.threshold", { n: mio(score) })
+                  : t("campaign.bar.progress", { a: mio(score), b: mio(rung.threshold) })}
+      </span>
+    </div>
+  );
+};
+
+export function Ladder({ campaign, onStart = null }) {
+  const c = campaign || CP.emptyCampaign();
+  const step = c.step || 1;
+  const scores = c.scores || [];
+  const final = !!c.done;
+  /* Der Ton, auf dem die Stufenzahlen sitzen. Die Linie läuft HINTER ihnen durch, also braucht die
+     Zahl einen deckenden Ring in der Kartenfarbe, sonst läuft die Linie mitten durch die Ziffer. */
+  const line = "#17151d";
+  return (
+    <div className="relative flex flex-col gap-1 mb-4">
+      <div className="absolute left-3 top-4 bottom-4 w-0.5 -translate-x-1/2"
+           style={{ background: final
+             ? `linear-gradient(180deg, ${GREEN}, ${GREEN} 78%, ${VIOLET})`
+             : `linear-gradient(180deg, ${GREEN}, ${GOLD} 45%, rgba(255,255,255,0.10) 62%, ${VIOLET}88)` }} />
+      {CP.LADDER.map((rung) => {
+        const done = rung.step < step || (rung.step === step && final);
+        const now = rung.step === step && !final;
+        if (!now) {
+          return <Rung key={rung.step} rung={rung} state={done ? "done" : "open"} final={final}
+                       score={done ? scores[rung.step - 1] ?? null : null} line={line} />;
+        }
+        return (
+          <div key={rung.step} className="relative my-2 p-4 rounded-2xl flex flex-col gap-3"
+               style={{ border: `2px solid ${GOLD}9e`, background: `linear-gradient(180deg, ${GOLD}24, ${GOLD}0a)` }}>
+            <div className="flex items-start gap-3">
+              <span className="ty-num text-meta flex-none w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: GOLD, color: CHIP_INK }}>{rung.step}</span>
+              <div className="min-w-0 flex-1">
+                <Head color={GOLD}>
+                  {t(isEndBoss(rung.boss) ? "campaign.boss.kind.end" : "campaign.boss.kind.mid")}
+                </Head>
+                <div className="ty-num text-figure font-bold leading-none mt-1" style={{ color: "#f0d79a" }}>
+                  {t("campaign.threshold", { n: mio(rung.threshold) })}
+                </div>
+              </div>
+            </div>
+            <div className="text-body"><Grants id={rung.unlock} /></div>
+            {onStart && (
+              <ActionButton kind="primary" onClick={onStart} className="w-full">
+                {t("campaign.start", { n: rung.step })}
+              </ActionButton>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---- Übersicht: die ganze Leiter auf einmal.
+
+   Der Startknopf steht NUR in der Karte der aktuellen Stufe, nicht noch einmal im Fuß: zwei gleich
+   beschriftete Knöpfe auf einem Handyschirm sind keine zwei Angebote, sondern eine Rückfrage. ---- */
+export function CampaignOverview({ campaign, onStart, onGiveUp, onReset = null }) {
   const c = campaign || CP.emptyCampaign();
   const step = c.step || 1;
   const [armed, setArmed] = useState(null); // null | "giveUp" | "reset"
   return (
     <Shell accent="gold">
-      <div className="flex items-end gap-3 mb-4 flex-wrap">
-        <div className="flex-1">
-          <Head>{t("start.campaign")}</Head>
-          <h2 className="ty-title text-head font-bold mt-1">{t("campaign.title", { n: step, max: CP.STEPS })}</h2>
-        </div>
+      <div className="mb-4">
+        <Head>{t("start.campaign")}</Head>
+        <h2 className="ty-title text-head font-bold mt-1">{t("campaign.title", { n: step, max: CP.STEPS })}</h2>
       </div>
 
-      <div className="flex flex-col gap-2 mb-4">
-        {CP.LADDER.map((rung) => {
-          const done = rung.step < step || (rung.step === step && c.done);
-          const now = rung.step === step && !c.done;
-          /* Bosse stehen verdeckt, bis ihre Stufe geschafft ist (Owner 2026-09-23). Wer vorher weiß,
-             was kommt, baut dagegen, statt sich anzupassen. Verdeckt steht die ART da: Miniboss
-             oder Endboss. Die FREISCHALTUNG bleibt offen sichtbar, sie ist das Ziel der Stufe. */
-          const col = done ? GREEN : now ? GOLD : isEndBoss(rung.boss) ? VIOLET : MUTED;
-          return (
-            <div key={rung.step} className="rounded-xl px-3 py-2.5 flex items-center gap-3 flex-wrap"
-                 style={{ border: `${now ? 2 : 1}px solid ${col}55`, background: "rgba(255,255,255,0.02)" }}>
-              <span className="ty-num text-body-lg w-8 text-center" style={{ color: col }}>{rung.step}</span>
-              <div className="min-w-0 flex-1">
-                <div className="text-meta" style={{ color: col }}>
-                  {done ? bossName(rung.boss) : t(isEndBoss(rung.boss) ? "campaign.boss.kind.end" : "campaign.boss.kind.mid")}
-                </div>
-                <div className="text-micro opacity-60">{unlockName(rung.unlock)}</div>
-              </div>
-              <div className="text-right">
-                <div className="ty-num text-body-lg" style={{ color: done ? GREEN : undefined }}>
-                  {t("campaign.threshold", { n: mio(rung.threshold) })}
-                </div>
-                {done && (c.scores || [])[rung.step - 1] != null && (
-                  <div className="ty-num-sm text-micro" style={{ color: GREEN }}>
-                    {t("campaign.reached", { n: mio(c.scores[rung.step - 1]) })}
-                  </div>
-                )}
-              </div>
-              {done && <span style={{ color: GREEN }}>✓</span>}
-              {now && <span className="ty-badge text-micro" style={{ color: GOLD }}>{t("campaign.now")}</span>}
-            </div>
-          );
-        })}
-      </div>
+      <Ladder campaign={c} onStart={() => { setArmed(null); onStart(); }} />
 
-      <UnlockLadder unlocked={unlocked} />
-
-      <div className="flex items-center gap-4 mt-5 flex-wrap">
+      <div className="flex items-center gap-5 mt-5 flex-wrap">
         <KillButton armed={armed === "giveUp"} onArm={() => setArmed("giveUp")} onFire={onGiveUp}
           label={t("campaign.giveUp")} sure={t("campaign.giveUp.sure")} color={RED} />
         {/* Testknopf: setzt die Leiter auf Stufe 1 zurück, samt Freischaltungen. */}
@@ -199,39 +281,10 @@ export function CampaignOverview({ campaign, unlocked = [], onStart, onGiveUp, o
           <KillButton armed={armed === "reset"} onArm={() => setArmed("reset")} onFire={onReset}
             label={t("campaign.reset")} sure={t("campaign.reset.sure")} color={RED} />
         )}
-        <div className="flex-1" />
-        {!c.done && (
-          <ActionButton kind="primary" onClick={() => { setArmed(null); onStart(); }}>
-            {t("campaign.start", { n: step })}
-          </ActionButton>
-        )}
       </div>
     </Shell>
   );
 }
-
-export const UnlockLadder = ({ unlocked = [] }) => (
-  <div className="rounded-xl p-3" style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-    <div className="flex items-baseline gap-2 mb-2">
-      <Head>{t("campaign.unlocks")}</Head>
-      <span className="ty-num-sm ml-auto text-meta" style={{ color: GOLD }}>
-        {t("campaign.unlocks.count", { n: unlocked.length, max: CP.UNLOCK_IDS.length })}
-      </span>
-    </div>
-    <div className="flex flex-wrap gap-1.5">
-      {CP.UNLOCK_IDS.map((id) => {
-        const on = unlocked.includes(id);
-        return (
-          <span key={id} className="flex-1 min-w-[6rem] rounded-lg px-2 py-1.5 text-center text-meta"
-                style={{ border: `1px ${on ? "solid" : "dashed"} ${on ? `${GOLD}99` : "rgba(255,255,255,0.12)"}`,
-                         color: on ? GOLD : "#5f5f6a" }}>
-            {on ? "✓ " : ""}{unlockName(id)}
-          </span>
-        );
-      })}
-    </div>
-  </div>
-);
 
 /* ---- Bossblock am Stufen-Start. Ohne Aufträge steht er allein, sonst über der Auftragswahl. ---- */
 export function CampaignBoss({ campaign, step = null, inline = false, onStart = null }) {
@@ -243,36 +296,44 @@ export function CampaignBoss({ campaign, step = null, inline = false, onStart = 
   const end = isEndBoss(boss);
   const col = end ? VIOLET : RED;
   const block = (
-    <div className="rounded-xl p-4" style={{ border: `1px solid ${col}77`, background: "rgba(255,255,255,0.02)" }}>
-      <div className="flex items-center gap-2.5 flex-wrap">
-        <span className="ty-badge rounded px-2 py-0.5 text-micro" style={{ background: col, color: "#14120c" }}>
+    /* Die Kopfzeile trägt NUR Sorte und Stufe/Schwelle; der Name steht als eigene Zeile darunter.
+       Nebeneinander umbrach „ENDBOSS · Der Denkmalpfleger · Stufe 1 · 5 Mio" auf 390 px in drei
+       Zeilen, und das Wichtigste stand dann in der Mitte. */
+    <div className="rounded-xl p-4 flex flex-col gap-2.5" style={{ border: `1px solid ${col}77`, background: "rgba(255,255,255,0.02)" }}>
+      <div className="flex items-center gap-2.5">
+        <span className="ty-badge rounded px-2 py-0.5 text-micro flex-none" style={{ background: col, color: CHIP_INK }}>
           {t(end ? "campaign.boss.end" : "campaign.boss.mid")}
         </span>
-        <span className="ty-title text-body-lg font-bold" style={{ color: col }}>{bossName(boss)}</span>
-        <span className="ml-auto text-meta opacity-70">
+        <span className="ty-num-sm ml-auto text-meta opacity-70 whitespace-nowrap">
           {t("campaign.step", { n })} · {t("campaign.threshold", { n: mio(rung.threshold) })}
         </span>
       </div>
-      <p className="mt-2.5 text-body opacity-90">{bossText(boss)}</p>
+      <h2 className="ty-title text-head font-bold leading-tight" style={{ color: col }}>{bossName(boss)}</h2>
+      <p className="text-body opacity-90">{bossText(boss)}</p>
+      <div className="h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
       {/* Wofür man spielt, direkt unter dem, wogegen man spielt. */}
-      <p className="mt-2 text-meta" style={{ color: GOLD }}>
-        {t("campaign.boss.grants", { name: unlockName(rung.unlock) })}
-      </p>
+      <div className="text-body"><Grants id={rung.unlock} /></div>
     </div>
   );
   if (inline) return block;
   return (
     <Shell accent={end ? "violet" : "red"}>
       {block}
-      <div className="flex justify-end mt-5">
-        <ActionButton kind="primary" onClick={onStart}>{t("campaign.start", { n })}</ActionButton>
+      <div className="flex flex-col sm:flex-row sm:justify-end mt-4">
+        <ActionButton kind="primary" onClick={onStart} className="w-full sm:w-auto">
+          {t("campaign.start", { n })}
+        </ActionButton>
       </div>
     </Shell>
   );
 }
 
-/* ---- Freischaltung im Goldrahmen ---- */
-export function CampaignUnlock({ id, unlocked = [], nextStep = 2, onNext }) {
+/* ---- Freischaltung im Goldrahmen.
+
+   Nur die EINE neue Freischaltung, keine Übersicht der schon vergebenen darunter (Owner
+   2026-09-25): was man bereits hat, sieht man im Spiel, und auf dem Belohnungsschirm zieht eine
+   Liste den Blick von dem weg, wofür man gerade gespielt hat. ---- */
+export function CampaignUnlock({ id, nextStep = 2, onNext }) {
   return (
     <Shell accent="gold">
       <div className="rounded-2xl p-6 mb-4" style={{ border: `3px solid ${GOLD}`, background: "rgba(212,166,58,0.06)" }}>
@@ -284,46 +345,70 @@ export function CampaignUnlock({ id, unlocked = [], nextStep = 2, onNext }) {
         <div className="ty-title text-head font-bold text-center">{unlockName(id)}</div>
         <p className="text-body text-center mt-2 opacity-85">{unlockText(id)}</p>
       </div>
-      <UnlockLadder unlocked={unlocked} />
-      <div className="flex justify-end mt-5">
-        <ActionButton kind="primary" onClick={onNext}>{t("campaign.unlock.next", { n: nextStep })}</ActionButton>
+      <div className="flex flex-col sm:flex-row sm:justify-end">
+        <ActionButton kind="primary" onClick={onNext} className="w-full sm:w-auto">
+          {t("campaign.unlock.next", { n: nextStep })}
+        </ActionButton>
       </div>
     </Shell>
   );
 }
 
 /* ---- Stufe verfehlt. Die Kampagne ist NICHT vorbei: dieselbe Stufe wird wiederholt, die
-   Freischaltungen bleiben (Owner 2026-09-25). Deshalb steht hier auch kein „das ist weg". ---- */
-export function CampaignFailed({ campaign, score = 0, onAgain, onMenu }) {
+   Freischaltungen bleiben (Owner 2026-09-25). Deshalb steht hier auch kein „das ist weg".
+
+   Die Leiste unter der Zahl ist dieselbe Rechnung wie die Schwellen-Leiste im Lauf, nur eingefroren:
+   wer knapp danebenlag, sieht das hier, und die nackte Zahl allein sagt es nicht. ---- */
+export function CampaignFailed({ campaign, score = 0, onAgain, onMenu, onReset = null }) {
   const c = campaign || CP.emptyCampaign();
   const step = c.step || 1;
+  const [armed, setArmed] = useState(false);
+  const p = CP.thresholdProgress(c, score, step);
   return (
     <Shell accent="red">
-      <div className="rounded-xl p-4 mb-4" style={{ border: `1px solid ${RED}66` }}>
-        <div className="flex items-end gap-3 flex-wrap">
-          <div className="flex-1">
-            <Head color={RED}>{t("campaign.over.failed", { n: step })}</Head>
-            <h2 className="ty-title text-title font-bold mt-1">{t("campaign.failed.title", { n: step })}</h2>
-          </div>
-          <div className="text-right">
-            <div className="ty-num text-title" style={{ color: RED }}>{t("campaign.threshold", { n: mio(score) })}</div>
-            <div className="text-meta opacity-70">{t("campaign.over.need", { n: mio(CP.thresholdFor(c, step)) })}</div>
-          </div>
+      <div className="rounded-xl p-4 mb-4 flex flex-col gap-3" style={{ border: `1px solid ${RED}66` }}>
+        <div>
+          <Head color={RED}>{t("campaign.over.failed", { n: step })}</Head>
+          <h2 className="ty-title text-title font-bold mt-1">{t("campaign.failed.title", { n: step })}</h2>
+        </div>
+        <div className="flex items-end gap-2.5 flex-wrap">
+          <span className="ty-num text-figure font-bold leading-none" style={{ color: RED }}>
+            {t("campaign.threshold", { n: mio(score) })}
+          </span>
+          <span className="ty-num-sm text-meta pb-0.5 opacity-70">
+            {t("campaign.over.need", { n: mio(CP.thresholdFor(c, step)) })}
+          </span>
+        </div>
+        <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "#26262f" }}>
+          <div className="h-full rounded-full" style={{ width: `${p.pct}%`, background: RED }} />
         </div>
       </div>
 
-      <div className="flex items-center gap-3 mt-5">
-        <button type="button" onClick={onMenu} className="text-meta opacity-60 hover:opacity-100">{t("campaign.failed.menu")}</button>
+      <div className="flex flex-col sm:flex-row sm:justify-end">
+        <ActionButton kind="primary" onClick={onAgain} className="w-full sm:w-auto">
+          {t("campaign.failed.again", { n: step })}
+        </ActionButton>
+      </div>
+
+      <div className="flex items-center gap-5 mt-4">
+        {onReset && (
+          <KillButton armed={armed} onArm={() => setArmed(true)} onFire={onReset}
+            label={t("campaign.reset")} sure={t("campaign.reset.sure")} color={RED} />
+        )}
         <div className="flex-1" />
-        <ActionButton kind="primary" onClick={onAgain}>{t("campaign.failed.again", { n: step })}</ActionButton>
+        <button type="button" onClick={onMenu} className="text-meta opacity-60 hover:opacity-100">{t("campaign.failed.menu")}</button>
       </div>
     </Shell>
   );
 }
 
 /* ---- Die Leiter ist durch. Weiter geht es erst, wenn Stufe 6 gebaut ist — der Schirm kündigt
-   deshalb nichts an, was der Spieler danach nicht vorfindet. ---- */
-export function CampaignWon({ campaign, unlocked = [], onNext }) {
+   deshalb nichts an, was der Spieler danach nicht vorfindet.
+
+   DIESELBE Leiter wie auf der Übersicht, nur im Endzustand (`campaign.done`), statt eines zweiten
+   Rasters aus Kacheln: es ist derselbe Weg, den man fünfmal angesehen hat, und auf 390 px waren
+   fünf Kacheln zwei Spalten mit einem Waisenkind. ---- */
+export function CampaignWon({ campaign, onNext }) {
   const c = campaign || CP.emptyCampaign();
   return (
     <Shell accent="gold">
@@ -331,25 +416,15 @@ export function CampaignWon({ campaign, unlocked = [], onNext }) {
         <div className="ty-screen-title text-micro" style={{ color: GOLD }}>
           {t("campaign.won.fallen", { boss: bossName(CP.LADDER[CP.STEPS - 1].boss) })}
         </div>
-        <h2 className="ty-title text-figure font-bold mt-2">{t("campaign.won.title")}</h2>
+        <h2 className="ty-title text-figure font-bold mt-2 leading-tight">{t("campaign.won.title")}</h2>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
-        {CP.LADDER.map((rung, i) => (
-          <div key={rung.step} className="rounded-xl p-3" style={{ border: "1px solid rgba(90,184,122,0.3)" }}>
-            <div className="text-meta opacity-60">{t("campaign.step", { n: rung.step })}</div>
-            <div className="ty-num text-body-lg mt-1" style={{ color: GREEN }}>
-              {t("campaign.threshold", { n: mio((c.scores || [])[i] ?? rung.threshold) })}
-            </div>
-            <div className="text-micro opacity-50">{bossName(rung.boss)}</div>
-          </div>
-        ))}
-      </div>
+      <Ladder campaign={{ ...c, done: true }} />
 
-      <UnlockLadder unlocked={unlocked} />
-
-      <div className="flex justify-end mt-5">
-        <ActionButton kind="primary" onClick={onNext}>{t("campaign.failed.menu")}</ActionButton>
+      <div className="flex flex-col sm:flex-row sm:justify-end mt-5">
+        <ActionButton kind="primary" onClick={onNext} className="w-full sm:w-auto">
+          {t("campaign.failed.menu")}
+        </ActionButton>
       </div>
     </Shell>
   );

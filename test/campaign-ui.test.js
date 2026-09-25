@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as CP from "../src/game/campaign.js";
 import { mio } from "../src/ui/campaignText.js";
-import { t } from "../src/i18n/index.js";
+import { t, catalog } from "../src/i18n/index.js";
 import { CampaignOverview, CampaignBoss, CampaignUnlock, CampaignFailed, CampaignWon,
          CampaignProgress, CampaignTile } from "../src/ui/CampaignScreens.jsx";
 import { RestartConfirm } from "../src/ui/RunConfirm.jsx";
@@ -27,19 +27,30 @@ const camp = (over = {}) => ({ ...CP.emptyCampaign(), ...over });
 
 describe("Kampagne · Übersicht zeigt die ganze Leiter", () => {
   const h = txt(html(CampaignOverview, { campaign: camp({ step: 3, scores: [6e6, 12e6] }),
-    unlocked: CP.unlocksFor(2), onStart: () => {}, onGiveUp: () => {} }));
+    onStart: () => {}, onGiveUp: () => {}, onReset: () => {} }));
 
   it("führt alle fünf Schwellen als Zahlen", () => {
     for (const rung of CP.LADDER) expect(h, `Stufe ${rung.step}`).toContain(`${mio(rung.threshold)} Mio`);
   });
 
-  it("nennt je Stufe, was sie freischaltet", () => {
-    for (const id of CP.UNLOCK_IDS) expect(h, id).toContain(t(`campaign.unlock.${id}`));
+  it("nennt an jeder OFFENEN Stufe, was sie einbringt", () => {
+    /* Eine geschaffte Sprosse zeigt ihren Boss, keine Belohnung — die hat man schon. Was noch
+       kommt, zeigt die Belohnung, und das ist der einzige Grund, die Stufe zu spielen. */
+    for (const rung of CP.LADDER.filter((r) => r.step >= 3)) {
+      expect(h, rung.unlock).toContain(t(`campaign.unlock.${rung.unlock}`));
+    }
   });
 
-  it("zeigt die Scores der geschafften Stufen", () => {
-    expect(h).toContain("6 Mio erreicht");
-    expect(h).toContain("12 Mio erreicht");
+  it("führt die schon vergebenen Freischaltungen nicht noch einmal auf", () => {
+    /* Owner 2026-09-25: die Übersicht „was habe ich schon" ist überall weg. Geprüft an den
+       Belohnungen der GESCHAFFTEN Stufen — genau die standen vorher in der Liste darunter. */
+    expect(h, "Stufe 1 ist durch").not.toContain(t("campaign.unlock.plantDeck"));
+    expect(h, "Stufe 2 ist durch").not.toContain(t("campaign.unlock.coins"));
+  });
+
+  it("zeigt den Score einer geschafften Stufe gegen ihre Schwelle", () => {
+    expect(h).toContain("6 / 5 Mio");
+    expect(h).toContain("12 / 10 Mio");
   });
 
   it("nennt nur den Boss einer GESCHAFFTEN Stufe", () => {
@@ -54,15 +65,46 @@ describe("Kampagne · Übersicht zeigt die ganze Leiter", () => {
     expect(h, "und Stufe 5 als Endboss").toContain("Endboss");
   });
 
-  it("bietet den Start der AKTUELLEN Stufe an", () => {
-    expect(h).toContain("Stufe 3 starten");
-    expect(h).toContain("2 / 5");     // der Freischaltungs-Zähler
+  it("bietet den Start der AKTUELLEN Stufe an, und zwar genau einmal", () => {
+    /* Der Knopf steht in der Karte der aktuellen Stufe. Ein zweiter mit derselben Beschriftung im
+       Fuß las sich auf 390 px wie eine Rückfrage statt wie ein Angebot (Mobil-Pass 2026-09-25). */
+    expect((h.match(/Stufe 3 starten/g) || []).length).toBe(1);
+    expect(h, "und der Kopf sagt, wo man steht").toContain("Stufe 3 von 5");
   });
 
   it("bietet keinen Start mehr an, wenn die Leiter durch ist", () => {
     const fertig = txt(html(CampaignOverview, { campaign: camp({ step: CP.STEPS, done: true, scores: [1e6, 2e6, 3e6, 4e6, 5e6] }),
-      unlocked: CP.UNLOCK_IDS, onStart: () => {}, onGiveUp: () => {} }));
+      onStart: () => {}, onGiveUp: () => {} }));
     expect(fertig).not.toContain("starten");
+  });
+
+  it("trägt den Zurücksetzen-Knopf, wenn er angeschlossen ist", () => {
+    expect(h, "Owner 2026-09-25: der Knopf ist wieder da").toContain(t("campaign.reset"));
+    const ohne = txt(html(CampaignOverview, { campaign: camp({ step: 3 }), onStart: () => {}, onGiveUp: () => {} }));
+    expect(ohne, "ohne Handler kein Knopf").not.toContain(t("campaign.reset"));
+  });
+});
+
+describe("Kampagne · der Belohnungssatz", () => {
+  it("behält seinen Platzhalter in jedem gepflegten Katalog", () => {
+    /* CampaignScreens teilt den Satz AM Platzhalter, um den Namen in Gold zu setzen. Fehlt
+       `{name}`, fällt der Name stillschweigend weg und auf dem Schirm stünde nur „Belohnung:". */
+    for (const loc of ["de", "en"]) {
+      expect(catalog(loc)["campaign.boss.grants"], loc).toContain("{name}");
+    }
+  });
+
+  it("nennt die Belohnung, statt eine Bedingung anzukündigen", () => {
+    // Owner 2026-09-25: aus „Bestehen schaltet frei: X" wird „Belohnung: X".
+    const s = t("campaign.boss.grants", { name: "X" });
+    expect(s).toContain("X");
+    expect(s.toLowerCase()).not.toMatch(/bestehen|schaltet frei/);
+  });
+
+  it("setzt den Namen VOLLSTÄNDIG in den gerenderten Satz", () => {
+    // Gegenprobe zur Teilung: beide Hälften müssen wieder am Schirm ankommen.
+    const h3 = txt(html(CampaignBoss, { campaign: camp({ step: 3 }), onStart: () => {} }));
+    expect(h3).toContain(t("campaign.boss.grants", { name: t("campaign.unlock.contracts") }));
   });
 });
 
@@ -107,22 +149,45 @@ describe("Kampagne · verfehlte Stufe", () => {
     // Owner 2026-09-23: die zwei Kästen sind weg, die Freischaltungen stehen auf dem Kampagnenschirm.
     for (const raus of ["DAS BEHÄLTST DU", "DAS IST WEG", "offen."]) expect(h, raus).not.toContain(raus);
   });
+
+  it("zeichnet, wie knapp es war", () => {
+    // Die nackte Zahl sagt nicht, ob zwei Millionen fehlten oder zwanzig.
+    const bar = html(CampaignFailed, { campaign: camp({ step: 3 }), score: 12.5e6, onAgain: () => {}, onMenu: () => {} });
+    expect(bar, "12,5 von 25 Mio").toContain("width:50%");
+  });
+
+  it("bietet ein Zurücksetzen an, aber kein Aufgeben", () => {
+    /* Owner 2026-09-25: der Knopf gehört auch hierher — wer an einer Stufe hängt, soll die Leiter
+       neu anfangen können, ohne erst über die Übersicht zu gehen. Aufgeben bleibt dort: die
+       Kampagne ist nach einer verfehlten Stufe nicht vorbei. */
+    const r = txt(html(CampaignFailed, { campaign: camp({ step: 3 }), score: 9e6,
+      onAgain: () => {}, onMenu: () => {}, onReset: () => {} }));
+    expect(r).toContain(t("campaign.reset"));
+    expect(r).not.toContain(t("campaign.giveUp"));
+    expect(h, "ohne Handler kein Knopf").not.toContain(t("campaign.reset"));
+  });
 });
 
 describe("Kampagne · Siegschirm", () => {
+  const scores = [6e6, 12e6, 26e6, 51e6, 210e6];
+  const h = txt(html(CampaignWon, { campaign: camp({ step: CP.STEPS, done: true, scores }), onNext: () => {} }));
+
   it("listet alle fünf Stufen mit Boss und Endscore", () => {
-    const scores = [6e6, 12e6, 26e6, 51e6, 210e6];
-    const h = txt(html(CampaignWon, { campaign: camp({ step: CP.STEPS, done: true, scores }),
-      unlocked: CP.UNLOCK_IDS, onNext: () => {} }));
     for (const s of scores) expect(h, `${mio(s)} Mio`).toContain(`${mio(s)} Mio`);
     for (const rung of CP.LADDER) expect(h, rung.boss).toContain(t(`campaign.boss.${rung.boss}`));
-    expect(h).toContain("5 / 5");
+  });
+
+  it("zeigt je Sprosse nur den erreichten Score, kein Ziel dahinter", () => {
+    /* Dieselbe Regel wie in der Schwellen-Leiste: wenn alles geschafft ist, liest sich „210 / 100
+       Mio" wie ein Fehler statt wie ein Sieg. */
+    expect(h).not.toMatch(/\d+ \/ \d+ Mio/);
   });
 
   it("kündigt nichts an, was es noch nicht gibt", () => {
-    const h = txt(html(CampaignWon, { campaign: camp({ step: CP.STEPS, done: true, scores: [1, 2, 3, 4, 5] }),
-      unlocked: CP.UNLOCK_IDS, onNext: () => {} }));
     expect(h, "Stufe 6 ist nicht gebaut").not.toContain("Stufe 6");
+    for (const id of CP.UNLOCK_IDS) {
+      expect(h, `${id} steht nicht noch einmal als Liste da`).not.toContain(t(`campaign.unlock.${id}`));
+    }
   });
 
   it("zeigt eine WIRKLICH durchgespielte Kette", () => {
@@ -130,20 +195,27 @@ describe("Kampagne · Siegschirm", () => {
        Lauf 2 rechnete die Kampagne gar nicht mehr ab, und ein echter Durchgang hätte hier leere
        Zeilen gezeigt. */
     let c = CP.emptyCampaign();
-    const scores = [6e6, 12e6, 26e6, 51e6, 210e6];
     for (let n = 1; n <= CP.STEPS; n++) c = CP.settleStep(c, { score: scores[n - 1] });
     expect(c.done).toBe(true);
-    const h = txt(html(CampaignWon, { campaign: c, unlocked: CP.unlocksOf(c), onNext: () => {} }));
-    for (const s of scores) expect(h, `${mio(s)} Mio fehlt`).toContain(`${mio(s)} Mio`);
+    const echt = txt(html(CampaignWon, { campaign: c, onNext: () => {} }));
+    for (const s of scores) expect(echt, `${mio(s)} Mio fehlt`).toContain(`${mio(s)} Mio`);
   });
 });
 
 describe("Kampagne · Freischaltungs-Schirm", () => {
+  const h = txt(html(CampaignUnlock, { id: "coins", nextStep: 3, onNext: () => {} }));
+
   it("nennt die neue Freischaltung und die nächste Stufe", () => {
-    const h = txt(html(CampaignUnlock, { id: "coins", unlocked: CP.unlocksFor(2), nextStep: 3, onNext: () => {} }));
     expect(h).toContain(t("campaign.unlock.coins"));
     expect(h).toContain(t("campaign.unlock.coins.text"));
     expect(h).toContain("Weiter zu Stufe 3");
+  });
+
+  it("zeigt NUR die neue, nicht die schon vergebenen", () => {
+    // Owner 2026-09-25: eine Liste daneben zieht den Blick von dem weg, wofür gerade gespielt wurde.
+    for (const id of CP.UNLOCK_IDS.filter((x) => x !== "coins")) {
+      expect(h, id).not.toContain(t(`campaign.unlock.${id}`));
+    }
   });
 
   it("sagt an der Münz-Stufe, was sie bringt, und nicht was sie nicht bringt", () => {
@@ -202,6 +274,9 @@ describe("Neustart-Warnung sagt die Wahrheit über die Leiter", () => {
     const h = txt(html(RestartConfirm, { onKeepPlaying: () => {}, onRestart: () => {}, campaign: true }));
     expect(h, "die Ebenen gibt es nicht mehr").not.toContain("Ebene");
     expect(h.toLowerCase(), "dieselbe Stufe kommt wieder").toContain("stufe");
-    expect(h.toLowerCase()).toContain("freischaltungen bleiben");
+    /* Owner 2026-09-25: der Zusatz „deine Freischaltungen bleiben" ist raus. Er beruhigte wegen
+       einer Gefahr, die der Spieler gar nicht kannte, und nannte damit genau das, was NICHT
+       passiert — dieselbe Regel wie bei den Belohnungstexten. */
+    expect(h.toLowerCase()).not.toContain("freischaltungen");
   });
 });
