@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, rundeLift, stanceCrit, grundrauschenCritMult, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
+  stanceLift, rundeLift, stanceCrit, grundrauschenCritMult, spektrumMult, lichtbandCap, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, roundSwitches, einklangDuration,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
@@ -49,20 +49,24 @@ const STANCE_IDS = [
   "SK_STANCE_01", "SK_STANCE_02", "SK_STANCE_03", "SK_STANCE_04", "SK_STANCE_05",
   "SK_STANCE_06", "SK_STANCE_07", "SK_STANCE_08", "SK_STANCE_09", "SK_STANCE_10",
   "SK_STANCE_11", "SK_STANCE_12", "SK_STANCE_13", "SK_STANCE_14", "SK_STANCE_15",
+  "SK_STANCE_L01", "SK_STANCE_L02", "SK_STANCE_L03",
 ];
 
 describe("Haltungen — Registry und Stufen", () => {
-  it("S nennt genau die registrierten Skills (15, noch keine Legendären)", () => {
+  it("S nennt genau die registrierten Skills: 15 mit Stufen und 3 Legendäre", () => {
     const ids = Object.values(S);
-    expect(ids).toHaveLength(15);
+    expect(ids).toHaveLength(18);
     expect([...ids].sort()).toEqual([...STANCE_IDS].sort());
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("stance");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "stance").map((s) => s.id).sort()).toEqual([...STANCE_IDS].sort());
-    // Owner-Plan: die drei Legendären werden erst entworfen, wenn die Sim Zahlen gegen die anderen Decks hat.
-    expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "stance" && s.legendary)).toHaveLength(0);
+    // Genau drei Legendäre (§6.21), und genau sie tragen keine Stufentabelle.
+    const leg = Object.values(SKILL_DEFS).filter((s) => s.archetype === "stance" && s.legendary);
+    expect(leg.map((s) => s.id).sort()).toEqual(["SK_STANCE_L01", "SK_STANCE_L02", "SK_STANCE_L03"]);
+    for (const s of leg) expect(s.tiers, s.id).toBeUndefined();
   });
   it("keine zwei Stufen eines Skills sind gleich (skill-rework.md §1) und jede hat einen eigenen Text", () => {
     for (const id of STANCE_IDS) {
+      if (SKILL_DEFS[id].legendary) continue;                 // Legendäre haben keine Stufen (§6.21)
       const rows = SKILL_DEFS[id].tiers;
       expect(rows, id).toHaveLength(4);
       const seen = rows.map((r) => JSON.stringify(r));
@@ -854,5 +858,44 @@ describe("Haltungen — Engine-Integration", () => {
     const deck = constDeck(3).map((c, i) => ({ ...c, value: i < 2 ? 7 : i, baseRank: i < 2 ? 7 : i }));
     expect(computeFormations(identity(), deck, {}, [], [], [], {}, null, null, null, null).map((p) => p.mult))
       .toEqual(computeFormations(identity(), deck).map((p) => p.mult));
+  });
+});
+
+describe("Haltungen — die drei Legendären (§6.21)", () => {
+  const all4 = () => st({ stance: "R", ring: { B: 3, G: 3, Y: 3 } });
+  it("SK_STANCE_L01 Spektrum: jede klingende Haltung multipliziert den Stich", () => {
+    expect(spektrumMult(st(), [])).toBe(1);                                   // ohne den Skill nichts
+    expect(spektrumMult(st(), [S.SPEKTRUM])).toBeCloseTo(C.STANCE_SPEKTRUM, 9); // eine klingt
+    expect(ringCount(all4())).toBe(4);
+    expect(spektrumMult(all4(), [S.SPEKTRUM])).toBeCloseTo(C.STANCE_SPEKTRUM ** 4, 9);
+    // In der Engine steckt er im Fraktions-Faktor, nicht daneben.
+    const off = resolveTrick(run(all4(), { skills: [] }), noCrit);
+    const on = resolveTrick(run(all4(), { skills: [S.SPEKTRUM] }), noCrit);
+    expect(on.lastTrick.breakdown.stanceMult / off.lastTrick.breakdown.stanceMult)
+      .toBeCloseTo(C.STANCE_SPEKTRUM ** 4, 6);
+  });
+  it("SK_STANCE_L02 Fernlicht: Grün zählt das ganze Brett statt des Segments", () => {
+    const f = computeFormations(order10(), board10());
+    const green = st({ stance: "G" });
+    const whole = f.reduce((x, p) => x + p.formations.length, 0);
+    const seg = segmentFormCounts(f, 2).reduce((x, y) => x + y, 0);
+    expect(seg).toBeLessThan(whole);                                          // das Fenster ist echt kleiner
+    expect(stanceGreenMult(green, f, 2, [S.FERNLICHT], {}))
+      .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * whole, 9);
+    expect(stanceGreenMult(green, f, 2, [], {}))
+      .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg, 9);
+    expect(stanceGreenMult(st(), f, 2, [S.FERNLICHT], {})).toBe(1);           // ohne klingendes Grün: nichts
+  });
+  it("SK_STANCE_L03 Lichtband: der Serien-Deckel steigt je klingender Haltung", () => {
+    expect(lichtbandCap(all4(), [])).toBe(0);
+    expect(lichtbandCap(all4(), [S.LICHTBAND])).toBeCloseTo(4 * C.STANCE_LICHTBAND_CAP, 9);
+    expect(lichtbandCap(st(), [S.LICHTBAND])).toBeCloseTo(C.STANCE_LICHTBAND_CAP, 9);
+    /* Er hebt den DECKEL, nicht den Satz: unter dem Deckel ändert er nichts, darüber zahlt die Serie weiter. */
+    const below = Math.floor(C.STREAK_BASE_CAP / C.STREAK_BASE_STEP) - 5;
+    const above = Math.ceil(C.STREAK_BASE_CAP / C.STREAK_BASE_STEP) + 20;
+    const plus = 4 * C.STANCE_LICHTBAND_CAP;
+    expect(streakBaseMult(below, 0, plus)).toBeCloseTo(streakBaseMult(below), 9);
+    expect(streakBaseMult(above)).toBeCloseTo(1 + C.STREAK_BASE_CAP, 9);
+    expect(streakBaseMult(above, 0, plus)).toBeGreaterThan(streakBaseMult(above));
   });
 });

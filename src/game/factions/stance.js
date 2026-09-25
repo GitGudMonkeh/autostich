@@ -40,6 +40,8 @@ export const S = Object.freeze({
   GENUGTUUNG: "SK_STANCE_10", RUECKHALT: "SK_STANCE_11", KEHRTWENDE: "SK_STANCE_12",
   // Rotations-Linie (wirkt über alle Haltungen)
   ANKLANG: "SK_STANCE_13", RUNDE: "SK_STANCE_14", BESCHLEUNIGUNG: "SK_STANCE_15",
+  // Legendäre (§6.21) — ohne Stufen, sie lesen nur, ob sie gehalten werden.
+  SPEKTRUM: "SK_STANCE_L01", FERNLICHT: "SK_STANCE_L02", LICHTBAND: "SK_STANCE_L03",
 });
 
 // Die vier Grundfarben in fester Reihenfolge — Zähler, Anzeige und Tests lesen dieselbe Quelle.
@@ -271,6 +273,16 @@ export function cashPeak(st, skills, skillTiers) {
   return { stance: { ...st, peakBest: 0, peakTicks: 0 }, payout: (st.peakBest || 0) * rate * (st.peakTicks || 0) };
 }
 
+/* ---- Die drei Legendären (§6.21, Owner) ----
+   Alle drei heben Score, jede auf einer anderen Achse, und alle drei zahlen auf „viele Haltungen klingen" —
+   dem Zustand, den Runde, Beschleunigung, Anklang und Mitklang herstellen. Keine Stufen. */
+// Spektrum: jede klingende Haltung multipliziert den Stich. Bei allen vieren ×1,5^4.
+export const spektrumMult = (st, skills) =>
+  (st && st.active && (skills || []).includes(S.SPEKTRUM) ? C.STANCE_SPEKTRUM ** ringCount(st) : 1);
+// Lichtband: hebt den DECKEL des Serien-Multiplikators je klingender Haltung, nicht den Satz.
+export const lichtbandCap = (st, skills) =>
+  (st && st.active && (skills || []).includes(S.LICHTBAND) ? C.STANCE_LICHTBAND_CAP * ringCount(st) : 0);
+
 /* ---- Der Takt: ein Stich weiter ----
    Am ENDE jedes Stichs gerufen, nachdem der Stich gewertet ist — der Stand VOR dem Stich hat ihn regiert, der
    Wechsel greift ab dem nächsten (§2: „Wechsel passieren mitten im Durchlauf"). Reihenfolge:
@@ -378,7 +390,10 @@ export function stanceTick(st, skills, skillTiers, { wonSuit = null } = {}) {
    Gezählt werden alle Einträge, auch die mit Faktor 1 (Owner) — s. segmentFormCounts. */
 export function stanceGreenMult(st, formations, pos, skills, skillTiers) {
   if (!ringsNow(st, "G")) return 1;
-  const counts = segmentFormCounts(formations || [], pos, stanceParam(skills, skillTiers, S.UEBERGRIFF, "reach") || 0);
+  // Fernlicht (§6.21): das Fenster ist das ganze Brett statt des Segments samt Übergriffs Rand.
+  const counts = (skills || []).includes(S.FERNLICHT)
+    ? (formations || []).map((p) => (p?.formations || []).length)
+    : segmentFormCounts(formations || [], pos, stanceParam(skills, skillTiers, S.UEBERGRIFF, "reach") || 0);
   let sum = counts.reduce((a, b) => a + b, 0);
   const dbl = stanceParam(skills, skillTiers, S.DOPPELBINDUNG, "cards") || 0;
   // Doppelbindung: die dichtesten Karten ein zweites Mal. `slice` nach absteigender Sortierung — mehr Karten als

@@ -45,8 +45,9 @@ export function zinsReadout(state) {
 /* `stepPlus` hebt den Satz JE SERIENSTUFE, nicht das Ergebnis (Prisma, Kehrtwende Episch). Der Deckel bleibt, wo er
    ist: ein höherer Satz erreicht ihn nur früher und kann nie darüber hinaus. Default 0 ⇒ alle Bestands-Aufrufer
    (u. a. die Anzeige baseScoreMultFor) rechnen byte-identisch. */
-export const streakBaseMult = (winStreak, stepPlus = 0) =>
-  1 + Math.min(winStreak * (C.STREAK_BASE_STEP + stepPlus), C.STREAK_BASE_CAP);
+// capPlus (§6.21, Prismas Lichtband): hebt den DECKEL, nicht den Satz. Ohne Zuschlag byte-gleich wie vorher.
+export const streakBaseMult = (winStreak, stepPlus = 0, capPlus = 0) =>
+  1 + Math.min(winStreak * (C.STREAK_BASE_STEP + stepPlus), C.STREAK_BASE_CAP + capPlus);
 
 export const CATEGORIES = {
   A: { key: "A", name: "Deck",   desc: "Dauerhafte Kartenwerte",   color: "#8a7de0" },

@@ -26,7 +26,7 @@ import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult
 // Haltungen (docs/haltungen-fraktion.md): vier Haltungen, eine je Farbe, gesteuert von den gewonnenen Stichen der
 // GRUNDFARBE. Die Engine ruft nur die reinen Übergänge des Moduls; die grüne Haltung greift zusätzlich in die
 // Formations-Geometrie, dafür wird das Brett bei jedem Haltungswechsel neu gelesen (Owner ausdrücklich freigegeben).
-import { stanceTick, stanceLift, rundeLift, stanceCrit, stanceScoreMult, stanceGreenMult,
+import { stanceTick, stanceLift, rundeLift, stanceCrit, stanceScoreMult, stanceGreenMult, spektrumMult, lichtbandCap,
   genugtuungScore, noteTurn, rueckhaltValue, extendStance, noteCrit, uebertragMult, grundrauschenCritMult, stauungOn, notePeak, tickPeak, cashPeak,
   anklangScore, kehrtwendeStreak, kehrtwendeStreakStep } from "./factions/stance.js";
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
@@ -665,7 +665,8 @@ export function resolveTrick(state, rng) {
     const flats = scoreBase - C.SCORE_PER_WIN;                                         // additive Boni (Perk-/Crit-Flats, Ion, L5-Jackpot)
     // Serie (#39). #267: der Serien-Stat-Booster ist weg — nur noch das Basis-System. Einzige Ausnahme: Kehrtwende
     // Episch hebt den SATZ, solange Rot klingt (§5.5); ohne Prisma ist der Zusatz 0 und die Zeile rechnet wie vorher.
-    const streakMult = streakBaseMult(serieStreak, stanceOn ? kehrtwendeStreakStep(stance, skills, skillTiers) : 0);
+    const streakMult = streakBaseMult(serieStreak, stanceOn ? kehrtwendeStreakStep(stance, skills, skillTiers) : 0,
+      stanceOn ? lichtbandCap(stance, skills) : 0);
     // Legendär-Perks-Rework (#203) — der ×-Multiplikator-Raum ist die family-free Legendär-Lane. Henker (Score, Kat. D)
     // faltet in perkMult; Brennpunkt/Sammler (Formation, Kat. E) falten unten in formMult → §17-Breakdown bleibt exakt.
     const henkerMult = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) ? C.HENKER_MULT : 1; // Segment-Finale ×
@@ -722,7 +723,7 @@ export function resolveTrick(state, rng) {
        kubischen Weglauf). Blau wirkt über den Crit; GRÜN sitzt seit §5.3 ebenfalls hier, als Zahl statt als
        Geometrie: Summe der Formationen über das Fenster um die Siegposition, mal dem Satz. */
     const stanceMult = stanceOn
-      ? stanceScoreMult(stance, skills, skillTiers) * stanceGreenMult(stance, formations, actualPos, skills, skillTiers)
+      ? stanceScoreMult(stance, skills, skillTiers) * stanceGreenMult(stance, formations, actualPos, skills, skillTiers) * spektrumMult(stance, skills)
       : 1;
     /* §7.51 (Owner): Blitz hat KEINEN eigenen Faktor im Produkt. Der Crit-Multiplikator ist die Multiplikator-Achse
        der Fraktion — jeder Stapel zahlt über ION_CRIT_MULT_PER_STACK dorthin. §7.43 hatte daneben `lightMult`

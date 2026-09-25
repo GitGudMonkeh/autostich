@@ -484,6 +484,10 @@ export const STANCE_SCORE_MULT   = envNum("SIM_STANCE_SCORE_MULT", 1.4); // Gelb
    ALLER Karten ihres Segments summiert (eine Karte in 3 Formationen zählt 3) und je Formation zahlt der Stich
    diesen Satz auf den Score-Multiplikator. Typische Summen liegen bei 4–9, das sind ×1,4 bis ×1,9. STARTWERT. */
 export const STANCE_GREEN_PER_FORM = envNum("SIM_STANCE_GREEN_PER_FORM", 0.1);
+/* Die drei Legendären (§6.21, Owner): Score-Hebel auf drei Achsen — Haltungen, Formationen, Serie. Fernlicht
+   braucht keine Zahl, es tauscht nur das Fenster gegen das Brett. STARTWERTE, ungemessen. */
+export const STANCE_SPEKTRUM      = envNum("SIM_STANCE_SPEKTRUM", 1.5);      // Faktor je klingender Haltung
+export const STANCE_LICHTBAND_CAP = envNum("SIM_STANCE_LICHTBAND_CAP", 0.5); // Serien-Deckel je klingender Haltung
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

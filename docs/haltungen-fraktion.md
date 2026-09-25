@@ -694,6 +694,32 @@ wirkt** (§4.1). Soll sie stattdessen unbedingt gelten, ist das eine Zeile.
 
 `+0,5 %` ist ebenfalls Startwert — „ein kleines bisschen" ist ein Viertel des Grundsatzes.
 
+### 5.6 · Die drei Legendären — **§6.21 gesetzt**
+
+Owner: *„etwas, das Score erhöht, um bei den anderen Legendären mitzuhalten — über die Haltungen,
+mehr Score je Crit, Formationen oder Serie."* Gewählt sind drei der vier Achsen; die Crit-Achse ist
+nicht besetzt. Alle drei zahlen auf **„viele Haltungen klingen"** — den Zustand, den die
+Rotations-Linie herstellt. Keine Stufen, wie bei allen Legendären.
+
+| Legendär | Achse | Beschreibung | Zahl |
+| --- | --- | --- | --- |
+| **Spektrum** `SK_STANCE_L01` | Haltungen | Jede klingende Haltung multipliziert deinen Stich mit ×1,5. | `STANCE_SPEKTRUM` |
+| **Fernlicht** `SK_STANCE_L02` | Formationen | Solange Grün klingt, zählt es die Formationen des ganzen Bretts statt nur die des Segments. | — |
+| **Lichtband** `SK_STANCE_L03` | Serie | Jede klingende Haltung hebt den Deckel des Serien-Multiplikators um +50 %. | `STANCE_LICHTBAND_CAP` |
+
+**Spektrum** sitzt multiplikativ in Prismas eigenem Slot: bei allen vieren ×1,5⁴ ≈ ×5. Es ist der
+stärkste Grund, den die Fraktion je hatte, alle vier klingen zu lassen.
+
+**Fernlicht** hebt die Reichweite des grünen Passivs von „dichte Stellen" auf das ganze Brett — §7
+nennt genau das als den stärksten der nicht gewählten grünen Kandidaten. Übergriff und Doppelbindung
+werden daneben klein, Verankerung groß.
+
+**Lichtband** ist das einzige der drei, das an einem Regler dreht, der dem **ganzen Spiel** gehört:
+`STREAK_BASE_CAP` bremst heute jede Fraktion. `streakBaseMult` hat dafür einen dritten Parameter
+bekommen (`capPlus`); ohne Zuschlag rechnet sie byte-gleich wie vorher.
+
+Alle drei Zahlen sind **Startwerte**.
+
 ---
 
 ## 6 · Was gerechnet ist
@@ -1542,8 +1568,8 @@ ein gerutschter Sieg zahlt **voll** (§3), **Übergriff wirkt auf einer schon of
 3. **Name und Thema.** „Echo" ist belegt (Kopf dieses Dokuments). Vier Fraktionen sind Elemente, diese
    wäre ein Konzept — die Genre-Recherche im Repo nennt das Elementar-Skin „das generischste im
    Feld", der Bruch wäre also möglicherweise ein Gewinn.
-4. **Drei Legendäre.** Nach Owner-Plan erst, wenn die Sim erste Zahlen gegen die anderen Decks
-   geliefert hat.
+4. ~~**Drei Legendäre.**~~ **Erledigt (§5.6, §6.21):** Spektrum, Fernlicht, Lichtband — gebaut, die
+   Zahlen ungemessen.
 5. **Die Startwerte selbst** (§5) sind Startwerte, kein Tarierstand — nichts davon ist gemessen.
 
 ### 8.1 · Vokabel-Kollisionen (geprüft)

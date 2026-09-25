@@ -254,13 +254,18 @@ describe("Stufenwurf — rollTier / rollSkillOfferTiers / tierOf (exp skill rewo
     for (let i = 0; i < off.length; i++) expect(archetypeOf(r.offer[i])).toBe(archetypeOf(off[i]));
     expect(r.tiers).toEqual({});
   });
-  it("Fraktion ohne Legendäre: der Platz bleibt normal und bekommt eine Stufe, auch bei Chance 1", () => {
-    const stance = ALL.filter((id) => archetypeOf(id) === "stance").slice(0, 3);
-    expect(stance).toHaveLength(3);
-    const r = rollSkillOfferTiers(stance, [], makeRng(7), 1);
-    expect(r.offer).toEqual(stance);                       // nichts zu ersetzen
+  it("Legendär-Pool erschöpft: der Platz bleibt normal und bekommt eine Stufe, auch bei Chance 1", () => {
+    /* Prisma hat seit §6.21 selbst Legendäre, also gibt es keine Fraktion ohne mehr. Der Zweig, den dieser
+       Wächter hält, ist damit „Pool leer" statt „Fraktion ohne": alle drei schon gehalten → nichts zu ersetzen. */
+    const all = ALL.filter((id) => archetypeOf(id) === "stance");
+    const leg = all.filter(isLegendarySkill);
+    const normal = all.filter((id) => !isLegendarySkill(id)).slice(0, 3);
+    expect(leg.length).toBeGreaterThan(0);
+    expect(normal).toHaveLength(3);
+    const r = rollSkillOfferTiers(normal, leg, makeRng(7), 1);
+    expect(r.offer).toEqual(normal);                       // nichts zu ersetzen
     expect(r.offer.some(isLegendarySkill)).toBe(false);
-    for (const id of stance) expect(r.tiers[id]).toBeGreaterThanOrEqual(0);
+    for (const id of normal) expect(r.tiers[id]).toBeGreaterThanOrEqual(0);
   });
   it("Legendär-Pool erschöpft (gehaltene + schon im Angebot) → der Platz bleibt normal und bekommt eine Stufe", () => {
     const five = ["SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];

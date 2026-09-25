@@ -578,6 +578,14 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.runde, (r) => `Nach je ${r.switches} Haltungswechseln klingen alle vier Haltungen ${r.duration ?? C.STANCE_EINKLANG} Stiche lang gleichzeitig. Solange sie es tun, gewinnst du jeden Stich.`) },
   SK_STANCE_15: { id: "SK_STANCE_15", name: "Beschleunigung", archetype: "stance", keywords: ["stance"], tiers: HALTUNG.beschleunigung,
     ...tiered(HALTUNG.beschleunigung, (r) => `${r.every ? "Jeder zweite Haltungswechsel" : "Jeder Haltungswechsel"} senkt die Schwelle um ${r.step}, bis herunter auf ${r.floor} gewonnene Stiche.${r.echoPlus ? " Außerdem klingt jede Haltung einen Stich länger nach." : ""}`) },
+  /* Legendäre (§6.21, Owner): drei Score-Hebel auf drei Achsen — Haltungen, Formationen, Serie. Alle drei zahlen
+     auf „viele Haltungen klingen", den Zustand, den die Rotations-Linie herstellt. Keine Stufen. */
+  SK_STANCE_L01: { id: "SK_STANCE_L01", name: "Spektrum", archetype: "stance", legendary: true, keywords: ["stance", "score"],
+    desc: `Jede klingende Haltung multipliziert deinen Stich mit ×${de(C.STANCE_SPEKTRUM)}.` },
+  SK_STANCE_L02: { id: "SK_STANCE_L02", name: "Fernlicht", archetype: "stance", legendary: true, keywords: ["stance", "formation"],
+    desc: `Solange die grüne Haltung klingt, zählt sie die Formationen des ganzen Bretts statt nur die deines Segments.` },
+  SK_STANCE_L03: { id: "SK_STANCE_L03", name: "Lichtband", archetype: "stance", legendary: true, keywords: ["stance", "streak"],
+    desc: `Jede klingende Haltung hebt den Deckel des Serien-Multiplikators um +${pct(C.STANCE_LICHTBAND_CAP)} %.` },
 
 };
 
