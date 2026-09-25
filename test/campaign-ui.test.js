@@ -146,12 +146,17 @@ describe("Kampagne · Freischaltungs-Schirm", () => {
     expect(h).toContain("Weiter zu Stufe 3");
   });
 
-  it("sagt an der Münz-Stufe, dass die Ökonomie reduziert ist", () => {
-    /* Der Spieler muss es LESEN können: eine Münze je Durchlauf, Formationen zahlen nicht. Sonst
-       rechnet er mit der vollen Ökonomie, die er aus einem freien Lauf kennt. */
+  it("sagt an der Münz-Stufe, was sie bringt, und nicht was sie nicht bringt", () => {
+    /* Owner 2026-09-25: eine Belohnung nennt nur ihre Wirkung. „Formationen zahlen nicht" nahm dem
+       Spieler etwas weg, von dem er nie wusste, dass es das gibt. Geprüft an allen
+       Freischaltungs-Texten, damit die Regel nicht beim nächsten Eintrag wieder bricht. */
     const text = t("campaign.unlock.coins.text");
-    expect(text.toLowerCase()).toContain("münze");
-    expect(text.toLowerCase()).toContain("formationen");
+    expect(text.toLowerCase(), "die Wirkung steht da").toContain("münze");
+    for (const id of CP.UNLOCK_IDS) {
+      const s = t(`campaign.unlock.${id}.text`);
+      expect(s, `${id} hat gar keinen Text`).not.toBe(`campaign.unlock.${id}.text`);
+      expect(s.toLowerCase(), `${id} sagt, was NICHT passiert: „${s}"`).not.toMatch(/\bnicht\b|\bkein/);
+    }
   });
 });
 

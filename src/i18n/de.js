@@ -1752,7 +1752,7 @@ export default {
   "campaign.unlock.plantDeck": "Pflanzen-Deck",
   "campaign.unlock.plantDeck.text": "Wachstum, grüne Karten, Farballianz.",
   "campaign.unlock.coins": "Münzen",
-  "campaign.unlock.coins.text": "Jeder Durchlauf bringt eine Münze. Ablehnen zahlt, Formationen zahlen nicht.",
+  "campaign.unlock.coins.text": "Jeder Durchlauf bringt eine Münze, Ablehnen zahlt zusätzlich.",
   "campaign.unlock.contracts": "Aufträge",
   "campaign.unlock.contracts.text": "Zwei Fenster je Lauf, eigene Beute.",
   "campaign.unlock.rarityRare": "Sehr selten",

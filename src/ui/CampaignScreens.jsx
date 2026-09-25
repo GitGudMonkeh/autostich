@@ -9,8 +9,11 @@
    Alle rendern nur in einem Lauf, der über den Kampagnen-Knopf gestartet wurde; App.jsx gatet sie
    auf state.campaign.
 
-   Hausregel des Owners (2026-09-22): keine Mini-Beschreibungen, keine Gedankenstriche in
-   Spielertexten. Was die Regel erklärt, steht im Dokument. */
+   Hausregeln des Owners für Spielertexte: keine Mini-Beschreibungen, keine Gedankenstriche
+   (2026-09-22), und eine Belohnung sagt nur, was sie BRINGT (2026-09-25). „Formationen zahlen
+   nicht" nimmt dem Spieler etwas weg, von dem er nie wusste, dass es das gibt. Was die Regel
+   vollständig erklärt, steht im Dokument. Ein BOSS-Text ist davon nicht betroffen: seine
+   Einschränkung ist die Regel selbst, nicht ihr Fehlen. */
 
 import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx";

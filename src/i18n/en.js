@@ -1963,7 +1963,7 @@ export default {
   "campaign.unlock.plantDeck": "Plant deck",
   "campaign.unlock.plantDeck.text": "Growth, green cards, colour alliance.",
   "campaign.unlock.coins": "Coins",
-  "campaign.unlock.coins.text": "Every cycle pays one coin. Declining pays, formations do not.",
+  "campaign.unlock.coins.text": "Every cycle pays one coin, and declining pays on top.",
   "campaign.unlock.contracts": "Contracts",
   "campaign.unlock.contracts.text": "Two windows per run, their own loot.",
   "campaign.unlock.rarityRare": "Very rare",

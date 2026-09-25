@@ -940,7 +940,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "campaign.threshold","i18n","{n} Mio","","{n}M","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.title","i18n","Kampagne · Stufe {n} von {max}","","Campaign · step {n} of {max}","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.unlock.coins","i18n","Münzen","","Coins","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"campaign.unlock.coins.text","i18n","Jeder Durchlauf bringt eine Münze. Ablehnen zahlt, Formationen zahlen nicht.","","Every cycle pays one coin. Declining pays, formations do not.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"campaign.unlock.coins.text","i18n","Jeder Durchlauf bringt eine Münze, Ablehnen zahlt zusätzlich.","","Every cycle pays one coin, and declining pays on top.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.unlock.contracts","i18n","Aufträge","","Contracts","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.unlock.contracts.text","i18n","Zwei Fenster je Lauf, eigene Beute.","","Two windows per run, their own loot.","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "campaign.unlock.iceDeck","i18n","Eis-Deck","","Ice deck","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
