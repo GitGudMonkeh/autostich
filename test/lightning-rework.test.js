@@ -599,12 +599,11 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(s.lastTrick.result).toBe("win");
     // Kein Blitz-Multiplikator im Breakdown: weder unter dem alten Namen noch unter einem neuen neben den anderen.
     expect(s.lastTrick.breakdown.lightMult).toBeUndefined();
-    // `campaignMult` (Steigbrief, docs/kampagne.md §9) kam als eigener benannter Faktor dazu, damit
-    // die Aufschlüsselung „Basis × Faktoren = total" weiter aufgeht. Ohne Kampagne steht er auf 1 —
-    // der Wächter prüft das gleich mit, sonst wäre die Liste nur länger und nicht schärfer.
+    /* `campaignMult` (Steigbrief) ist mit dem Reward-Katalog weggefallen: die Kampagne hebt seit dem
+       Umbau auf die Leiter keinen Score-Faktor mehr, und ein Faktor, der immer 1 ist, gehört nicht
+       in eine Aufschlüsselung, die „Basis × Faktoren = total" behauptet. */
     expect(Object.keys(s.lastTrick.breakdown).filter((k) => /Mult$/.test(k)).sort())
-      .toEqual(["afterglowMult", "architectMult", "campaignMult", "coreMult", "critMult", "fireMult", "formMult", "perkMult", "plantMult", "streakMult", "strikeMult"]);
-    expect(s.lastTrick.breakdown.campaignMult).toBe(1);
+      .toEqual(["afterglowMult", "architectMult", "coreMult", "critMult", "fireMult", "formMult", "perkMult", "plantMult", "streakMult", "strikeMult"]);
     // Die Achse, die Blitz WIRKLICH hat: jeder Stapel der Siegkarte hebt den Crit-Multiplikator.
     const crit = resolveTrick(scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), skills: [L.KETTENBLITZ] }), zero);
     expect(crit.lastTrick.isCrit).toBe(true);

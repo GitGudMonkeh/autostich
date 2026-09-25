@@ -251,13 +251,7 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-/* `gap` = Lückenschluss der Kampagne (docs/kampagne.md §9): `{ n, scope }` oder null. Er dreht
-   KEINEN neuen Regler, sondern hebt die beiden, die E_PACE (Wiederholung) und E_COLORBRIDGE
-   (Farbblock) schon drehen — deshalb steht er hier und nicht in einem eigenen Erkennungspfad.
-   `scope: "all"` hebt jeden Lauf, `"one"` gibt der ganzen Phase EIN Budget, das der erste Lauf
-   verbraucht, der eine Lücke wirklich nimmt. Der Aufrufer reicht ihn durch; ohne Kampagne ist er
-   null und nichts an der Erkennung ändert sich. */
-export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null, gap = null) {
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
@@ -306,23 +300,8 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // ---- E-Formationsfamilien (Rarität #167 Kat. E, REGELERSETZUNG): Parameter der GEHALTENEN Stufe je Familie
   //      (familyTierParam; ungehalten → Default = klassische Erkennung ohne E-Werkzeug). Nur die höchste Stufe zählt. ----
   const eP = (id, key, dflt) => { const v = familyTierParam(familyTiers, id, key); return v === undefined ? dflt : v; };
-  const wiedGapBase = { run: eP("E_PACE", "gapRun", 0), seg: eP("E_PACE", "gapSeg", 0) };                       // E_PACE: Wiederholung-Gaps
-  const suitGapBase = { run: eP("E_COLORBRIDGE", "suitGapRun", 0), seg: eP("E_COLORBRIDGE", "suitGapSeg", 0) }; // E_COLORBRIDGE: Farbblock-Gaps
-  /* Lückenschluss: hebt BEIDE Budgets, `run` wie `seg`. Nur `run` zu heben brächte nichts — ein
-     Segment-Budget von 0 verbietet die Lücke unabhängig davon, wie hoch der Lauf darf.
-     Bei `scope: "one"` ist `lueckLeft` das gemeinsame Budget von Wiederholung UND Farbblock: der
-     Regler kommt dann als Funktion, die beim Lauf-Start fragt, ob noch etwas übrig ist, und
-     `noteLueck` zieht erst ab, wenn ein Lauf wirklich übersprungen hat. Ein Lauf, dem die Lücke
-     angeboten wurde und der sie nicht brauchte, verbraucht sie nicht. */
-  const lueckN = gap && gap.n > 0 ? gap.n : 0;
-  let lueckLeft = gap && gap.scope === "one" ? lueckN : Infinity;
-  const lifted = (base) => ({ run: base.run + lueckN, seg: base.seg + lueckN });
-  const withLueck = (base) => (lueckN <= 0 ? base
-    : gap.scope === "one" ? () => (lueckLeft > 0 ? lifted(base) : base)
-    : lifted(base));
-  const noteLueck = (skipped) => { if (lueckN > 0 && skipped && skipped.length) lueckLeft -= skipped.length; };
-  const wiedGap = withLueck(wiedGapBase);
-  const suitGap = withLueck(suitGapBase);
+  const wiedGap = { run: eP("E_PACE", "gapRun", 0), seg: eP("E_PACE", "gapSeg", 0) };                           // E_PACE: Wiederholung-Gaps
+  const suitGap = { run: eP("E_COLORBRIDGE", "suitGapRun", 0), seg: eP("E_COLORBRIDGE", "suitGapSeg", 0) };     // E_COLORBRIDGE: Farbblock-Gaps
   const treppeE = { eqRun: eP("E_GENTLE", "eqRun", 0), eqSeg: eP("E_GENTLE", "eqSeg", 0),                   // E_GENTLE: Gleichstände
                     revRun: eP("E_BIGSTEP", "revRun", 0), revSeg: eP("E_BIGSTEP", "revSeg", 0),             // E_BIGSTEP: Rückschritte
                     drehSeg: eP("E_RPM", "drehSeg", 0) };                                                   // E_RPM: Doppel-Treppe
@@ -383,8 +362,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Mitglieder je Lauf auf jedem Eintrag ablegen (Resonanz, Blitz-Legendär §7.25: die Karten einer Formation teilen ihre
   // Stapel). Ein Eintrag je Typ und Lauf — bei zwei Treppen (E_RPM) bekommt der zweite Eintrag den zweiten Lauf.
   const noteMembers = (type, mem) => { for (const p of mem) { const fe = out[p].formations.find((f) => f.type === type && !f.members); if (fe) fe.members = mem; } };
-  // `skipped` geht mit: der Lückenschluss zieht sein Budget erst ab, wenn ein Lauf wirklich übersprungen hat.
-  const onRunJoker = (type) => (mem, skipped) => { noteLueck(skipped); if (noteCross) noteCross(mem); noteMembers(type, mem); };
+  const onRunJoker = (type) => (mem) => { if (noteCross) noteCross(mem); noteMembers(type, mem); };
   // F6 Nachhall: bester (höchster) Endfaktor je Endposition eines Basislaufs (Wiederholung/Farbblock/Treppe/Wechsel).
   // Der Empfänger ist die direkt folgende Karte; Anker zählen NICHT als Ursprung.
   const endBest = {}; // pos(letztes Mitglied) → { factor, type }
@@ -411,13 +389,12 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
      gehaltener Skill den Faktor niemals senkt. Aufgehoben wird er nicht: der Runaway-Schutz bleibt. */
   const greenCap = Math.max(PLANT_GREEN_FARBBLOCK_CAP, plantParam(skills, pTiers, P.DICKICHT, "cap") || 0);
   const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, greenCap) : ord, farbBase);
-  const suitGapFor = suitGap;
   // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen
   // (Blätterdach #228 C2 zahlt „je Karte im Block" — braucht die Blockgröße, nicht nur das Ordinal an der Siegposition).
-  markRuns(n, minFor(3), matchSuit, suitGapFor, canExtendSeg,
+  markRuns(n, minFor(3), matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
     (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
-    (mem, skipped) => { noteLueck(skipped); if (noteCross) noteCross(mem); noteMembers("farbblock", mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) { fe.len = mem.length; if (skipped && skipped.length) fe.gapped = skipped; } } });
+    (mem, skipped) => { if (noteCross) noteCross(mem); noteMembers("farbblock", mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) { fe.len = mem.length; if (skipped && skipped.length) fe.gapped = skipped; } } });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));

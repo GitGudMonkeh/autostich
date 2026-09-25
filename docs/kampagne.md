@@ -1,12 +1,61 @@
-# Kampagne — Notizen zum Entwurf
+# Kampagne — die Leiter
 
-> **Stand: 2026-09-22.** Frisch begonnen. Dieses Dokument ist noch **kein Beschluss**, sondern der
-> Zettel, auf dem steht, was gesetzt ist, was offen ist und was gemessen wurde. Wer daran
-> anschließt, liest §2 (gesetzt) und §3 (offen) und fragt den Owner zu §3, bevor er baut.
+> **Stand: 2026-09-25.** Gebaut ist die **Leiter** aus §0. Alles ab §1 beschreibt die abgelöste
+> **Kettenfassung** (vier Läufe hintereinander, Rewards dazwischen) und steht nur noch als Beleg da:
+> die Messungen und die Begründungen sind weiter gültig, die Mechanik ist es nicht. Wer baut, liest
+> §0 und danach den Code.
 >
 > Sprache Deutsch, wie `docs/zwischenaufgaben.md` und `docs/muenz-oekonomie.md`: der Owner schreibt
 > hier mit, und es geht um Produktgefühl. Bewusste Abweichung von der Engineering-Sprache
 > (`AGENTS.md`).
+
+---
+
+## 0. Die Leiter (Owner 2026-09-25) — DER AKTUELLE STAND
+
+Die Kettenfassung hat im Playtest nicht getragen: ein verfehlter Lauf kostete den ganzen Durchgang,
+und die Rewards zwischen den Läufen waren ein zweites Fortschrittssystem neben den Freischaltungen.
+Beides ist ersetzt durch **eine Leiter**. Eine Stufe ist **ein Lauf** gegen eine Schwelle, bewacht
+von einem festen Boss. Wer sie reißt, steigt auf und bekommt **eine Freischaltung**; wer sie
+verfehlt, **wiederholt dieselbe Stufe** und behält alles Freigeschaltete.
+
+| Stufe | Boss | Schwelle | Freischaltung |
+| --- | --- | --- | --- |
+| Tutorial | (kommt später) | | |
+| 1 | Denkmalpfleger | 5 Mio | Pflanzen-Deck |
+| 2 | Schließer | 10 Mio | Münzen, **reduziert** |
+| 3 | Bremser | 25 Mio | Aufträge |
+| 4 | Schmarotzer | 50 Mio | Rarität „Sehr selten" |
+| 5 | Der Konter (Endboss) | 100 Mio | Eis-Deck |
+| 6 | (kommt später) | | |
+
+Startbedingungen wie bisher: Blitz und Feuer, keine Münzen, keine Aufträge, Angebote enden bei
+„Selten". Legendäre hängen an Stufe IV und bleiben damit über die ganze gebaute Leiter gesperrt.
+
+**Die reduzierte Ökonomie** heißt: **eine Münze je Durchlauf**, die Aufstellung zahlt nicht mit
+(ein freier Lauf zahlt gemessen drei). Der **Verzicht skaliert mit** — Skill 3, Perk 2, Baufeld 2,
+übrige Energie 0 statt 12/6/6/1. Ohne das wäre ein einziges abgelehntes Skill-Angebot zwölf
+Durchläufe wert, und die Reduktion verpuffte genau dort, wo man sie am leichtesten umgeht.
+
+**Was mit der Kettenfassung weggefallen ist:** der ganze Reward-Katalog (16 Stücke) samt seinen
+Türen in den Motor, die Auswertung und die Auslage zwischen den Läufen, die Schritte- und
+Raritätsformel, die 2×/3×-Marken der Schwellen-Leiste, und die Ebenen. Der **Wucherer** bleibt im
+Bosskatalog, aber ohne Stufe: er ist gebaut und wartet auf Stufe 6.
+
+**Drei Entscheidungen, die beim Umbau gefallen sind.**
+
+Die **Freischaltungen zählen geschaffte Stufen**, nicht die aktuelle. Über `step` abgeleitet fiele
+die letzte unter den Tisch: Stufe 5 rückt beim Bestehen nicht weiter, `step` sähe danach aus wie
+davor. `scores` trägt je bestandener Stufe ihren Endscore, ein verfehlter Lauf schreibt nichts
+hinein — die Länge ist also genau die Zahl der geschafften Stufen.
+
+Der **Auftrags-Segen addiert auf die reduzierte Einnahme**, er ersetzt sie nicht. Münzrecht ist im
+Lauf verdient, nicht vom Aufbau geschenkt. Deshalb steht die Kampagnen-Tür im Motor innen und die
+des Auftrags außen.
+
+Ein **Neustart kostet nur den laufenden Versuch**. Die Kettenfassung warf dafür die ganze Ebene
+zurück, weil man sonst beliebig oft neu beginnen konnte, bis die Schwelle fiel. Auf der Leiter ist
+genau das die Regel, also gibt es nichts mehr zurückzuwerfen.
 
 ---
 

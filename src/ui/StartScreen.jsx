@@ -3,7 +3,7 @@ import { RankIcon } from "./RankIcon.jsx"; // #pokal-eins: Ranglisten-Zeichen, g
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer für den Ranglisten-Knopf
-import { RUNS_PER_LEVEL } from "../game/campaign.js"; // Kampagne: „Lauf 2 von 4" in der Unterzeile des Einstiegs
+import { STEPS as CAMP_STEPS } from "../game/campaign.js"; // Kampagne: „Stufe 2 von 5" in der Unterzeile des Einstiegs
 import { GlossaryPanel } from "./Glossary.jsx";
 import { battlefieldVeil, battlefieldDim } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder; #bf-desktop: Bild-Daempfung ab 1280 px
 import { deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
@@ -420,8 +420,8 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <span>{t("start.campaign")}</span>
             <span className="text-meta-1 font-normal opacity-70 normal-case tracking-normal">
               {campaign
-                ? t("start.campaign.state", { level: campaign.level || 1, run: campaign.run || 1, runs: RUNS_PER_LEVEL })
-                : t("start.campaign.fresh", { level: 1 })}
+                ? t("start.campaign.state", { n: campaign.step || 1, max: CAMP_STEPS })
+                : t("start.campaign.fresh", { max: CAMP_STEPS })}
             </span>
           </button>
         )}

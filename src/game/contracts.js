@@ -11,7 +11,6 @@
 import * as C from "./constants.js";
 import { FORMATION_TYPES, SEGMENT_SIZE } from "./formations.js";
 import { TIER_META } from "./rarity.js";
-import * as CP from "./campaign.js"; // Kampagne: Wucherer und Handelsbrief liegen auf derselben Preis-Tür
 import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER,
          CATEGORIES as ARCH_CATEGORIES } from "./architect.js";
 import { MAX_SKILL_TIER, rerollOffer, rerollPrice } from "./coins.js";
@@ -787,12 +786,9 @@ export function forfeitWith(state, base) {
    cheaper than the family says. */
 export function rerollPriceWith(state, base, legendary = false, normalBase = null) {
   const b = boonsOf(state);
-  /* Kampagne durch DIESELBE Tuer: Wucherer verteuert, Handelsbrief verbilligt. Sie liegt hinter den
-     Auftrags-Segen, damit ein Rabatt auf den bereits erhoehten Preis greift und nicht umgekehrt —
-     und sie steht auch dann hier, wenn der Lauf gar keine Auftraege hat (fruehes return sonst). */
-  if (!b) return CP.discountWith(state, base);
+  if (!b) return base;
   const start = legendary && b.legendaryRerollNormalPrice && normalBase != null ? normalBase : base;
-  return CP.discountWith(state, contractRerollPrice(start, b));
+  return contractRerollPrice(start, b);
 }
 
 /* DAS Neuwurf-Angebot für Knopf UND Reducer — beide müssen durch diese Tür.

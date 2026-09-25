@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout, offerHasLegendary } from "../game/perks.js";
-import { UPGRADE_FROM, FORFEIT_PERK, coinsOn } from "../game/coins.js";  // Münz-Ökonomie §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { UPGRADE_FROM, forfeitPerk, coinsOn } from "../game/coins.js";  // Münz-Ökonomie §3.5 Aufwerten — dieselben Zahlen wie der Reducer
 import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { PerkUpgrade } from "./PerkUpgrade.jsx";               // Aufwertphase für Perks (Zwilling von SkillUpgrade)
@@ -126,7 +126,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, onUpgradeFamily
                 nach der Entscheidung in der Leiste auf — zu spät, um sie zu treffen. */}
             {onDecline && (
               <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>
-                <span className="inline-flex items-center gap-1.5">{tr("perk.declineAll")}<CoinReward n={coinsOn(state) ? FORFEIT_PERK : 0} /></span>
+                <span className="inline-flex items-center gap-1.5">{tr("perk.declineAll")}<CoinReward n={coinsOn(state) ? forfeitPerk(state) : 0} /></span>
               </ActionButton>
             )}
           </ActionBar>
