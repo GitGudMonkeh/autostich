@@ -261,7 +261,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
                 und der Spieler sieht den Preis eines Tauschs, während er ihn erwägt. GEKAUFTE Energie ist
                 herausgerechnet (unspentEnergyCoins): ein Kauf hebt die Zahl nicht, sonst wäre er ein Rabatt
                 auf die eigene Erstattung. */}
-            <CoinReward n={coinsOn(state) ? unspentEnergyCoins(formationEnergy, state.coinEnergy) : 0} />
+            <CoinReward n={coinsOn(state) ? unspentEnergyCoins(formationEnergy, state.coinEnergy, state) : 0} />
             {!energy.soldOut && onBuyEnergy && (
               <button onClick={energy.can ? onBuyEnergy : undefined} disabled={!energy.can}
                 className="ml-auto as-edge-thin px-2.5 py-1.5 rounded-lg text-body-5 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"

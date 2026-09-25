@@ -1,12 +1,61 @@
-# Kampagne — Notizen zum Entwurf
+# Kampagne — die Leiter
 
-> **Stand: 2026-09-22.** Frisch begonnen. Dieses Dokument ist noch **kein Beschluss**, sondern der
-> Zettel, auf dem steht, was gesetzt ist, was offen ist und was gemessen wurde. Wer daran
-> anschließt, liest §2 (gesetzt) und §3 (offen) und fragt den Owner zu §3, bevor er baut.
+> **Stand: 2026-09-25.** Gebaut ist die **Leiter** aus §0. Alles ab §1 beschreibt die abgelöste
+> **Kettenfassung** (vier Läufe hintereinander, Rewards dazwischen) und steht nur noch als Beleg da:
+> die Messungen und die Begründungen sind weiter gültig, die Mechanik ist es nicht. Wer baut, liest
+> §0 und danach den Code.
 >
 > Sprache Deutsch, wie `docs/zwischenaufgaben.md` und `docs/muenz-oekonomie.md`: der Owner schreibt
 > hier mit, und es geht um Produktgefühl. Bewusste Abweichung von der Engineering-Sprache
 > (`AGENTS.md`).
+
+---
+
+## 0. Die Leiter (Owner 2026-09-25) — DER AKTUELLE STAND
+
+Die Kettenfassung hat im Playtest nicht getragen: ein verfehlter Lauf kostete den ganzen Durchgang,
+und die Rewards zwischen den Läufen waren ein zweites Fortschrittssystem neben den Freischaltungen.
+Beides ist ersetzt durch **eine Leiter**. Eine Stufe ist **ein Lauf** gegen eine Schwelle, bewacht
+von einem festen Boss. Wer sie reißt, steigt auf und bekommt **eine Freischaltung**; wer sie
+verfehlt, **wiederholt dieselbe Stufe** und behält alles Freigeschaltete.
+
+| Stufe | Boss | Schwelle | Freischaltung |
+| --- | --- | --- | --- |
+| Tutorial | (kommt später) | | |
+| 1 | Denkmalpfleger | 5 Mio | Pflanzen-Deck |
+| 2 | Schließer | 10 Mio | Münzen, **reduziert** |
+| 3 | Bremser | 25 Mio | Aufträge |
+| 4 | Schmarotzer | 50 Mio | Rarität „Sehr selten" |
+| 5 | Der Konter (Endboss) | 100 Mio | Eis-Deck |
+| 6 | (kommt später) | | |
+
+Startbedingungen wie bisher: Blitz und Feuer, keine Münzen, keine Aufträge, Angebote enden bei
+„Selten". Legendäre hängen an Stufe IV und bleiben damit über die ganze gebaute Leiter gesperrt.
+
+**Die reduzierte Ökonomie** heißt: **eine Münze je Durchlauf**, die Aufstellung zahlt nicht mit
+(ein freier Lauf zahlt gemessen drei). Der **Verzicht skaliert mit** — Skill 3, Perk 2, Baufeld 2,
+übrige Energie 0 statt 12/6/6/1. Ohne das wäre ein einziges abgelehntes Skill-Angebot zwölf
+Durchläufe wert, und die Reduktion verpuffte genau dort, wo man sie am leichtesten umgeht.
+
+**Was mit der Kettenfassung weggefallen ist:** der ganze Reward-Katalog (16 Stücke) samt seinen
+Türen in den Motor, die Auswertung und die Auslage zwischen den Läufen, die Schritte- und
+Raritätsformel, die 2×/3×-Marken der Schwellen-Leiste, und die Ebenen. Der **Wucherer** bleibt im
+Bosskatalog, aber ohne Stufe: er ist gebaut und wartet auf Stufe 6.
+
+**Drei Entscheidungen, die beim Umbau gefallen sind.**
+
+Die **Freischaltungen zählen geschaffte Stufen**, nicht die aktuelle. Über `step` abgeleitet fiele
+die letzte unter den Tisch: Stufe 5 rückt beim Bestehen nicht weiter, `step` sähe danach aus wie
+davor. `scores` trägt je bestandener Stufe ihren Endscore, ein verfehlter Lauf schreibt nichts
+hinein — die Länge ist also genau die Zahl der geschafften Stufen.
+
+Der **Auftrags-Segen addiert auf die reduzierte Einnahme**, er ersetzt sie nicht. Münzrecht ist im
+Lauf verdient, nicht vom Aufbau geschenkt. Deshalb steht die Kampagnen-Tür im Motor innen und die
+des Auftrags außen.
+
+Ein **Neustart kostet nur den laufenden Versuch**. Die Kettenfassung warf dafür die ganze Ebene
+zurück, weil man sonst beliebig oft neu beginnen konnte, bis die Schwelle fiel. Auf der Leiter ist
+genau das die Regel, also gibt es nichts mehr zurückzuwerfen.
 
 ---
 
@@ -1076,3 +1125,44 @@ zweiten Score an).
 Laufende. Die Kette über mehrere Läufe hat niemand gespielt — und genau dort sass der Fehler. Dieselbe
 Lehre wie im Methodenwechsel oben, eine Ebene höher: nicht nur die Zahl eines Laufs messen, sondern
 den Übergang zwischen zweien.
+
+### Das Feldzeichen und die tote Achse (Owner-Fund 2026-09-24)
+
+Owner-Frage zum Wirkungstext „Die Achse Perks zahlt dauerhaft 20 % mehr": unverständlich. Die
+Nachfrage hat zwei getrennte Fehler freigelegt.
+
+**Der Text log um etwa das Dreifache.** Gehoben wird nicht der Multiplikator, sondern nur sein
+Anteil über ×1 (`1 + (factor - 1) * (1 + x)`). Nachgerechnet mit Stufe II (20 %):
+
+| Multiplikator | wird zu | Score real |
+| --- | --- | --- |
+| ×1,00 | ×1,00 | +0 % |
+| ×1,50 | ×1,60 | +6,7 % |
+| ×2,00 | ×2,20 | +10 % |
+| ×3,00 | ×3,40 | +13,3 % |
+
+Die Mechanik bleibt, sie ist richtig: multiplizierte man den Faktor selbst, bekäme ein Stich ohne
+Crit einen Crit-Bonus geschenkt, obwohl er bei ×1,00 steht. Der Text heißt jetzt „Was dein
+{Multiplikator} über ×1 hinaus bringt, zählt {v} % mehr", und „Achse" ist ganz verschwunden: der
+Spieler liest diese Dinge überall sonst als **Multiplikatoren** (die Leiste heißt so, die Glieder
+heißen Serie · Perks · Form · Crit). Jede Achse trägt dafür eine zusammengesetzte Form
+(`campaign.axis.<id>.mult`) — „Perks-Multiplikator" und „Serie-Multiplikator" liest niemand gern.
+
+**Der schwerere Fehler: eine der neun Achsen konnte auf Ebene 1 gar nichts tun.** Der
+Perk-Multiplikator speist sich ausschließlich aus fünf **legendären** Perks (Taktschlag ×2,5,
+Henker ×2, Opfergang ×1,8, Hochseil ×1,45, Monochrom); Familien tragen nichts bei. Legendäre Perks
+schalten mit Stufe IV frei (`perks.js`: `maxTier < 4` filtert sie raus), und Ebene 1 deckelt bei
+`MAX_TIER_L1 = 3` — auch mit allen fünf Freischaltungen. Gemessen über sechs Läufe: **null
+legendäre Perks angeboten, `perkMult` konstant ×1,00.** Der Pool wird gleichverteilt gewürfelt,
+also war **jedes neunte Feldzeichen wertlos**, ohne dass man es dem Angebot ansah.
+
+`axesFor(unlocked)` würfelt jetzt nur noch, was der Lauf-Aufbau überhaupt zulässt. Die Grenze liegt
+bewusst am **Aufbau**, nicht am Spielverlauf: eine Achse, die der Spieler nicht bespielt, ist seine
+Sache — eine, die es im Lauf gar nicht gibt, wäre eine Wette ohne Gegenwert. Drei hängen am Aufbau
+(`perk` an der Stufe IV, `fire` und `plant` an ihrer Fraktion im Pool), sechs an nichts:
+Formationskern und Nachhall sind normale Familien der Stufen 1–4, der Architekt läuft auch in der
+Kampagne.
+
+**Noch offen:** ob die Achse `plant` im Spiel wirklich erreichbar ist, sobald das Deck
+freigeschaltet ist. In den Messungen blieb sie auf ×1,00, aber die Test-Policy nimmt selten
+Pflanzen-Skills — das ist ein Werkzeug-Artefakt und kein Befund, und es ist nicht nachgemessen.

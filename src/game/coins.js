@@ -12,7 +12,7 @@
    Owner-Entscheid 2026-09-09, um im Spiel zu sehen, wie sich die höhere Kaufkraft anfühlt. */
 
 import { envNum } from "./constants.js";
-import * as CP from "./campaign.js"; // Handelsbrief: derselbe Nachlass auf jeden Preis (kein Zyklus — campaign.js kennt nur rarity.js)
+import * as CP from "./campaign.js"; // Kampagne: der reduzierte Verzicht (kein Zyklus — campaign.js importiert nichts)
 
 /* ---- Zwei Regeln, die nirgends Code brauchen (docs/muenz-oekonomie.md) ---------------------------
    1. MÜNZVERFALL AM LAUFENDE. Übrige Münzen verfallen (Owner 2026-09-09) — kein Score-Umtausch, keine
@@ -68,8 +68,16 @@ export const FORFEIT_BUILD = envNum("SIM_COIN_FORFEIT_BUILD", 6);     // Archite
    kauft man für 3 und bekommt 1 zurück, und der Kauf wäre Geldvernichtung mit Rabatt. Die Rechnung
    behandelt die gekaufte Energie damit als die zuletzt übrige: erst zahlt sich aus, was über sie
    hinausgeht. */
-export const unspentEnergyCoins = (left = 0, bought = 0) =>
-  Math.max(0, (left || 0) - (bought || 0)) * FORFEIT_ENERGY;
+export const unspentEnergyCoins = (left = 0, bought = 0, state = null) =>
+  Math.max(0, (left || 0) - (bought || 0)) * CP.forfeitWith(state, "energy", FORFEIT_ENERGY);
+
+/* Die vier Verzichts-Betraege, durch die Kampagnen-Tuer. Ein Lauf ohne Kampagne bekommt seine
+   Konstante zurueck; in der Kampagne zahlt der Verzicht die reduzierten Saetze (Owner 2026-09-25),
+   sonst waere ein abgelehntes Skill-Angebot zwoelf Durchlaeufe wert. EINE Stelle, damit Knopf und
+   Reducer nie verschiedene Zahlen nennen. */
+export const forfeitSkill = (state) => CP.forfeitWith(state, "skill", FORFEIT_SKILL);
+export const forfeitPerk = (state) => CP.forfeitWith(state, "perk", FORFEIT_PERK);
+export const forfeitBuild = (state) => CP.forfeitWith(state, "build", FORFEIT_BUILD);
 
 /* Gibt es in DIESEM Lauf überhaupt Münzen? Die WIRKUNG sperrt `coinGrant` unten; diese Frage stellt
    die OBERFLÄCHE, damit sie keine Preise und keine Gutschriften für eine Ökonomie zeigt, die es nicht
@@ -174,15 +182,9 @@ export const coverPrice = (bought = 0) => step(COVER_BASE, bought);
 
 /* Ein Kauf mit Vorrat — eine Quelle für Knopf und Reducer, wie `rerollOffer`. `left` trägt die Anzeige
    (die Punkte am Baufeld-Knopf), `can` die Auslösbarkeit: ausverkauft ODER zu wenig Münzen. */
-/* `netto` ist die eine Stelle, an der ein fertiger Preis zum ZAHLBAREN wird: Handelsbrief nimmt
-   seine Prozente, nachdem die Treppe (und damit der Wucherer) gerechnet hat. Sie sitzt in den
-   PREIS-Funktionen und nicht im Reducer, weil Knopf und Reducer dieselbe Zahl lesen muessen — die
-   Lehre aus dem Beute-Audit 2026-09-17, als ein Nachlass im Reducer wirkte und am Knopf nicht. */
-const netto = (state, price) => CP.discountWith(state, price);
-
 export function stepBuy(state = {}, bought = 0, max = 0, price = 0) {
   const left = Math.max(0, max - (bought || 0));
-  const p = netto(state, price);
+  const p = price;
   return { left, max, price: p, soldOut: left <= 0, can: left > 0 && (state.coins || 0) >= p };
 }
 /* Wucherer gilt fuer JEDE Kaufart, jede mit ihrem eigenen Zaehler (Owner 2026-09-22) — deshalb
@@ -199,7 +201,7 @@ export const coverBuy = (state = {}) =>
 // Durchlauf-Einnahmen statt einer knappen — er ist eine Entscheidung, kein Beiläufiges mehr.
 export const FOCUS_PRICE = envNum("SIM_COIN_FOCUS", 10);
 // Derselbe Preis, nur mit dem Nachlass — der Ruf ist ein Kauf wie jeder andere.
-export const focusPrice = (state = {}) => netto(state, FOCUS_PRICE);
+export const focusPrice = () => FOCUS_PRICE;
 
 /* ---- Skill aufwerten (§3.5) ----------------------------------------------------------------------- */
 /* Preis nach ZIELSTUFE, nicht nach Reihenfolge: jeder Schritt kostet, was seine Stufe wert ist. Wer von
@@ -227,7 +229,7 @@ export function upgradeBuy(state = {}, tier = 0) {
   const next = (tier || 0) + 1;
   if (next > MAX_SKILL_TIER) return { maxed: true, locked: false, next: null, price: 0, can: false };
   if (state.rareCap && next > state.rareCap - 1) return { maxed: false, locked: true, next: null, price: 0, can: false };
-  const price = netto(state, upgradePrice(next));
+  const price = upgradePrice(next);
   return { maxed: false, locked: false, next, price, can: (state.coins || 0) >= price };
 }
 

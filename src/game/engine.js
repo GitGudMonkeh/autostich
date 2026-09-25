@@ -219,7 +219,7 @@ export function resolveTrick(state, rng) {
   // Architekt-Precompute je Durchlauf (stabil): value-/score-Effekte + Struktur-Faktor je Position (target einmal bestimmt).
   let archPreNow = architectPre;
   if (pos === 0) {
-    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth }, CT.openBordersOf(state), CP.formationGapOf(state));
+    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth }, CT.openBordersOf(state));
     // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
     // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
     // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
@@ -391,7 +391,7 @@ export function resolveTrick(state, rng) {
   // Pflanze (§6.13, Ewiger Frühling): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion.
   const plantValue = plantValueBonus(skills, pCard);
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
-  const pValue = CP.cardValueWith(state, effectivePlayerValue(pCard.value, perks, ctx)) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + glacierBuff + glacierTongue + wmCardBonus + plantValue;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + glacierBuff + glacierTongue + wmCardBonus + plantValue;
   // Verdichtung (§5.18): Kampfwert ÜBER dem Grundwert wird zusätzlich Masse. Sie unterdrückt nichts mehr — der Wert wird
   // normal ausgespielt, und es zählt jede Quelle (Gebäude, Perks, Familien, Frostbund), nicht nur der Architekt. Der
   // Zungen-Bonus ist ausgenommen: sonst schlösse sich Masse → Wert → Masse zu einem Kreis, der geometrisch wegläuft.
@@ -437,7 +437,7 @@ export function resolveTrick(state, rng) {
   // Patt (#203): eine Niederlage um höchstens PATT_MARGIN Wert zählt stattdessen als Sieg (Winrate-Hebel; harte Bedingung
   // = knapp verloren). Marge = oValue − pValue (≥1 bei Niederlage); der Sieg-Zweig läuft danach normal (Marge dann −PATT..0).
   // Losentscheid (Kampagne) liest dieselbe Marge wie Patt; die weitere der beiden gilt.
-  const pattMargin = CP.pattMarginWith(state, ownsFlag(perks, "patt") ? C.PATT_MARGIN : 0);
+  const pattMargin = ownsFlag(perks, "patt") ? C.PATT_MARGIN : 0;
   if (lost && pattMargin > 0 && (oValue - pValue) <= pattMargin) { lost = false; won = true; }
 
   // Sieg-Kontext VOR der Verzweigung — mit den Werten, die ein Sieg hätte (Serie +1, Siege +1). Der Sieg-Zweig
@@ -595,7 +595,7 @@ export function resolveTrick(state, rng) {
     const architectStreakFlat = architectScoreRes.streakFlat || 0;
     // Familien-Score-Flats (Rarität-Umbau #167, Kat. D) laufen ADDITIV neben den flachen Perk-Flats: nur die
     // gehaltene Familien-Stufe zählt (activeTierDefs) → kein Doppel-Trigger über Stufen (Spec §2.3/§9).
-    const scoreBase = CP.soldWith(state, C.SCORE_PER_WIN) + sumHook(perks, "scoreFlat", wctx) + familySumHook(familyTiers, "scoreFlat", wctx)
+    const scoreBase = C.SCORE_PER_WIN + sumHook(perks, "scoreFlat", wctx) + familySumHook(familyTiers, "scoreFlat", wctx)
                       + (isCrit ? sumHook(perks, "scoreFlatOnCrit", critCtx) + skillSum(skills, "scoreFlatOnCrit", critCtx)
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
@@ -679,18 +679,9 @@ export function resolveTrick(state, rng) {
     /* Feldzeichen (Kampagne): die ausgewürfelte Achse zahlt mehr. Je Faktor einzeln, damit eine
        INAKTIVE Achse (Faktor 1) nichts bekommt — ein Nicht-Crit-Stich soll keinen Crit-Bonus
        erben. Ohne Kampagne gibt jeder Aufruf seinen Eingabewert zurück. */
-    const streakMultC = CP.axisMultWith(state, "streak", streakMult);
-    const perkMultC = CP.axisMultWith(state, "perk", perkMult);
-    const formMultC = CP.axisMultWith(state, "form", formMult);
-    const afterglowMultC = CP.axisMultWith(state, "afterglow", afterglowMult);
-    const coreMultC = CP.axisMultWith(state, "core", coreMult);
-    const fireMultC = CP.axisMultWith(state, "fire", fireMult);
-    const plantMultC = CP.axisMultWith(state, "plant", plantMult);
-    const architectMultC = CP.axisMultWith(state, "architect", architectMult);
-    const critMultiplierC = CP.axisMultWith(state, "crit", critMultiplier);
-    const streakMuldBase = Math.max(0, scoreBase) * streakMultC;
-    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMultC * formMultC * afterglowMultC * coreMultC * fireMultC * plantMultC * architectMultC;
-    gained = scoreBeforeCrit * (isCrit ? critMultiplierC : 1);
+    const streakMuldBase = Math.max(0, scoreBase) * streakMult;
+    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * architectMult;
+    gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // Doppelentladung (Blitz-Legendär, §3.7): Crit mit einer ionisierten Karte — der Blitz schlägt zweimal ein, der ganze
     // gewertete Stich (Basis mal Multiplikatoren) zählt DOPPELENTLADUNG_STRIKE-fach. Kein Kreislauf: speist keine Leiste.
     const strikeMult = (isCrit && (pCardR.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1; // pCardR: mit Resonanz zählt die Formation (§7.25)
@@ -698,10 +689,8 @@ export function resolveTrick(state, rng) {
     /* Steigbrief (Kampagne): ein EIGENER benannter Faktor, genau wie strikeMult — nicht still auf
        `gained` multipliziert. Sonst stimmte die Stich-Aufschlüsselung unten nicht mehr
        (Basis × Faktoren ≠ total), und genau das ist der Vertrag, den sie erfüllen muss. */
-    const campaignMult = CP.steigbriefWith(state, cycle, 1);
-    gained *= campaignMult;
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
-    glacierWinMult = streakMultC * perkMultC * formMultC * afterglowMultC * coreMultC * fireMultC * plantMultC * architectMultC * (isCrit ? critMultiplierC : 1) * campaignMult;
+    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im
@@ -712,12 +701,12 @@ export function resolveTrick(state, rng) {
     // Auf dem MULTIPLIZIERTEN Score, VOR der Glutdividende (die läuft am Stack vorbei und zählt nicht als Formations-Score).
     // [#229 T4] Bekannte Attributions-Ungenauigkeit (nur Anzeige, kein Gameplay): formMult bündelt auch
     // brennpunktMult/sammlerMult → dieser Anteil wird hier der Formation zugeschlagen statt seinen echten Quellen.
-    const formFactorTotal = formMultC * afterglowMultC * coreMultC;
+    const formFactorTotal = formMult * afterglowMult * coreMult;
     if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
     // #251: Serien-Anteil — der Serien-Multiplikator als Faktor-Anteil an `gained` (analog formationScore; Näherung, da die Faktoren multiplikativ ineinandergreifen).
     // Nur der serien-multiplizierte Teil zählt: der Reihenhaus-streakFlat läuft am Serien-Mult vorbei (kein Doppel-Dip) → sein Anteil bleibt hier ausgeklammert.
     const streakStackTotal = streakMuldBase + architectStreakFlat;
-    if (streakMultC > 1 && streakStackTotal > 0) streakScore += gained * (streakMuldBase / streakStackTotal) * (1 - 1 / streakMultC);
+    if (streakMult > 1 && streakStackTotal > 0) streakScore += gained * (streakMuldBase / streakStackTotal) * (1 - 1 / streakMult);
     // #UI: Gebäude-Score-Anteil — analog zu formationScore. Architekt-Score-Mult (Struktur/Schatzkammer) als
     // Faktor-Anteil an `gained`, plus der Handelsbauten-Flat mit seinem Beitrag OHNE den (separat gezählten)
     // architectMult → kein Doppelzählen. Nur Architekt-Score-Bauten; der Wert-Bonus (Basis) bleibt unattribuiert.
@@ -771,9 +760,7 @@ export function resolveTrick(state, rng) {
     // streakFlat/fireMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
     // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Feuer×Architekt) × (Form×Nachhall×Kern) × Crit
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
-    // Kampagne: die Faktoren stehen hier in ihrer WIRKSAMEN Fassung (Feldzeichen ist schon drin) und
-    // campaignMult als eigener Faktor — sonst wäre der Vertrag „Basis×Faktoren = total" gebrochen.
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult: streakMultC, perkMult: perkMultC, fireMult: fireMultC, plantMult: plantMultC, formMult: formMultC, formBase: formBaseEff, afterglowMult: afterglowMultC, coreMult: coreMultC, architectMult: architectMultC, critMult: isCrit ? critMultiplierC : 1, strikeMult, campaignMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, plantMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
     // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter (§7.18: auch je Sieg
     // ohne Crit auf Episch), Überspannung (§7.24: der Überschuss über dem Crit-Deckel und über 100 % Chance), Ladungsserie
     // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte). Die volle
@@ -868,7 +855,7 @@ export function resolveTrick(state, rng) {
     //  war ein Pflaster auf dem Symptom; die Gletscherzunge behebt die Ursache, indem der Gletscher seinen Stich gewinnt.)
     // Standhaftigkeit (Kampagne) haengt an derselben Naht wie Serienanker und Blitz: die Serie
     // ueberlebt so viele Niederlagen je Durchlauf, wie die Stufe sagt. cycleLosses zaehlt DIESE mit.
-    const streakNoReset = anchorNoReset || lightStreakHeld || CP.streakSurvivesWith(state, cycleLosses);
+    const streakNoReset = anchorNoReset || lightStreakHeld;
     winStreak = streakNoReset ? winStreak : 0;
     counterStack = 0; // Kampagne: die Niederlage nullt den Konter-Aufschlag, auch wenn die Serie haelt
     initiative = "opp";
@@ -1076,15 +1063,6 @@ export function resolveTrick(state, rng) {
       for (const c of deck) if (!weakest || c.value < weakest.value || (c.value === weakest.value && c.id < weakest.id)) weakest = c;
       if (weakest) deck = deck.map((c) => (c.id === weakest.id ? { ...c, value: c.value + schmiedeStep } : c));
     }
-    /* Wetzstein (Kampagne) tut dasselbe wie Schmiede und liegt deshalb daneben, mit derselben
-       Determinismus-Regel: bei Gleichstand gewinnt die kleinste id. Getrennt gehalten, damit beide
-       nebeneinander zahlen koennen statt sich gegenseitig zu verschlucken. */
-    const wetzStep = CP.wetzsteinWith(state);
-    if (wetzStep) {
-      let weakest = null;
-      for (const c of deck) if (!weakest || c.value < weakest.value || (c.value === weakest.value && c.id < weakest.id)) weakest = c;
-      if (weakest) deck = deck.map((c) => (c.id === weakest.id ? { ...c, value: c.value + wetzStep } : c));
-    }
     /* Schmarotzer (Kampagne): Unterhalt je Durchlauf, zugunsten des Spielers gerundet und nie mehr,
        als auf dem Konto liegt. Direkt an der Muenz-Einnahme oben, damit beide denselben Moment
        teilen und die Anzeige nicht zwei Schritte weit auseinanderlaeuft. */
@@ -1102,7 +1080,7 @@ export function resolveTrick(state, rng) {
     // Münzrecht (Auftrags-Beute), dann die Kampagne: ohne freigeschaltete Ökonomie gibt es gar
     // keine Einnahme, mit Pfründe eine höhere. Beide Türen haben dieselbe Form (Basis rein, eigene
     // Zahl raus), und ein Lauf ohne das jeweilige System zahlt nur eine Feldabfrage.
-    lastCycleCoins = CP.campaignCoinsWith(state, CT.coinsPerCycleWith(state, coinsForFormations(lastCycleForms), cycle));
+    lastCycleCoins = CT.coinsPerCycleWith(state, CP.cycleCoinsWith(state, coinsForFormations(lastCycleForms)), cycle);
     coins += lastCycleCoins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // §7.68 Lichtbogen Episch: „bis zum ersten Crit eines Durchlaufs" — die Marke gehört zum Durchlauf, nicht zum Lauf.
@@ -1231,7 +1209,7 @@ export function resolveTrick(state, rng) {
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: newGrowth }, CT.openBordersOf(state), CP.formationGapOf(state));
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: newGrowth }, CT.openBordersOf(state));
       }
     }
   }

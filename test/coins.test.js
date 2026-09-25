@@ -637,9 +637,12 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
        `coinsOn(state) ? … : 0` gehört zum Muster und ist keine Redundanz: ohne freigeschaltete
        Münz-Ökonomie (Kampagne Ebene 1) faellt die Marke weg, weil die Zahlung nicht kommt.
        CoinReward gibt bei 0 null zurueck — deshalb reicht die 0 und es braucht kein zweites Gate. */
-    expect(read("src/ui/PerkSelect.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? FORFEIT_PERK : 0\}/);
-    expect(read("src/ui/SkillSelect.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? FORFEIT_SKILL : 0\}/);
-    expect(read("src/ui/ArchitectScreen.jsx")).toMatch(/idleReward = architect\.actedMain \|\| !coinsOn\(state\) \? 0 : FORFEIT_BUILD/);
+    /* Seit der Kampagnen-Leiter ist es keine Konstante mehr, sondern eine Tür: `forfeitPerk(state)`
+       gibt in der Kampagne den reduzierten Satz. Genau deshalb darf am Knopf erst recht kein
+       Literal stehen — die Zahl hängt jetzt am Lauf. */
+    expect(read("src/ui/PerkSelect.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? forfeitPerk\(state\) : 0\}/);
+    expect(read("src/ui/SkillSelect.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? forfeitSkill\(state\) : 0\}/);
+    expect(read("src/ui/ArchitectScreen.jsx")).toMatch(/idleReward = architect\.actedMain \|\| !coinsOn\(state\) \? 0 : forfeitBuild\(state\)/);
     /* Die Architekt-Phase hat DREI Ausgänge (nichts bauen mit und ohne Gebäude, und das Bestätigen nach
        dem Umstellen). Alle drei zahlen — versetzen verbraucht keinen Bauplan —, also trägt jeder die
        Marke. Ohne die Zählung fällt ein vierter Ausgang später still durch. */
@@ -648,7 +651,7 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
     for (const line of doneButtons) expect(line).toContain("<CoinReward n={idleReward} />");
     // Die Energie ist die einzige laufende Zahl: sie zählt mit jedem Tausch herunter und rechnet die
     // GEKAUFTE Energie heraus — dieselbe Funktion, die der Reducer beim Bestätigen benutzt.
-    expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? unspentEnergyCoins\(formationEnergy, state\.coinEnergy\) : 0\}/);
+    expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{coinsOn\(state\) \? unspentEnergyCoins\(formationEnergy, state\.coinEnergy, state\) : 0\}/);
   });
 
   it("die Auszahlung der Aufstellung rechnet über die GEBAUTEN Formationen, nicht über die angezeigte Zahl", () => {

@@ -102,9 +102,10 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
   );
 }
 
-/* `campaign` tauscht nur die Warnzeile. In der Kampagne wirft der Neustart nämlich nicht den LAUF
-   zurück, sondern die ganze Ebene (Owner 2026-09-22) — und das muss dastehen, bevor geklickt wird,
-   nicht danach. Ein eigener Dialog dafür wäre derselbe Dialog mit einem anderen Satz. */
+/* `campaign` tauscht nur die Warnzeile. Auf der Leiter kostet ein Neustart nichts als den
+   laufenden Versuch — dieselbe Stufe kommt wieder, die Freischaltungen bleiben. Das muss dastehen,
+   bevor geklickt wird: in der Kettenfassung warf derselbe Knopf die ganze Ebene zurück, und wer das
+   noch im Kopf hat, klickt sonst nicht. */
 export function RestartConfirm({ onKeepPlaying, onRestart, campaign = false }) {
   const wide = useIsWide();
   const help = t(campaign ? "app.restart.help.campaign" : "app.restart.help");

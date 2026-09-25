@@ -8,9 +8,9 @@ import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Dec
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory, saveCampaign, loadCampaign, clearCampaign } from "./game/storage.js";
-import * as CP from "./game/campaign.js"; // Kampagne: Ebene, Bosse, Rewards, Freischaltungen
+import * as CP from "./game/campaign.js"; // Kampagne: die Leiter, Bosse, Freischaltungen
 import * as COINS from "./game/coins.js"; // Münz-Ökonomie: gibt es sie in diesem Lauf überhaupt
-import { CampaignOverview, CampaignBoss, CampaignTally, CampaignPick, CampaignUnlock, CampaignLost, CampaignWon, CampaignProgress } from "./ui/CampaignScreens.jsx";
+import { CampaignOverview, CampaignBoss, CampaignUnlock, CampaignFailed, CampaignWon, CampaignProgress } from "./ui/CampaignScreens.jsx";
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
@@ -262,9 +262,8 @@ function AutostichGame() {
      nicht. `campScreen` ist die Kette der Panels; sie hängt bewusst NICHT an state.phase, genau wie
      die Auftrags-Overlays, damit die Phasenmaschine des Laufs unberührt bleibt. */
   const [campaign, setCampaign] = useState(loadCampaign);         // beim Start gelesen: der Knopf im Menü zeigt den Stand an
-  const [campScreen, setCampScreen] = useState(null);             // null | overview | boss | tally | pick | unlock | lost | won
-  const [campOffers, setCampOffers] = useState([]);               // die drei ausliegenden Rewards
-  const [campUnlock, setCampUnlock] = useState(null);             // Freischaltung, die dieser gewonnene Lauf gebracht hat
+  const [campScreen, setCampScreen] = useState(null);             // null | overview | boss | unlock | failed | won
+  const [campUnlock, setCampUnlock] = useState(null);             // Freischaltung, die diese bestandene Stufe gebracht hat
   const pendingCampaign = useRef(null);                           // Kampagne für den nächsten Lauf (null = normaler Lauf)
   const campSettledRun = useRef(null);                            // welcher runId schon abgerechnet ist — die Abrechnung läuft einmal
   const [showFeedback, setShowFeedback] = useState(false);      // #396 Feedback-Melder (nur im Menü, deshalb OHNE Einfrier-Kopplung)
@@ -671,7 +670,7 @@ function AutostichGame() {
          hinterher nicht. Also die volle Liste, wie ueberall sonst. */
       formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [],
         state.shop?.anchors || [], state.familyTiers || {}, state.architectEnabled ? state.architect : null,
-        { skillTiers: state.skillTiers || {}, growth: state.growth || {} }, openBordersOf(state), CP.formationGapOf(state)),
+        { skillTiers: state.skillTiers || {}, growth: state.growth || {} }, openBordersOf(state)),
       architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
       buildings: archBuildingsSnap,
       challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
@@ -958,7 +957,7 @@ function AutostichGame() {
     // Kampagne: Stand + der Freischaltungs-Stand VON JETZT. Beide gehören zusammen in denselben
     // Dispatch — ein Lauf, der mit den Unlocks des nächsten rechnete, wäre still zu stark.
     const camp = pendingCampaign.current; pendingCampaign.current = null;
-    const unlocked = camp ? CP.unlocksFor(profile.campaignRunsWon || 0) : null;
+    const unlocked = camp ? CP.unlocksOf(camp) : null;
     dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, contracts, campaign: camp, unlocked }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste · Aufträge · Kampagne
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
@@ -1006,15 +1005,12 @@ function AutostichGame() {
     // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
     // Zwischenaufgaben: „Neustart" muss den Auftragslauf MITNEHMEN. Ohne das Flag fiel der neue Lauf
     // stumm auf den normalen zurück und das Angebot blieb aus.
-    /* Kampagne: „Neustart" wirft die ganze EBENE zurück, nicht den Lauf (Owner 2026-09-22). Würde er
-       denselben Lauf wiederholen, könnte man ihn beliebig oft neu beginnen, bis die Schwelle fällt —
-       die Kette hätte dann keinen Einsatz mehr. Also eine frische Kette: Lauf 1, neu gezogene Bosse,
-       keine gehaltenen Rewards. Die Freischaltungen bleiben, sie sind die Meta-Progression.
-       RestartConfirm sagt das vorher; hier steht, dass es auch passiert. */
-    const camp = state.campaign ? CP.startCampaign(Math.random, campUnlocked) : null;
-    if (camp) { setCampaign(camp); saveCampaign(camp); setCampOffers([]); setCampUnlock(null); }
+    /* Kampagne: „Neustart" spielt DIESELBE Stufe noch einmal. Die Kettenfassung warf dafür die ganze
+       Ebene zurück, weil man sonst beliebig oft neu beginnen konnte, bis die Schwelle fiel — auf der
+       Leiter ist genau das die Regel (ein verfehlter Lauf wiederholt seine Stufe, Owner 2026-09-25),
+       also gibt es nichts mehr zurückzuwerfen. Der Stand bleibt unangetastet. */
     launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled,
-      campaign: camp });
+      campaign: state.campaign ? campaign : null });
   }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
@@ -1034,18 +1030,12 @@ function AutostichGame() {
      hier steht nur, was danach mit dem STAND passiert: speichern, Freischaltung buchen, das
      nächste Panel zeigen. Die Trennung ist Absicht — der Reducer kennt weder localStorage noch
      das Profil, und die Kette überlebt den Lauf-State. */
-  const campUnlocked = useMemo(() => CP.unlocksFor(profile.campaignRunsWon || 0), [profile.campaignRunsWon]);
 
   function openCampaign() {
-    const c = campaign || CP.startCampaign(Math.random, campUnlocked);
+    const c = campaign || CP.startCampaign();
     if (!campaign) { setCampaign(c); saveCampaign(c); }
-    setCampOffers([]);
-    /* Ein Stand MIT `pending` heißt: der Lauf ist abgerechnet, der Reward aber noch nicht gewählt
-       (Tab zu zwischen Auswertung und Auslage). Dann geht es dort weiter und nicht in die Übersicht,
-       sonst spielte man denselben Lauf noch einmal und der Reward wäre still verfallen. Der Score
-       steht in `pending`, die Freischaltung war schon gebucht — sie wird nur neu benannt. */
-    setCampUnlock(c.pending ? CP.nextUnlock(Math.max(0, (profile.campaignRunsWon || 0) - 1)) : null);
-    setCampScreen(c.pending ? "tally" : "overview");
+    setCampUnlock(null);
+    setCampScreen("overview");
   }
   function giveUpCampaign() { clearCampaign(); setCampaign(null); setCampScreen(null); setCampUnlock(null); }
   /* Testknopf (Owner 2026-09-22): alles zurück auf null, ANDERS als „Aufgeben". Aufgeben beendet die
@@ -1054,24 +1044,13 @@ function AutostichGame() {
      frische Kette, damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
   function resetCampaign() {
     clearCampaign();
-    setProfile(saveProfile({ ...profile, campaignRunsWon: 0 }));
-    const c = CP.startCampaign(Math.random, []);
+    const c = CP.startCampaign();
     setCampaign(c); saveCampaign(c);
-    setCampOffers([]); setCampUnlock(null); setCampScreen("overview");
+    setCampUnlock(null); setCampScreen("overview");
   }
   function closeCampaign() { setCampScreen(null); setCampUnlock(null); if (state.phase !== "menu") toMenu(); }
   // Übersicht → Bossblock → Lauf. Zwei Schritte, weil der Boss VOR dem Start gelesen werden soll.
   function campaignRun() { setCampScreen(null); launchRun({ campaign }); }
-  function campaignPickOpen() {
-    const tier = (campaign.pending || {}).tier || 1;
-    setCampOffers(CP.rollOffers(Math.random, { held: campaign.held, tier, unlocked: campUnlocked }));
-    setCampScreen("pick");
-  }
-  function campaignTake(offer) {
-    const c = CP.takeReward(campaign, offer);
-    setCampaign(c); saveCampaign(c); setCampOffers([]);
-    setCampScreen(campUnlock ? "unlock" : "overview");
-  }
 
   /* Die Abrechnung EINES Laufendes. Sie hängt am runId und nicht an einem Zustands-Flag: `settled`
      sagt, dass der Reducer gerechnet hat, nicht dass die UI es schon gebucht hat — und dieser
@@ -1081,20 +1060,14 @@ function AutostichGame() {
     if (state.phase !== "gameover" || !c || !c.settled) return;
     if (campSettledRun.current === runId.current) return;
     campSettledRun.current = runId.current;
-    setCampaign(c);
-    if (c.lost) { clearCampaign(); setCampUnlock(null); setCampScreen("lost"); return; }
-    saveCampaign(c);
-    // Gewonnene Läufe sind die Meta-Progression: sie überleben die verlorene Kampagne, deshalb
-    // stehen sie im Profil und nicht im Kampagnen-Stand.
-    const wins = profile.campaignRunsWon || 0;
-    const next = CP.nextUnlock(wins);
-    setProfile(saveProfile({ ...profile, campaignRunsWon: wins + 1 }));
-    setCampUnlock(next);
-    setCampScreen(c.done ? "won" : "tally");
-    // `profile` steht bewusst in den Deps statt hinter einer Ausnahme: der Effekt läuft dadurch
-    // beim Profil-Schreiben ein zweites Mal, und der runId-Riegel oben fängt ihn ab. Eine
-    // stabilisierte Fassung wäre hier nur eine Ausnahme mit mehr Zeilen.
-  }, [state.phase, state.campaign, profile]);
+    setCampaign(c); saveCampaign(c);
+    /* Verfehlt heißt NICHT verloren: die Stufe bleibt stehen und wird wiederholt, die
+       Freischaltungen bleiben (Owner 2026-09-25). Deshalb wird der Stand auch hier gespeichert. */
+    if (!c.cleared) { setCampUnlock(null); setCampScreen("failed"); return; }
+    /* Die Freischaltung, die GERADE verdient wurde: die letzte in der Liste der geschafften. */
+    setCampUnlock(CP.unlocksOf(c).slice(-1)[0] || null);
+    setCampScreen(c.done ? "won" : "unlock");
+  }, [state.phase, state.campaign]);
   // RESUME (Phase 1): gespeicherten Lauf fortsetzen — Refs (Timer/Geist-Linie/Attribution) aus dem Snapshot
   // wiederherstellen, dann den State laden. Der Timer läuft ab jetzt weiter (segStart neu gesetzt).
   function resumeRun() {
@@ -1434,29 +1407,26 @@ function AutostichGame() {
           unberührt, und die Kette läuft über vier Läufe hinweg. z-30 liegt über dem Endscreen (z-20),
           der darunter stehen bleibt: der Lauf ist normal gewertet, nur nicht der letzte Bildschirm. */}
       {campScreen === "overview" && campaign && (
-        <CampaignOverview campaign={campaign} unlocked={campUnlocked}
+        <CampaignOverview campaign={campaign}
           onStart={() => setCampScreen("boss")} onGiveUp={giveUpCampaign} onReset={resetCampaign} />
       )}
       {campScreen === "boss" && campaign && (
         <CampaignBoss campaign={campaign} onStart={campaignRun} />
       )}
-      {campScreen === "tally" && campaign && (
-        <CampaignTally campaign={campaign} score={(campaign.pending || {}).score || 0} onPick={campaignPickOpen} />
-      )}
-      {campScreen === "pick" && campaign && (
-        <CampaignPick campaign={campaign} offers={campOffers} onTake={campaignTake} />
-      )}
-      {campScreen === "unlock" && (
-        <CampaignUnlock id={campUnlock} unlocked={campUnlocked} nextRun={(campaign && campaign.run) || 2}
+      {campScreen === "unlock" && campaign && (
+        <CampaignUnlock id={campUnlock} nextStep={campaign.step}
           onNext={() => { setCampUnlock(null); setCampScreen("overview"); }} />
       )}
-      {campScreen === "lost" && campaign && (
-        <CampaignLost campaign={campaign} score={(campaign.scores || []).slice(-1)[0] || 0}
-          onAgain={() => { const c = CP.startCampaign(Math.random, campUnlocked); setCampaign(c); saveCampaign(c); setCampScreen("overview"); }}
-          onMenu={() => { setCampaign(null); closeCampaign(); }} />
+      {/* Verfehlt: dieselbe Stufe noch einmal. Kein „Aufgeben" hier — die Kampagne ist nicht vorbei.
+          Zurücksetzen schon: wer an einer Stufe hängen bleibt, soll die Leiter von hier aus neu
+          anfangen können, ohne erst über die Übersicht zu gehen (Owner 2026-09-25). */}
+      {campScreen === "failed" && campaign && (
+        <CampaignFailed campaign={campaign} score={campaign.lastScore || 0}
+          onAgain={() => setCampScreen("overview")} onReset={resetCampaign}
+          onMenu={() => closeCampaign()} />
       )}
       {campScreen === "won" && campaign && (
-        <CampaignWon campaign={campaign} unlocked={campUnlocked}
+        <CampaignWon campaign={campaign}
           onNext={() => { clearCampaign(); setCampaign(null); closeCampaign(); }} />
       )}
 
