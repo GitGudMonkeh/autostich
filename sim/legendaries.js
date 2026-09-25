@@ -20,7 +20,7 @@ import { robustDelta } from "./eval.js";
 import { SKILL_LIST, SKILL_DEFS, archetypeOf } from "../src/game/skills.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
 
-const NAME = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
+const NAME = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze", stance: "Prisma" };
 const quantile = (a, q) => { const s = [...a].sort((x, y) => x - y); if (!s.length) return 0; const i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo); };
 const mean = (a) => (a.length ? a.reduce((t, v) => t + v, 0) / a.length : 0);
 const stats = (a) => ({ n: a.length, median: quantile(a, 0.5), mean: mean(a), p90: quantile(a, 0.9) });
