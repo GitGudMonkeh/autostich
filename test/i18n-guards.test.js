@@ -1053,8 +1053,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      migriert sind. */
   const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx",
     "src/ui/GameOver.jsx",
-    // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
-    "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx",
+    // Die fünf Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
+    "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx", "src/ui/StanceBar.jsx",
     // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.
     "src/ui/StatusBar.jsx", "src/ui/StatusRail.jsx", "src/ui/Battlefield.jsx", "src/ui/FormationPhase.jsx",
     // Die Entscheidungen eines Durchlaufs — Angebote, Ziel-Auswahlen und die Panels, die sie begleiten.

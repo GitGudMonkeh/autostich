@@ -227,6 +227,31 @@ dafür etwas anderes: der Einklang lässt alle vier gleichzeitig klingen, ohne d
 **Verankerung** prüft deshalb auf „klingt, ist aber nicht aktiv" und nicht auf den Einklang selbst;
 **Genugtuung** prüft seit §6.18 nur noch, ob Rot überhaupt klingt.
 
+### 3.2 · Das Feldpanel — **Entwurf abgenommen (Owner), gebaut**
+
+`src/ui/StanceBar.jsx`, in der Bank neben den vier anderen Leisten. Es beantwortet drei Fragen, und
+zwar auf **einer Zeile je Grundfarbe**: wie viele Stiche bis zum Wechsel (Zählfelder + die fehlende
+Zahl), welche Haltung aktiv ist und welche nachklingt (Zustands-Chip, die Zeile leuchtet in beiden
+Fällen gleich stark), und was dadurch wirkt (Block *Wirkt gerade*, nur die klingenden).
+
+Vier Entscheidungen, die man beim Ändern kennen muss:
+
+- **Die aktive Zeile trägt keine Zahl.** Ihr Zähler läuft weiter und fällt bei der Schwelle zurück,
+  aber ein Selbst-Auslösen ist kein Wechsel (§2) — eine Zahl dort verspräche einen, den es nicht gibt.
+- **Die Zählfelder sind so viele, wie die Schwelle verlangt.** Senkt **Beschleunigung** sie, wird die
+  Spur kürzer; die Zahl „Schwelle n" erscheint nur dann.
+- **Die Werte in *Wirkt gerade* sind live.** Verankerung hebt den grünen Satz, Beharrlichkeit den
+  gelben Multiplikator. Eine feste Zahl wäre dieselbe Falle wie bei Spalier/Verwachsung in der
+  Formations-Legende (§6.23/§6.26 in `skill-rework.md`): das Panel zeigt sonst etwas anderes, als der
+  Motor verrechnet. Die laufenden Skill-Fenster (Anklang, Rückhalt, Übertrag, Genugtuung, Lichtband)
+  stehen daneben, neutral gefärbt — sie hängen am Skill, nicht an der Haltung.
+- **Über den Zählern steht „zählt die Grundfarbe"** (§2.2), und beide Zeilen-Tooltips sagen es aus.
+  Mit Pflanze im Deck ist das der Unterschied zwischen einer laufenden und einer stehenden Rotation.
+
+Die Schale trägt die Farbe der **aktiven Haltung** und wird im Einklang weiß (Owner) — Prisma hat als
+einzige Fraktion keine feste Leistenfarbe. Das **Icon** ist ein Platzhalter aus vier Vierteln in den
+Grundfarben, kein Asset (offen). Wächter: `test/stance-panel.test.js`.
+
 ---
 
 ## 4 · Die Linien — **gesetzt** (Schnitt A)

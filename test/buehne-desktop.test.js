@@ -242,8 +242,8 @@ describe("#skillheim · Skills bei ihrem Archetyp", () => {
     expect(kit).toMatch(/\.filter\(\(id\) => archetypeOf\(id\) === arch\)/);
   });
 
-  it("alle vier Fraktions-Leisten haengen am selben Fuss", () => {
-    for (const f of ["ChargeBar", "HeatBar", "PlantBar", "GlacierBar"]) {
+  it("alle fuenf Fraktions-Leisten haengen am selben Fuss", () => {
+    for (const f of ["ChargeBar", "HeatBar", "PlantBar", "GlacierBar", "StanceBar"]) {
       const src = readFileSync(new URL(`../src/ui/${f}.jsx`, import.meta.url), "utf8");
       expect(src, `${f} zeigt seine Skills nicht`).toMatch(/footer=\{showSkills \? <PanelSkills/);
     }

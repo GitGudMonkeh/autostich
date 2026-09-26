@@ -29,6 +29,10 @@ export const LIGHTNING = "#5ec8f0"; // Blitz (= Ionisierung/Ladung)
 export const LIGHTNING_ACCENT = "#8a7de0";
 export const ICE = "#5ec8f0"; // Eis (Frost)
 export const PLANT = "#5ab87a"; // Pflanze (grün/reif)
+/* Prisma hat keine eigene Leistenfarbe: die Schale trägt die Farbe der AKTIVEN Haltung (Owner). Nur der
+   Einklang braucht einen Ton — vier Farben zugleich sind weiß, und weiß mit einem Hauch Violett setzt
+   sich von der Fläche ab, ohne eine fünfte Fraktionsfarbe zu erfinden. */
+export const PRISM = "#e9e6f2";
 
 // ---- Feuer-Unterfarben (#206) ----
 export const ASH = "#b3a596"; // entsättigtes Warmgrau — „ausgebrannt", hebt sich von der Hitze ab

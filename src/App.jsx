@@ -43,6 +43,7 @@ import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { GlacierBar } from "./ui/GlacierBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
+import { StanceBar } from "./ui/StanceBar.jsx";
 import { archetypeOf, ARCHETYPE_ORDER } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
@@ -1099,6 +1100,7 @@ function AutostichGame() {
     state.heat?.active && "fire",
     (state.activeArchetypes || []).includes("plant") && "plant",
     (state.activeArchetypes || []).includes("ice") && "ice",
+    (state.activeArchetypes || []).includes("stance") && "stance",
   ].filter(Boolean);
   const manyFac = shownSkillArchs.length > 1;
 
@@ -1260,6 +1262,9 @@ function AutostichGame() {
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
                 cycle={state.cycle || 0} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac}
                 skills={state.skills || []} showSkills={wide} />
+              <StanceBar active={(state.activeArchetypes || []).includes("stance")}
+                stance={state.stance} skills={state.skills || []} skillTiers={state.skillTiers || {}}
+                options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               </div>
               {/* Stats — Mobil nach den Fraktions-Leisten (order-3), bis 1280 px rechte Sidebar, darüber die
                   linke Spur der Bank. */}

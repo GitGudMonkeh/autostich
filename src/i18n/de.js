@@ -266,6 +266,30 @@ export default {
   "bar.plant.maturing": "Wachsende Karten · {n}",
   "bar.plant.maturing.more": "+{n} weitere",
 
+  /* ---- Prisma-Leiste (StanceBar) ----
+     Der Kopf-Chip trägt die eingeklappte Antwort: welche Haltung trägt, welche zündet als nächste.
+     Die Zeilen-Tooltips sagen beide dasselbe Wichtige — gezählt wird die GRUNDFARBE (§2.2). */
+  "bar.stance.stances": "Haltungen",
+  "bar.stance.state": "{stance} · {next} in {n}",
+  "bar.stance.einklang": "Einklang",
+  "bar.stance.base": "zählt die Grundfarbe",
+  "bar.stance.base.threshold": "Grundfarbe · Schwelle {n}",
+  "bar.stance.active": "Aktiv",
+  "bar.stance.echo": "Nachklang {n}",
+  "bar.stance.row": "{suit} · {won} von {need} — noch {left} bis zum Wechsel. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte.",
+  "bar.stance.row.active": "{suit} · aktiv — {won} von {need}. Die aktive Haltung wechselt nicht zu sich selbst, ihr Zähler fällt nur zurück. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte.",
+  "bar.stance.now": "Wirkt gerade",
+  "bar.stance.fx.R": "Ergebnis +1 Stufe",
+  "bar.stance.fx.R.all": "Jeder Stich gewinnt",
+  "bar.stance.fx.B": "Crit +{pct} %",
+  "bar.stance.fx.G": "+{rate} je Formation",
+  "bar.stance.fx.Y": "Score ×{mult}",
+  "bar.stance.sk.anklang": "Anklang {n}",
+  "bar.stance.sk.rueckhalt": "Rückhalt {n}",
+  "bar.stance.sk.uebertrag": "Übertrag +{v}",
+  "bar.stance.sk.genugtuung": "Genugtuung +{v}",
+  "bar.stance.sk.lichtband": "Lichtband +{pct} %",
+
 
   /* ---- Kopfleiste im Stichspiel (StatusBar) ---- */
   "hud.pause": "Pause",
