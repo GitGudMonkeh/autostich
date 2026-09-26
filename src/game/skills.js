@@ -559,7 +559,7 @@ export const SKILL_DEFS = {
     ...tiered(HALTUNG.schwungrad, (r) => `Jeder Crit verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
   // Überlappungs-Linie (grün)
   SK_STANCE_07: { id: "SK_STANCE_07", name: "Doppelbindung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.doppelbindung,
-    ...tiered(HALTUNG.doppelbindung, (r) => `Die grüne Haltung zählt ${r.cards >= 5 ? "die Karten deines Segments alle" : `die ${de1(r.cards)} dichteste${r.cards === 1 ? "" : "n"} Karte${r.cards === 1 ? "" : "n"} deines Segments`} doppelt.`) },
+    ...tiered(HALTUNG.doppelbindung, (r) => `Die grüne Haltung zählt ${r.cards >= 5 ? "die Karten deines Segments alle" : `die ${de1(r.cards)} Karte${r.cards === 1 ? "" : "n"} deines Segments mit den meisten Formationen`} doppelt.`) },
   SK_STANCE_08: { id: "SK_STANCE_08", name: "Übergriff", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.uebergriff,
     ...tiered(HALTUNG.uebergriff, (r) => `Die grüne Haltung zählt zusätzlich ${de1(r.reach)} Karte${r.reach === 1 ? "" : "n"} jenseits jeder Segmentgrenze mit.`) },
   SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.verankerung,
