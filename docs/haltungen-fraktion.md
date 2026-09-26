@@ -4,8 +4,9 @@
 > sind vom Owner gesetzt, alle fünf Linien sind besetzt — 15 Skills, keine Legendären. Die Fraktion läuft in der
 > Sim (`--mode motor/skills/cross --arch stance`); die Ausgangsmessung steht in **§6.15** (Duos, Trios,
 > Quartette) und **§6.16** (die 15 Skills), die Tarierschleife in **§6.17** (was gedreht wurde) und **§6.18**
-> (was dabei herauskam, Runde für Runde gemessen). **§6.19 misst den Wegfall der Stufe** (Owner). Die offenen
-> Punkte stehen am Ende von §6.18 und §6.19 C.
+> (was dabei herauskam, Runde für Runde gemessen). **§6.19** misst den Wegfall der Stufe, **§6.20** gibt drei
+> Skills ein neues Ziel, **§6.21** stellt die drei Legendären (§5.6) gegen das Feld. Die offenen Punkte stehen
+> am Ende von §6.18 und §6.19 C.
 >
 > Stand: 2026-09-22 · Basis: `origin/exp` · Vorgänger: `docs/fraktion-5-brainstorm.md` (die sechs
 > Richtungen und die Landkarte des freien Designraums; diese Fraktion ist keine davon, sondern ein
@@ -705,7 +706,7 @@ Rotations-Linie herstellt. Keine Stufen, wie bei allen Legendären.
 | --- | --- | --- | --- |
 | **Spektrum** `SK_STANCE_L01` | Haltungen | Jede klingende Haltung multipliziert deinen Stich mit ×1,5. | `STANCE_SPEKTRUM` |
 | **Fernlicht** `SK_STANCE_L02` | Formationen | Solange Grün klingt, zählt es die Formationen des ganzen Bretts statt nur die des Segments. | — |
-| **Lichtband** `SK_STANCE_L03` | Serie | Jeder Haltungswechsel hebt den Deckel des Serien-Multiplikators dauerhaft um +2 %. | `STANCE_LICHTBAND_CAP` |
+| **Lichtband** `SK_STANCE_L03` | Serie | Jeder Haltungswechsel hebt den Deckel des Serien-Multiplikators dauerhaft um +4 %. | `STANCE_LICHTBAND_CAP` |
 
 **Spektrum** sitzt multiplikativ in Prismas eigenem Slot: bei allen vieren ×1,5⁴ ≈ ×5. Es ist der
 stärkste Grund, den die Fraktion je hatte, alle vier klingen zu lassen.
@@ -720,9 +721,10 @@ bekommen (`capPlus`); ohne Zuschlag rechnet sie byte-gleich wie vorher.
 
 > **Erste Fassung verworfen (§6.21, gemessen −20 %):** *„Jede klingende Haltung hebt den Deckel um +50 %."*
 > Owner: *„Es hat kein Scaling. Maximal 4 Haltungen und dann ist Ende."* Ein Deckel, der selbst gedeckelt ist.
-> Jetzt sammelt er über die Wechsel — rund 266 je Lauf, also am Ende etwa +530 Prozentpunkte. Er zahlt nur,
-> soweit die Serie ihn erreicht; der Owner nennt bei guten Spielern Serien von 200 bis 500, wo der rohe Wert
-> (×5 bis ×11) heute auf ×2,50 abgeschnitten wird.
+> Jetzt sammelt er über die Wechsel — rund 266 je Lauf. Er zahlt nur, soweit die Serie ihn erreicht; der Owner
+> nennt bei guten Spielern Serien von 200 bis 500, wo der rohe Wert (×5 bis ×11) heute auf ×2,50 abgeschnitten
+> wird. Die zweite Fassung maß −12 %, der Satz steht seit §6.21 auf **+4 %** je Wechsel (Owner: „sehen dann im
+> Playtest, wie es ist").
 
 Alle drei Zahlen sind **Startwerte**.
 
@@ -1519,6 +1521,85 @@ haben Runde, Beschleunigung und Mitklang kein Ziel, auf das sie hinspielen. Das 
 keine Zahl: entweder der Moment bekommt einen eigenen Körper, oder die drei Skills brauchen ein anderes.
 
 Die Entscheidung selbst ist gesetzt; §3.1 ist entsprechend neu gefasst. Hier steht nur, was sie kostet.
+
+### 6.21 · Die drei Legendären gegen das Feld — **gemessen**
+
+Alle 15 Legendären in derselben Fünf-Fraktionen-Welt, jedes in Skill-Phase 7 von 13 (Runde 25)
+bekommen, gepaart gegen denselben Seed ohne. 600 Explore-, 150 Basis- und 15 × 150 Läufe.
+
+| # | Legendär | Fraktion | typ. \| frei | besser in |
+| --- | --- | --- | --- | --- |
+| 1 | **Fernlicht** | **Prisma** | **+99 %** | 80 % |
+| 2 | **Spektrum** | **Prisma** | **+72 %** | 74 % |
+| 3 | Ewiger Frühling | Pflanze | +69 % | 65 % |
+| 4 | Doppelentladung | Blitz | +61 % | 69 % |
+| 5 | Große Lawine | Eis | +60 % | 56 % |
+| 6 | Baumreihe | Pflanze | +55 % | 67 % |
+| 7 | Hochspannung | Blitz | +53 % | 68 % |
+| 8 | Ewige Glut | Feuer | +44 % | 69 % |
+| 9 | Wurzelgeflecht | Pflanze | +41 % | 60 % |
+| 10 | Eiszeit | Eis | +39 % | 57 % |
+| 11 | Resonanz | Blitz | +20 % | 59 % |
+| 12 | Sonnenzorn | Feuer | +20 % | 56 % |
+| 13 | Sonnenkern | Feuer | +17 % | 51 % |
+| 14 | Ewiges Schild | Eis | +4 % | 47 % |
+| 15 | **Lichtband** | **Prisma** | **−12 %** | 46 % |
+
+**Fernlicht führt das ganze Feld an** und hat mit 80 % die beste Trefferquote von allen fünfzehn.
+**Spektrum** steht auf Platz 2. Beide bleiben, wie sie sind.
+
+#### Eine Lücke im Messwerkzeug, zuerst
+
+Der erste Lauf stürzte beim ersten getesteten Legendären ab. Kein Spielfehler: `--mode legendaries`
+erzwingt den Pick, und bei **fünf** Fraktionen hält der Bau in Runde 25 oft schon vier Archetypen —
+dann lehnt der Reducer ab, die Action bringt keinen Fortschritt, `runOne` wirft. Mit vier Fraktionen
+konnte das nie passieren. Die Einspritzung prüft jetzt `canAddSkill`; ist der Pick illegal, bleibt
+der Lauf der Basislauf (Δ 0) und zählt als `gesperrt`. Weil diese Nullmasse den Median verzieht —
+Eis liegt bei 23 %, Prisma bei 4 % — steht der Effekt zweimal im Bericht, und die Spalte oben ist
+die über die **legalen** Läufe.
+
+#### Warum Lichtband letzter wurde
+
+Erste Fassung (*„je klingender Haltung +50 %"*): −20 %. Owner: *„Es hat kein Scaling. Maximal vier
+Haltungen und dann ist Ende."* Zweite Fassung über die Wechsel: −12 %. Zwei Messungen haben dann
+gezeigt, woran es wirklich liegt.
+
+**Die Serien werden lang** — 30 Läufe je Build, längste Serie des Laufs:
+
+| Build | Median | p90 | Max | erreicht 75 |
+| --- | --- | --- | --- | --- |
+| Mix (zufällig) | 67 | 268 | 525 | 43 % |
+| Prisma mono | 104 | 209 | 332 | 60 % |
+| Prisma+Blitz | 120 | 476 | 856 | 80 % |
+| Fe+Bl+Pf+Pr | 77 | 319 | 833 | 50 % |
+
+Der alte Deckel (Serie 75) wird also regelmäßig erreicht. **Aber er trägt je nach Partner ganz
+unterschiedlich viel Score** — Anteil am Gesamtscore nach der *laufenden* Serie des Stichs:
+
+| Build | 0–24 | 25–74 | 75–149 | 150–340 | 341+ | **über 75** | Stiche ≥ 75 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Mix (zufällig) | 52 % | 25 % | 8 % | 13 % | 1 % | **22 %** | 3,0 % |
+| **Prisma mono** | 57 % | 33 % | 8 % | 2 % | 0 % | **10 %** | 3,2 % |
+| **Prisma+Blitz** | 27 % | 20 % | 28 % | 12 % | 13 % | **53 %** | 7,8 % |
+| Fe+Bl+Pf+Pr | 44 % | 20 % | 14 % | 16 % | 6 % | **37 %** | 6,5 % |
+
+Die langen Serien sind selten (3–8 % der Stiche), tragen aber 10–53 % des Scores — Score potenziert
+sich mit der Serie.
+
+**Lichtband ist damit kein schwaches, sondern ein partnerabhängiges Legendäres.** In Prisma mono
+liegen 10 % des Scores über der Schwelle, fast alles im flachen Bereich 75–149; in Prisma+Blitz sind
+es 53 %, davon 13 % jenseits von 341. Es zahlt bei dem, der die langen Serien baut, und das ist
+Blitz, nicht Prisma. Der gierige Spieler im Fünfer-Feld landet selten dort, also misst die Sim den
+schlechten Fall.
+
+**Owner-Entscheid:** so lassen, Satz von 0,02 auf **0,04** je Wechsel, und im Playtest beurteilen.
+Der strukturelle Gegenvorschlag — vom **Deckel** auf den **Satz** wechseln, der auch die 57 % im
+Bereich 0–24 erreicht — ist damit nicht gewählt, aber notiert.
+
+**Einschränkungen:** 150 gepaarte Läufe je Legendärem, 30 je Serien-Zeile. Die Rangfolge oben trägt,
+einzelne Prozentpunkte nicht. Und die ganze Tabelle verschiebt sich, wenn ein Legendäres sich
+ändert — der gierige Spieler baut dann anders; zwischen den beiden Lichtband-Läufen bewegten sich
+auch die übrigen vierzehn Zeilen.
 
 ---
 
