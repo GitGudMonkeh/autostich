@@ -585,7 +585,7 @@ export const SKILL_DEFS = {
   SK_STANCE_L02: { id: "SK_STANCE_L02", name: "Fernlicht", archetype: "stance", legendary: true, keywords: ["stance", "formation"],
     desc: `Solange die grüne Haltung klingt, zählt sie die Formationen des ganzen Bretts statt nur die deines Segments.` },
   SK_STANCE_L03: { id: "SK_STANCE_L03", name: "Lichtband", archetype: "stance", legendary: true, keywords: ["stance", "streak"],
-    desc: `Jede klingende Haltung hebt den Deckel des Serien-Multiplikators um +${pct(C.STANCE_LICHTBAND_CAP)} %.` },
+    desc: `Jeder Haltungswechsel hebt den Deckel des Serien-Multiplikators dauerhaft um +${pct(C.STANCE_LICHTBAND_CAP)} %.` },
 
 };
 

@@ -705,7 +705,7 @@ Rotations-Linie herstellt. Keine Stufen, wie bei allen Legendären.
 | --- | --- | --- | --- |
 | **Spektrum** `SK_STANCE_L01` | Haltungen | Jede klingende Haltung multipliziert deinen Stich mit ×1,5. | `STANCE_SPEKTRUM` |
 | **Fernlicht** `SK_STANCE_L02` | Formationen | Solange Grün klingt, zählt es die Formationen des ganzen Bretts statt nur die des Segments. | — |
-| **Lichtband** `SK_STANCE_L03` | Serie | Jede klingende Haltung hebt den Deckel des Serien-Multiplikators um +50 %. | `STANCE_LICHTBAND_CAP` |
+| **Lichtband** `SK_STANCE_L03` | Serie | Jeder Haltungswechsel hebt den Deckel des Serien-Multiplikators dauerhaft um +2 %. | `STANCE_LICHTBAND_CAP` |
 
 **Spektrum** sitzt multiplikativ in Prismas eigenem Slot: bei allen vieren ×1,5⁴ ≈ ×5. Es ist der
 stärkste Grund, den die Fraktion je hatte, alle vier klingen zu lassen.
@@ -717,6 +717,12 @@ werden daneben klein, Verankerung groß.
 **Lichtband** ist das einzige der drei, das an einem Regler dreht, der dem **ganzen Spiel** gehört:
 `STREAK_BASE_CAP` bremst heute jede Fraktion. `streakBaseMult` hat dafür einen dritten Parameter
 bekommen (`capPlus`); ohne Zuschlag rechnet sie byte-gleich wie vorher.
+
+> **Erste Fassung verworfen (§6.21, gemessen −20 %):** *„Jede klingende Haltung hebt den Deckel um +50 %."*
+> Owner: *„Es hat kein Scaling. Maximal 4 Haltungen und dann ist Ende."* Ein Deckel, der selbst gedeckelt ist.
+> Jetzt sammelt er über die Wechsel — rund 266 je Lauf, also am Ende etwa +530 Prozentpunkte. Er zahlt nur,
+> soweit die Serie ihn erreicht; der Owner nennt bei guten Spielern Serien von 200 bis 500, wo der rohe Wert
+> (×5 bis ×11) heute auf ×2,50 abgeschnitten wird.
 
 Alle drei Zahlen sind **Startwerte**.
 

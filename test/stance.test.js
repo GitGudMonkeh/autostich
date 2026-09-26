@@ -886,14 +886,19 @@ describe("Haltungen — die drei Legendären (§6.21)", () => {
       .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg, 9);
     expect(stanceGreenMult(st(), f, 2, [S.FERNLICHT], {})).toBe(1);           // ohne klingendes Grün: nichts
   });
-  it("SK_STANCE_L03 Lichtband: der Serien-Deckel steigt je klingender Haltung", () => {
-    expect(lichtbandCap(all4(), [])).toBe(0);
-    expect(lichtbandCap(all4(), [S.LICHTBAND])).toBeCloseTo(4 * C.STANCE_LICHTBAND_CAP, 9);
-    expect(lichtbandCap(st(), [S.LICHTBAND])).toBeCloseTo(C.STANCE_LICHTBAND_CAP, 9);
+  it("SK_STANCE_L03 Lichtband: der Serien-Deckel steigt je HALTUNGSWECHSEL des Laufs", () => {
+    /* §6.21: die erste Fassung zählte klingende Haltungen und endete damit bei vier — ein Deckel, der selbst
+       gedeckelt ist, gemessen −20 %. Jetzt sammelt er über den ganzen Lauf. */
+    expect(lichtbandCap(st({ switches: 30 }), [])).toBe(0);                  // ohne den Skill nichts
+    expect(lichtbandCap(st({ switches: 0 }), [S.LICHTBAND])).toBe(0);        // vor dem ersten Wechsel nichts
+    expect(lichtbandCap(st({ switches: 30 }), [S.LICHTBAND])).toBeCloseTo(30 * C.STANCE_LICHTBAND_CAP, 9);
+    // Klingende Haltungen sind egal — nur die Wechsel zählen.
+    expect(lichtbandCap({ ...all4(), switches: 30 }, [S.LICHTBAND]))
+      .toBeCloseTo(lichtbandCap(st({ switches: 30 }), [S.LICHTBAND]), 9);
     /* Er hebt den DECKEL, nicht den Satz: unter dem Deckel ändert er nichts, darüber zahlt die Serie weiter. */
     const below = Math.floor(C.STREAK_BASE_CAP / C.STREAK_BASE_STEP) - 5;
     const above = Math.ceil(C.STREAK_BASE_CAP / C.STREAK_BASE_STEP) + 20;
-    const plus = 4 * C.STANCE_LICHTBAND_CAP;
+    const plus = 100 * C.STANCE_LICHTBAND_CAP;   // ein Lauf mit 100 Wechseln
     expect(streakBaseMult(below, 0, plus)).toBeCloseTo(streakBaseMult(below), 9);
     expect(streakBaseMult(above)).toBeCloseTo(1 + C.STREAK_BASE_CAP, 9);
     expect(streakBaseMult(above, 0, plus)).toBeGreaterThan(streakBaseMult(above));

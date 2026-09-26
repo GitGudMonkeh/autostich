@@ -279,9 +279,13 @@ export function cashPeak(st, skills, skillTiers) {
 // Spektrum: jede klingende Haltung multipliziert den Stich. Bei allen vieren ×1,5^4.
 export const spektrumMult = (st, skills) =>
   (st && st.active && (skills || []).includes(S.SPEKTRUM) ? C.STANCE_SPEKTRUM ** ringCount(st) : 1);
-// Lichtband: hebt den DECKEL des Serien-Multiplikators je klingender Haltung, nicht den Satz.
+/* Lichtband: hebt den DECKEL des Serien-Multiplikators, nicht den Satz — und zwar je HALTUNGSWECHSEL des
+   Laufs, nicht je klingender Haltung (Owner, §6.21). Die erste Fassung maß −20 %, weil sie bei vier Haltungen
+   endete: ein Deckel, der selbst gedeckelt ist. Über die Wechsel wächst er dagegen den ganzen Lauf mit. Er
+   zahlt nur, soweit die Serie ihn erreicht — Schritt 2 % je Serienstufe, der rohe Wert muss also über den
+   Deckel hinauslaufen, damit das Heben etwas ändert. */
 export const lichtbandCap = (st, skills) =>
-  (st && st.active && (skills || []).includes(S.LICHTBAND) ? C.STANCE_LICHTBAND_CAP * ringCount(st) : 0);
+  (st && st.active && (skills || []).includes(S.LICHTBAND) ? C.STANCE_LICHTBAND_CAP * (st.switches || 0) : 0);
 
 /* ---- Der Takt: ein Stich weiter ----
    Am ENDE jedes Stichs gerufen, nachdem der Stich gewertet ist — der Stand VOR dem Stich hat ihn regiert, der
