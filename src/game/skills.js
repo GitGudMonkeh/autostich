@@ -545,28 +545,28 @@ export const SKILL_DEFS = {
      Legendären: die werden nach der ersten Messung entworfen. Alle Zahlen sind STARTWERTE. */
   // Score-Linie (gelb)
   SK_STANCE_01: { id: "SK_STANCE_01", name: "Stauung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.stauung,
-    ...tiered(HALTUNG.stauung, (r) => `Endet die gelbe Haltung, zahlt dein größter Sieg aus ihr noch einmal: +${pct(r.peak)} % je Stich, den die Haltung geklungen hat.`) },
+    ...tiered(HALTUNG.stauung, (r) => `Endet die gelbe Haltung, zahlt dein größter Sieg aus ihr noch einmal: +${pct(r.peak)} % je Stich, den sie geklungen hat.`) },
   SK_STANCE_02: { id: "SK_STANCE_02", name: "Beharrlichkeit", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.beharrlichkeit,
     ...tiered(HALTUNG.beharrlichkeit, (r) => `Die gelbe Haltung zählt +${de(r.perTrick)} Score-Multiplikator je Stich, den sie schon klingt.`) },
   SK_STANCE_03: { id: "SK_STANCE_03", name: "Mitklang", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.mitklang,
-    ...tiered(HALTUNG.mitklang, (r) => `Du zählst +${de(r.perStance)} Score-Multiplikator je zusätzlich klingender Haltung.`) },
+    ...tiered(HALTUNG.mitklang, (r) => `Jede zusätzlich klingende Haltung zählt +${de(r.perStance)} Score-Multiplikator.`) },
   // Crit-Linie (blau)
   SK_STANCE_04: { id: "SK_STANCE_04", name: "Grundrauschen", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.grundrauschen,
-    ...tiered(HALTUNG.grundrauschen, (r) => `Du hast +${pct(r.crit)} % Crit-Chance${r.critMult ? ` und +${de(r.critMult)} Crit-Multiplikator` : ""}, ganz gleich welche Haltung klingt.`) },
+    ...tiered(HALTUNG.grundrauschen, (r) => `Jeder Sieg hat +${pct(r.crit)} % Crit-Chance${r.critMult ? ` und +${de(r.critMult)} Crit-Multiplikator` : ""}, ganz gleich welche Haltung klingt.`) },
   SK_STANCE_05: { id: "SK_STANCE_05", name: "Übertrag", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.uebertrag,
     ...tiered(HALTUNG.uebertrag, (r) => `Solange die blaue Haltung klingt, hebt jeder Crit deinen Crit-Multiplikator um +${de(r.step)}. Verklingt sie, bleibt die Hälfte des Zuschlags für die nächste blaue Haltung stehen.`) },
   SK_STANCE_06: { id: "SK_STANCE_06", name: "Schwungrad", archetype: "stance", keywords: ["stance", "crit"], tiers: HALTUNG.schwungrad,
     ...tiered(HALTUNG.schwungrad, (r) => `Jeder Crit verlängert die laufende Haltung um einen Stich, höchstens ${r.max}× je Haltung.`) },
   // Überlappungs-Linie (grün)
   SK_STANCE_07: { id: "SK_STANCE_07", name: "Doppelbindung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.doppelbindung,
-    ...tiered(HALTUNG.doppelbindung, (r) => `Grün zählt die ${r.cards >= 5 ? "Karten deines Segments alle" : `${de1(r.cards)} dichteste${r.cards === 1 ? "" : "n"} Karte${r.cards === 1 ? "" : "n"} deines Segments`} doppelt.`) },
+    ...tiered(HALTUNG.doppelbindung, (r) => `Die grüne Haltung zählt ${r.cards >= 5 ? "die Karten deines Segments alle" : `die ${de1(r.cards)} dichteste${r.cards === 1 ? "" : "n"} Karte${r.cards === 1 ? "" : "n"} deines Segments`} doppelt.`) },
   SK_STANCE_08: { id: "SK_STANCE_08", name: "Übergriff", archetype: "stance", keywords: ["stance", "formation", "segment"], tiers: HALTUNG.uebergriff,
-    ...tiered(HALTUNG.uebergriff, (r) => `Grün zählt zusätzlich ${de1(r.reach)} Karte${r.reach === 1 ? "" : "n"} jenseits jeder Segmentgrenze mit.`) },
+    ...tiered(HALTUNG.uebergriff, (r) => `Die grüne Haltung zählt zusätzlich ${de1(r.reach)} Karte${r.reach === 1 ? "" : "n"} jenseits jeder Segmentgrenze mit.`) },
   SK_STANCE_09: { id: "SK_STANCE_09", name: "Verankerung", archetype: "stance", keywords: ["stance", "formation"], tiers: HALTUNG.verankerung,
-    ...tiered(HALTUNG.verankerung, (r) => `Jede von Grün gezählte Formation gibt zusätzlich +${de(r.plus)} Score-Multiplikator.`) },
+    ...tiered(HALTUNG.verankerung, (r) => `Jede Formation, die die grüne Haltung zählt, gibt zusätzlich +${de(r.plus)} Score-Multiplikator.`) },
   // Ergebnis-Linie (rot)
   SK_STANCE_10: { id: "SK_STANCE_10", name: "Genugtuung", archetype: "stance", keywords: ["stance", "score"], tiers: HALTUNG.genugtuung,
-    ...tiered(HALTUNG.genugtuung, (r) => `Solange die rote Haltung klingt, gibt jeder Stich +${r.score} Basis-Score je Stich, den sie schon gedreht hat.`) },
+    ...tiered(HALTUNG.genugtuung, (r) => `Solange die rote Haltung klingt, gibt jeder Stich +${r.score} Basis-Score je gedrehtem Stich.`) },
   SK_STANCE_11: { id: "SK_STANCE_11", name: "Rückhalt", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.rueckhalt,
     ...tiered(HALTUNG.rueckhalt, (r) => `Endet die rote Haltung, kämpfen deine nächsten ${r.cards} Karten mit +${r.value} Wert.`) },
   SK_STANCE_12: { id: "SK_STANCE_12", name: "Kehrtwende", archetype: "stance", keywords: ["stance", "value"], tiers: HALTUNG.kehrtwende,
@@ -581,7 +581,7 @@ export const SKILL_DEFS = {
   /* Legendäre (§6.21, Owner): drei Score-Hebel auf drei Achsen — Haltungen, Formationen, Serie. Alle drei zahlen
      auf „viele Haltungen klingen", den Zustand, den die Rotations-Linie herstellt. Keine Stufen. */
   SK_STANCE_L01: { id: "SK_STANCE_L01", name: "Spektrum", archetype: "stance", legendary: true, keywords: ["stance", "score"],
-    desc: `Jede klingende Haltung multipliziert deinen Stich mit ×${de(C.STANCE_SPEKTRUM)}.` },
+    desc: `Dein Stich zählt ×${de(C.STANCE_SPEKTRUM)} je klingender Haltung.` },
   SK_STANCE_L02: { id: "SK_STANCE_L02", name: "Fernlicht", archetype: "stance", legendary: true, keywords: ["stance", "formation"],
     desc: `Solange die grüne Haltung klingt, zählt sie die Formationen des ganzen Bretts statt nur die deines Segments.` },
   SK_STANCE_L03: { id: "SK_STANCE_L03", name: "Lichtband", archetype: "stance", legendary: true, keywords: ["stance", "streak"],
