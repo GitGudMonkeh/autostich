@@ -593,6 +593,7 @@ export default {
   "upgrade.title": "Aufwerten",
   "upgrade.hint": "So viele, wie du dir leisten kannst. Der Skill-Zug bleibt dir.",
   "upgrade.maxTier": "Höchste Stufe",
+  "upgrade.locked": "Noch nicht freigeschaltet",
   "upgrade.justRaised": "gerade erhöht",
   "upgrade.empty": "Du hältst noch keinen Skill, der eine Stufe hat.",
   "upgrade.back": "Zurück zur Skill-Wahl",
@@ -804,6 +805,7 @@ export default {
   "arch.upgrade.reason.inert": "keine Aufwertung, der Effekt hat keine Stufen",
   "arch.upgrade.reason.legendary": "Legendäre sind nicht aufwertbar",
   "arch.upgrade.reason.max": "bereits auf höchster Stufe",
+  "arch.upgrade.reason.locked": "diese Stufe ist noch nicht freigeschaltet",
   "arch.upgrade.reason.acted": "in dieser Bauphase ist die Hauptaktion (Bauen ODER Aufwerten) schon verbraucht",
   "arch.upgrade.reason.generic": "nicht aufwertbar",
   "arch.upgraded": "aufgewertet:",
@@ -1036,6 +1038,7 @@ export default {
   "app.restart.title": "Wirklich neustarten?",
   "app.restart": "Neustarten",
   "app.restart.help": "Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.",
+  "app.restart.help.campaign": "In der Kampagne kostet der Neustart nur diesen Versuch: dieselbe Stufe beginnt von vorn.",
 
   /* ---- Steuerleiste (Controls) ---- */
   "controls.options": "⚙ Optionen",
@@ -1551,6 +1554,7 @@ export default {
 
   "contract.loot.title": "Auftrag erfüllt",
   "contract.loot.take": "Nehmen",
+  "contract.loot.two": "Doppelwahl: du nimmst {n} Stücke.",
 
   "contract.step.leicht": "Leicht",
   "contract.step.mittel": "Mittel",
@@ -1590,7 +1594,8 @@ export default {
   "contract.task.sperrfeuer.name": "Sperrfeuer",
   "contract.task.sperrfeuer.text": "Gewinne in einem Durchlauf alle fünf Stiche in {n} Segmenten.",
   "contract.task.gedraenge.name": "Gedränge",
-  "contract.task.gedraenge.text": "Baue {n} Formationen.",
+  // Formationen je Position, summiert: eine Position in drei Formationen zählt drei (Owner, 2026-09-22).
+  "contract.task.gedraenge.text": "Bringe alle Positionen zusammen auf {n} Formationen.",
   "contract.task.reinheit.name": "Reinheit",
   "contract.task.reinheit.text": "Bringe {n} Positionen in eine Formation vom Typ {variant}.",
   "contract.task.langbau.name": "Langbau",
@@ -1713,4 +1718,72 @@ export default {
   "contract.leg.stadtrecht.text": "Das Baufeld hat keinen Deckel mehr. Du baust, so weit die Fläche reicht.",
   "contract.leg.stiftung.name": "Stiftung",
   "contract.leg.stiftung.text": "Jede Phase beginnt mit 5 Münzen, bis zum Laufende.",
+
+  /* ============================================================
+     KAMPAGNE (docs/kampagne.md §11) — Ebene 1.
+     Hausregel des Owners (2026-09-22): KEINE Mini-Beschreibungen, keine Gedankenstriche in
+     Spielertexten. Was die Regel erklärt, steht im Dokument, nicht auf dem Schirm.
+     ============================================================ */
+  "start.campaign": "Kampagne",
+  "start.campaign.state": "Stufe {n} von {max}",
+  "start.campaign.fresh": "Stufe 1 von {max}",
+
+  "campaign.title": "Kampagne · Stufe {n} von {max}",
+  "campaign.step": "Stufe {n}",
+  "campaign.bar.cleared": "Geschafft",
+  "campaign.boss.grants": "Belohnung: {name}",
+  "campaign.failed.title": "Stufe {n} noch einmal.",
+  "campaign.failed.again": "Stufe {n} wiederholen",
+  "campaign.failed.menu": "Ins Menü",
+  "campaign.rail.label": "Stufe {n}/{steps}",
+  "campaign.rail.counter": "Nächster Gegner +{n}",
+  "campaign.bar.threshold": "Schwelle",
+  "campaign.bar.progress": "{a} / {b} Mio",
+  "campaign.threshold": "{n} Mio",
+  "campaign.start": "Stufe {n} starten",
+  "campaign.giveUp": "Kampagne aufgeben",
+  "campaign.giveUp.sure": "Wirklich aufgeben?",
+  "campaign.reset": "Kampagne zurücksetzen",
+  "campaign.reset.sure": "Alles zurück auf null?",
+
+  "campaign.boss.mid": "MINIBOSS",
+  "campaign.boss.kind.mid": "Miniboss",
+  "campaign.boss.kind.end": "Endboss",
+  "campaign.boss.end": "ENDBOSS",
+  "campaign.boss.denkmalpfleger": "Der Denkmalpfleger",
+  "campaign.boss.denkmalpfleger.text": "Sechs Zellen des Baufelds sind gesperrt, dort baust du nicht.",
+  "campaign.boss.schliesser": "Der Schließer",
+  "campaign.boss.schliesser.text": "Vor jeder Aufstellphase wird eines der acht Aufstellsegmente festgesetzt. Die fünf Karten darin lassen sich nicht verschieben.",
+  "campaign.boss.bremser": "Der Bremser",
+  "campaign.boss.bremser.text": "Zwei Tauschzüge je Aufstellphase statt vier.",
+  "campaign.boss.wucherer": "Der Wucherer",
+  "campaign.boss.wucherer.text": "Jeder weitere Kauf derselben Art verdreifacht den Preis, statt ihn zu verdoppeln.",
+  "campaign.boss.schmarotzer": "Der Schmarotzer",
+  "campaign.boss.schmarotzer.text": "Je zwei gehaltene Perks kosten dich eine Münze je Durchlauf.",
+  "campaign.boss.konter": "Der Konter",
+  "campaign.boss.konter.text": "Jeder gewonnene Stich macht den nächsten Gegner stärker. Eine Niederlage setzt den Aufschlag zurück auf null.",
+
+  "campaign.over.failed": "Lauf {n} nicht bestanden",
+  "campaign.over.need": "von {n} Mio nötig",
+
+
+  "campaign.unlock.title": "NEU FREIGESCHALTET",
+  "campaign.unlock.next": "Weiter zu Stufe {n}",
+  "campaign.unlock.plantDeck": "Pflanzen-Deck",
+  "campaign.unlock.plantDeck.text": "Wachstum, grüne Karten, Farballianz.",
+  "campaign.unlock.coins": "Münzen",
+  "campaign.unlock.coins.text": "Jeder Durchlauf bringt eine Münze, Ablehnen zahlt zusätzlich.",
+  "campaign.unlock.contracts": "Aufträge",
+  "campaign.unlock.contracts.text": "Zwei Fenster je Lauf, eigene Beute.",
+  "campaign.unlock.rarityRare": "Sehr selten",
+  "campaign.unlock.rarityRare.text": "Skills und Perks reichen eine Stufe höher.",
+  "campaign.unlock.iceDeck": "Eis-Deck",
+  "campaign.unlock.iceDeck.text": "Gletscher, Frost, Lawine.",
+
+
+  "campaign.won.title": "Die Leiter ist durch.",
+  "campaign.won.fallen": "{boss} IST GEFALLEN",
+
+
+
 };

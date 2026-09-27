@@ -12,6 +12,7 @@
    Owner-Entscheid 2026-09-09, um im Spiel zu sehen, wie sich die höhere Kaufkraft anfühlt. */
 
 import { envNum } from "./constants.js";
+import * as CP from "./campaign.js"; // Kampagne: der reduzierte Verzicht (kein Zyklus — campaign.js importiert nichts)
 
 /* ---- Zwei Regeln, die nirgends Code brauchen (docs/muenz-oekonomie.md) ---------------------------
    1. MÜNZVERFALL AM LAUFENDE. Übrige Münzen verfallen (Owner 2026-09-09) — kein Score-Umtausch, keine
@@ -67,8 +68,24 @@ export const FORFEIT_BUILD = envNum("SIM_COIN_FORFEIT_BUILD", 6);     // Archite
    kauft man für 3 und bekommt 1 zurück, und der Kauf wäre Geldvernichtung mit Rabatt. Die Rechnung
    behandelt die gekaufte Energie damit als die zuletzt übrige: erst zahlt sich aus, was über sie
    hinausgeht. */
-export const unspentEnergyCoins = (left = 0, bought = 0) =>
-  Math.max(0, (left || 0) - (bought || 0)) * FORFEIT_ENERGY;
+export const unspentEnergyCoins = (left = 0, bought = 0, state = null) =>
+  Math.max(0, (left || 0) - (bought || 0)) * CP.forfeitWith(state, "energy", FORFEIT_ENERGY);
+
+/* Die vier Verzichts-Betraege, durch die Kampagnen-Tuer. Ein Lauf ohne Kampagne bekommt seine
+   Konstante zurueck; in der Kampagne zahlt der Verzicht die reduzierten Saetze (Owner 2026-09-25),
+   sonst waere ein abgelehntes Skill-Angebot zwoelf Durchlaeufe wert. EINE Stelle, damit Knopf und
+   Reducer nie verschiedene Zahlen nennen. */
+export const forfeitSkill = (state) => CP.forfeitWith(state, "skill", FORFEIT_SKILL);
+export const forfeitPerk = (state) => CP.forfeitWith(state, "perk", FORFEIT_PERK);
+export const forfeitBuild = (state) => CP.forfeitWith(state, "build", FORFEIT_BUILD);
+
+/* Gibt es in DIESEM Lauf überhaupt Münzen? Die WIRKUNG sperrt `coinGrant` unten; diese Frage stellt
+   die OBERFLÄCHE, damit sie keine Preise und keine Gutschriften für eine Ökonomie zeigt, die es nicht
+   gibt. Beides braucht es, und das ist im Playtest auf `exp` aufgefallen: Neuwurf-Preise, „Fokus
+   rufen" und ein „Ablehnen → Perk (+12)" standen in einem Lauf ohne freigeschaltete Münzen
+   vollständig auf dem Schirm — mechanisch war alles längst tot. Ein Lauf ohne Kampagne trägt das
+   Feld nicht und ist damit an. */
+export const coinsOn = (state = {}) => state.coinsEnabled !== false;
 
 /* Eine Gutschrift, an EINER Stelle gebaut: Kontostand plus die Spur für die Anzeige (§4 — eine
    Verzichts-Zahlung muss in dem Moment sichtbar werden, in dem sie anfällt, sonst merkt niemand, dass
@@ -76,6 +93,11 @@ export const unspentEnergyCoins = (left = 0, bought = 0) =>
    Leiste nicht stumm bleibt. Betrag ≤ 0 → null, der Aufrufer schreibt dann nichts. */
 export function coinGrant(state = {}, n = 0, source = "") {
   if (!(n > 0)) return null;
+  /* Kampagne, Ebene 1 (docs/kampagne.md §11): ohne freigeschaltete Ökonomie gibt es keine Münzen —
+     auch keine aus dem Verzicht. Die Sperre sitzt hier und nicht an den vier Aufrufern, weil dies
+     der einzige Weg ist, auf dem eine Münze entsteht; eine vergessene Stelle wäre sonst ein
+     stiller Kanal. */
+  if (!coinsOn(state)) return null;
   return { coins: (state.coins || 0) + n, coinGain: { n, source, seq: ((state.coinGain && state.coinGain.seq) || 0) + 1 } };
 }
 
@@ -90,9 +112,22 @@ export const REROLL_LEG_BASE = envNum("SIM_COIN_REROLL_LEG", 15);
 /* Alle drei Treppen verdoppeln — Neuwurf 3→6→12, Energie 3→6, Baufeld 20→40. EIN Faktor, damit „jeder
    weitere teurer" überall dasselbe heißt und ein Tuning-Schritt nicht drei Zahlen anfassen muss. */
 export const PRICE_LADDER = envNum("SIM_COIN_LADDER", 2);
-const step = (base, bought) => Math.round(base * PRICE_LADDER ** Math.max(0, bought || 0));
+/* EXPORTIERT, damit die Kaufflächen unten die Treppe mit einem anderen Faktor rechnen können, ohne
+   dass `energyPrice`/`coverPrice` einen zweiten Parameter bekommen. Genau der wäre eine Falle: beide
+   werden idiomatisch an `.map()` gereicht, und `.map` schiebt den INDEX als zweites Argument nach —
+   aus `[0,1].map(energyPrice)` würde dann still „Leiter 0" und „Leiter 1". */
+export const priceStep = (base, bought, ladder = PRICE_LADDER) => Math.round(base * ladder ** Math.max(0, bought || 0));
+const step = priceStep;
 
-export const rerollPrice = (bought = 0, legendary = false) => step(legendary ? REROLL_LEG_BASE : REROLL_BASE, bought);
+/* Der Kampagnen-Boss Wucherer verdreifacht die Treppe, statt sie zu verdoppeln (3 → 9 → 27): der
+   Grundpreis bleibt, nur jede weitere Stufe wird teurer. Er kommt als schlichte Zahl auf dem State
+   (`state.priceLadder`, vom Lauf-Start gesetzt) — coins.js soll die Kampagne nicht kennen müssen,
+   und es ist dasselbe Muster wie `coinsEnabled`.
+   Bewusst an der TREPPE und nicht als Nachrechnung am fertigen Preis: der legendäre Neuwurf hat eine
+   eigene Basis (15), aus dem Preis allein ließe sich die Stufenzahl nicht zurückrechnen. */
+export const ladderOf = (state = {}) => state.priceLadder || PRICE_LADDER;
+export const rerollPrice = (bought = 0, legendary = false, ladder = PRICE_LADDER) =>
+  step(legendary ? REROLL_LEG_BASE : REROLL_BASE, bought, ladder);
 
 /* DECKEL je Phase (Owner 2026-09-15). Bis hierher war der Preis der einzige Regler: „beliebig oft je
    Phase, jeder weitere teurer", und beim legendären Neuwurf ausdrücklich „kein Deckel". Das hielt,
@@ -117,12 +152,17 @@ export const rerollsLeft = (state = {}) => Math.max(0, REROLL_CAP - (state.offer
    `legendary` bleibt währenddessen falsch: die Legendär-GARANTIE hängt am Kauf, nicht am Angebot (§3.1) —
    ein Gratis-Wurf verspricht kein Legendäres und trägt deshalb auch nicht den goldenen Rahmen. */
 export function rerollOffer(state = {}, freeTokens = 0, legendary = false) {
-  const nextPrice = rerollPrice(state.coinRerolls || 0, legendary);
+  const nextPrice = rerollPrice(state.coinRerolls || 0, legendary, ladderOf(state));
   const left = rerollsLeft(state);
   // Der Deckel steht VOR dem Preis: ist er erreicht, ist auch ein Gratis-Wurf keiner mehr.
-  if (left <= 0) return { free: false, tokens: freeTokens, price: nextPrice, nextPrice, legendary: false, can: false, left: 0, capped: true };
-  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true, left, capped: false };
-  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice, left, capped: false };
+  /* `offered` = gibt es diesen Knopf überhaupt. Die beiden KAUF-Wege hängen daran, ob es in diesem
+     Lauf Münzen gibt (Kampagne Ebene 1); der Gratis-Wurf darunter nicht, den hat man sich verdient.
+     Auch der Deckel-Hinweis geht mit: er deckelt den Kauf, und ohne Ökonomie gibt es nichts zu
+     deckeln. */
+  const kauf = coinsOn(state);
+  if (left <= 0) return { free: false, tokens: freeTokens, price: nextPrice, nextPrice, legendary: false, can: false, left: 0, capped: true, offered: kauf };
+  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true, left, capped: false, offered: true };
+  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice, left, capped: false, offered: kauf };
 }
 
 /* ---- Energie in der Aufstellphase (§3.2) ---------------------------------------------------------- */
@@ -144,12 +184,15 @@ export const coverPrice = (bought = 0) => step(COVER_BASE, bought);
    (die Punkte am Baufeld-Knopf), `can` die Auslösbarkeit: ausverkauft ODER zu wenig Münzen. */
 export function stepBuy(state = {}, bought = 0, max = 0, price = 0) {
   const left = Math.max(0, max - (bought || 0));
-  return { left, max, price, soldOut: left <= 0, can: left > 0 && (state.coins || 0) >= price };
+  const p = price;
+  return { left, max, price: p, soldOut: left <= 0, can: left > 0 && (state.coins || 0) >= p };
 }
+/* Wucherer gilt fuer JEDE Kaufart, jede mit ihrem eigenen Zaehler (Owner 2026-09-22) — deshalb
+   reicht jede Kaufflaeche die Leiter des Laufs durch. */
 export const energyBuy = (state = {}) =>
-  stepBuy(state, state.coinEnergy || 0, ENERGY_MAX_BUYS, energyPrice(state.coinEnergy || 0));
+  stepBuy(state, state.coinEnergy || 0, ENERGY_MAX_BUYS, priceStep(ENERGY_BASE, state.coinEnergy || 0, ladderOf(state)));
 export const coverBuy = (state = {}) =>
-  stepBuy(state, state.coverBuys || 0, COVER_MAX_BUYS, coverPrice(state.coverBuys || 0));
+  stepBuy(state, state.coverBuys || 0, COVER_MAX_BUYS, priceStep(COVER_BASE, state.coverBuys || 0, ladderOf(state)));
 
 /* ---- Fokus rufen (§3.3) --------------------------------------------------------------------------- */
 // Fester Preis, einmal je Skill-Phase: der Ruf ist gekaufte AUSWAHL, keine Vormerkung — nichts wird
@@ -157,6 +200,8 @@ export const coverBuy = (state = {}) =>
 // Owner 2026-09-14: 5 → 10. Zusammen mit COIN_FORM_PER 8 → 10 kostet der Ruf damit über drei
 // Durchlauf-Einnahmen statt einer knappen — er ist eine Entscheidung, kein Beiläufiges mehr.
 export const FOCUS_PRICE = envNum("SIM_COIN_FOCUS", 10);
+// Derselbe Preis, nur mit dem Nachlass — der Ruf ist ein Kauf wie jeder andere.
+export const focusPrice = () => FOCUS_PRICE;
 
 /* ---- Skill aufwerten (§3.5) ----------------------------------------------------------------------- */
 /* Preis nach ZIELSTUFE, nicht nach Reihenfolge: jeder Schritt kostet, was seine Stufe wert ist. Wer von
@@ -173,12 +218,19 @@ export const upgradePrice = (targetTier) => UPGRADE_PRICES[targetTier] || 0;
 // lohnt hineinzugehen, ohne dass der Knopf einen Preis nennt, der von der Auswahl abhängt.
 export const UPGRADE_FROM = Math.min(...UPGRADE_PRICES.filter((p) => p > 0));
 
-/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer. */
+/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer.
+
+   DREI Ausgänge, nicht zwei: `maxed` ist das Ende der Leiter, `locked` der Kampagnen-Deckel davor.
+   Sie auseinanderzuhalten kostet ein Feld und spart eine Lüge — „Höchste Stufe" an einem Skill auf
+   Selten wäre schlicht falsch, die Stufe darüber gibt es, sie ist nur noch nicht freigeschaltet.
+   Owner 2026-09-23: man soll nicht über Selten aufwerten können, bevor die Rarität offen ist.
+   `state.rareCap` ist 1-basiert (4 = kein Deckel), `tier`/`next` hier 0-basiert. */
 export function upgradeBuy(state = {}, tier = 0) {
   const next = (tier || 0) + 1;
-  if (next > MAX_SKILL_TIER) return { maxed: true, next: null, price: 0, can: false };
+  if (next > MAX_SKILL_TIER) return { maxed: true, locked: false, next: null, price: 0, can: false };
+  if (state.rareCap && next > state.rareCap - 1) return { maxed: false, locked: true, next: null, price: 0, can: false };
   const price = upgradePrice(next);
-  return { maxed: false, next, price, can: (state.coins || 0) >= price };
+  return { maxed: false, locked: false, next, price, can: (state.coins || 0) >= price };
 }
 
 /* Dieselbe Leiter für PERKS (Owner 2026-09-08: „genauso wie Skills, gleiche Kosten").
@@ -191,7 +243,7 @@ export function upgradeBuy(state = {}, tier = 0) {
    Wer UPGRADE_PRICES anfasst, verschiebt beide. */
 export function familyUpgradeBuy(state = {}, tier = 0) {
   const buy = upgradeBuy(state, (tier || 0) - 1);
-  return buy.maxed ? buy : { ...buy, next: buy.next + 1 };
+  return buy.maxed || buy.locked ? buy : { ...buy, next: buy.next + 1 };   // beide tragen next: null
 }
 
 export const MAX_FAMILY_TIER = MAX_SKILL_TIER + 1;

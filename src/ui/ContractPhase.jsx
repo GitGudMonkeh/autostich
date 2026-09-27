@@ -141,10 +141,14 @@ export function ContractOffer({ offers = [], windowId = 1, onPick }) {
 
 /* --- Beute: drei Stücke ------------------------------------------------------------------------ */
 
-export function ContractLoot({ pieces = [], onPick }) {
+/* `take` = wie viele Griffe die Auslage noch hergibt (Kampagnen-Reward Doppelwahl). Ohne ihn ist
+   es einer und die Zeile bleibt weg — ein Hinweis auf eine Wahl, die man gar nicht hat, wäre
+   schlimmer als keiner. */
+export function ContractLoot({ pieces = [], take = 1, onPick }) {
   return (
     <Overlay>
-      <Head title={t("contract.loot.title")} />
+      <Head title={t("contract.loot.title")}
+        sub={take > 1 ? t("contract.loot.two", { n: take }) : null} />
       <div className="grid gap-3 sm:grid-cols-3">
         {pieces.map((p) => {
           const tone = tierColor(p.tier);

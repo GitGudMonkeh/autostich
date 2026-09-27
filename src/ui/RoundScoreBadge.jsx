@@ -4,7 +4,8 @@
    Rendert nichts, solange noch kein Durchlauf abgeschlossen ist (Start-Panel → lastCycleScore == null). */
 import { fmtScore } from "./format.js";
 import { t } from "../i18n/index.js"; // #sprache
-import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): die Auszahlung des Durchlaufs sichtbar machen
+import { CoinAmount } from "./CoinMark.jsx";
+import { coinsOn } from "../game/coins.js"; // ohne Oekonomie kein Auszahlungs-Chip // Münz-Ökonomie (§4): die Auszahlung des Durchlaufs sichtbar machen
 
 /* Münz-Auszahlung des eben beendeten Durchlaufs (docs/muenz-oekonomie.md §4): „N Formationen → +M". Sie
    steht NEBEN dem Rundenscore, weil beide dasselbe beantworten — was der Durchlauf gebracht hat — und
@@ -13,7 +14,7 @@ import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): die Ausza
    die Größe, die der Spieler beeinflusst hat — und die Zeile ist der schnellste Weg, das zu lernen. */
 function CoinPayoutChip({ state }) {
   const paid = state.lastCycleCoins;
-  if (paid == null) return null;
+  if (paid == null || !coinsOn(state)) return null;
   return (
     <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-body-5"
       style={{ background: "#20202a", border: "1px solid #33333e" }} title={t("coins.payout.title")}>

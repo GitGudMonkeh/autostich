@@ -10,6 +10,7 @@ import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: �
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { ContractTile, HeldLoot } from "./ContractPhase.jsx"; // Zwischenaufgaben: Stand des laufenden Auftrags + genommene Beute
+import { CampaignTile } from "./CampaignScreens.jsx"; // Kampagne: Boss, Schwelle und gehaltene Rewards im Lauf
 
 // #252: einklappbarer Panel-Abschnitt (Kopf mit ▸/▾ togglet; Inhalt nur bei !collapsed). Der Zustand kommt aus den
 // Optionen (über Runs gemerkt) — der Kopf ruft onToggle, das die Option persistiert.
@@ -98,6 +99,9 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       {/* Zwischenaufgaben: der Auftrag steht ÜBER den Multiplikatoren, weil er als einziges Element der
           Leiste eine Frist hat. Rendert sich selbst weg, wenn kein Auftrag läuft. */}
+      {/* Kampagne ganz oben: Boss und Schwelle sind die Bedingungen, unter denen der ganze Lauf
+          steht — sie ordnen alles darunter ein, auch den Auftrag. Ohne Kampagne rendert sie nichts. */}
+      <CampaignTile state={state} />
       <ContractTile state={state} />
       {/* Die genommene Beute steht bei den Multiplikatoren, weil sie einer ist: sie wirkt den
           ganzen Lauf weiter und war bisher nach dem Nehmen nicht mehr zu sehen. */}

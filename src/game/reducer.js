@@ -1,8 +1,8 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollsLeft, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
-         coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
+import { rerollsLeft, energyBuy, coverBuy, COVER_CELLS, focusPrice, upgradeBuy, familyUpgradeBuy, COIN_START,
+         coinGrant, unspentEnergyCoins, forfeitSkill, forfeitPerk, forfeitBuild } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
 import { sellPatch, deckDeltaOf, withDeckDelta } from "./perkSale.js"; // §3.6 Perk-Verkauf: Erlös, Rückbau und das Gedächtnis der Deck-Differenzen
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
@@ -20,6 +20,7 @@ import { computeFormations, formationPotential, openBorderInfo, FORMATION_TYPES 
 import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js";
 import * as CT from "./contracts.js"; // Zwischenaufgaben — nur aktiv, wenn der Lauf über „Aufträge" gestartet wurde
+import * as CP from "./campaign.js"; // Kampagne (docs/kampagne.md §11): Lauf-Konfiguration und Verlauf
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
@@ -94,15 +95,23 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
     return { phase: "architect", architect: { ...archAtEntry, phaseAnchor: archFpMap(archAtEntry), phaseHistory: [] } };
   }
   if (decision === "formation") {
-    const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null, bordersOf(s));
-    return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
+    /* Dieser Aufruf stand als einziger auf NEUN Argumenten: `bordersOf(s)` landete damit im
+       `plant`-Platz und die offenen Grenzen fielen still weg. Am allerersten Entscheidungspunkt
+       war das folgenlos (dort gibt es noch keine Beute-Grenzen), beim Ausrichten auf elf
+       Argumente aber genau die Sorte Fehler, die der Waechter in test/formations-gap.test.js
+       ab jetzt verhindert. */
+    const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null, plantBag(s), bordersOf(s));
+    // Schliesser (Kampagne): auch der allererste Entscheidungspunkt zieht sein Segment. Die
+    // uebrigen Aufstellphasen kommen aus der Engine (resolveTrick), nicht von hier.
+    return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations,
+             lockedSegment: CP.drawLockedSegment(s, rngAt(seed, "schliesser", s.cycle || 0)) };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
   // exp skill rework: der Dev-Run zeigt den flachen Voll-Katalog; sonst die zwei Türen (docs/skill-rework.md §1),
   // Stufen und Legendär-Chance je Platz mit der Tür gewürfelt, sichtbar erst nach dem Öffnen (CHOOSE_DOOR).
   if (devMode) { const rolled = devSkillOffer(); return { phase: "levelup", skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, skillDoors: null }; }
   const doors = buildSkillDoors([], [], rngAtOr("skill", 0), rngAtOr("skill", 0, "tiers"),
-    { unlockedArchetypes: s.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize }); // §4b: Archetyp-Gatung
+    { unlockedArchetypes: s.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize, maxTier: rareCap }); // §4b: Archetyp-Gatung · §4c Rarität-Deckel
   if (doors.length) return { phase: "levelup", skillDoors: doors, skillOffer: null, skillOfferTiers: null };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -278,7 +287,8 @@ function contractStep(prev, next, rng = Math.random) {
       const won = CT.isFulfilled({ ...next, contractTally: tally }, active);
       contracts = { ...contracts, active: null,
                     done: won ? [...(contracts.done || []), active.taskId] : contracts.done || [],
-                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null };
+                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null,
+                    pendingLootTake: won ? 1 : 0 };
     }
     const win = CT.windowFor(finished + 1);
     /* Die Beute des alten Fensters und das Angebot des neuen fallen jetzt auf DIESELBE Grenze. Das
@@ -383,6 +393,15 @@ function dropSkill(state, skillId) {
     glacierBuffPending: ice ? state.glacierBuffPending : {}, glacierBuffActive: ice ? state.glacierBuffActive : {} };
 }
 
+/* Kampagne: die Stufe abrechnen — Schwelle geprueft, Leiter fortgeschrieben. Sie haengt an BEIDEN
+   Wegen ins Laufende (die Engine nach dem letzten Durchlauf, END_RUN beim freiwilligen Beenden),
+   und `settled` macht sie idempotent: ein zweiter Aufruf auf demselben Gameover-State wuerde sonst
+   ein zweites Mal werten. Geloest wird der Riegel an START_RUN, der einen Tuer in jeden Lauf. */
+const settleCampaign = (s) =>
+  (s && s.campaign && s.phase === "gameover" && !s.campaign.settled)
+    ? { ...s, campaign: { ...CP.settleStep(s.campaign, { score: s.score || 0 }), settled: true } }
+    : s;
+
 export function reducer(state, action) {
   switch (action.type) {
     case "START_RUN":   // frischer Lauf aus dem Menü / Neustart
@@ -451,17 +470,35 @@ export function reducer(state, action) {
       // exp skill rework (Sim): `action.archetypes` narrows the offer pool to the named archetypes for this run — the
       // tuning of Feuer and Blitz measures in a world without Eis and Pflanze until those are reworked. null = open pool.
       const archPool = Array.isArray(action.archetypes) && action.archetypes.length ? [...action.archetypes] : null;
-      const sBase = { ...s, architect: { ...s.architect, maxCover: effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
+      /* Kampagne (docs/kampagne.md §11). Sie legt sich ÜBER die eben berechneten Werte, weil sie
+         dieselben Nähte benutzt, die die Wochen-Modifikatoren schon kennen: Archetyp-Pool,
+         Raritäts-Deckel, Aufstell-Energie, Baufeld und die gesperrten Bauzellen. Ohne
+         `action.campaign` bleibt der Lauf-Start unverändert — kein Zweig, keine Zahl. */
+      const camp = action.campaign && typeof action.campaign === "object" ? action.campaign : null;
+      const cUnlocked = Array.isArray(action.unlocked) ? action.unlocked : [];
+      const cSetup = camp ? CP.runSetup(camp, cUnlocked,
+        { energy: effEnergy, cover: effCover, coins: s.coins, positions: N_POS, rng: action.rng || Math.random }) : null;
+      const sBase = { ...s, architect: { ...s.architect, maxCover: cSetup ? cSetup.cover : effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
         rerollsPerk2: 0,
-        formationEnergyBase: effEnergy, unlockedArchetypes: archPool, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        formationEnergyBase: cSetup ? cSetup.energy : effEnergy,
+        unlockedArchetypes: cSetup ? cSetup.archetypes : archPool,
+        rareCap: cSetup ? cSetup.rareCap : effRareCap,
+        rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        /* `settled: false` ist der Reset des Laufende-Riegels, und er gehört HIERHER: dies ist die
+           eine Tür, durch die jeder Kampagnenlauf geht. `takeReward` schob bis 2026-09-23 auf Lauf 2
+           weiter und liess das Flag des ersten Laufs stehen — ab da rechnete `settleCampaign` nie
+           wieder ab. Die Auswertung stand auf 0, kein verfehlter Lauf galt als verloren, und die
+           Kampagne war nicht mehr zu gewinnen. */
+        ...(cSetup ? { campaign: { ...camp, settled: false }, campaignUnlocked: cUnlocked, coinsEnabled: cSetup.coinsEnabled, coins: cSetup.coins, priceLadder: cSetup.priceLadder } : {}),
         weekMods: weekModsState,
-        challengeBlockArch: [...new Set(wmBlockArch)],
+        challengeBlockArch: [...new Set([...wmBlockArch, ...(cSetup ? cSetup.blockCells : [])])],
         challengeBlockForm: [...new Set(wmBlockForm)] };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       /* Zwischenaufgaben: nur über den „Aufträge"-Knopf. Das erste Angebot liegt sofort aus — gewählt
          wird laut docs/zwischenaufgaben.md §3.1 nach der ersten Skill-Wahl, und genau dann ist der
          Start-Patch durch und der Spieler sieht den Aufsteller. */
-      const contractsOn = !!action.contracts;
+      // Im Kampagnenlauf entscheidet die Freischaltung, nicht der Knopf.
+      const contractsOn = cSetup ? cSetup.contracts : !!action.contracts;
       /* „Kein Angebot zweimal in einem Lauf" (§3.6) meint ALLE drei Aufsteller, nicht nur den
          angenommenen — sonst kann Fenster 2 genau die zwei zeigen, die man eben hat verfallen lassen.
          Deshalb wandern sie beim AUSLEGEN in `usedTasks`, nicht beim Annehmen. */
@@ -494,7 +531,7 @@ export function reducer(state, action) {
         active: { ...chosen, windowId: c.windowId } } };
     }
 
-    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die anderen zwei verfallen
+    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die übrigen verfallen
       const c = state.contracts;
       if (!state.contractsEnabled || !c || !(c.pendingLoot || []).length) return state;
       const piece = c.pendingLoot.find((p) => p.id === action.lootId && p.tier === action.tier);
@@ -503,7 +540,8 @@ export function reducer(state, action) {
       /* Vollendung bringt eine Auswahl statt einer Wirkung mit. Sie gehört in den Auftrags-Zustand,
          nicht in den Lauf-Zustand — sonst müsste jeder andere Codepfad sie kennen. */
       return { ...state, ...patch,
-        contracts: { ...c, pendingLoot: null, pendingSkillPick: pendingSkillPick || null,
+        contracts: { ...c, pendingLoot: null, pendingLootTake: 0,
+                     pendingSkillPick: pendingSkillPick || null,
                      pendingBorderPick: pendingBorderPick || null,
                      taken: [...(c.taken || []), { id: piece.id, tier: piece.tier }] } };
     }
@@ -545,7 +583,7 @@ export function reducer(state, action) {
 
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
-      return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
+      return (state.phase === "menu" || state.phase === "gameover") ? state : settleCampaign({ ...state, phase: "gameover" });
 
 
     /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;
@@ -574,7 +612,9 @@ export function reducer(state, action) {
       const b = a.buildings.find((x) => x.id === action.buildingId);
       if (!b) return state;
       const fam = archFamily(b.familyId);
-      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER) return state; // legendär/Maximalstufe → nicht ausbaubar
+      // Kampagnen-Deckel (Owner 2026-09-23): dieselbe Decke wie am Angebot. Gebäudestufen zählen ab 1,
+      // `rareCap` auch — hier braucht es keinen Versatz, anders als bei den Skills.
+      if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER || b.tier + 1 > (state.rareCap || 4)) return state; // legendär/Maximalstufe/gedeckelt → nicht ausbaubar
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, tier: x.tier + 1 } : x));
       // #361-Folge: Aufwerten ist verbindlich (Hauptaktion) → KEIN Undo-Schritt.
       return { ...state, architect: { ...a, buildings, actedMain: true } };
@@ -681,14 +721,14 @@ export function reducer(state, action) {
          richtige Bedingung — es ist der Riegel, den Errichten UND Ausbauen setzen und den sonst nichts
          setzt. Versetzen, Umfärben und Abreißen zahlen also weiter aus, und das ist gewollt: sie kosten
          keinen Bauplan, sie ordnen nur um. */
-      const idle = state.architect && !state.architect.actedMain ? FORFEIT_BUILD : 0;
+      const idle = state.architect && !state.architect.actedMain ? forfeitBuild(state) : 0;
       // #361 transiente Undo-Daten mit der Phase verwerfen (nicht in den gespeicherten Lauf mitschleppen).
       return { ...state, ...coinGrant(state, idle, "build"), phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseAnchor: null } };
     }
 
     case "RESOLVE_TRICK": {
       const next = resolveTrick(state, action.rng);
-      return state.contractsEnabled ? contractStep(state, next, action.rng) : next;
+      return settleCampaign(state.contractsEnabled ? contractStep(state, next, action.rng) : next);
     }
 
     case "PICK_PERK": {
@@ -740,7 +780,7 @@ export function reducer(state, action) {
       // exp skill rework: das Bonus-Angebot ist ein normales Türen-Angebot (zwei Türen, Stufen hinter der Tür).
       const bonusDoors = (def.skillSlotBonus && !goTarget)
         ? buildSkillDoors(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0), rngFor(state, action, state.cycle, "meisterhand", 1),
-            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize })
+            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize, maxTier: state.rareCap || 4 })
         : [];
       const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state), bordersOf(state))
@@ -994,14 +1034,16 @@ export function reducer(state, action) {
       if (state.focusCalled) return state;                            // einmal je Phase
       const arch = action.arch;
       if (!arch || !ARCHETYPE_ORDER.includes(arch)) return state;
-      if ((state.coins || 0) < FOCUS_PRICE) return state;
+      // Handelsbrief gilt auch hier: der Ruf ist ein Kauf wie jeder andere.
+      const focusCost = focusPrice(state);
+      if ((state.coins || 0) < focusCost) return state;
       const held = (state.skillDoors || []).flatMap((d) => d.skills || []); // die gewürfelten Türen doppeln sich nicht in die gerufene
       const built = buildSkillDoors([...state.skills, ...held], state.activeArchetypes || [],
         rngFor(state, action, state.cycle, "focus", 0), rngFor(state, action, state.cycle, "focus", 0, "tiers"),
         { unlockedArchetypes: [arch], maxArchetypes: C.MAX_ARCHETYPES, doors: 1, factions: 1,
-          size: skillOfferParams(state).doorSize });
+          size: skillOfferParams(state).doorSize, maxTier: state.rareCap || 4 });
       if (!built.length || !(built[0].skills || []).length) return state; // Fraktion hat nichts mehr → nicht kassieren
-      return { ...state, coins: (state.coins || 0) - FOCUS_PRICE, focusCalled: true,
+      return { ...state, coins: (state.coins || 0) - focusCost, focusCalled: true,
                skillDoors: [...state.skillDoors, { ...built[0], called: true, arch }] };
     }
 
@@ -1105,7 +1147,7 @@ export function reducer(state, action) {
          Ausgang gespreizt — die fünf Wege hier (Meisterhand-Bonus, Dev-Run, Eis-Gletscher, Perk-Ersatz,
          leerer Pool) sind alle derselbe Verzicht, und eine Zahlung, die an einem davon fehlt, wäre für
          den Spieler nicht erklärbar. Auch der Meisterhand-Bonus zahlt: der Slot bleibt leer. */
-      const paid = coinGrant(state, CT.forfeitWith(state, FORFEIT_SKILL), "skill"); // Ablass
+      const paid = coinGrant(state, CT.forfeitWith(state, forfeitSkill(state)), "skill"); // Ablass
       // Meisterhand-Bonus (s. PICK_PERK): das Angebot ist ein GESCHENK des eben genommenen Perks, kein
       // Rundenplatz. Die „nie verschwendet"-Regel darunter (Skill abgelehnt → stattdessen ein Perk) darf
       // hier deshalb nicht greifen — sie machte aus einem Perk zwei. Ablehnen heißt: Slot bleibt vorerst
@@ -1129,7 +1171,7 @@ export function reducer(state, action) {
     // ein Perk weniger Lauf-Gewicht trägt. (Die alte #138-Belohnung fiel mit dem Shop weg; sie ist zurück.)
     case "DECLINE_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
-      return { ...state, ...coinGrant(state, CT.forfeitWith(state, FORFEIT_PERK), "perk"), offer: null, phase: "play",
+      return { ...state, ...coinGrant(state, CT.forfeitWith(state, forfeitPerk(state)), "perk"), offer: null, phase: "play",
                ...spendLegendaryPerk(state) };
     }
 
@@ -1190,7 +1232,7 @@ export function reducer(state, action) {
         const skillP = skillOfferParams(state);
         const rolled = buildSkillDoors(state.skills, state.activeArchetypes || [],
           rngFor(state, action, state.cycle, "skill", idxD), rngFor(state, action, state.cycle, "skill", idxD, "tiers"),
-          { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize });
+          { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize, maxTier: state.rareCap || 4 });
         if (!rolled.length) return state;                            // nichts Neues verfügbar → Ressource behalten
         return { ...state, skillDoors: [...rolled, ...kept], offerRerolls: idxD,
                  ...(paidD ? paidD.patch : { rerollsSkill: tokensD - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
@@ -1204,7 +1246,7 @@ export function reducer(state, action) {
       const legBuy = !!(paid && paid.legendary);
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
       const archs = Array.isArray(state.skillOfferArchs) && state.skillOfferArchs.length ? state.skillOfferArchs : state.skillOffer.map(archetypeOf);
-      const rolled = rerollDoorSkills(archs, state.skills, state.skillOffer, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"), legBuy ? { forceLegendary: 1 } : undefined);
+      const rolled = rerollDoorSkills(archs, state.skills, state.skillOffer, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"), { ...(legBuy ? { forceLegendary: 1 } : {}), maxTier: state.rareCap || 4 });
       if (!rolled.offer.length) return state;                       // nichts Neues verfügbar → Ressource behalten
       // Garantie nicht einlösbar (kein freies Legendäres in den Fraktionen der Tür) → nicht kassieren.
       if (legBuy && !rolled.offer.some(isLegendarySkill)) return state;
@@ -1221,6 +1263,9 @@ export function reducer(state, action) {
       if (state.glacierLocked && (state.glacierLocked[i] || state.glacierLocked[j])) return state;
       // #301 C3: gesperrte Aufstell-Zellen sind fixiert — weder weg- noch hin-tauschbar (beide Endpunkte prüfen).
       if (state.challengeBlockForm && (state.challengeBlockForm.includes(i) || state.challengeBlockForm.includes(j))) return state;
+      // Schliesser (Kampagne): die fuenf Karten des festgesetzten Segments lassen sich nicht
+      // verschieben - weder weg noch hin, genau wie die gesperrten Zellen darueber.
+      if (CP.segmentLocked(state, i) || CP.segmentLocked(state, j)) return state;
       if ((state.formationEnergy || 0) <= 0) return state; // Tausch braucht Energie
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
       const order = state.playerOrder.slice();
@@ -1296,7 +1341,7 @@ export function reducer(state, action) {
        trifft, und nur hier steht `formationEnergy` noch auf dem Rest, den er stehen lässt. */
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
-      const left = CT.unspentEnergyWith(state, unspentEnergyCoins(state.formationEnergy, state.coinEnergy)); // Freizug IV
+      const left = CT.unspentEnergyWith(state, unspentEnergyCoins(state.formationEnergy, state.coinEnergy, state)); // Freizug IV
       return { ...state, ...coinGrant(state, left, "energy"), phase: "play", formationEnergy: 0, formationSwaps: [] };
     }
 

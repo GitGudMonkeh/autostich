@@ -7,7 +7,10 @@ import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory, saveCampaign, loadCampaign, clearCampaign } from "./game/storage.js";
+import * as CP from "./game/campaign.js"; // Kampagne: die Leiter, Bosse, Freischaltungen
+import * as COINS from "./game/coins.js"; // Münz-Ökonomie: gibt es sie in diesem Lauf überhaupt
+import { CampaignOverview, CampaignBoss, CampaignUnlock, CampaignFailed, CampaignWon, CampaignProgress } from "./ui/CampaignScreens.jsx";
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
@@ -18,7 +21,7 @@ import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus 
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { ContractOffer, ContractLoot, ContractSkillPick, ContractBorderPick } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
-import { upgradableSkills, borderPickState } from "./game/contracts.js"; // Vollendung: Legendäre tragen keine Stufe · Durchlass: welche Grenzen schon offen sind
+import { upgradableSkills, borderPickState, openBordersOf } from "./game/contracts.js"; // Vollendung: Legendäre tragen keine Stufe · Durchlass: welche Grenzen schon offen sind · offene Grenzen für den Chronik-Schnappschuss
 import { openBorderInfo } from "./game/formations.js"; // ALLE offenen Grenzen, egal aus welcher Quelle
 import { useIsWide, DESKTOP_MIN, PHONE_MAX } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug) · #mobil-emblem: dieselben zwei Schwellen für den Emblem-Vorlader
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
@@ -254,6 +257,16 @@ function AutostichGame() {
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
   const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('ranked' = Wochen-Modus)
   const pendingContracts = useRef(false);                         // Zwischenaufgaben: nächster Lauf über den „Aufträge"-Knopf? (false = normaler Lauf)
+  /* Kampagne (docs/kampagne.md §11). Der STAND lebt hier und im localStorage, nicht im Lauf-State:
+     er überspannt vier Läufe, der Lauf-State endet mit jedem. Was der laufende Lauf davon braucht,
+     reicht START_RUN als `campaign` hinein (reducer.js) — der Reducer rechnet damit, hält ihn aber
+     nicht. `campScreen` ist die Kette der Panels; sie hängt bewusst NICHT an state.phase, genau wie
+     die Auftrags-Overlays, damit die Phasenmaschine des Laufs unberührt bleibt. */
+  const [campaign, setCampaign] = useState(loadCampaign);         // beim Start gelesen: der Knopf im Menü zeigt den Stand an
+  const [campScreen, setCampScreen] = useState(null);             // null | overview | boss | unlock | failed | won
+  const [campUnlock, setCampUnlock] = useState(null);             // Freischaltung, die diese bestandene Stufe gebracht hat
+  const pendingCampaign = useRef(null);                           // Kampagne für den nächsten Lauf (null = normaler Lauf)
+  const campSettledRun = useRef(null);                            // welcher runId schon abgerechnet ist — die Abrechnung läuft einmal
   const [showFeedback, setShowFeedback] = useState(false);      // #396 Feedback-Melder (nur im Menü, deshalb OHNE Einfrier-Kopplung)
   /* #datenschutz: Der Hinweis wird aus DREI Stellen geöffnet (Optionen · Startbildschirm · Namens-Dialog)
      und liegt deshalb hier an der Wurzel statt in einem der drei. Er pausiert bewusst NICHTS: die Optionen,
@@ -652,7 +665,13 @@ function AutostichGame() {
       .map((b) => ({ id: b.id, familyId: b.familyId, tier: b.tier, footprint: b.footprint }));
     const deckSnapshot = {
       cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green }; }),
-      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [], state.shop?.anchors || [], state.familyTiers || {}),
+      /* Der Schnappschuss stand auf sieben Argumenten und liess Architekt, Pflanze und die offenen
+         Grenzen weg — die Chronik zeigte damit ANDERE Formationen als der Lauf gewertet hatte.
+         Beim Lueckenschluss faellt das auf: wer ihn haelt, saehe seine ueberbrueckten Formationen
+         hinterher nicht. Also die volle Liste, wie ueberall sonst. */
+      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [],
+        state.shop?.anchors || [], state.familyTiers || {}, state.architectEnabled ? state.architect : null,
+        { skillTiers: state.skillTiers || {}, growth: state.growth || {} }, openBordersOf(state)),
       architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
       buildings: archBuildingsSnap,
       challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
@@ -936,18 +955,23 @@ function AutostichGame() {
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
     const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('ranked' = Wochen-Modus)
     const contracts = pendingContracts.current; pendingContracts.current = false; // Zwischenaufgaben nur über den eigenen Knopf
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, contracts }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste · Aufträge (exp: kein Profil, kein Baum)
+    // Kampagne: Stand + der Freischaltungs-Stand VON JETZT. Beide gehören zusammen in denselben
+    // Dispatch — ein Lauf, der mit den Unlocks des nächsten rechnete, wäre still zu stark.
+    const camp = pendingCampaign.current; pendingCampaign.current = null;
+    const unlocked = camp ? CP.unlocksOf(camp) : null;
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, contracts, campaign: camp, unlocked }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste · Aufträge · Kampagne
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null, contracts = false } = {}) {
+  function launchRun({ seed = null, dev = null, ranked = null, contracts = false, campaign: camp = null } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
     pendingContracts.current = !!contracts; // Zwischenaufgaben: nur wahr, wenn der Lauf vom „Aufträge"-Knopf kommt
+    pendingCampaign.current = camp || null; // Kampagne: nur ein Lauf aus der Kette trägt sie
     // #393 Zufalls-Deck je Lauf: ist der Toggle an UND kein Ranglisten-Lauf (Ranked hat eine feste Baseline und bleibt
     //   unberührt), für DIESEN Lauf einen zufälligen besessenen (farbigen) Pack ziehen. Neu je Lauf (bewusst nicht
     //   persistiert); leerer Pool → null → gewähltes Deck. Sonst immer zurücksetzen, damit kein Alt-Override hängen bleibt.
@@ -982,13 +1006,69 @@ function AutostichGame() {
     // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
     // Zwischenaufgaben: „Neustart" muss den Auftragslauf MITNEHMEN. Ohne das Flag fiel der neue Lauf
     // stumm auf den normalen zurück und das Angebot blieb aus.
-    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled });
+    /* Kampagne: „Neustart" spielt DIESELBE Stufe noch einmal. Die Kettenfassung warf dafür die ganze
+       Ebene zurück, weil man sonst beliebig oft neu beginnen konnte, bis die Schwelle fiel — auf der
+       Leiter ist genau das die Regel (ein verfehlter Lauf wiederholt seine Stufe, Owner 2026-09-25),
+       also gibt es nichts mehr zurückzuwerfen. Der Stand bleibt unangetastet. */
+    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled,
+      campaign: state.campaign ? campaign : null });
   }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
   // Lauf verlassen (#5).
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); };
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun + clearActiveRun laufen über den gameover-Effekt
+
+  /* Kampagne, Ebene 1: ohne freigeschaltete Münzen gibt es keine Kaufflächen. Die Sperre sitzt HIER
+     und nicht in den fünf Screens, weil die alle schon die richtige Regel kennen — „kein Handler,
+     kein Knopf" (`canReroll = !!onReroll`, `FocusCall` gibt ohne `onCallFocus` null zurück …). App
+     entscheidet, die Screens gehorchen. Der GRATIS-Neuwurf bleibt davon unberührt; den regelt
+     `rerollOffer.offered`, weil er nichts kostet und man ihn sich verdient hat. */
+  const ifCoins = (fn) => (COINS.coinsOn(state) ? fn : null);
+
+  /* ---- Kampagne: die Kette zwischen den Läufen -------------------------------------------
+     Der Reducer rechnet den Lauf ab (settleRun in reducer.js, an RESOLVE_TRICK und END_RUN);
+     hier steht nur, was danach mit dem STAND passiert: speichern, Freischaltung buchen, das
+     nächste Panel zeigen. Die Trennung ist Absicht — der Reducer kennt weder localStorage noch
+     das Profil, und die Kette überlebt den Lauf-State. */
+
+  function openCampaign() {
+    const c = campaign || CP.startCampaign();
+    if (!campaign) { setCampaign(c); saveCampaign(c); }
+    setCampUnlock(null);
+    setCampScreen("overview");
+  }
+  function giveUpCampaign() { clearCampaign(); setCampaign(null); setCampScreen(null); setCampUnlock(null); }
+  /* Testknopf (Owner 2026-09-22): alles zurück auf null, ANDERS als „Aufgeben". Aufgeben beendet die
+     Kette und lässt die Freischaltungen stehen — das ist die Spielregel. Der Reset nimmt auch sie
+     mit, sonst könnte man Lauf 1 nie wieder unter Startbedingungen sehen. Er zieht sofort eine
+     frische Kette, damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
+  function resetCampaign() {
+    clearCampaign();
+    const c = CP.startCampaign();
+    setCampaign(c); saveCampaign(c);
+    setCampUnlock(null); setCampScreen("overview");
+  }
+  function closeCampaign() { setCampScreen(null); setCampUnlock(null); if (state.phase !== "menu") toMenu(); }
+  // Übersicht → Bossblock → Lauf. Zwei Schritte, weil der Boss VOR dem Start gelesen werden soll.
+  function campaignRun() { setCampScreen(null); launchRun({ campaign }); }
+
+  /* Die Abrechnung EINES Laufendes. Sie hängt am runId und nicht an einem Zustands-Flag: `settled`
+     sagt, dass der Reducer gerechnet hat, nicht dass die UI es schon gebucht hat — und dieser
+     Effekt läuft bei jedem Render der gameover-Phase erneut. */
+  useEffect(() => {
+    const c = state.campaign;
+    if (state.phase !== "gameover" || !c || !c.settled) return;
+    if (campSettledRun.current === runId.current) return;
+    campSettledRun.current = runId.current;
+    setCampaign(c); saveCampaign(c);
+    /* Verfehlt heißt NICHT verloren: die Stufe bleibt stehen und wird wiederholt, die
+       Freischaltungen bleiben (Owner 2026-09-25). Deshalb wird der Stand auch hier gespeichert. */
+    if (!c.cleared) { setCampUnlock(null); setCampScreen("failed"); return; }
+    /* Die Freischaltung, die GERADE verdient wurde: die letzte in der Liste der geschafften. */
+    setCampUnlock(CP.unlocksOf(c).slice(-1)[0] || null);
+    setCampScreen(c.done ? "won" : "unlock");
+  }, [state.phase, state.campaign]);
   // RESUME (Phase 1): gespeicherten Lauf fortsetzen — Refs (Timer/Geist-Linie/Attribution) aus dem Snapshot
   // wiederherstellen, dann den State laden. Der Timer läuft ab jetzt weiter (segStart neu gesetzt).
   function resumeRun() {
@@ -1160,6 +1240,7 @@ function AutostichGame() {
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard("board")}
             onDevRun={() => setShowDevSetup(true)}
             onContracts={() => launchRun({ contracts: true })}
+            onCampaign={openCampaign} campaign={campaign}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
             username={username} onEditName={() => setShowUsername(true)}
@@ -1198,17 +1279,21 @@ function AutostichGame() {
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
-          {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten. */}
+          {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten.
+              Kampagne: die Schwellen-Leiste sitzt im `milestone`-Slot. Der war für genau so einen Balken
+              gebaut, ist seit dem Ausbau der Meta-Progression leer, und bringt beide Breiten schon mit
+              (`.sb-ms` als 250-px-Zelle ab 1280 px, darunter volle Zeile unter der Score-Reihe). Ohne
+              Kampagne bleibt er null und die Leiste ist exakt die von heute. */}
           <StatusBar className="rn-bar"
             score={state.score} ghost={ghost}
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
             getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
-            coins={state.coins || 0} coinGain={state.coinGain}
+            coins={COINS.coinsOn(state) ? (state.coins || 0) : null} coinGain={state.coinGain}
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
-            milestone={null}
+            milestone={state.campaign ? <CampaignProgress state={state} className="sb-ms" /> : null}
             music={wide && state.phase !== "gameover"
               ? <MusicBar className="sb-music" title={musicTitle} onNext={() => music.next()} />
               : null}
@@ -1298,15 +1383,19 @@ function AutostichGame() {
           Fensters und Angebot des neuen auf dieselbe Durchlaufgrenze. Erst die Beute samt ihrer
           Nachwahl, dann der neue Aufsteller — zwei Vollbild-Overlays gleichzeitig wären ein Stapel. */}
       {state.contractsEnabled && (state.contracts?.pendingLoot || []).length > 0 && (
-        <ContractLoot pieces={state.contracts.pendingLoot}
+        <ContractLoot pieces={state.contracts.pendingLoot} take={state.contracts.pendingLootTake ?? 1}
           onPick={(p) => dispatch({ type: "PICK_LOOT", lootId: p.id, tier: p.tier })} />
       )}
-      {state.contractsEnabled && state.contracts?.pendingBorderPick && (
+      {/* Beide Nachwahlen warten, solange die Auslage noch offen ist. Vor der Doppelwahl konnte das
+          nicht kollidieren — mit ihr schon: das erste genommene Stück kann eine Nachwahl mitbringen,
+          während der zweite Griff noch aussteht. Dieselbe Vorrang-Regel, die das Auftrags-Angebot
+          unten schon befolgt. */}
+      {state.contractsEnabled && state.contracts?.pendingBorderPick && !(state.contracts?.pendingLoot || []).length && (
         <ContractBorderPick count={state.contracts.pendingBorderPick.count}
           borders={borderPickState(state, openBordersNow(state))}
           onPick={(bs) => dispatch({ type: "PICK_CONTRACT_BORDER", borders: bs })} />
       )}
-      {state.contractsEnabled && state.contracts?.pendingSkillPick && (
+      {state.contractsEnabled && state.contracts?.pendingSkillPick && !(state.contracts?.pendingLoot || []).length && (
         <ContractSkillPick skills={upgradableSkills(state)} skillTiers={state.skillTiers || {}}
           rest={state.contracts.pendingSkillPick.rest || 0}
           onPick={(id) => dispatch({ type: "PICK_CONTRACT_SKILL", skillId: id })} />
@@ -1318,8 +1407,36 @@ function AutostichGame() {
           onPick={(o) => dispatch({ type: "PICK_CONTRACT", taskId: o.taskId, step: o.step })} />
       )}
 
+      {/* Kampagne: die Kette der Vollbild-Panels. Sie hängt an `campScreen` statt an `state.phase`,
+          aus demselben Grund wie die Auftrags-Overlays darüber — die Phasenmaschine des Laufs bleibt
+          unberührt, und die Kette läuft über vier Läufe hinweg. z-30 liegt über dem Endscreen (z-20),
+          der darunter stehen bleibt: der Lauf ist normal gewertet, nur nicht der letzte Bildschirm. */}
+      {campScreen === "overview" && campaign && (
+        <CampaignOverview campaign={campaign}
+          onStart={() => setCampScreen("boss")} onGiveUp={giveUpCampaign} onReset={resetCampaign} />
+      )}
+      {campScreen === "boss" && campaign && (
+        <CampaignBoss campaign={campaign} onStart={campaignRun} />
+      )}
+      {campScreen === "unlock" && campaign && (
+        <CampaignUnlock id={campUnlock} nextStep={campaign.step}
+          onNext={() => { setCampUnlock(null); setCampScreen("overview"); }} />
+      )}
+      {/* Verfehlt: dieselbe Stufe noch einmal. Kein „Aufgeben" hier — die Kampagne ist nicht vorbei.
+          Zurücksetzen schon: wer an einer Stufe hängen bleibt, soll die Leiter von hier aus neu
+          anfangen können, ohne erst über die Übersicht zu gehen (Owner 2026-09-25). */}
+      {campScreen === "failed" && campaign && (
+        <CampaignFailed campaign={campaign} score={campaign.lastScore || 0}
+          onAgain={() => setCampScreen("overview")} onReset={resetCampaign}
+          onMenu={() => closeCampaign()} />
+      )}
+      {campScreen === "won" && campaign && (
+        <CampaignWon campaign={campaign}
+          onNext={() => { clearCampaign(); setCampaign(null); closeCampaign(); }} />
+      )}
+
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onBuyEnergy={buyEnergy} options={options} onOption={changeOptions} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onBuyEnergy={ifCoins(buyEnergy)} options={options} onOption={changeOptions} />
       )}
       {state.phase === "glacier-target" && (
         <GlacierPick state={state} onConfirm={lockGlacier} />
@@ -1327,7 +1444,7 @@ function AutostichGame() {
       {state.phase === "architect" && (
         <Suspense fallback={<OverlayFallback />}>
           <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onBuyCover={buyCover} onDone={architectDone}
+            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={ifCoins(rerollArchitect)} onBuyCover={ifCoins(buyCover)} onDone={architectDone}
             onUndo={architectUndo} onReset={architectReset} />
         </Suspense>
       )}
@@ -1339,11 +1456,11 @@ function AutostichGame() {
       )}
       {showChronik && <Suspense fallback={<OverlayFallback />}><ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} /></Suspense>}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} onUpgradeFamily={upgradeFamily} onSellPerk={sellPerk} perks={state.perks} deck={state.deck} state={state}
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={ifCoins(rerollPerk)} onDecline={declinePerk} onUpgradeFamily={ifCoins(upgradeFamily)} onSellPerk={ifCoins(sellPerk)} perks={state.perks} deck={state.deck} state={state}
           options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "levelup" && (state.skillOffer || state.skillDoors) && (
-        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onCallFocus={callFocus} onUpgradeSkill={upgradeSkill} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
+        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onCallFocus={ifCoins(callFocus)} onUpgradeSkill={ifCoins(upgradeSkill)} onPick={pickSkill} onDecline={declineSkill} onReroll={ifCoins(rerollSkill)} skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}
@@ -1414,7 +1531,7 @@ function AutostichGame() {
 
       {/* Komfort: Neustart-Rückfrage — der laufende Lauf ist noch nicht gewertet; kein Ein-Tap-Verlust bei Fettfingern. */}
       {confirmRestart && (
-        <RestartConfirm onKeepPlaying={() => setConfirmRestart(false)}
+        <RestartConfirm onKeepPlaying={() => setConfirmRestart(false)} campaign={!!state.campaign}
           onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
 

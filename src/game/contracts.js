@@ -9,7 +9,7 @@
    the engine already keeps, and returns the patch a piece of loot applies. The reducer owns the state. */
 
 import * as C from "./constants.js";
-import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formations.js";
+import { FORMATION_TYPES, SEGMENT_SIZE } from "./formations.js";
 import { TIER_META } from "./rarity.js";
 import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER,
          CATEGORIES as ARCH_CATEGORIES } from "./architect.js";
@@ -73,8 +73,11 @@ export const TASKS = [
     measure: { schwer: "perfectRun" } },
   { id: "sperrfeuer",   kind: "spitze",  rungs: [3, 6, 8],
     extra: { schwer: { positions: 40, min: 2 } } },
-  { id: "gedraenge",    kind: "spitze",  rungs: [25, 30, 40],
-    extra: { schwer: { positions: 40, min: 2 } } },
+  /* Gedränge zählt seit 2026-09-22 (Owner) Formationen JE POSITION, summiert über das Brett — die
+     Paare aus Position × Formation, nicht mehr die distinkten Formationen. Offene Segmentgrenzen
+     verschmelzen Läufe und drückten die distinkte Zahl; das Paar-Maß ist davon unabhängig. Ohne
+     Zusatz auf Schwer: das Maß misst die Dichte selbst, jede Position doppelt wären schon 80. */
+  { id: "gedraenge",    kind: "spitze",  rungs: [40, 50, 70] },
   /* Reinheit zählt KARTEN in einer Formation des gewürfelten Typs, nicht die Formationen selbst
      (Owner, 2026-09-15). Distinkte Läufe eines Typs reichen gemessen von 2 bis 8 — neun mögliche
      Werte für vier Stufen, jede Stufe ein Sprung. Karten reichen von 6 bis 40 und lassen sich
@@ -353,6 +356,17 @@ function longestFormation(perPosition) {
   return max;
 }
 
+/* Formationen je Position, summiert über das Brett: eine Position in drei Formationen zählt drei.
+   Das ist die Summe der Formationslängen, und sie ändert sich nicht, wenn eine offene Segmentgrenze
+   zwei Läufe zu einem verschmilzt. */
+export function formationPairs(perPosition) {
+  let n = 0;
+  for (const p of perPosition || []) {
+    for (const f of p.formations || []) if (FORMATION_TYPES.includes(f.type)) n += 1;
+  }
+  return n;
+}
+
 /* Positions carrying at least `min` distinct real formations. */
 function positionsWith(perPosition, min) {
   let n = 0;
@@ -416,7 +430,7 @@ export function readLive(state, contract) {
     case "durchmarsch":  return state.cycleWins || 0;
     case "perfectRun":   return tally.perfectRun || 0;
     case "sperrfeuer":   return tally.segments || 0;
-    case "gedraenge":    return countBuiltFormations(forms);
+    case "gedraenge":    return formationPairs(forms);
     case "reinheit":     return cardsInType(forms, contract.variantId);
     case "langbau":      return longestFormation(forms);
     case "vollbrett":    return positionsWith(forms, 1);
@@ -582,7 +596,7 @@ export function tallyCycleEnd(tally, state, contract = null) {
   keep("bestCycleWins", state.cycleWins || 0);
   keep("bestSegments", t.segments || 0);
   keep("bestRainbow", minSuitWins(t.suitWins));
-  keep("bestForms", countBuiltFormations(forms));
+  keep("bestForms", formationPairs(forms));
   keep("bestLong", longestFormation(forms));
   keep("bestCovered", positionsWith(forms, 1));
   keep("bestWoven", positionsWith(forms, 3));
@@ -654,9 +668,14 @@ export function applySkillPick(state, skillId, rest = 0) {
 function raiseBuildings(state, count) {
   const arch = state.architect;
   if (!arch || !Array.isArray(arch.buildings)) return null;
+  /* Derselbe Kampagnen-Deckel wie am Aufwert-Knopf (Owner 2026-09-23). Er gehört hierher, weil
+     Aufträge eine Freischaltung VOR der Rarität kommen: dazwischen liegt ein Lauf, in dem eine
+     Beute Gebäude über die offene Stufe gehoben hätte. Gebäudestufen und `rareCap` zählen beide
+     ab 1, also ohne Versatz. */
+  const deckel = Math.min(ARCH_MAX_TIER, state.rareCap || ARCH_MAX_TIER);
   const open = arch.buildings
     .map((b, i) => ({ i, tier: b.tier }))
-    .filter((x) => Number.isInteger(x.tier) && x.tier < ARCH_MAX_TIER)   // Legendäre tragen keine Stufe
+    .filter((x) => Number.isInteger(x.tier) && x.tier < deckel)          // Legendäre tragen keine Stufe
     .sort((a, b) => b.tier - a.tier);
   const lift = new Set((count === "all" ? open : open.slice(0, count)).map((x) => x.i));
   if (!lift.size) return null;
@@ -780,8 +799,11 @@ export function rerollPriceWith(state, base, legendary = false, normalBase = nul
    coins.js kann contracts.js nicht importieren (Zyklus über MAX_SKILL_TIER), also liegt die Tür hier. */
 export function rerollOfferWith(state, freeTokens = 0, legendary = false) {
   const o = rerollOffer(state, freeTokens, legendary);
-  const b = boonsOf(state);
-  if (!b || o.free || o.capped) return o;      // gratis bleibt gratis, gedeckelt bleibt gedeckelt
+  /* Der Ausstieg stand bis 2026-09-23 auf `!b || o.free || o.capped` — ohne Auftrags-Segen ging es
+     hier hinaus und `rerollPriceWith` wurde NIE gerufen. Dort sitzt aber auch der Kampagnen-Rabatt,
+     und ein Lauf mit Handelsbrief ohne Auftraege zahlte deshalb den vollen Preis. `rerollPriceWith`
+     kommt mit `!b` selbst zurecht; gratis und gedeckelt bleiben die einzigen echten Ausstiege. */
+  if (o.free || o.capped) return o;            // gratis bleibt gratis, gedeckelt bleibt gedeckelt
   const normal = rerollPrice(state.coinRerolls || 0, false);
   const price = rerollPriceWith(state, o.nextPrice, legendary, normal);
   if (price === o.nextPrice) return o;
@@ -837,11 +859,15 @@ export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier =
   const byPhase = live(b.offerLift, cycle) ? (b.offerLift.steps || 1) : 0;
   const below = b.offerLiftBelow || 0;          // 3 = alles unter Sehr selten, 4 = alles unter Episch
   if (!byPhase && !below) return tiers;
+  /* Der Kampagnen-Deckel schlaegt hier genauso durch wie am Wurf (2026-09-23): Auftraege schalten
+     eine Freischaltung VOR der Raritaet frei, also gibt es ein Fenster, in dem Veredelung eine
+     gedeckelte Stufe angehoben haette. `state.rareCap` ist 1-basiert, diese Skala 0-basiert. */
+  const deckel = Math.min(maxTier, state && state.rareCap ? state.rareCap - 1 : maxTier);
   const hebe = (t) => {
     if (!Number.isInteger(t)) return t;          // Legendäre tragen keine Stufe
     let out = t + byPhase;
     if (below && t + 1 < below) out = Math.max(out, t + 1);
-    return Math.min(maxTier, out);
+    return Math.max(t, Math.min(deckel, out));   // Veredelung hebt oder laesst liegen, sie senkt nie
   };
   /* ZWEI Formen, und das war der Fehler: die Türen halten ihre Stufen als OBJEKT je Skill-id
      (`rollSkillOfferTiers` gibt `{ SK_… : 0 }` zurück), eine flache Auswahl als Array. Geprüft wurde

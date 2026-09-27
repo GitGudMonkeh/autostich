@@ -7,7 +7,8 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
   saveProfile, wipeProfileStorage, saveOptions,
   maybeResetForEpoch, RESET_EPOCH,
-  migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
+  migrateReducedFx, deviceDefaultReducedFx,
+  saveCampaign, loadCampaign, clearCampaign, CAMPAIGN_SCHEMA } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 import { WELCOME_DP, ONBOARDING_LINKS, NODE_IDS, SP_PER_RUN } from "../src/game/progression.js";
 
@@ -806,5 +807,62 @@ describe("Aktiver Lauf (Resume / Auto-Save)", () => {
     expect(loadActiveRun()).not.toBeNull();
     clearActiveRun();
     expect(loadActiveRun()).toBeNull();
+  });
+});
+
+/* Kampagne (docs/kampagne.md §11): zwei Lebensdauern, zwei Ablagen. Der Zähler im Profil ist die
+   Meta-Progression und überlebt eine verlorene Kampagne; der Stand in `as_campaign` endet mit ihr. */
+describe("Kampagne: Stand und Freischaltungs-Zähler", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  const camp = () => ({ level: 1, run: 2, bosses: ["bremser", "schliesser", "denkmalpfleger"], held: { sold: 2 }, scores: [7e6] });
+
+  it("speichert und lädt den Kampagnen-Stand", () => {
+    saveCampaign(camp());
+    const back = loadCampaign();
+    expect(back.run).toBe(2);
+    expect(back.held.sold).toBe(2);
+    expect(back.bosses).toHaveLength(3);
+  });
+
+  it("verwirft einen Stand aus einem fremden Schema, statt ihn zu raten", () => {
+    global.localStorage.setItem("as_campaign", JSON.stringify({ schema: CAMPAIGN_SCHEMA + 99, campaign: camp() }));
+    expect(loadCampaign()).toBeNull();
+  });
+
+  it("kaputter Blob → null, kein Absturz", () => {
+    global.localStorage.setItem("as_campaign", "{kaputt");
+    expect(loadCampaign()).toBeNull();
+  });
+
+  it("clearCampaign räumt den Stand weg", () => {
+    saveCampaign(camp());
+    expect(loadCampaign()).not.toBeNull();
+    clearCampaign();
+    expect(loadCampaign()).toBeNull();
+  });
+
+  it("liegt in einem EIGENEN Schlüssel — ein Laufende darf die Kampagne nicht mitnehmen", () => {
+    // Das ist der Grund für die zweite Ablage: `as_activerun` wird bei jedem Laufende verworfen,
+    // die Kampagne läuft über vier Läufe hinweg.
+    saveCampaign(camp());
+    clearActiveRun();
+    expect(loadCampaign()).not.toBeNull();
+  });
+
+  it("gibt dem frischen Profil null gewonnene Kampagnen-Läufe", () => {
+    expect(loadProfile().campaignRunsWon).toBe(0);
+  });
+
+  it("hält den Zähler über saveProfile hinweg — er ist die Meta-Progression", () => {
+    saveProfile({ ...loadProfile(), campaignRunsWon: 3 });
+    expect(loadProfile().campaignRunsWon).toBe(3);
+  });
+
+  it("wipeProfileStorage nimmt den Kampagnen-Stand mit", () => {
+    saveCampaign(camp());
+    wipeProfileStorage();
+    expect(loadCampaign()).toBeNull();
   });
 });

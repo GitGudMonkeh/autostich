@@ -599,6 +599,9 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(s.lastTrick.result).toBe("win");
     // Kein Blitz-Multiplikator im Breakdown: weder unter dem alten Namen noch unter einem neuen neben den anderen.
     expect(s.lastTrick.breakdown.lightMult).toBeUndefined();
+    /* `campaignMult` (Steigbrief) ist mit dem Reward-Katalog weggefallen: die Kampagne hebt seit dem
+       Umbau auf die Leiter keinen Score-Faktor mehr, und ein Faktor, der immer 1 ist, gehört nicht
+       in eine Aufschlüsselung, die „Basis × Faktoren = total" behauptet. */
     expect(Object.keys(s.lastTrick.breakdown).filter((k) => /Mult$/.test(k)).sort())
       .toEqual(["afterglowMult", "architectMult", "coreMult", "critMult", "fireMult", "formMult", "perkMult", "plantMult", "stanceMult", "streakMult", "strikeMult"]);
     // Die Achse, die Blitz WIRKLICH hat: jeder Stapel der Siegkarte hebt den Crit-Multiplikator.

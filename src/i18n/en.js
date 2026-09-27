@@ -593,6 +593,7 @@ export default {
   "upgrade.title": "Upgrade",
   "upgrade.hint": "As many as you can afford. Your skill pick stays yours.",
   "upgrade.maxTier": "Highest tier",
+  "upgrade.locked": "Not unlocked yet",
   "upgrade.justRaised": "just raised",
   "upgrade.empty": "You do not hold a skill with a tier yet.",
   "upgrade.back": "Back to the skill choice",
@@ -801,6 +802,7 @@ export default {
   "arch.upgrade.reason.inert": "no upgrade, this effect has no tiers",
   "arch.upgrade.reason.legendary": "legendaries cannot be upgraded",
   "arch.upgrade.reason.max": "already at the highest tier",
+  "arch.upgrade.reason.locked": "this tier is not unlocked yet",
   "arch.upgrade.reason.acted": "the main action of this build phase (build OR upgrade) is already spent",
   "arch.upgrade.reason.generic": "not upgradable",
   "arch.upgraded": "upgraded:",
@@ -1017,6 +1019,7 @@ export default {
   "app.restart.title": "Really restart?",
   "app.restart": "Restart",
   "app.restart.help": "The current run is discarded and a new one starts immediately. This cannot be undone.",
+  "app.restart.help.campaign": "In the campaign a restart costs only this attempt: the same step starts over.",
   "app.tutrun.title": "Start a tutorial run?",
   "app.tutrun.help": "The current run is discarded. The new run guides you with all tutorial tips again.",
 
@@ -1905,4 +1908,69 @@ export default {
   "privacy.contact.discord": "Open Discord",
   "privacy.updated": "As of 2026-08-16 · beta playtest",
   "privacy.link": "Privacy",
+
+  /* Campaign (docs/kampagne.md §11) — tier 1. House rule: no mini-descriptions, no dashes in
+     player-facing text. What explains the rule lives in the document, not on screen. */
+  "start.campaign": "Campaign",
+  "start.campaign.state": "Step {n} of {max}",
+  "start.campaign.fresh": "Step 1 of {max}",
+
+  "campaign.title": "Campaign · step {n} of {max}",
+  "campaign.step": "Step {n}",
+  "campaign.bar.cleared": "Cleared",
+  "campaign.boss.grants": "Reward: {name}",
+  "campaign.failed.title": "Step {n} once more.",
+  "campaign.failed.again": "Retry step {n}",
+  "campaign.failed.menu": "To the menu",
+  "campaign.rail.label": "Step {n}/{steps}",
+  "campaign.rail.counter": "Next opponent +{n}",
+  "campaign.bar.threshold": "Threshold",
+  "campaign.bar.progress": "{a} / {b}M",
+  "campaign.threshold": "{n}M",
+  "campaign.start": "Start step {n}",
+  "campaign.giveUp": "Abandon campaign",
+  "campaign.giveUp.sure": "Really abandon?",
+  "campaign.reset": "Reset campaign",
+  "campaign.reset.sure": "Everything back to zero?",
+
+  "campaign.boss.mid": "MINI BOSS",
+  "campaign.boss.kind.mid": "Mini boss",
+  "campaign.boss.kind.end": "End boss",
+  "campaign.boss.end": "END BOSS",
+  "campaign.boss.denkmalpfleger": "The Conservator",
+  "campaign.boss.denkmalpfleger.text": "Six cells of the build field are sealed. You cannot build there.",
+  "campaign.boss.schliesser": "The Warden",
+  "campaign.boss.schliesser.text": "Before every layout phase one of the eight layout segments is fixed. Its five cards cannot be moved.",
+  "campaign.boss.bremser": "The Drag",
+  "campaign.boss.bremser.text": "Two swaps per layout phase instead of four.",
+  "campaign.boss.wucherer": "The Usurer",
+  "campaign.boss.wucherer.text": "Every further purchase of the same kind triples the price instead of doubling it.",
+  "campaign.boss.schmarotzer": "The Parasite",
+  "campaign.boss.schmarotzer.text": "Every two perks you hold cost you one coin per cycle.",
+  "campaign.boss.konter": "The Counter",
+  "campaign.boss.konter.text": "Every trick you win makes the next opponent stronger. A loss resets the surcharge to zero.",
+
+  "campaign.over.failed": "Run {n} not cleared",
+  "campaign.over.need": "of {n}M needed",
+
+
+  "campaign.unlock.title": "NEWLY UNLOCKED",
+  "campaign.unlock.next": "On to step {n}",
+  "campaign.unlock.plantDeck": "Plant deck",
+  "campaign.unlock.plantDeck.text": "Growth, green cards, colour alliance.",
+  "campaign.unlock.coins": "Coins",
+  "campaign.unlock.coins.text": "Every cycle pays one coin, and declining pays on top.",
+  "campaign.unlock.contracts": "Contracts",
+  "campaign.unlock.contracts.text": "Two windows per run, their own loot.",
+  "campaign.unlock.rarityRare": "Very rare",
+  "campaign.unlock.rarityRare.text": "Skills and perks reach one step higher.",
+  "campaign.unlock.iceDeck": "Ice deck",
+  "campaign.unlock.iceDeck.text": "Glacier, frost, avalanche.",
+
+
+  "campaign.won.title": "The ladder is done.",
+  "campaign.won.fallen": "{boss} HAS FALLEN",
+
+
+
 };

@@ -89,16 +89,24 @@ export const tierFactor = (base, tier) => (tier === "legendary" ? base : base + 
 // Aufwert-Status eines Gebäudes: joker/transparentFarb/crossSeg lesen `tier` NICHT → dort ist Aufrüsten ein No-op.
 // „Nicht aufwertbar" = legendär | inert (No-op-Effektart) | max (Stufe IV). `reason` speist Label/Meldung in der UI.
 export const TIER_INERT_KINDS = new Set(["joker", "transparentFarb", "crossSeg"]); // #256: exportiert für den DB-/Katalog-Generator (max. erreichbare Stufe)
-export function upgradeInfo(fam, tier) {
+/* `maxTier` ist der Kampagnen-Deckel (1-basiert wie die Gebäudestufen, MAX_TIER = kein Deckel). Er greift
+   NUR dort, wo sonst ein Ja stünde, und ändert damit ohne Übergabe keinen einzigen Bestandsfall —
+   „inert" und „max" gehen weiter vor, sonst nennte ein Gebäude auf Stufe IV plötzlich einen Deckel als
+   Grund. Owner 2026-09-23: nicht über Selten aufwerten, bevor die Rarität offen ist. */
+export function upgradeInfo(fam, tier, maxTier = MAX_TIER) {
   if (!fam) return { can: false, reason: null };
   if (fam.legendary) return { can: false, reason: "legendary" };
+  const gedeckelt = typeof tier === "number" && tier + 1 > maxTier;
   // #Pool: stufen-inerte Effektarten (joker/…) sind normalerweise No-op beim Aufrüsten. MIT tierKick werden sie bis
   // zur Kick-Stufe `at` wieder aufwertbar (dort zündet der Zusatz), darüber wieder inert.
   if (TIER_INERT_KINDS.has(fam.base && fam.base.kind) && !fam.tierValue) {
-    if (fam.tierKick && typeof tier === "number" && tier < fam.tierKick.at) return { can: true, reason: null };
+    if (fam.tierKick && typeof tier === "number" && tier < fam.tierKick.at) {
+      return gedeckelt ? { can: false, reason: "locked" } : { can: true, reason: null };
+    }
     return { can: false, reason: "inert" };
   }
   if (!(typeof tier === "number" && tier < MAX_TIER)) return { can: false, reason: "max" };
+  if (gedeckelt) return { can: false, reason: "locked" };
   return { can: true, reason: null };
 }
 // Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I ±1, II ±2, III/IV ±3 (Runde 6: keine tote Stufe mehr).

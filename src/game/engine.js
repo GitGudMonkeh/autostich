@@ -8,6 +8,7 @@ import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfok
 import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
 import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Einnahme je Durchlauf aus der Aufstellung
 import * as CT from "./contracts.js"; // Zwischenaufgaben: die Beute-Segen. Ohne Auftragslauf geben alle Zugriffe ihren Eingabewert zurück.
+import * as CP from "./campaign.js"; // Kampagne: dieselbe Bauform — ohne Kampagnenlauf gibt jede Tür ihren Eingabewert zurück.
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, potenzialValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
@@ -122,6 +123,10 @@ export function resolveTrick(state, rng) {
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     score, winStreak, bestStreak, wins, losses, ties,
+    /* Kampagne, Der Konter: Aufschlag auf die naechste Gegnerkarte. Eigener Zaehler statt
+       winStreak, weil Standhaftigkeit die SERIE ueber Niederlagen rettet - der Aufschlag darf
+       das nicht erben. Laeuft ueber die Durchlauf-Grenze weiter, nur eine Niederlage nullt ihn. */
+    counterStack = 0,
     scoreAtCycleStart = 0, lastCycleScore = null, prevCycleScore = null, // #131 Rundenscore-Tracking (Zuwachs je Durchlauf + Rollover)
     initiative, lastResult, perks, offer, tieArmed, sinceWin = 0,
     lossStreak = 0, lastWinValue = null, // #71 Rares: Revanche / Präzision
@@ -421,7 +426,10 @@ export function resolveTrick(state, rng) {
   // Brand (Feuer, §4.5/§4.7): in dieser Runde gebrandmarkte Gegnerkarten verlieren ihre Brandpunkte an Wert (nie < 0);
   // Brände verschiedener Quellen addieren sich, ohne Deckel — mit Sonnenkern stapeln sie sich über die Runden.
   const brandOnOpp = brandActive[oCard.id] || 0;
-  const oValue = Math.max(0, oCard.value + oppValueMod - brandOnOpp);
+  /* Kampagne: Zehnt senkt jede Gegnerkarte, Der Konter hebt sie um den Aufschlag, den die
+     bisherige Siegesserie aufgebaut hat. counterStack ist der Stand VOR diesem Stich — genau
+     das meint „die FOLGENDE Gegnerkarte". */
+  const oValue = CP.enemyValueWith(state, Math.max(0, oCard.value + oppValueMod - brandOnOpp), counterStack);
   const newIceTemp = iceTemp; // (exp: nur durchgereicht, kein Leser mehr)
   let newFrozenOppPending = { ...frozenOppPending };  // Einfrieren: in diesem Durchlauf gesetzte Gegner-Marken (für den nächsten)
   let newFrozenOppActive = frozenOppActive;           // Einfrieren: in diesem Durchlauf aktive Marken (Gegnerkarte verliert)
@@ -449,7 +457,9 @@ export function resolveTrick(state, rng) {
   // sonst echter Gleichstand: kein Effekt (§4.1)
   // Patt (#203): eine Niederlage um höchstens PATT_MARGIN Wert zählt stattdessen als Sieg (Winrate-Hebel; harte Bedingung
   // = knapp verloren). Marge = oValue − pValue (≥1 bei Niederlage); der Sieg-Zweig läuft danach normal (Marge dann −PATT..0).
-  if (lost && ownsFlag(perks, "patt") && (oValue - pValue) <= C.PATT_MARGIN) { lost = false; won = true; }
+  // Losentscheid (Kampagne) liest dieselbe Marge wie Patt; die weitere der beiden gilt.
+  const pattMargin = ownsFlag(perks, "patt") ? C.PATT_MARGIN : 0;
+  if (lost && pattMargin > 0 && (oValue - pValue) <= pattMargin) { lost = false; won = true; }
   /* Haltungen, rot (§3): die Ergebnisleiter rutscht eine Stufe — Niederlage → Gleichstand, Gleichstand → Sieg.
      NACH Patt, damit Patt weiter als erstes an die knappe Niederlage darf (dort wird sie ein ganzer Sieg statt
      eines Gleichstands). Als einziges der vier Passive wirkt sie PRO STICH und ist damit robust gegen jede
@@ -510,6 +520,7 @@ export function resolveTrick(state, rng) {
 
   if (won) {
     winStreak += 1; wins += 1; cycleWins += 1; // cycleWins: Durchlauf-Sieg-Bilanz für Zinseszins (#203)
+    counterStack += 1; // Kampagne: Der Konter legt auf die naechste Gegnerkarte nach
     segmentWins += 1; // #189 Volles Haus: Sieg im aktuellen Segment (recentWinCount trug oben den Stand DAVOR)
     if (winStreak > bestStreak) bestStreak = winStreak; // längste Serie des Runs (#8)
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
@@ -734,6 +745,9 @@ export function resolveTrick(state, rng) {
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
     // Serien-Flat (Reihenhaus) wird NEBEN der serien-multiplizierten Basis addiert → er bekommt Perk/Formation/Crit,
     // aber NICHT den globalen Serien-Mult (kein Doppel-Dip). Rest des Stacks unverändert.
+    /* Feldzeichen (Kampagne): die ausgewürfelte Achse zahlt mehr. Je Faktor einzeln, damit eine
+       INAKTIVE Achse (Faktor 1) nichts bekommt — ein Nicht-Crit-Stich soll keinen Crit-Bonus
+       erben. Ohne Kampagne gibt jeder Aufruf seinen Eingabewert zurück. */
     const streakMuldBase = Math.max(0, scoreBase) * streakMult;
     scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * stanceMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
@@ -741,6 +755,9 @@ export function resolveTrick(state, rng) {
     // gewertete Stich (Basis mal Multiplikatoren) zählt DOPPELENTLADUNG_STRIKE-fach. Kein Kreislauf: speist keine Leiste.
     const strikeMult = (isCrit && (pCardR.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1; // pCardR: mit Resonanz zählt die Formation (§7.25)
     gained *= strikeMult;
+    /* Steigbrief (Kampagne): ein EIGENER benannter Faktor, genau wie strikeMult — nicht still auf
+       `gained` multipliziert. Sonst stimmte die Stich-Aufschlüsselung unten nicht mehr
+       (Basis × Faktoren ≠ total), und genau das ist der Vertrag, den sie erfüllen muss. */
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
     glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * stanceMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
@@ -908,8 +925,11 @@ export function resolveTrick(state, rng) {
     }
     // (§5.18: der Eispanzer — Niederlage neben einem Gletscher folgenlos + Masse — ist mit dem Sprödbruch gegangen. Er
     //  war ein Pflaster auf dem Symptom; die Gletscherzunge behebt die Ursache, indem der Gletscher seinen Stich gewinnt.)
+    // Standhaftigkeit (Kampagne) haengt an derselben Naht wie Serienanker und Blitz: die Serie
+    // ueberlebt so viele Niederlagen je Durchlauf, wie die Stufe sagt. cycleLosses zaehlt DIESE mit.
     const streakNoReset = anchorNoReset || lightStreakHeld;
     winStreak = streakNoReset ? winStreak : 0;
+    counterStack = 0; // Kampagne: die Niederlage nullt den Konter-Aufschlag, auch wenn die Serie haelt
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
     lossStreak += 1; // #71 Revanche: aufeinanderfolgende Niederlagen
@@ -1075,6 +1095,7 @@ export function resolveTrick(state, rng) {
   let newSkillOfferTiers = state.skillOfferTiers || null; // exp skill rework: tier per offered skill (rollSkillOfferTiers)
   let newSkillDoors = state.skillDoors || null; // exp skill rework: the two doors of a skill phase (buildSkillDoors)
   let newFormationEnergy = formationEnergy;
+  let newLockedSegment = state.lockedSegment ?? null; // Kampagne/Schliesser: haelt bis zur naechsten Aufstellphase
   let newFormationSwaps = formationSwaps;
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
   let newArchitect = architect;
@@ -1144,6 +1165,11 @@ export function resolveTrick(state, rng) {
       for (const c of deck) if (!weakest || c.value < weakest.value || (c.value === weakest.value && c.id < weakest.id)) weakest = c;
       if (weakest) deck = deck.map((c) => (c.id === weakest.id ? { ...c, value: c.value + schmiedeStep } : c));
     }
+    /* Schmarotzer (Kampagne): Unterhalt je Durchlauf, zugunsten des Spielers gerundet und nie mehr,
+       als auf dem Konto liegt. Direkt an der Muenz-Einnahme oben, damit beide denselben Moment
+       teilen und die Anzeige nicht zwei Schritte weit auseinanderlaeuft. */
+    const upkeep = CP.upkeepWith({ ...state, coins }, (perks || []).length);
+    if (upkeep) coins -= upkeep;
     score += cycleEndScore;
     // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
@@ -1153,7 +1179,10 @@ export function resolveTrick(state, rng) {
     // Score noch Siegzahl. `formations` ist der Stand DIESES Durchlaufs (in der Aufstellphase gerechnet, bei Wachstum
     // nachgezogen); countBuiltFormations filtert Architektur/Anker heraus. lastCycle* trägt nur die Anzeige (§4).
     lastCycleForms = countBuiltFormations(formations);
-    lastCycleCoins = CT.coinsPerCycleWith(state, coinsForFormations(lastCycleForms), cycle); // Münzrecht
+    // Münzrecht (Auftrags-Beute), dann die Kampagne: ohne freigeschaltete Ökonomie gibt es gar
+    // keine Einnahme, mit Pfründe eine höhere. Beide Türen haben dieselbe Form (Basis rein, eigene
+    // Zahl raus), und ein Lauf ohne das jeweilige System zahlt nur eine Feldabfrage.
+    lastCycleCoins = CT.coinsPerCycleWith(state, CP.cycleCoinsWith(state, coinsForFormations(lastCycleForms)), cycle);
     coins += lastCycleCoins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // §7.68 Lichtbogen Episch: „bis zum ersten Crit eines Durchlaufs" — die Marke gehört zum Durchlauf, nicht zum Lauf.
@@ -1239,7 +1268,8 @@ export function resolveTrick(state, rng) {
           const doors = buildSkillDoors(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), rngAtOr(cycle, "skill", 0, "tiers"),
             { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize,
               doors: CT.skillDoorsWith(state, C.SKILL_DOORS, cycle),                                   // Freibrief: die dritte Tür
-              legendaryChance: CT.skillLegendaryWith(state, C.SKILL_LEGENDARY_PER_SLOT) });             // Freibrief IV · §4b: Archetyp-Gatung
+              legendaryChance: CT.skillLegendaryWith(state, C.SKILL_LEGENDARY_PER_SLOT),               // Freibrief IV · §4b: Archetyp-Gatung
+              maxTier: rareCapEff });                                                                  // §4c Rarität-Deckel — derselbe, den Perks und Gebäude lesen
           if (doors.length > 0) { phase = "levelup"; newSkillDoors = CT.liftDoorTiers(state, doors, cycle); } // Veredelung
           else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
         }
@@ -1277,6 +1307,10 @@ export function resolveTrick(state, rng) {
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
         // `cycle` ist hier bereits erhöht (neuer Durchlauf) → explizit durchreichen, nicht state.cycle nehmen.
         newFormationEnergy = formationEnergyFor({ ...state, perks, familyTiers, cycle });
+        /* Schliesser (Kampagne): vor JEDER Aufstellphase ein frisch gezogenes Segment, dessen
+           fuenf Karten sich nicht verschieben lassen. Eigener rngAt-Adressstrom je Durchlauf —
+           deterministisch und ohne die Deal-Reihenfolge zu stoeren. */
+        newLockedSegment = CP.drawLockedSegment(state, rngAtOr(cycle, "schliesser"));
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
@@ -1302,7 +1336,7 @@ export function resolveTrick(state, rng) {
     coinRerolls: 0, // Münz-Ökonomie §3.1: neue Phase → die Neuwurf-Preistreppe beginnt wieder beim Grundpreis
     coinEnergy: 0,  // §3.2: gekaufte Energie verfällt mit ihrer Aufstellphase (der Zähler läuft nur, solange kein Stich löst)
     focusCalled: false, // §3.3: der Fokus-Ruf gilt einmal je Skill-Phase
-    score, winStreak, bestStreak, wins, losses, ties,
+    score, winStreak, bestStreak, wins, losses, ties, counterStack,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ bester Gletscher-Stich / Gebäude-/Serien-Score)
@@ -1319,7 +1353,7 @@ export function resolveTrick(state, rng) {
     glacierBuffPending: newGlacierBuffPending, glacierBuffActive: newGlacierBuffActive, // Eis-Neudesign (Frostbund): Nachbar-Wert-Buffs
 
 
-    formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
+    formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, lockedSegment: newLockedSegment, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank

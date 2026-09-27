@@ -324,8 +324,8 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // ---- E-Formationsfamilien (Rarität #167 Kat. E, REGELERSETZUNG): Parameter der GEHALTENEN Stufe je Familie
   //      (familyTierParam; ungehalten → Default = klassische Erkennung ohne E-Werkzeug). Nur die höchste Stufe zählt. ----
   const eP = (id, key, dflt) => { const v = familyTierParam(familyTiers, id, key); return v === undefined ? dflt : v; };
-  const wiedGap = { run: eP("E_PACE", "gapRun", 0), seg: eP("E_PACE", "gapSeg", 0) };                       // E_PACE: Wiederholung-Gaps
-  const suitGap = { run: eP("E_COLORBRIDGE", "suitGapRun", 0), seg: eP("E_COLORBRIDGE", "suitGapSeg", 0) }; // E_COLORBRIDGE: Farbblock-Gaps
+  const wiedGap = { run: eP("E_PACE", "gapRun", 0), seg: eP("E_PACE", "gapSeg", 0) };                           // E_PACE: Wiederholung-Gaps
+  const suitGap = { run: eP("E_COLORBRIDGE", "suitGapRun", 0), seg: eP("E_COLORBRIDGE", "suitGapSeg", 0) };     // E_COLORBRIDGE: Farbblock-Gaps
   const treppeE = { eqRun: eP("E_GENTLE", "eqRun", 0), eqSeg: eP("E_GENTLE", "eqSeg", 0),                   // E_GENTLE: Gleichstände
                     revRun: eP("E_BIGSTEP", "revRun", 0), revSeg: eP("E_BIGSTEP", "revSeg", 0),             // E_BIGSTEP: Rückschritte
                     drehSeg: eP("E_RPM", "drehSeg", 0) };                                                   // E_RPM: Doppel-Treppe
@@ -413,10 +413,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
      gehaltener Skill den Faktor niemals senkt. Aufgehoben wird er nicht: der Runaway-Schutz bleibt. */
   const greenCap = Math.max(PLANT_GREEN_FARBBLOCK_CAP, plantParam(skills, pTiers, P.DICKICHT, "cap") || 0);
   const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, greenCap) : ord, farbBase);
-  const suitGapFor = suitGap;
   // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen
   // (Blätterdach #228 C2 zahlt „je Karte im Block" — braucht die Blockgröße, nicht nur das Ordinal an der Siegposition).
-  markRuns(n, minFor(3), matchSuit, suitGapFor, canExtendSeg,
+  markRuns(n, minFor(3), matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
     (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
     (mem, skipped) => { if (noteCross) noteCross(mem); noteMembers("farbblock", mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) { fe.len = mem.length; if (skipped && skipped.length) fe.gapped = skipped; } } });

@@ -55,19 +55,22 @@ function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
   // §7.45: hier bleibt es bei der GEWÜRFELTEN Stufe — bezahlt wird der Wurf, nicht die von Hochspannung gehobene
   // Wirkung. Mit der wirksamen Stufe stünde ein gehobener Skill fälschlich auf „höchste Stufe" und der Preis wäre falsch.
   const tier = tierOf(state, id);
-  const buy = upgradeBuy({ coins }, tier);
+  // Der GANZE State, nicht `{ coins }`: daran haengen Handelsbrief (Preis) und Raritaet-Deckel
+  // (`locked`). Mit dem abgespeckten Objekt nannte der Knopf einen anderen Preis als der Reducer.
+  const buy = upgradeBuy(state, tier);
   const am = archMeta(archetypeOf(id)) || { color: "#8a8a95" };
   const cur = skillDef(id, tier);
-  const next = buy.maxed ? null : skillDef(id, buy.next);
+  const zu = buy.maxed || buy.locked;          // blockiert ist blockiert; nur die Beschriftung unterscheidet
+  const next = zu ? null : skillDef(id, buy.next);
   const d = next ? tierTextDiff(cur?.desc || "", next.desc || "") : null;
   return (
-    <button type="button" disabled={buy.maxed || !buy.can}
-      onClick={buy.maxed || !buy.can ? undefined : () => onUpgrade({ id, name: cur?.name, price: buy.price })}
+    <button type="button" disabled={zu || !buy.can}
+      onClick={zu || !buy.can ? undefined : () => onUpgrade({ id, name: cur?.name, price: buy.price })}
       className="su-row as-edge-card text-left rounded-xl p-3 flex flex-col gap-2 transition-all disabled:cursor-not-allowed"
       /* Drei Zustände, drei Helligkeiten: bezahlbar (voll), zu teuer (gedämpft — der Kauf ist zu sehen, aber
          nicht auszulösen), höchste Stufe (am blassesten, hier endet die Leiter). Ohne den mittleren Schritt
          sieht ein Skill, für den das Geld nicht reicht, aus wie einer, den man gleich nehmen kann. */
-      style={{ "--c": buy.maxed ? "#3a3850" : am.color, opacity: buy.maxed ? 0.42 : (buy.can ? 1 : 0.62) }}>
+      style={{ "--c": zu ? "#3a3850" : am.color, opacity: zu ? 0.42 : (buy.can ? 1 : 0.62) }}>
       <div className="flex items-center gap-2 flex-wrap">
         <ArchIcon meta={am} size={13} />
         <span className="font-bold text-body-lg-5">{cur?.name}</span>
@@ -77,8 +80,8 @@ function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
           <span className="text-meta-1 font-bold inline-flex items-center gap-1" style={{ color: "#4ade80" }}>✓ {t("upgrade.justRaised")}</span>
         )}
         <span className="ml-auto">
-          {buy.maxed
-            ? <span className="text-meta-1" style={{ color: "#71717c" }}>{t("upgrade.maxTier")}</span>
+          {zu
+            ? <span className="text-meta-1" style={{ color: "#71717c" }}>{t(buy.locked ? "upgrade.locked" : "upgrade.maxTier")}</span>
             : <span className="inline-flex items-center rounded-lg px-2.5 py-1"
                 style={{ background: "linear-gradient(180deg,#2a2410,#1d1a12)", border: "1px solid #d4a63a66" }}>
                 <CoinAmount n={buy.price} size={11} dim={!buy.can} have={coins} />
@@ -87,7 +90,7 @@ function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
       </div>
       <div className="flex items-center gap-2">
         <SkillTierBadge tier={tier} />
-        {!buy.maxed && <><TierArrow /><SkillTierBadge tier={buy.next} /></>}
+        {!zu && <><TierArrow /><SkillTierBadge tier={buy.next} /></>}
       </div>
       {d && (
         <div className="text-body-5 leading-snug" style={{ color: "#a6a6b0" }}>
