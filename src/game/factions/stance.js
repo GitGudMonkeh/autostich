@@ -1,5 +1,5 @@
 import * as C from "../constants.js";
-import { SKILL_DEFS, isLegendarySkill, boostedTier } from "../skills.js";
+import { SKILL_DEFS, isLegendarySkill, boostedTier, archetypeOf } from "../skills.js";
 import { segmentFormCounts } from "../formations.js";
 
 /* ============================================================
@@ -22,7 +22,8 @@ import { segmentFormCounts } from "../formations.js";
      Blau Crit         — STANCE_CRIT Crit-Chance, additiv auf das, was das Deck schon hat
      Grün Überlappung  — die Nachbarkarte INNERHALB des Segments erbt eine Überlappungs-Stufe (formations.js)
      Gelb Score        — glatter Multiplikator auf den Sieg-Score
-   Sie stehen und skalieren NICHT mit der Zahl gehaltener Skills (Owner) — anders als Blitz.
+   Blau, Grün und Gelb WACHSEN mit der Zahl gehaltener Prisma-Skills (Owner, 2026-09-27): je eine Stufe aus den
+   Leitern in constants.js, voll ab dem dritten Skill. Rot nicht — eine Stufe lässt sich nicht dritteln.
 
    Die 15 Skills lesen ihre Kennwerte aus den Stufentabellen in SKILL_DEFS (`tiers[0..3]`) über `stanceParam`.
    Legendäre gibt es noch keine: sie werden nach der ersten Messung entworfen (Owner-Plan).
@@ -131,6 +132,21 @@ export const roundSwitches = (skills, skillTiers) =>
    Dauer auf einem Moment der Länge null ist keine Wirkung, sondern ein Rechenfehler. */
 export const einklangDuration = (skills, skillTiers) =>
   (C.STANCE_EINKLANG > 0 ? (stanceParam(skills, skillTiers, S.RUNDE, "duration") ?? C.STANCE_EINKLANG) : 0);
+/* ---- Die Staffel der Passive (Owner, 2026-09-27) ----
+   Blau, Grün und Gelb zahlen ein Drittel je gehaltenem Prisma-Skill und stehen ab dem dritten voll. Gezählt wird
+   über das Register (`archetypeOf`), nicht über das ID-Präfix — dieselbe Quelle, nach der auch das Angebot gebaut
+   wird und nach der die Panel-Zeile ihre Skills sammelt. Legendäre zählen mit: sie sind Prisma-Skills.
+   Der Lauf-Substate ist erst aktiv, wenn der erste Skill liegt; eine Stufe 0 ist damit kein erreichbarer Zustand,
+   sondern nur der Neutralwert für die Leser unten. */
+export const stanceLevel = (skills) =>
+  Math.min((skills || []).filter((id) => archetypeOf(id) === "stance").length, C.STANCE_SCALE_MAX);
+/* Der Wert einer Leiter auf der aktuellen Stufe. Stufe 0 gibt den NEUTRALWERT der Leiter zurück (0 für einen
+   Zuschlag, 1 für einen Multiplikator) — sie ist kein erreichbarer Zustand, aber der Leser muss sie beantworten. */
+const stepOf = (steps, skills, zero) => { const k = stanceLevel(skills); return k > 0 ? steps[k - 1] : zero; };
+export const stanceCritStep  = (skills) => stepOf(C.STANCE_CRIT_STEPS, skills, 0);
+export const stanceGreenStep = (skills) => stepOf(C.STANCE_GREEN_STEPS, skills, 0);
+export const stanceScoreStep = (skills) => stepOf(C.STANCE_SCORE_STEPS, skills, 1);
+
 /* ---- Die vier Passive ---- */
 
 // Rot (Ergebnis): um wie viele Stufen der Ausgang steigt. Eine Stufe, solange Rot klingt — sonst keine.
@@ -149,7 +165,7 @@ export const rundeLift = (st, skills, skillTiers) =>
    liegt das Passiv obendrauf. Vorher war es entweder-oder. */
 export function stanceCrit(st, skills, skillTiers) {
   if (!st || !st.active) return 0;
-  const passive = ringsNow(st, "B") ? C.STANCE_CRIT : 0;
+  const passive = ringsNow(st, "B") ? stanceCritStep(skills) : 0;
   return passive + (stanceParam(skills, skillTiers, S.GRUNDRAUSCHEN, "crit") || 0);
 }
 // Grundrauschen Episch (§5.3, Owner): dazu ein Crit-MULTIPLIKATOR, ebenfalls unabhängig von der Haltung.
@@ -170,7 +186,8 @@ export function stanceScoreMult(st, skills, skillTiers) {
   const mit = stanceParam(skills, skillTiers, S.MITKLANG, "perStance");
   const overlap = mit && st && st.active ? mit * Math.max(0, ringCount(st) - 1) : 0;
   if (!ringsNow(st, "Y")) return 1 + overlap;
-  let m = C.STANCE_SCORE_MULT + overlap;
+  // Die Stufe steht als ganzer Multiplikator in der Leiter (1,15/1,25/1,40), nicht als gestaffelter Zuschlag.
+  let m = stanceScoreStep(skills) + overlap;
   const per = stanceParam(skills, skillTiers, S.BEHARRLICHKEIT, "perTrick");
   if (per) m += per * (st.ranFor?.Y || 0);
   return m;
@@ -403,6 +420,7 @@ export function stanceGreenMult(st, formations, pos, skills, skillTiers) {
   // Doppelbindung: die dichtesten Karten ein zweites Mal. `slice` nach absteigender Sortierung — mehr Karten als
   // im Fenster zu verdoppeln ist harmlos, slice deckelt selbst.
   if (dbl) sum += [...counts].sort((a, b) => b - a).slice(0, dbl).reduce((a, b) => a + b, 0);
-  const rate = C.STANCE_GREEN_PER_FORM + (stanceParam(skills, skillTiers, S.VERANKERUNG, "plus") || 0);
+  // Der GRUNDSATZ ist gestaffelt, Verankerungs Zuschlag nicht — der gehört dem Skill, nicht dem Passiv.
+  const rate = stanceGreenStep(skills) + (stanceParam(skills, skillTiers, S.VERANKERUNG, "plus") || 0);
   return sum > 0 ? 1 + rate * sum : 1;
 }

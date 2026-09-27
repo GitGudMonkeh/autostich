@@ -19,15 +19,20 @@
    Rein informativ, keine Engine-Kopplung (spiegelt state.stance). */
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
 import { PRISM } from "./indicators/vocab.js";
-import { STANCE_SUITS, ringsNow, ringCount, rundeLift, stanceParam, anklangScore,
+import { STANCE_SUITS, ringsNow, ringCount, rundeLift, stanceParam, anklangScore, stanceLevel,
+  stanceCritStep, stanceGreenStep, stanceScoreStep,
   uebertragMult, genugtuungScore, lichtbandCap, S } from "../game/factions/stance.js";
-import { suitColor, STANCE_THRESHOLD, STANCE_CRIT, STANCE_SCORE_MULT, STANCE_GREEN_PER_FORM } from "../game/constants.js";
+import { suitColor, STANCE_THRESHOLD, STANCE_SCALE_MAX } from "../game/constants.js";
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { archetypeLabel } from "../i18n/labels.js";
 
 const SUNK = "#26262e";  // leeres Zählfeld — dieselbe versenkte Fläche wie in den anderen Leisten
 const MUTE = "#8a8a92";  // stumme Farbe (klingt nicht)
 const num = (x) => fmtNum(Math.round(x * 100) / 100);
+// Die Staffel dritteln lässt keine glatten Zahlen übrig: der Crit-Satz steht auf eine, der Formations-Satz auf
+// drei Stellen, damit 16,7 % und 0,033 nicht beide zu „0,03" bzw. „17" gerundet werden.
+const pct1 = (x) => fmtNum(Math.round(x * 1000) / 10);
+const rate3 = (x) => fmtNum(Math.round(x * 1000) / 1000);
 const suitLabel = (s) => t(`suit.${s}.name`);
 
 /* Das Fraktions-Icon ist ein Platzhalter (Owner: offen) — vier Viertel in den vier Grundfarben, aus
@@ -65,14 +70,16 @@ export function StanceBar({ active, stance = null, skills = [], skillTiers = {},
   const collapsed = options.collapseFacStance ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacStance: !collapsed });
 
-  // Die vier Passive, jedes mit dem Wert, mit dem der Motor gerade rechnet (s. Dateikopf).
-  const greenRate = STANCE_GREEN_PER_FORM + (stanceParam(skills, skillTiers, S.VERANKERUNG, "plus") || 0);
-  const yellowMult = STANCE_SCORE_MULT + (stanceParam(skills, skillTiers, S.BEHARRLICHKEIT, "perTrick") || 0) * (st.ranFor?.Y || 0);
+  /* Die vier Passive, jedes mit dem Wert, mit dem der Motor gerade rechnet (s. Dateikopf) — seit der Staffel
+     (2026-09-27) heißt das auch: mit der Stufe, auf der die Fraktion gerade steht. */
+  const blueCrit = stanceCritStep(skills);
+  const greenRate = stanceGreenStep(skills) + (stanceParam(skills, skillTiers, S.VERANKERUNG, "plus") || 0);
+  const yellowMult = stanceScoreStep(skills) + (stanceParam(skills, skillTiers, S.BEHARRLICHKEIT, "perTrick") || 0) * (st.ranFor?.Y || 0);
   const fx = [
     // Rot hebt eine Stufe — im Einklang hebt Runde so viele, wie der Ausgang braucht (§6.20).
     ringsNow(st, "R") && ["R", rundeLift(st, skills, skillTiers) ? t("bar.stance.fx.R.all") : t("bar.stance.fx.R")],
-    ringsNow(st, "B") && ["B", t("bar.stance.fx.B", { pct: fmtNum(Math.round(STANCE_CRIT * 100)) })],
-    ringsNow(st, "G") && ["G", t("bar.stance.fx.G", { rate: num(greenRate) })],
+    ringsNow(st, "B") && ["B", t("bar.stance.fx.B", { pct: pct1(blueCrit) })],
+    ringsNow(st, "G") && ["G", t("bar.stance.fx.G", { rate: rate3(greenRate) })],
     ringsNow(st, "Y") && ["Y", t("bar.stance.fx.Y", { mult: num(yellowMult) })],
   ].filter(Boolean);
 
@@ -147,7 +154,11 @@ export function StanceBar({ active, stance = null, skills = [], skillTiers = {},
 
       {/* Was daraus gerade wirkt — so viele farbige Chips, wie Haltungen klingen. */}
       <div className="pt-2 border-t" style={{ borderColor: SUNK }}>
-        <span className="text-micro-3 uppercase tracking-wide opacity-55">{t("bar.stance.now")}</span>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-micro-3 uppercase tracking-wide opacity-55">{t("bar.stance.now")}</span>
+          {/* Auf welcher Stufe Blau, Grün und Gelb stehen — ein Drittel je gehaltenem Prisma-Skill. */}
+          <span className="text-meta-1 opacity-50">{t("bar.stance.level", { n: stanceLevel(skills), max: STANCE_SCALE_MAX })}</span>
+        </div>
         <div className="flex flex-wrap gap-1 mt-1.5">
           {fx.map(([s, text]) => (
             <span key={s} className="text-meta-1 rounded px-1.5 py-0.5 whitespace-nowrap"

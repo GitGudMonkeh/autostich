@@ -38,13 +38,20 @@ describe("Prisma-Panel · was der Spieler abliest", () => {
     expect(code, "aktiv und Nachklang leuchten gleich — beide wirken voll").toMatch(/background: on \? `\$\{c\}12`/);
   });
 
-  it("Grün zeigt den Satz, mit dem der Motor rechnet (Verankerung hebt ihn)", () => {
-    expect(code).toMatch(/STANCE_GREEN_PER_FORM \+ \(stanceParam\(skills, skillTiers, S\.VERANKERUNG, "plus"\)/);
+  it("Grün zeigt den Satz, mit dem der Motor rechnet (Stufe und Verankerung heben ihn)", () => {
+    expect(code).toMatch(/stanceGreenStep\(skills\) \+ \(stanceParam\(skills, skillTiers, S\.VERANKERUNG, "plus"\)/);
   });
 
-  it("Gelb zeigt den Multiplikator, mit dem der Motor rechnet (Beharrlichkeit hebt ihn je Stich)", () => {
-    expect(code).toMatch(/STANCE_SCORE_MULT \+ \(stanceParam\(skills, skillTiers, S\.BEHARRLICHKEIT, "perTrick"\)/);
+  it("Gelb zeigt den Multiplikator, mit dem der Motor rechnet (Stufe, dann Beharrlichkeit je Stich)", () => {
+    expect(code).toMatch(/stanceScoreStep\(skills\) \+ \(stanceParam\(skills, skillTiers, S\.BEHARRLICHKEIT, "perTrick"\)/);
     expect(code, "der Hebel ist die Laufzeit der gelben Haltung").toMatch(/st\.ranFor\?\.Y/);
+  });
+
+  it("die Stufenwerte kommen aus dem Modul, nicht aus einer zweiten Rechnung", () => {
+    // Die drei Leitern gehören dem Fraktionsmodul; das Panel rechnet keine davon nach.
+    expect(code).toMatch(/const blueCrit = stanceCritStep\(skills\)/);
+    expect(code, "keine eigene Staffel im Panel").not.toMatch(/STANCE_CRIT_STEPS|STANCE_SCALE_MAX \* |\/ STANCE_SCALE_MAX/);
+    expect(code, "und die Stufe steht im Panel").toMatch(/t\("bar\.stance\.level", \{ n: stanceLevel\(skills\), max: STANCE_SCALE_MAX \}\)/);
   });
 
   it("die Skill-Fenster lesen ihre Werte aus dem Fraktions-Modul", () => {

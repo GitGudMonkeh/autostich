@@ -477,13 +477,23 @@ export const STANCE_START        = "R";                                  // der 
    Skill „Runde", der nach n Wechseln alle vier klingen lässt.
    Der Einklang braucht keine eigene Mechanik: er schreibt in die vier Nachklang-Zähler, die es ohnehin gibt. */
 export const STANCE_EINKLANG = envNum("SIM_STANCE_EINKLANG", 3);  // Stiche, die Runde alle vier klingen lässt (0 = Ablation)
-// Grundwerte der vier Passive (§3, Owner). Sie stehen und skalieren NICHT mit der Zahl gehaltener Skills.
-export const STANCE_CRIT         = envNum("SIM_STANCE_CRIT", 0.5);       // Blau: Crit-Chance, solange sie klingt — additiv, kein Mindestwert
-export const STANCE_SCORE_MULT   = envNum("SIM_STANCE_SCORE_MULT", 1.4); // Gelb: glatter Multiplikator auf den Sieg-Score
+/* Grundwerte der vier Passive (§3, Owner). Blau, Grün und Gelb WACHSEN mit der Zahl gehaltener Prisma-Skills
+   (Owner, 2026-09-27): die Leitern unten tragen einen Eintrag je Skill, die dritte Stufe ist die Decke. Rot
+   bleibt ungestaffelt — eine Stufe auf der Ergebnisleiter lässt sich nicht dritteln.
+   Getippte Leitern wie SKILL_TIER_WEIGHTS, keine neun ENV-Haken: gedreht werden sie hier. Die Werte sind gesetzt,
+   nicht gerechnet — deshalb steht bei Gelb 1,15/1,25/1,40 und nicht das gleichmäßige Drittel. */
+export const STANCE_CRIT_STEPS   = [0.15, 0.30, 0.45];  // Blau: Crit-Chance je Stufe, solange Blau klingt
+export const STANCE_GREEN_STEPS  = [0.03, 0.06, 0.10];  // Grün: Satz je gezählter Formation
+export const STANCE_SCORE_STEPS  = [1.15, 1.25, 1.40];  // Gelb: glatter Multiplikator auf den Sieg-Score
+export const STANCE_SCALE_MAX    = STANCE_CRIT_STEPS.length;
+/* Die DECKE der drei Leitern — was ein Bau mit drei Prisma-Skills sieht. Anzeige, Dokumentation und Tests lesen
+   sie, damit „voll" an einer Stelle steht und nicht dreimal abgetippt wird. */
+export const STANCE_CRIT         = STANCE_CRIT_STEPS[STANCE_SCALE_MAX - 1];
+export const STANCE_SCORE_MULT   = STANCE_SCORE_STEPS[STANCE_SCALE_MAX - 1];
 /* Grün (§3, §5.3 Neufassung): kein Abfärben mehr, keine Geometrie. Gewinnt eine Karte, werden die Formationen
    ALLER Karten ihres Segments summiert (eine Karte in 3 Formationen zählt 3) und je Formation zahlt der Stich
    diesen Satz auf den Score-Multiplikator. Typische Summen liegen bei 4–9, das sind ×1,4 bis ×1,9. STARTWERT. */
-export const STANCE_GREEN_PER_FORM = envNum("SIM_STANCE_GREEN_PER_FORM", 0.1);
+export const STANCE_GREEN_PER_FORM = STANCE_GREEN_STEPS[STANCE_SCALE_MAX - 1];
 /* Die drei Legendären (§6.21, Owner): Score-Hebel auf drei Achsen — Haltungen, Formationen, Serie. Fernlicht
    braucht keine Zahl, es tauscht nur das Fenster gegen das Brett. STARTWERTE, ungemessen. */
 export const STANCE_SPEKTRUM      = envNum("SIM_STANCE_SPEKTRUM", 1.5);      // Faktor je klingender Haltung

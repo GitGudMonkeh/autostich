@@ -127,16 +127,24 @@ erste Stelle, an der ich beim Tarieren nachsehen würde.
 Jede beugt **eine Regel**, die es schon gibt, statt eine Zahl zu addieren. Keine doppelt eine andere,
 und zusammen decken sie die Score-Pipeline ab.
 
-| Farbe | Haltung | Greift an | Was sie tut | Grundwert |
-| --- | --- | --- | --- | --- |
-| **Rot** | Ergebnis | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. | eine Stufe |
-| **Blau** | Crit | die Spitze | Durchgehend Crit-Chance, solange sie klingt. | **+50 %** |
-| **Grün** | Überlappung | den Sieg-Score | Die Formationen **aller Karten des Segments** werden summiert; je Formation zahlt der Stich mehr. | +0,1 je Formation |
-| **Gelb** | Score | den Basis-Score | Glatter Multiplikator. | **×1,4** |
+| Farbe | Haltung | Greift an | Was sie tut | 1 Skill | 2 Skills | 3 Skills |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Rot** | Ergebnis | den Ausgang des Stichs | Niederlage → Gleichstand, Gleichstand → Sieg. | eine Stufe | eine Stufe | eine Stufe |
+| **Blau** | Crit | die Spitze | Durchgehend Crit-Chance, solange sie klingt. | +15 % | +30 % | **+45 %** |
+| **Grün** | Überlappung | den Sieg-Score | Die Formationen **aller Karten des Segments** werden summiert; je Formation zahlt der Stich mehr. | +0,03 | +0,06 | **+0,1** |
+| **Gelb** | Score | den Basis-Score | Glatter Multiplikator. | ×1,15 | ×1,25 | **×1,4** |
 
-Die vier Grundwerte **stehen und skalieren nicht** mit der Zahl gehaltener Skills (Owner). Gelbs ×1,4
-wirkt nur, solange die Haltung klingt — bei gleichmäßiger Rotation rund ein Viertel der Stiche, also
-grob +10 % über den Lauf; Feuers Hitze-Multiplikator liegt zum Vergleich bei ×1,2 *dauerhaft*.
+**Die Staffel ist gesetzt (Owner, 2026-09-27):** Blau, Grün und Gelb wachsen mit der Zahl gehaltener
+Prisma-Skills — eine Stufe je Skill, voll ab dem dritten, Legendäre zählen mit. Die Leitern stehen als
+`STANCE_CRIT_STEPS` / `STANCE_GREEN_STEPS` / `STANCE_SCORE_STEPS` in `constants.js`; die alten Namen
+(`STANCE_CRIT` …) sind jetzt die **Decke** und werden daraus abgeleitet. **Rot bleibt ungestaffelt** —
+eine Stufe auf der Ergebnisleiter lässt sich nicht dritteln. Die Zahlen sind gesetzt, nicht gerechnet:
+bei Gelb steht 1,15/1,25/1,40 und nicht das gleichmäßige Drittel.
+
+Damit zahlt ein Bau, der Prisma nur beimischt, ein Drittel der Passive statt voll — genau der Posten,
+den §6.15/§6.18 als Beimischungsprämie gemessen haben. Gelbs ×1,4 wirkt ohnehin nur, solange die Haltung
+klingt — bei gleichmäßiger Rotation rund ein Viertel der Stiche; Feuers Hitze-Multiplikator liegt zum
+Vergleich bei ×1,2 *dauerhaft*.
 
 **Farbzuordnung gesetzt** (Owner). Sie ist seit §2.2 reine Gefühlssache — die Grundfarbe entscheidet
 nur, *wann* eine Haltung zündet, nicht *was* sie tut. Das Farbregister liest sich stimmig: Rot dreht
@@ -1625,6 +1633,44 @@ Bereich 0–24 erreicht — ist damit nicht gewählt, aber notiert.
 einzelne Prozentpunkte nicht. Und die ganze Tabelle verschiebt sich, wenn ein Legendäres sich
 ändert — der gierige Spieler baut dann anders; zwischen den beiden Lichtband-Läufen bewegten sich
 auch die übrigen vierzehn Zeilen.
+
+### 6.22 · Die Staffel der Passive — **gemessen**
+
+Die Passiv-Staffel (§3, Owner 2026-09-27) gegen den Stand davor: `--mode cross`, 80 Seeds (1–80),
+Fraktions-Policy mit Slot-Split, eigenes Angebot je Build. Einziger Unterschied zwischen den Läufen
+sind die drei Leitern — **„vorher" heißt: jede Stufe auf der Decke**, also Blau 50 %, Grün 0,1,
+Gelb ×1,4 für jeden Bau, so wie es bis zu diesem Tag war.
+
+**Die fünfzehn Zeilen ohne Prisma sind bitgleich.** Das ist die Isolationsprobe: die Staffel fasst
+nichts an, was sie nicht anfassen soll.
+
+| | vorher | mit Staffel | Δ |
+| --- | --- | --- | --- |
+| **Prisma mono** | 69,8 Mio | 67,4 Mio | **−3 %** |
+| Fe+Bl+Pf+Pr (bestes Quartett) | 98,1 | 84,6 | −14 % |
+| Feuer+Pflanze+Prisma | 84,9 | 70,3 | −17 % |
+| Blitz+Prisma | 73,5 | 64,2 | −13 % |
+| Zufallsspieler (Mix) | 22,1 | 16,8 | **−24 %** |
+
+Über alle 14 Prisma-Kombis: Median **−8 %**, Mittel −6 %, Spanne −19 % … +17 %. Zwei Zeilen steigen;
+bei 80 Seeds trägt der Median, nicht die Differenz zweier Mediane (§6.14, derselbe Vorbehalt).
+
+**Mono bewegt sich kaum, und das ist die Pointe.** Ein reiner Bau hält dreizehn Prisma-Skills und steht
+damit immer auf Stufe 3 — die −3 % sind allein Blaus Decke von 50 auf 45 %. Was fällt, ist die
+**Beimischung**: genau der Posten, den §6.15 und §6.18 als Prämie gemessen haben.
+
+| Gesundheitszahl (Cross) | vorher | mit Staffel |
+| --- | --- | --- |
+| bester Kombi-Floor ÷ bester reiner Member | 1,22× | **1,04×** |
+| Spannweite über alle Kombis | 0,11 … 1,22× | 0,11 … 1,04× |
+
+Die Schwelle „Mischen dominiert" liegt bei 1,15× und ist damit unterschritten; die Referenz vor dem
+Skill-Rework war 1,03×. Das Feld dahinter steht unverändert: Eis 154,6 · Blitz 85,0 · **Prisma 67,4** ·
+Pflanze 33,9 · Feuer 26,1 (Mio Median, mono) — Prisma bleibt Dritter.
+
+**Offen:** `test/sim-balance-guard.test.js` steht bei Median 16,0 Mio gegen eine Bandgrenze von 15
+(vor der Staffel 18,9). Der Mean ist wieder im Band. Ob das Band neu zentriert wird oder die Zahlen
+weiter fallen sollen, ist nicht entschieden — der Wächter ist unangetastet.
 
 ---
 

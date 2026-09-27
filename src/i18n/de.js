@@ -279,6 +279,7 @@ export default {
   "bar.stance.row": "{suit} · {won} von {need} — noch {left} bis zum Wechsel. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte.",
   "bar.stance.row.active": "{suit} · aktiv — {won} von {need}. Die aktive Haltung wechselt nicht zu sich selbst, ihr Zähler fällt nur zurück. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte.",
   "bar.stance.now": "Wirkt gerade",
+  "bar.stance.level": "Stufe {n}/{max}",
   "bar.stance.fx.R": "Ergebnis +1 Stufe",
   "bar.stance.fx.R.all": "Jeder Stich gewinnt",
   "bar.stance.fx.B": "Crit +{pct} %",

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, HALTUNG_TIERS } from "../src/game/skills.js";
 import { initStance, S, STANCE_SUITS, stanceTier, stanceParam, ringsNow, ringCount, minDuration,
-  stanceLift, rundeLift, stanceCrit, grundrauschenCritMult, spektrumMult, lichtbandCap, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
+  stanceLift, rundeLift, stanceCrit, stanceLevel, grundrauschenCritMult, spektrumMult, lichtbandCap, stanceScoreMult, genugtuungScore, stanceGreenMult, rueckhaltValue, extendStance,
   noteCrit, uebertragMult, stauungOn, notePeak, tickPeak, cashPeak,
   stanceTick, roundSwitches, einklangDuration,
   anklangScore, extTotal, kehrtwendeStreak, kehrtwendeStreakStep } from "../src/game/factions/stance.js";
@@ -38,6 +38,13 @@ const st = (over = {}) => {
     ring: { ...base.ring, ...(over.ring || {}) },
     ranFor: { ...base.ranFor, ...(over.ranFor || {}) } };
 };
+/* Seit der Staffel (Owner, 2026-09-27) zahlen Blau, Grün und Gelb ein Drittel je gehaltenem Prisma-Skill. Wer die
+   PASSIVE auf voller Stärke prüfen will, muss also drei halten — `VOLL` sind drei, die keinen der drei Leser
+   anfassen: Rückhalt zahlt erst nach dem Ende von Rot, Schwungrad verlängert nur, und Übertrags Rampe steht bei
+   0, solange kein Crit gezählt wurde. Damit bleibt jede Erwartung unten die, die vor der Staffel dort stand.
+   `voll(skills)` hängt sie an einen Bau an, ohne dessen eigene Stufe zu ändern (der Deckel liegt bei 3). */
+const VOLL = [S.RUECKHALT, S.SCHWUNGRAD, S.UEBERTRAG];
+const voll = (skills = []) => [...skills, ...VOLL];
 const noCrit = () => 0.99, zero = () => 0;
 const T = HALTUNG_TIERS;
 const B = C.SCORE_PER_WIN;
@@ -127,7 +134,7 @@ describe("Haltungen — der Mechanismus (§2)", () => {
     expect(s.ring.R).toBe(C.STANCE_MIN_DURATION);
     expect(ringsNow(s, "R")).toBe(true);                     // Rot wirkt weiter
     expect(stanceLift(s)).toBe(1);                           // und zwar auf voller Stärke
-    expect(stanceCrit(s, [], {})).toBe(C.STANCE_CRIT);       // Blau trägt dazu
+    expect(stanceCrit(s, VOLL, {})).toBe(C.STANCE_CRIT);     // Blau trägt dazu
     expect(ringCount(s)).toBe(2);
     // Nach der Mindestdauer ist Rot still.
     for (let i = 0; i < C.STANCE_MIN_DURATION; i++) s = stanceTick(s, [], {}, {}).stance;
@@ -189,19 +196,19 @@ describe("Haltungen — die vier Passive (§3)", () => {
     expect(resolveTrick(run(blue, { deck: constDeck(0), oppDeck: constDeck(12) }), noCrit).losses).toBe(1);
   });
   it("Blau: durchgehende Crit-Chance, additiv — und Rot zahlt sie nicht", () => {
-    expect(stanceCrit(st({ stance: "B" }), [], {})).toBe(C.STANCE_CRIT);
-    expect(stanceCrit(st(), [], {})).toBe(0);
-    const s = resolveTrick(run(st({ stance: "B" }), { skills: [] }), noCrit);
+    expect(stanceCrit(st({ stance: "B" }), VOLL, {})).toBe(C.STANCE_CRIT);
+    expect(stanceCrit(st(), VOLL, {})).toBe(0);
+    const s = resolveTrick(run(st({ stance: "B" }), { skills: VOLL }), noCrit);
     expect(s.lastTrick.critChance).toBeCloseTo(C.STANCE_CRIT, 6);
     // Und sie landet auch: derselbe Stich mit einem Wurf unter der Chance crittet, ohne Blau nicht.
-    expect(resolveTrick(run(st({ stance: "B" })), zero).lastTrick.isCrit).toBe(true);
+    expect(resolveTrick(run(st({ stance: "B" }), { skills: VOLL }), zero).lastTrick.isCrit).toBe(true);
     expect(resolveTrick(run(st()), zero).lastTrick.isCrit).toBe(false);
   });
   it("Gelb: glatter Multiplikator auf den Sieg-Score, nur solange Gelb klingt", () => {
-    expect(stanceScoreMult(st({ stance: "Y" }), [], {})).toBeCloseTo(C.STANCE_SCORE_MULT, 6);
-    expect(stanceScoreMult(st(), [], {})).toBe(1);
-    const y = resolveTrick(run(st({ stance: "Y" })), noCrit);
-    const r = resolveTrick(run(st()), noCrit);
+    expect(stanceScoreMult(st({ stance: "Y" }), VOLL, {})).toBeCloseTo(C.STANCE_SCORE_MULT, 6);
+    expect(stanceScoreMult(st(), VOLL, {})).toBe(1);
+    const y = resolveTrick(run(st({ stance: "Y" }), { skills: VOLL }), noCrit);
+    const r = resolveTrick(run(st(), { skills: VOLL }), noCrit);
     expect(y.lastTrick.breakdown.stanceMult).toBeCloseTo(C.STANCE_SCORE_MULT, 6);
     expect(r.lastTrick.breakdown.stanceMult).toBe(1);
     expect(y.lastTrick.gained).toBeCloseTo(r.lastTrick.gained * C.STANCE_SCORE_MULT, 6);
@@ -222,11 +229,11 @@ describe("Haltungen — die vier Passive (§3)", () => {
     expect(segmentFormCounts(forms, 7)).toEqual(perCard.slice(5));
     // Der Multiplikator: 1 + Satz × Summe. Jede Position desselben Segments gibt dasselbe.
     const green = st({ stance: "G" });
-    for (const pos of [0, 2, 4]) expect(stanceGreenMult(green, forms, pos, [], {})).toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg0, 9);
-    for (const pos of [5, 9]) expect(stanceGreenMult(green, forms, pos, [], {})).toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg1, 9);
+    for (const pos of [0, 2, 4]) expect(stanceGreenMult(green, forms, pos, VOLL, {})).toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg0, 9);
+    for (const pos of [5, 9]) expect(stanceGreenMult(green, forms, pos, VOLL, {})).toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg1, 9);
     // Klingt Grün nicht, ist es 1 — und das Brett rechnet ohnehin für alle gleich.
-    expect(stanceGreenMult(st(), forms, 2, [], {})).toBe(1);
-    expect(stanceGreenMult(st({ stance: "B", ring: { G: 2 } }), forms, 2, [], {})).toBeGreaterThan(1); // Nachklang zählt
+    expect(stanceGreenMult(st(), forms, 2, VOLL, {})).toBe(1);
+    expect(stanceGreenMult(st({ stance: "B", ring: { G: 2 } }), forms, 2, VOLL, {})).toBeGreaterThan(1); // Nachklang zählt
   });
   it("Grün ändert die Formationserkennung NICHT mehr — computeFormations kennt keine Haltung", () => {
     /* Gegenprobe zum gestrichenen Abfärben: der frühere 11. Parameter trug die Haltungs-Geometrie. Wird er
@@ -242,10 +249,30 @@ describe("Haltungen — die vier Passive (§3)", () => {
     expect(overlapFactor(4)).toBe(OVERLAP_BONUS[4]);
     expect(overlapFactor(7)).toBe(OVERLAP_BONUS[4]);
   });
-  it("die Grundwerte skalieren NICHT mit der Zahl gehaltener Skills (Owner)", () => {
-    const many = [S.MITKLANG, S.BEHARRLICHKEIT, S.ANKLANG, S.RUNDE, S.GENUGTUUNG];
-    expect(stanceCrit(st({ stance: "B" }), many, {})).toBe(stanceCrit(st({ stance: "B" }), [], {}));
-    expect(stanceLift(st())).toBe(stanceLift(st()));
+  it("Blau, Grün und Gelb wachsen mit der Zahl gehaltener Prisma-Skills — Rot nicht (Owner, 2026-09-27)", () => {
+    /* Ein Drittel je Skill, voll ab dem dritten, darüber gedeckelt. Die Konstanten in constants.js sind damit die
+       DECKE. Rot bleibt draußen: eine Stufe auf der Ergebnisleiter lässt sich nicht dritteln. */
+    const f = computeFormations(order10(), board10());
+    const sum = segmentFormCounts(f, 2).reduce((a, b) => a + b, 0);
+    const blue = st({ stance: "B" }), yellow = st({ stance: "Y" }), green = st({ stance: "G" });
+    const stufen = [[[S.RUECKHALT], 1], [[S.RUECKHALT, S.SCHWUNGRAD], 2], [VOLL, 3], [[...VOLL, S.STAUUNG], 3]];
+    for (const [skills, k] of stufen) {
+      expect(stanceLevel(skills), `${k} Skills`).toBe(k);
+      expect(stanceCrit(blue, skills, {}), `${k} Skills`).toBeCloseTo(C.STANCE_CRIT_STEPS[k - 1], 9);
+      // Gelbs Leiter trägt ganze Multiplikatoren (1,15/1,25/1,40), keinen gestaffelten Zuschlag.
+      expect(stanceScoreMult(yellow, skills, {}), `${k} Skills`).toBeCloseTo(C.STANCE_SCORE_STEPS[k - 1], 9);
+      expect(stanceScoreMult(yellow, skills, {}), `${k} Skills`).toBeGreaterThan(1);
+      expect(stanceGreenMult(green, f, 2, skills, {}), `${k} Skills`).toBeCloseTo(1 + C.STANCE_GREEN_STEPS[k - 1] * sum, 9);
+      expect(stanceLift(st()), `${k} Skills`).toBe(1);   // Rot steht, egal wie viele liegen
+    }
+    // Jede Leiter steigt streng und endet auf der Decke, die Anzeige und Doku lesen.
+    for (const steps of [C.STANCE_CRIT_STEPS, C.STANCE_GREEN_STEPS, C.STANCE_SCORE_STEPS]) {
+      expect(steps).toHaveLength(C.STANCE_SCALE_MAX);
+      expect(steps.every((v, i) => i === 0 || v > steps[i - 1])).toBe(true);
+    }
+    expect(C.STANCE_CRIT).toBe(C.STANCE_CRIT_STEPS[C.STANCE_SCALE_MAX - 1]);
+    expect(C.STANCE_SCORE_MULT).toBe(C.STANCE_SCORE_STEPS[C.STANCE_SCALE_MAX - 1]);
+    expect(C.STANCE_GREEN_PER_FORM).toBe(C.STANCE_GREEN_STEPS[C.STANCE_SCALE_MAX - 1]);
   });
 });
 
@@ -272,8 +299,9 @@ describe("Haltungen — Score-Linie (gelb)", () => {
     expect(cashPeak(s, skills, { [S.STAUUNG]: 3 }).payout).toBeCloseTo(700 * T.stauung[3].peak * 6, 6);
   });
   it("Stauung bunkert NICHT mehr (§5.3): der Sieg zahlt normal, gemerkt wird nur die Spitze", () => {
-    const skills = [S.STAUUNG];
-    const bare = resolveTrick(run(st({ stance: "Y" })), noCrit);
+    // Beide Seiten halten DREI Prisma-Skills, sonst vergliche man die Staffel statt den Skill.
+    const skills = voll([S.STAUUNG]);
+    const bare = resolveTrick(run(st({ stance: "Y" }), { skills: VOLL }), noCrit);
     const held = resolveTrick(run(st({ stance: "Y" }), { skills }), noCrit);
     expect(held.lastTrick.gained).toBe(bare.lastTrick.gained); // derselbe Stich, derselbe Score
     expect(held.score).toBe(bare.score);
@@ -286,14 +314,14 @@ describe("Haltungen — Score-Linie (gelb)", () => {
     expect(lost.stance.peakBest).toBe(0);
   });
   it("SK_STANCE_02 Beharrlichkeit: der Multiplikator wächst je Stich Laufzeit — Campen zahlt", () => {
-    const skills = [S.BEHARRLICHKEIT], per = T.beharrlichkeit[0].perTrick;
+    const skills = voll([S.BEHARRLICHKEIT]), per = T.beharrlichkeit[0].perTrick;
     const s0 = st({ stance: "Y", ranFor: { R: 0, B: 0, G: 0, Y: 10 } });
     expect(stanceScoreMult(s0, skills, {})).toBeCloseTo(C.STANCE_SCORE_MULT + 10 * per, 6);
     // Ohne klingendes Gelb tut der Skill nichts.
     expect(stanceScoreMult(st({ ranFor: { R: 0, B: 0, G: 0, Y: 10 } }), skills, {})).toBe(1);
   });
   it("SK_STANCE_03 Mitklang: der Multiplikator zählt je ZUSÄTZLICH klingender Haltung — Tanzen zahlt", () => {
-    const skills = [S.MITKLANG], per = T.mitklang[0].perStance;
+    const skills = voll([S.MITKLANG]), per = T.mitklang[0].perStance;
     const alone = st({ stance: "Y" });
     expect(stanceScoreMult(alone, skills, {})).toBeCloseTo(C.STANCE_SCORE_MULT, 6); // eine klingt → kein Zuschlag
     const three = st({ stance: "Y", ring: { R: 2, B: 1, G: 0, Y: 0 } });
@@ -304,23 +332,23 @@ describe("Haltungen — Score-Linie (gelb)", () => {
     expect(ringsNow(noY, "Y")).toBe(false);
     expect(ringCount(noY)).toBe(3);
     expect(stanceScoreMult(noY, skills, {})).toBeCloseTo(1 + 2 * per, 6);
-    expect(stanceScoreMult(noY, [], {})).toBe(1);              // ohne den Skill bleibt es bei 1
+    expect(stanceScoreMult(noY, VOLL, {})).toBe(1);            // ohne den Skill bleibt es bei 1
     expect(stanceScoreMult(st({ stance: "R" }), skills, {})).toBe(1); // eine klingt → kein Zuschlag
   });
   it("Beharrlichkeit und Mitklang sind ein Spiegelpaar: im Block-Build zahlt die eine, im bunten die andere", () => {
     const block = st({ stance: "Y", ranFor: { R: 0, B: 0, G: 0, Y: 20 } });                 // lange allein
     const bunt = st({ stance: "Y", ring: { R: 2, B: 2, G: 2, Y: 0 }, ranFor: { R: 0, B: 0, G: 0, Y: 1 } });
-    expect(stanceScoreMult(block, [S.BEHARRLICHKEIT], {})).toBeGreaterThan(stanceScoreMult(bunt, [S.BEHARRLICHKEIT], {}));
-    expect(stanceScoreMult(bunt, [S.MITKLANG], {})).toBeGreaterThan(stanceScoreMult(block, [S.MITKLANG], {}));
+    expect(stanceScoreMult(block, voll([S.BEHARRLICHKEIT]), {})).toBeGreaterThan(stanceScoreMult(bunt, voll([S.BEHARRLICHKEIT]), {}));
+    expect(stanceScoreMult(bunt, voll([S.MITKLANG]), {})).toBeGreaterThan(stanceScoreMult(block, voll([S.MITKLANG]), {}));
   });
 });
 
 describe("Haltungen — Crit-Linie (blau)", () => {
   it("SK_STANCE_04 Grundrauschen: der Crit-Boden der Fraktion — gilt in JEDER Haltung und addiert sich (§5.3)", () => {
-    const skills = [S.GRUNDRAUSCHEN];
+    const skills = voll([S.GRUNDRAUSCHEN]);
     // Ohne den Skill trägt nur das Passiv, und nur in Blau.
-    expect(stanceCrit(st(), [], {})).toBe(0);
-    expect(stanceCrit(st({ stance: "B" }), [], {})).toBe(C.STANCE_CRIT);
+    expect(stanceCrit(st(), VOLL, {})).toBe(0);
+    expect(stanceCrit(st({ stance: "B" }), VOLL, {})).toBe(C.STANCE_CRIT);
     // Mit dem Skill: außerhalb von Blau sein Wert, IN Blau das Passiv PLUS sein Wert (vorher entweder-oder).
     expect(stanceCrit(st(), skills, {})).toBe(T.grundrauschen[0].crit);
     expect(stanceCrit(st({ stance: "B" }), skills, {})).toBeCloseTo(C.STANCE_CRIT + T.grundrauschen[0].crit, 6);
@@ -436,13 +464,13 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
     for (let tier = 0; tier < 4; tier++) {
       const n = T.doppelbindung[tier].cards;
       const extra = top.slice(0, n).reduce((x, y) => x + y, 0);
-      expect(stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: tier }), `Stufe ${tier}`)
+      expect(stanceGreenMult(green(), f, 2, voll([S.DOPPELBINDUNG]), { [S.DOPPELBINDUNG]: tier }), `Stufe ${tier}`)
         .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * (sumOf(f, 0, 5) + extra), 9);
     }
     // Episch verdoppelt mindestens das ganze nackte Segment — das ist genau die doppelte Summe. Eine Zahl
     // darüber (§6.18) ändert daran nichts: `slice` deckelt, und sie greift erst in Übergriffs breiterem Fenster.
     expect(T.doppelbindung[3].cards).toBeGreaterThanOrEqual(counts.length);
-    expect(stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG], { [S.DOPPELBINDUNG]: 3 }))
+    expect(stanceGreenMult(green(), f, 2, voll([S.DOPPELBINDUNG]), { [S.DOPPELBINDUNG]: 3 }))
       .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * 2 * sumOf(f, 0, 5), 9);
   });
   it("SK_STANCE_08 Übergriff: das Fenster reicht über die Segmentgrenzen hinaus", () => {
@@ -454,7 +482,7 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
     for (let tier = 0; tier < 4; tier++) {
       const reach = T.uebergriff[tier].reach;
       const to = Math.min(10, 5 + reach);
-      expect(stanceGreenMult(green(), f, 2, [S.UEBERGRIFF], { [S.UEBERGRIFF]: tier }), `Stufe ${tier}`)
+      expect(stanceGreenMult(green(), f, 2, voll([S.UEBERGRIFF]), { [S.UEBERGRIFF]: tier }), `Stufe ${tier}`)
         .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * sumOf(f, 0, to), 9);
     }
     // Jede Stufe ist mindestens so gut wie die darunter (das Fenster wächst nur).
@@ -464,24 +492,24 @@ describe("Haltungen — Überlappungs-Linie (grün)", () => {
   it("SK_STANCE_09 Verankerung: hebt den SATZ je gezählter Formation", () => {
     const f = forms(), sum = sumOf(f, 0, 5);
     for (let tier = 0; tier < 4; tier++)
-      expect(stanceGreenMult(green(), f, 2, [S.VERANKERUNG], { [S.VERANKERUNG]: tier }), `Stufe ${tier}`)
+      expect(stanceGreenMult(green(), f, 2, voll([S.VERANKERUNG]), { [S.VERANKERUNG]: tier }), `Stufe ${tier}`)
         .toBeCloseTo(1 + (C.STANCE_GREEN_PER_FORM + T.verankerung[tier].plus) * sum, 9);
     // Sie ändert am Fenster und an der Zählung nichts — nur am Satz.
     expect(segmentFormCounts(f, 2)).toEqual(segmentFormCounts(f, 2, 0));
   });
   it("die drei grünen Skills greifen an drei verschiedenen Stellen derselben Rechnung an", () => {
     const f = forms();
-    const only = (id, tier) => stanceGreenMult(green(), f, 2, [id], { [id]: tier });
-    const base = stanceGreenMult(green(), f, 2, [], {});
+    const only = (id, tier) => stanceGreenMult(green(), f, 2, voll([id]), { [id]: tier });
+    const base = stanceGreenMult(green(), f, 2, VOLL, {});
     for (const id of [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG]) expect(only(id, 0), id).toBeGreaterThan(base);
     // Zusammen mehr als jeder für sich — Fenster, Zählung und Satz multiplizieren sich nicht, sie greifen ineinander.
-    const all = stanceGreenMult(green(), f, 2, [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG], {});
+    const all = stanceGreenMult(green(), f, 2, voll([S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG]), {});
     for (const id of [S.DOPPELBINDUNG, S.UEBERGRIFF, S.VERANKERUNG]) expect(all, id).toBeGreaterThan(only(id, 0));
   });
   it("Grün in der Engine: derselbe Stich, einmal mit klingendem Grün und einmal ohne", () => {
     const board = { deck: board10(), oppDeck: constDeck(0), playerOrder: order10(), oppOrder: order10(), pos: 0 };
-    const off = resolveTrick(run(st(), board), noCrit);                 // Rot klingt
-    const on = resolveTrick(run(st({ stance: "G" }), board), noCrit);
+    const off = resolveTrick(run(st(), { ...board, skills: VOLL }), noCrit);   // Rot klingt
+    const on = resolveTrick(run(st({ stance: "G" }), { ...board, skills: VOLL }), noCrit);
     const sum = sumOf(computeFormations(order10(), board10()), 0, 5);
     expect(on.lastTrick.breakdown.stanceMult / off.lastTrick.breakdown.stanceMult)
       .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * sum, 6);
@@ -785,9 +813,9 @@ describe("Haltungen — der Einklang (§3.1)", () => {
   it("die gelbe Linie zahlt NUR, solange Gelb klingt — die Stufe ist raus (§6.19)", () => {
     /* Vor §6.19 stand hier ein dauerhafter Sammler, der auf JEDEN Sieg-Score zahlte, auch ohne klingendes Gelb.
        Der Wächter prüft jetzt die Gegeneigenschaft: außerhalb von Gelb hat die Linie keinen Faktor mehr. */
-    expect(stanceScoreMult(st(), [], {})).toBe(1);                  // Rot klingt, Gelb nicht
-    expect(stanceScoreMult(st({ stance: "B" }), [], {})).toBe(1);
-    expect(stanceScoreMult(st({ stance: "Y" }), [], {})).toBeCloseTo(C.STANCE_SCORE_MULT, 9);
+    expect(stanceScoreMult(st(), VOLL, {})).toBe(1);                // Rot klingt, Gelb nicht
+    expect(stanceScoreMult(st({ stance: "B" }), VOLL, {})).toBe(1);
+    expect(stanceScoreMult(st({ stance: "Y" }), VOLL, {})).toBeCloseTo(C.STANCE_SCORE_MULT, 9);
     // Und ein Lauf voller Einklänge legt nichts Dauerhaftes an — der Zähler ist reine Telemetrie.
     const s = resolveTrick(run(st({ einklang: 20 })), noCrit);
     expect(s.lastTrick.breakdown.stanceMult).toBe(1);
@@ -869,8 +897,8 @@ describe("Haltungen — die drei Legendären (§6.21)", () => {
     expect(ringCount(all4())).toBe(4);
     expect(spektrumMult(all4(), [S.SPEKTRUM])).toBeCloseTo(C.STANCE_SPEKTRUM ** 4, 9);
     // In der Engine steckt er im Fraktions-Faktor, nicht daneben.
-    const off = resolveTrick(run(all4(), { skills: [] }), noCrit);
-    const on = resolveTrick(run(all4(), { skills: [S.SPEKTRUM] }), noCrit);
+    const off = resolveTrick(run(all4(), { skills: VOLL }), noCrit);
+    const on = resolveTrick(run(all4(), { skills: voll([S.SPEKTRUM]) }), noCrit);
     expect(on.lastTrick.breakdown.stanceMult / off.lastTrick.breakdown.stanceMult)
       .toBeCloseTo(C.STANCE_SPEKTRUM ** 4, 6);
   });
@@ -880,11 +908,11 @@ describe("Haltungen — die drei Legendären (§6.21)", () => {
     const whole = f.reduce((x, p) => x + p.formations.length, 0);
     const seg = segmentFormCounts(f, 2).reduce((x, y) => x + y, 0);
     expect(seg).toBeLessThan(whole);                                          // das Fenster ist echt kleiner
-    expect(stanceGreenMult(green, f, 2, [S.FERNLICHT], {}))
+    expect(stanceGreenMult(green, f, 2, voll([S.FERNLICHT]), {}))
       .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * whole, 9);
-    expect(stanceGreenMult(green, f, 2, [], {}))
+    expect(stanceGreenMult(green, f, 2, VOLL, {}))
       .toBeCloseTo(1 + C.STANCE_GREEN_PER_FORM * seg, 9);
-    expect(stanceGreenMult(st(), f, 2, [S.FERNLICHT], {})).toBe(1);           // ohne klingendes Grün: nichts
+    expect(stanceGreenMult(st(), f, 2, voll([S.FERNLICHT]), {})).toBe(1);     // ohne klingendes Grün: nichts
   });
   it("SK_STANCE_L03 Lichtband: der Serien-Deckel steigt je HALTUNGSWECHSEL des Laufs", () => {
     /* §6.21: die erste Fassung zählte klingende Haltungen und endete damit bei vier — ein Deckel, der selbst

@@ -840,6 +840,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "bar.stance.fx.R","i18n","Ergebnis +1 Stufe","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "bar.stance.fx.R.all","i18n","Jeder Stich gewinnt","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "bar.stance.fx.Y","i18n","Score ×{mult}","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"bar.stance.level","i18n","Stufe {n}/{max}","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "bar.stance.now","i18n","Wirkt gerade","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "bar.stance.row","i18n","{suit} · {won} von {need} — noch {left} bis zum Wechsel. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "bar.stance.row.active","i18n","{suit} · aktiv — {won} von {need}. Die aktive Haltung wechselt nicht zu sich selbst, ihr Zähler fällt nur zurück. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
