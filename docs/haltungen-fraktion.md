@@ -1668,9 +1668,19 @@ Die Schwelle „Mischen dominiert" liegt bei 1,15× und ist damit unterschritten
 Skill-Rework war 1,03×. Das Feld dahinter steht unverändert: Eis 154,6 · Blitz 85,0 · **Prisma 67,4** ·
 Pflanze 33,9 · Feuer 26,1 (Mio Median, mono) — Prisma bleibt Dritter.
 
-**Offen:** `test/sim-balance-guard.test.js` steht bei Median 16,0 Mio gegen eine Bandgrenze von 15
-(vor der Staffel 18,9). Der Mean ist wieder im Band. Ob das Band neu zentriert wird oder die Zahlen
-weiter fallen sollen, ist nicht entschieden — der Wächter ist unangetastet.
+**Der Balance-Wächter ist neu zentriert** (Owner-Entscheid, 2026-09-27). Der Zufallsspieler steigt,
+weil eine fünfte Fraktion im Topf den BODEN hebt — dieselbe Signatur, die die Datei für Pflanze und Eis
+schon zweimal festhält; die Staffel nimmt den größeren Teil davon zurück (18,9 → 16,0 Mio). Beleg:
+
+| | Seeds 1..40 | Seeds 1..200 |
+| --- | --- | --- |
+| Median | 16,01 Mio | 16,69 Mio |
+| Mean | 23,49 Mio | 28,52 Mio |
+
+Dasselbe Niveau über beide Seed-Sätze, also kein einzelner Ausreißer. Das **Median**-Band ist darauf
+neu zentriert (7–15 → **10–22 Mio**, ≈ ±35 %); das **Mean**-Band bleibt bei 15–31, sein Wert liegt
+mitten darin. Der Mean ist der Schwanzfänger — vor der Staffel stand er bei 43,7 gegen 31, jetzt
+wieder drinnen; die Signatur sagt „der Boden ist gestiegen", nicht „die Decke ist explodiert".
 
 ---
 

@@ -124,8 +124,15 @@ describe("sim balance guard", () => {
        Direkt danach `BURST_SCALE` 80 → 60 (Owner): Median 9,83M, Mean 18,99M — beide im frisch zentrierten
        Band, nicht erneut zentriert. Der Regler nimmt also gut die Hälfte dessen zurück, was die zwei Buffs
        gebracht haben, ohne einen einzelnen Skill anzufassen. */
-    expect(median).toBeGreaterThan(7_000_000);
-    expect(median).toBeLessThan(15_000_000);
+    /* 2026-09-27 (Owner): PRISMA kommt ins Angebot (SKILL_OFFER_ARCHETYPES) und bekommt im selben Zug die
+       Passiv-Staffel (docs/haltungen-fraktion.md §3, gemessen in §6.22). Der Zufallsspieler STEIGT — dieselbe
+       Signatur wie bei Pflanze und Eis davor: eine fünfte Fraktion im Topf hebt den BODEN, weil ihre vier
+       Passive ohne gebauten Motor zahlen. Die Staffel nimmt den größeren Teil davon wieder zurück (18,9 → 16,0M).
+       Seeds 1..40 Median 16,01M, Mean 23,49M · Seeds 1..200: 16,69M / 28,52M — dasselbe Niveau, also kein
+       einzelner Ausreißer, sondern die gewollte Folge. Das MEDIAN-Band ist darauf neu zentriert (≈ ±35 %);
+       das MEAN-Band bleibt, sein Wert liegt mitten darin. */
+    expect(median).toBeGreaterThan(10_000_000);
+    expect(median).toBeLessThan(22_000_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
