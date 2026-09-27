@@ -986,11 +986,16 @@ describe("Aufträge · abgerechnet wird erst am Fensterende (§3.7)", () => {
   }, 30_000);
 
   it("ein früh erfüllter Auftrag läuft weiter und wartet auf das Fensterende", () => {
-    // Seed 1 erfüllt im ERSTEN Durchlauf und wird trotzdem erst nach D16 bezahlt.
+    /* Seed 1 erfüllt lange vor dem Fensterende und wird trotzdem erst danach bezahlt. WELCHES Fenster
+       das ist, hängt am Angebot: bis 2026-09-27 stand es auf D16, seit Prisma im Skill-Pool ist
+       (SKILL_OFFER_ARCHETYPES) zieht derselbe Seed einen anderen Auftrag und landet im zweiten.
+       Die Regel ist unverändert — deshalb steht hier das LETZTE Fensterende aus dem Register und
+       keine getippte Zahl, und die Wartezeit endet eine Runde davor. */
     const { beuteBei, erfuelltOhne } = auftragslauf(1);
+    const ende = ENDEN[ENDEN.length - 1];
     expect(erfuelltOhne.length, "erfüllt, aber noch nicht bezahlt").toBeGreaterThan(0);
-    expect(beuteBei, "genau eine Auszahlung, am Fensterende").toEqual([16]);
-    expect(Math.max(...erfuelltOhne), "die Wartezeit reicht bis an die Grenze").toBe(15);
+    expect(beuteBei, "genau eine Auszahlung, am Fensterende").toEqual([ende]);
+    expect(Math.max(...erfuelltOhne), "die Wartezeit reicht bis an die Grenze").toBe(ende - 1);
   }, 30_000);
 });
 

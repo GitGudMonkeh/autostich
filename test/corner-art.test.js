@@ -46,13 +46,17 @@ const buildPy = readFileSync(new URL("../scripts/skill-art-build.py", import.met
 
 const FILES = readdirSync(new URL("../src/assets/corners", import.meta.url));
 const MASTERS = readdirSync(new URL("../docs/art/corners", import.meta.url)).filter((f) => f.endsWith(".webp"));
-/* Ornaments belong to the factions a PLAYER can meet — that is the skill-offer pool, not the registry. A faction
-   that exists only in the registry and in the sim (docs/haltungen-fraktion.md, working title „Prisma": deliberately
-   NOT in SKILL_OFFER_ARCHETYPES until it is measured) has no offer screen to decorate, and inventing art for it
-   would be a new glyph nobody asked for. Both sets are pinned below, so the day such a faction is shipped to
-   players the gap fails HERE and not in a playtest. */
+/* Ornaments belong to the factions a PLAYER can meet — that is the skill-offer pool, not the registry. The sets are
+   pinned below, so the day a faction is shipped to players without art the gap fails HERE and not in a playtest.
+
+   That day came on 2026-09-27: Prisma entered SKILL_OFFER_ARCHETYPES, this guard reported the gap — which is what it
+   is for — and the OWNER decided to ship it without an ornament for now. The exemption is therefore named, and named
+   only here: a second artless faction has to come past this line, and a faction that is neither shipped nor named
+   still fails. A missing image renders nothing at all (CardCorners: `if (!src) return null`), so the offer heads stay
+   intact meanwhile. When the master is drawn, the name leaves this list and the rest of the guard bites again. */
+const ARTLESS = ["stance"];
 const SHIPPED = ARCHETYPE_ORDER.filter((a) => SKILL_OFFER_ARCHETYPES.includes(a));
-const KEYS = [...SHIPPED, CORNER_PERK];
+const KEYS = [...SHIPPED.filter((a) => !ARTLESS.includes(a)), CORNER_PERK];
 
 /* A rule body, isolated. Every CSS assertion reads THIS and not the whole stylesheet — a match
    anywhere in a 5000-line file would also match a comment that merely mentions the property, which
@@ -112,11 +116,12 @@ describe("#cornerart — mapping through the filename", () => {
 
 describe("#cornerart — completeness of the lot", () => {
   it("knows archetypes at all (otherwise the suite would be silently green)", () => {
-    expect(SHIPPED.length).toBe(4);
-    expect(KEYS.length).toBe(5);
-    // The registry may carry more than the pool. Those are sim-only and artless ON PURPOSE — name them, so
-    // adding one is a deliberate edit here and shipping one without art cannot pass.
-    expect(ARCHETYPE_ORDER.filter((a) => !SHIPPED.includes(a))).toEqual(["stance"]);
+    expect(SHIPPED.length).toBe(5);
+    expect(KEYS.length).toBe(5); // four decorated factions plus the perk panel
+    // The registry no longer carries a faction the pool does not — every one of them is shipped.
+    expect(ARCHETYPE_ORDER.filter((a) => !SHIPPED.includes(a))).toEqual([]);
+    // The one exemption, by name (owner, 2026-09-27). A second one is a deliberate edit right here.
+    expect(ARTLESS).toEqual(["stance"]);
   });
 
   it("every archetype and the perk panel has an ornament", () => {
