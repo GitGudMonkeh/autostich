@@ -1,5 +1,5 @@
-/* #308 ZENTRALE Fraktions-Icon-Quelle. EIN Asset-Map + eine Komponente für alle vier Fraktionen (Feuer/Eis/Blitz/
-   Pflanze) — ersetzt die bisher gemischte Darstellung (Emoji 🔥/🌿/⚡ + Alt-Asset glacier.webp). Jede View rendert
+/* #308 ZENTRALE Fraktions-Icon-Quelle. EIN Asset-Map + eine Komponente für alle fünf Fraktionen (Feuer/Eis/Blitz/
+   Pflanze/Prisma) — ersetzt die bisher gemischte Darstellung (Emoji 🔥/🌿/⚡ + Alt-Asset glacier.webp). Jede View rendert
    die Fraktion über <FactionIcon type="fire|ice|lightning|plant" /> bzw. FACTION_ICON_SRC[type]; neue Views erben
    automatisch. Assets sind quadratisch und transparent (src/ui/assets/factions/*.webp).
 
@@ -24,14 +24,15 @@ import fireIcon from "./assets/factions/fire.webp";
 import iceIcon from "./assets/factions/ice.webp";
 import lightningIcon from "./assets/factions/lightning.webp";
 import plantIcon from "./assets/factions/plant.webp";
+import stanceIcon from "./assets/factions/stance.webp";
 import glacierIcon from "./assets/glacier.webp";
 
 // Fraktions-id (fire|ice|lightning|plant) → Bild-URL. Auch direkt nutzbar (z. B. als <img src={FACTION_ICON_SRC.fire}>).
-export const FACTION_ICON_SRC = { fire: fireIcon, ice: iceIcon, lightning: lightningIcon, plant: plantIcon };
+export const FACTION_ICON_SRC = { fire: fireIcon, ice: iceIcon, lightning: lightningIcon, plant: plantIcon, stance: stanceIcon };
 // Glossar-Einträge, die ein EIGENES Bild statt des Fraktions-Icons tragen (`img`-Feld im Register).
 export const GLOSSARY_IMG_SRC = { glacier: glacierIcon };
 // Glow-Farbe je Fraktion (Neon-drop-shadow) — an die HIT_STYLE-Farben angelehnt.
-export const FACTION_GLOW = { fire: "#e0714a", ice: "#5ec8f0", lightning: "#cf9bff", plant: "#5ab87a" };
+export const FACTION_GLOW = { fire: "#e0714a", ice: "#5ec8f0", lightning: "#cf9bff", plant: "#5ab87a", stance: "#c07ad0" };
 
 /* Fraktions-Icon. `type` = Fraktions-id; `size` = px (quadratisch); `glow` = zusätzlicher CSS-Neon-Schein
    (default AUS — die Zeichnung bringt ihren eigenen mit, Begründung im Dateikopf).

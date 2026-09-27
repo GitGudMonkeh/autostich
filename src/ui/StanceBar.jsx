@@ -18,6 +18,7 @@
 
    Rein informativ, keine Engine-Kopplung (spiegelt state.stance). */
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { PRISM } from "./indicators/vocab.js";
 import { STANCE_SUITS, ringsNow, ringCount, rundeLift, stanceParam, anklangScore, stanceLevel,
   stanceCritStep, stanceGreenStep, stanceScoreStep,
@@ -34,16 +35,6 @@ const num = (x) => fmtNum(Math.round(x * 100) / 100);
 const pct1 = (x) => fmtNum(Math.round(x * 1000) / 10);
 const rate3 = (x) => fmtNum(Math.round(x * 1000) / 1000);
 const suitLabel = (s) => t(`suit.${s}.name`);
-
-/* Das Fraktions-Icon ist ein Platzhalter (Owner: offen) — vier Viertel in den vier Grundfarben, aus
-   den Farbverläufen gebaut statt als Asset. Kein neues Glyph: die Farben sind die des Decks. */
-function PrismIcon({ size = 15 }) {
-  const q = (deg, s) => `linear-gradient(${deg}deg, ${suitColor(s)} 0 50%, transparent 50% 100%)`;
-  return (
-    <span aria-hidden="true" style={{ display: "inline-block", width: size, height: size, borderRadius: 3, opacity: 0.92,
-      background: [q(135, "R"), q(225, "B"), q(45, "G"), q(315, "Y")].join(", ") }} />
-  );
-}
 
 export function StanceBar({ active, stance = null, skills = [], skillTiers = {}, showSkills = false,
                             options = {}, onOption, manyActive = false }) {
@@ -97,7 +88,7 @@ export function StanceBar({ active, stance = null, skills = [], skillTiers = {},
   ].filter(Boolean);
 
   return (
-    <FactionShell anchor="faction-stance" icon={<PrismIcon />} name={archetypeLabel("stance")} color={fac}
+    <FactionShell anchor="faction-stance" icon={<FactionIcon type="stance" size={15} />} name={archetypeLabel("stance")} color={fac}
       stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       footer={showSkills ? <PanelSkills skills={skills} arch="stance" color={fac} /> : null}>
       {/* Hauptelement: eine Zeile je Grundfarbe, feste Reihenfolge R · B · G · Y. */}

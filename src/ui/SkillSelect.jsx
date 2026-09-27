@@ -5,7 +5,8 @@ import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, boostedTier, effectiveT
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
-         HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
+         HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH,
+         STANCE_THRESHOLD, STANCE_MIN_DURATION, STANCE_SCALE_MAX, STANCE_CRIT_STEPS, STANCE_GREEN_STEPS, STANCE_SCORE_STEPS } from "../game/constants.js";
 import { focusPrice, UPGRADE_FROM, forfeitSkill, coinsOn } from "../game/coins.js"; // Münz-Ökonomie §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
 import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
@@ -22,7 +23,7 @@ import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
-import { t } from "../i18n/index.js";
+import { t, fmtNum } from "../i18n/index.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
@@ -48,6 +49,9 @@ const PASSIVE_KEYWORDS = {
   ice:       ["masse", "bersten", "eisformation"],
   plant:     ["green"],
 };
+
+// Eine Staffel als Reihe: „15 / 30 / 45". #sprache: das Trennzeichen folgt der Sprache (fmtNum).
+const ladder = (steps, map = (v) => v) => steps.map((v) => fmtNum(map(v))).join(" / ");
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -110,7 +114,7 @@ function FocusIcon({ size = 15 }) {
   );
 }
 
-/* Fokus rufen (docs/muenz-oekonomie.md §3.3) — unter den Türen, vier Fraktions-Chips, ein Tap wählt UND
+/* Fokus rufen (docs/muenz-oekonomie.md §3.3) — unter den Türen, ein Chip je Fraktion, ein Tap wählt UND
    bezahlt. Einmal je Skill-Phase; danach ist der Block weg, weil die gerufene Tür darüber schon dasteht.
    Die Fraktion, von der man am meisten hält, ist hervorgehoben — das ist die, die man am ehesten sucht,
    und der Chip sagt es, ohne dass man zählen muss. */
@@ -131,7 +135,7 @@ function FocusCall({ state, onCallFocus }) {
         <span className="ml-auto"><CoinAmount n={preis} size={12} dim={!can} have={coins} /></span>
       </div>
       <div className="text-body-5 leading-snug mt-1.5" style={{ color: "#9a93b5" }}>{t("focus.hint")}</div>
-      <div className="grid grid-cols-4 gap-1.5 mt-3">
+      <div className="grid gap-1.5 mt-3" style={{ gridTemplateColumns: `repeat(${ARCHETYPE_ORDER.length}, minmax(0, 1fr))` }}>
         {ARCHETYPE_ORDER.map((a) => {
           const m = archMeta(a) || { color: "#8a8a95", label: a };
           const on = a === lead;
@@ -231,6 +235,12 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
         return t("skill.passive.plant", { win: PLANT_GROWTH_WIN, perForm: PLANT_GROWTH_PER_FORMATION,
           green: PLANT_GREEN_THRESHOLD, bloom: PLANT_BLOOM_THRESHOLD, score: PLANT_BLOOM_SCORE_PER_GREEN,
           weight: numWord(PLANT_BLOOM_WEIGHT), per: PLANT_BLOOM_WEIGHT_PER_GROWTH });
+      case "stance":
+        /* Die drei Leitern kommen als fertige Reihe in den Satz, nicht als neun Platzhalter: sie stehen
+           in constants.js und sollen sich dort ändern lassen, ohne dass der Katalog nachzieht. */
+        return t("skill.passive.stance", { thr: STANCE_THRESHOLD, dur: STANCE_MIN_DURATION, max: STANCE_SCALE_MAX,
+          crit: ladder(STANCE_CRIT_STEPS, (v) => Math.round(v * 100)),
+          green: ladder(STANCE_GREEN_STEPS), score: ladder(STANCE_SCORE_STEPS) });
       default: return "";
     }
   };

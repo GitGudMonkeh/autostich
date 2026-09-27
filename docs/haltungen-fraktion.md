@@ -257,8 +257,15 @@ Vier Entscheidungen, die man beim Ändern kennen muss:
   Mit Pflanze im Deck ist das der Unterschied zwischen einer laufenden und einer stehenden Rotation.
 
 Die Schale trägt die Farbe der **aktiven Haltung** und wird im Einklang weiß (Owner) — Prisma hat als
-einzige Fraktion keine feste Leistenfarbe. Das **Icon** ist ein Platzhalter aus vier Vierteln in den
-Grundfarben, kein Asset (offen). Wächter: `test/stance-panel.test.js`.
+einzige Fraktion keine feste Leistenfarbe. Das **Icon** steht seit 2026-09-27 als Asset
+(`src/ui/assets/factions/stance.webp`, 128 px, Schein eingebrannt wie bei den vier anderen): ein Prisma,
+in das ein weißer Strahl fällt und als Fächer in den vier Grundfarben austritt. Ein Austausch bleibt ein
+reiner Dateitausch (s. Dateikopf `FactionIcon.jsx`). Wächter: `test/stance-panel.test.js`.
+
+**Was die Fraktion an Spielertext hat:** die Passiv-Beschreibung in der Skill-Auswahl
+(`skill.passive.stance`) — Wechsel, Nachklang, die vier Passive und die Staffel in der Reihenfolge, in
+der der Spieler sie erlebt. Sie fehlte bis 2026-09-27: `unlockLine` in `SkillSelect.jsx` hatte keinen
+`stance`-Zweig, und die Fraktion stand im Angebot mit einem leeren Kasten.
 
 ---
 
