@@ -1749,8 +1749,6 @@ export default {
   "campaign.bar.progress": "{a} / {b} Mio",
   "campaign.threshold": "{n} Mio",
   "campaign.start": "Stufe {n} starten",
-  "campaign.giveUp": "Kampagne aufgeben",
-  "campaign.giveUp.sure": "Wirklich aufgeben?",
   "campaign.reset": "Kampagne zurücksetzen",
   "campaign.reset.sure": "Alles zurück auf null?",
 

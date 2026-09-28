@@ -1928,8 +1928,6 @@ export default {
   "campaign.bar.progress": "{a} / {b}M",
   "campaign.threshold": "{n}M",
   "campaign.start": "Start step {n}",
-  "campaign.giveUp": "Abandon campaign",
-  "campaign.giveUp.sure": "Really abandon?",
   "campaign.reset": "Reset campaign",
   "campaign.reset.sure": "Everything back to zero?",
 
