@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import { runOne } from "../sim/run.js";
 import { randomPolicy } from "../sim/policies/random.js";
 
+/* This guard is a measurement pin, not an invariant: a deliberate balance change moves the level, and the band
+   follows. Re-centre it IN THE SAME COMMIT as the change that moves it (2026-09-27 pushed a knowingly red
+   guard and the exp deploy failed on it) — a red gate is never the way to record a decision. */
 // Balance-Guard (docs/sim-harness-plan.md §9): Random-Policy über feste Seeds → Median UND Mean im Band.
 // Fängt versehentlichen Power-Creep bei Tuning-Änderungen. WICHTIG: BEIDE Kennzahlen prüfen —
 // der Median ist gegen Heavy Tails robust (der #121-Feuer-Runaway bewegte den Median kaum), der

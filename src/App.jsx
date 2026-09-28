@@ -29,7 +29,10 @@ import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Geb
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
 import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx dreistufig auf (full/balanced/minimal) → steuert Overlay-Blur + Sweeps
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
-import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
+import { getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
+import { usePerfMarks } from "./ui/usePerfMarks.js";
+import { useAudioSync } from "./ui/useAudioSync.js";
+import { useRunActions } from "./ui/useRunActions.js";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
@@ -68,7 +71,6 @@ import { UpdateBanner } from "./ui/UpdateBanner.jsx"; // #update: „Neue Versio
 
 // #333: Musik-Ducking in den Auswahlphasen (Perk/Skill/Gebäude/Aufstell + übrige Nicht-„play"-Screens im Lauf) —
 // Faktor 0,6 = ~40 % leiser (tunebar); 1 = volle Lautstärke im aktiven Stichspiel.
-const MUSIC_DUCK = 0.6;
 
 // #351: harter Boden für den Auto-Play-Takt — selbst bei sehr hoher dynamischer Rundengeschwindigkeit (viele Siege ×
 //   MAX-Turbo) nie unter dieses Delay, und ein endlicher Fallback gegen NaN/Infinity. Verhindert 0-ms-Runaway/Nie-Feuern.
@@ -406,9 +408,6 @@ function AutostichGame() {
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, []);
-  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke). #207: Haptik-Toggle spiegeln (Default an; wirkt nur auf Mobile).
-  useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
-  useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
   // #sprache: Sprachwechsel in den i18n-Kern spiegeln und `<html lang>` mitziehen (Screenreader, Browser-Übersetzung,
   // Silbentrennung). Der Kern benachrichtigt alle Abonnenten (useLocale) → die UI rendert in der neuen Sprache neu.
   // Der Tab-Titel zieht mit: index.html trägt den deutschen Titel statisch (er steht im HTML, bevor
@@ -422,52 +421,10 @@ function AutostichGame() {
     try { document.documentElement.lang = loc; } catch (e) {}
     try { document.title = t("meta.title"); } catch (e) {}
   }, [options.lang]);
-  // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
-  // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
-  const prevBuys = useRef(0);
-  useEffect(() => {
-    const n = state.shop?.purchaseLog?.length || 0;
-    if (n > prevBuys.current) { audio.play("buy"); haptics.tick(); } // #207: Kauf-Bestätigung buzzt mit (Cashout-Button ist data-sfx="none")
-    prevBuys.current = n;
-  }, [state.shop?.purchaseLog?.length]);
-  // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover
-  // → „Midnight Drive"; sonst (im Run) ein zufälliger Track aus dem harmonisierten Pool. Lautstärke/Mute spiegeln.
-  const [musicTitle, setMusicTitle] = useState(null);
-  useEffect(() => music.subscribe(setMusicTitle), []);
-  const musicHome = state.phase === "menu" || state.phase === "gameover";
-  // #339: aktuellen Score über einen Ref bereithalten (KEINE Effekt-Dep → die Musik startet nicht bei jedem Score-Tick neu),
-  //   damit enterRun beim Run-/Resume-Start die zum gespeicherten Score passende Stufe wählt (statt immer calm).
-  const scoreRef = useRef(state.score || 0);
-  useEffect(() => { scoreRef.current = state.score || 0; }, [state.score]);
-  useEffect(() => { if (musicHome) music.menu(); else music.enterRun(scoreRef.current); }, [musicHome]);
-  // Aktueller Score an die Musik: steuert die Intensitäts-Stufe (<1 Mio ruhig → 60 Mio+ Overdrive+).
-  useEffect(() => { if (!musicHome) music.setProgress(state.score || 0); }, [state.score, musicHome]);
-  useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
-  // Ruhiger Modus (Option): kappt die score-abhängige Musik-Eskalation bei „mid" (nur calm/mid-Tracks). Default aus.
-  useEffect(() => { music.setCalmMode(!!options.calmMusic); }, [options.calmMusic]);
-  // #333: In den Auswahl-/Aufbau-Screens im Lauf (alles außer „play") die Musik ~40 % leiser ziehen (sanft), im
-  // aktiven Stichspiel wieder voll. Deckt Perk/Skill/Gebäude/Aufstell und konsistent target/family-target/glacier-target/
-  // legendary ab. Duck ist KEIN Mute (Nutzer-Lautstärke/Mute bleiben unberührt).
-  useEffect(() => { music.setDuck(inRun && state.phase !== "play" ? MUSIC_DUCK : 1); }, [inRun, state.phase]);
-  // Pause-Knopf hält die Musik an (nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter) UND der
-  // Hintergrund/geschlossen-Zustand (!visible) hält sie IMMER an — sonst läuft die BGM auf dem Handy hinter dem
-  // gesperrten Bildschirm/App-Wechsel weiter. Beim Zurückkehren (visible) wird der Zustand neu berechnet → Musik läuft weiter.
-  useEffect(() => { music.setPaused((paused && state.phase === "play") || !visible); }, [paused, state.phase, visible]);
-  // #: „Game komplett samt Musik pausieren", wenn die App in den Hintergrund geht/geschlossen wird (Handy sperren,
-  // App-Wechsel): zusätzlich zur BGM den GANZEN Sound-Context suspendieren (alle SFX/Finisher-Betten einfrieren,
-  // Akku sparen) — und beim Zurückkehren nahtlos fortsetzen. Der Lauf selbst friert bereits über `visible` ein.
-  useEffect(() => { audio.setSuspended(!visible); }, [visible]);
-  // #: Persistente Finisher-Ton-Betten (Brennstrahl/Schwarzes Loch) dürfen NUR in zwei Zuständen klingen: (1) im aktiv
-  // laufenden Stichspiel und (2) in der Werkstatt-Vorschau (dort mounten die Preview-Betten). In JEDEM anderen Zustand
-  // — Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Overlays, Hintergrund-Tab UND besonders der Victory-/Gameover-Screen
-  // (Lauf zu Ende, aber der letzte Sieg-Loop hängt noch) — werden sie verstummt. Positiv-Logik (statt inRun-gated), damit
-  // auch der Gameover-Zustand (inRun=false) sicher greift.
-  useEffect(() => {
-    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && visible;
-    const loopsAllowed = inActivePlay || showCustomize; // Werkstatt-Showcase = einziger Nicht-Spiel-Ort mit Loop-Betten
-    audio.setLoopsSuspended(!loopsAllowed);
-    audio.setFxSuspended(!loopsAllowed); // #329: Effekt-One-Shots (fx_*) exakt wie die Loop-Betten gaten → kein Sound-Schwanz im Victory/Overlay
-  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, showCustomize]);
+  // Audio, music and haptics follow options and run state in useAudioSync.js (mute/volume mirrors, buy sound,
+  // music phase/progress/duck/pause, loop beds gated to active play or the workshop showcase).
+  const { musicTitle } = useAudioSync({ options, state, inRun, paused, visible,
+    overlays: { showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, showCustomize } });
   const changeOptions = (patch) => setOptions((o) => {
     // #telemetrie: Abschalten verwirft auch das, was noch in der Warteschlange liegt (siehe telemetry.purge).
     if (patch.telemetry === false && o.telemetry !== false) telemetry.purge();
@@ -619,131 +576,7 @@ function AutostichGame() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [state.trickNo]);
 
-  // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
-  // Genutzt von Game-Over UND vom vorzeitigen Beenden (#5), damit nichts verloren geht.
-  function saveRun() {
-    if (recorded.current) return;
-    /* Lauf ohne einen einzigen Stich (Abbruch in den Eröffnungsphasen): nichts zu werten — aber
-       die Anzeige-Reste des VORHERIGEN Laufs müssen weg (Review-Runde 2026-08-28, Zeile 34). */
-    if (!state.trickNo) {
-      setPrevBests(null);
-      return;
-    }
-    recorded.current = true;
-    const finalScore = Math.floor(state.score);
-    // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
-    const localEntry = {
-      score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
-      bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
-      skillTiers: state.skillTiers || {}, // exp skill rework: die gehaltene Stufe je Skill → die Rückblicke zeigen den Text dieser Stufe
-      maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
-      crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
-      bestGlacierTrickScore: state.bestGlacierTrickScore || 0, // bester Gletscher-Stich (nur wenn Eis gespielt) → separate KPI in Victory/Statistik
-      // Victory/Stats-Redesign: Fraktions-Score-Kanäle mitspeichern → die feine Score-Herkunft (Gletscher/Pflanze/
-      // Blitz/Feuer + Serie) steht ab jetzt auch in der Statistik (Bestes Build). Alt-Läufe ohne die Felder degradieren
-      // sauber aufs grobe Modell (factionShares klemmt fehlende Kanäle auf 0 → „Sonstige").
-      glacierYield: state.glacierYield || 0, streakScore: state.streakScore || 0, lightYield: state.lightYield || 0,
-      plantBase: state.plantBase || 0,
-      fireBase: state.fireBase || 0, fireWhite: state.fireWhite || 0,
-      // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
-      // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
-      seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
-    };
-    setHighscores(recordHighscore(localEntry));
-    // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
-    // Zusätzlich: Lauf-Dauer (aus dem HUD-Timer) + im Lauf genutzte Archetypen (unique) für die Analyse.
-    const durationMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-    const archetypesUsed = [...new Set((state.skills || []).map(archetypeOf).filter(Boolean))];
-    const prevProfile = profile;
-    // #190 Challenge-Tracking: nur ein natürlich abgeschlossener Lauf (cycle === MAX_CYCLES) zählt; plus die
-    // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
-    const completed = state.cycle >= totalCycles;
-    // #201.8 Stufe B: kompakte finale Aufstellung mitpersistieren (playerOrder ist bereits in Spielreihenfolge aufgelöst).
-    // Zusätzlich das Architekt-Gebäude-Overlay + die Gebäude-Liste (Positionen matchen die Snapshot-Karten-Reihenfolge),
-    // damit die Lauf-Details (RunDetail) die Gebäude ein-/austoggeln und Name·Stufe zeigen können — wie im Victory-Screen.
-    const archBuildingsSnap = ((state.architectEnabled && state.architect && state.architect.buildings) || [])
-      .map((b) => ({ id: b.id, familyId: b.familyId, tier: b.tier, footprint: b.footprint }));
-    const deckSnapshot = {
-      cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green }; }),
-      /* Der Schnappschuss stand auf sieben Argumenten und liess Architekt, Pflanze und die offenen
-         Grenzen weg — die Chronik zeigte damit ANDERE Formationen als der Lauf gewertet hatte.
-         Beim Lueckenschluss faellt das auf: wer ihn haelt, saehe seine ueberbrueckten Formationen
-         hinterher nicht. Also die volle Liste, wie ueberall sonst. */
-      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [],
-        state.shop?.anchors || [], state.familyTiers || {}, state.architectEnabled ? state.architect : null,
-        { skillTiers: state.skillTiers || {}, growth: state.growth || {} }, openBordersOf(state)),
-      architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
-      buildings: archBuildingsSnap,
-      challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
-    };
-    /* #rd-verlauf: die zwei Verlaufsreihen des Laufs mit in die Historie — bis hierher existierten sie nur im
-       Live-State und der Victory-Screen war der einzige Ort, an dem man sie je zu sehen bekam. Beide sind klein
-       (Trajektorie: ein Wert je GHOST_STEP Stiche; Stich-Log: ein Zahlenpaar je Stich) und liegen damit weit
-       unter dem deckSnapshot, dem größten Posten der Historie. `won` als 0/1 statt bool spart im JSON die Hälfte.
-       Bewusst NICHT in `localEntry`: Highscore-Liste und Telemetrie brauchen sie nicht und bleiben unverändert. */
-    const trajSnap = currentTraj.current.filter((v) => typeof v === "number");
-    const trickLogSnap = (state.trickLog || []).map((c) => (c || []).map((tk) => ({ gained: Math.round(tk.gained || 0), won: tk.won ? 1 : 0 })));
-    /* exp: recordRun still books SP/DP/unlocks in the profile (data model untouched, nothing to migrate on
-       the way back), but nothing here reads them any more — the earn rollup, the onboarding banner and the
-       skin-unlock window left with the meta-progression. */
-    const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
-      traj: trajSnap, trickLog: trickLogSnap, // #rd-verlauf: Score-Verlauf + Stich-Score je Durchlauf (Lauf-Details)
-      shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
-      ranked: state.ranked || null, // #303 Sparfuchs: Ranked-Wochen-Seed (Freischalt-Bedingung)
-      completed, deckSnapshot }); // #382 Challenge-Modus entfernt
-    setProfile(nextProfile);
-    // #go-ruhe: Vorher-Stand der vier All-Time-Rekorde fürs Bestleistungs-Panel (prevProfile = Profil vor recordRun).
-    setPrevBests({ score: prevProfile.bestScore || 0, streak: prevProfile.bestStreak || 0,
-      crits: prevProfile.maxCrits || 0, trick: prevProfile.bestTrickScore || 0 });
-    // #telemetrie: denselben Lauf anonym an die Telemetrie-Tabelle schicken — UNABHÄNGIG vom Leaderboard.
-    // Bewusst getrennt: das Board schreibt nur mit gesetztem Namen und nur den Wettbewerbs-Ausschnitt; fürs
-    // Balancing brauchen wir JEDEN Lauf (auch namenlose und vorzeitig beendete) samt Entscheidungs-Mitschrift.
-    // `nextProfile` (nicht `profile`) → der Baum-/Kosmetik-Stand NACH diesem Lauf. Fehler sind gekapselt.
-    telemetry.recordRun({
-      enabled: options.telemetry !== false, state, profile: nextProfile, options, durationMs, runId: runId.current,
-      localEntry: { ...localEntry, archetypes: archetypesUsed },
-      outcome: completed ? "completed" : "ended",
-    });
-    // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
-    // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
-    const name = [...(username || "").trim()].slice(0, 20).join(""); // #health-check S7: Codepoints statt UTF-16-Einheiten — .slice(0,20) konnte ein Surrogatpaar zerschneiden
-    // Archetyp je gehaltenem Skill am Laufende (#139): ein Eintrag pro Skill (z. B. "fire,fire,ice"),
-    // damit das Board ein Icon PRO Skill zeigt (4 Feuer → 4× 🔥). Leer, wenn keine Skills gehalten wurden.
-    // Reihenfolge egal — decodeArchetypes gruppiert/zählt beim Rendern.
-    const archetypes = (state.skills || []).map(archetypeOf).filter(Boolean).join(",");
-    // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
-    // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
-    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes,
-      seed: state.seed ?? null, // #205: Lauf-Seed mitposten → Board-Einträge sind nachspielbar + Challenge-Board (Top-3 pro Seed)
-      // #169 FB-8: Detailspalten (snake_case = Supabase-Spalten). perks/skills als kompakte ID-Liste (wie archetypes).
-      // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
-      best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
-      max_formations: state.maxFormations, formation_score: state.formationScore,
-      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
-      // exp: no tree → no tree_nodes column; the board's optional column stays NULL for playground runs.
-      // #370: Ranglisten-Läufe posten aufs Wochen-Board (Board-String bleibt vorerst "meister" = bestehendes
-      //   Wochen-Board + Champions; Seed segmentiert die Woche). Casual-Läufe posten OHNE board (→ NULL).
-      ...(state.ranked ? { board: "meister" } : {}) };
-    setMyEntry(gEntry);
-    // #174 Zweite Verteidigungslinie: das Modal blockt unsaubere Namen schon bei der Eingabe,
-    // aber ein VOR dem Filter gespeicherter Altname liegt weiter im localStorage und käme
-    // hier ungeprüft aufs globale Board. Lokal bleibt der Lauf sichtbar (myEntry oben) —
-    // nur veröffentlicht wird er nicht.
-    const nameOk = isAllowedUsername(name).ok;
-    if (leaderboardConfigured && name && nameOk) {
-      publishRun(gEntry).then((saved) => {
-        // #229 N2: die vom Board vergebene id nachtragen → GlobalLeaderboard markiert die Eigen-Zeile eindeutig.
-        if (saved && saved.id != null) setMyEntry((e) => (e ? { ...e, id: saved.id } : e));
-        setPubToken((t) => t + 1);
-      }).catch(() => {});
-    }
-    if (finalScore > recordTotal.current) {
-      recordTraj.current = currentTraj.current.slice();
-      recordTotal.current = finalScore;
-      saveGhost(recordTraj.current, finalScore);
-      setIsRecord(true);
-    }
-  }
+  const { saveRun } = useSaveRun({ currentTraj, options, profile, recordTotal, recordTraj, recorded, runId, segStart, setHighscores, setIsRecord, setMyEntry, setPrevBests, setProfile, setPubToken, state, timeBase, totalCycles, username });
   // Bei Game-Over automatisch werten + den Resume-Snapshot löschen (Lauf ist beendet → kein Fortsetzen mehr).
   useEffect(() => {
     if (state.phase === "gameover") { saveRun(); clearActiveRun(); setResumable(null); }
@@ -767,16 +600,9 @@ function AutostichGame() {
      Phasenwechsel zurück ins Menü — der Eintrag ist beim Betreten also garantiert schon da. */
   const lastRun = useMemo(() => (state.phase === "menu" ? loadRunHistory()[0] || null : null), [state.phase]);
 
-  // Perf-Recorder: Spiel-Events markieren, damit Frame-Ruckler dem zugeordnet werden, WAS gerade
-  // passiert (perfMark ist außerhalb des Preview-Builds ein billiger No-op). Deck-Wechsel, laufender
-  // Stich-Takt, Overlays (Blur-Verdacht), Phasen/Durchläufe.
-  useEffect(() => { perfMark("phase:" + state.phase, { phase: state.phase }); }, [state.phase]);
-  useEffect(() => { if (state.trickNo) perfMark("trick", { trick: state.trickNo }); }, [state.trickNo]);
-  useEffect(() => { perfMark("cycle", { cycle: state.cycle }); }, [state.cycle]);
-  useEffect(() => { perfMark("deck-switch"); }, [deckSkin.front, deckSkin.back]);
-  useEffect(() => { if (showOptions) perfMark("overlay:options"); }, [showOptions]);
-  useEffect(() => { if (showChronik) perfMark("overlay:chronik"); }, [showChronik]);
-  useEffect(() => { if (glossaryOpen) perfMark("overlay:glossar"); }, [glossaryOpen]);
+  // Perf-Recorder marks (phase, trick, cycle, deck switch, overlays) live in usePerfMarks.js.
+  usePerfMarks({ phase: state.phase, trickNo: state.trickNo, cycle: state.cycle, deckFront: deckSkin.front, deckBack: deckSkin.back,
+                 showOptions, showChronik, glossaryOpen });
   // Auto-Dump bei Game-Over: jeder Lauf hinterlässt eine Perf-Bilanz in der Konsole (nur Preview).
   useEffect(() => {
     if (import.meta.env.VITE_PREVIEW === "1" && options.perfHud && state.phase === "gameover") {
@@ -860,161 +686,9 @@ function AutostichGame() {
   // (Entscheidungs-/Ruhephasen: Skill-/Perk-Wahl, Formation, Architekt, Menü), damit Chunk-Load + Erst-Bitmap-Aufbau
   // nicht selbst mitten in Animationsframes fallen. Je Session einmal pro aktivem Archetyp; gestaffelt (ein Effekt je
   // Idle-Slot). Deckfarben werden nur beim Auslösen gelesen (je Lauf stabil).
-  const fxPrewarmedRef = useRef(new Set());
-  /* #372b — die ANGEBOTENEN Archetypen zählen mit, nicht nur die aktiven.
+  const { fxWarmTasks } = useFxPrewarm({ deckFx, state });
 
-     Der gemeldete Ruckler („die erste ausgewachsene Pflanzen-Karte hängt beim Umdrehen") kam von einer
-     Lücke in genau diesem Effekt: `PICK_SKILL` setzt `activeArchetypes` UND `phase: "play"` in EINEM
-     Dispatch (reducer.js). Der Effekt läuft danach zwar, fällt aber sofort über seine erste Zeile —
-     Phase ist „play" — und der eben gewählte Archetyp wird übersprungen. Vorgewärmt wurde er erst in
-     der nächsten Nicht-Spiel-Phase, also mehrere Stiche später; die erste reife Karte kam vorher und
-     baute ihr teures Bitmap synchron auf dem Umdreh-Frame.
-
-     EIS war deshalb nie betroffen und der Fehler sah nach einem reinen Pflanzen-Problem aus: der
-     Eis-Pick geht auf „glacier-target", also in eine Nicht-Spiel-Phase, und wärmt dort ganz normal.
-
-     Vorgewärmt wird jetzt, WÄHREND das Angebot offen steht — eine Nicht-Spiel-Phase, in der der
-     Spieler ohnehin liest. Damit bleibt die Regel „nie mitten im Stichspiel" (#372) unangetastet:
-     die Wärmung passiert VOR dem Pick, nicht danach. Preis: ein Archetyp, der am Ende nicht gewählt
-     wird, ist umsonst gewärmt — ein Bitmap, einmal je Sitzung, gegen einen sichtbaren Hänger. */
-  // exp skill rework: vor der Türwahl stehen die Fraktionen BEIDER Türen im Netz — geöffnet wird erst danach.
-  const offeredArchs = (state.skillOffer || (state.skillDoors || []).flatMap((d) => d.skills || [])).map(archetypeOf).filter(Boolean).join(",");
-  useEffect(() => {
-    const arch = [...new Set([...(state.activeArchetypes || []), ...(offeredArchs ? offeredArchs.split(",") : [])])];
-    if (!arch.length || state.phase === "play") return undefined;   // nie mitten im Stichspiel prewarmen
-    const todo = arch.filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a));
-    if (!todo.length) return undefined;
-    const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
-    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 400));
-    let i = 0;
-    const step = () => {
-      if (i >= todo.length) return;
-      const a = todo[i++];
-      fxPrewarmedRef.current.add(a);
-      try { Promise.resolve(FX_PREWARM[a](opts)).catch(() => {}); } catch { /* Prewarm nie kritisch */ }
-      idle(step);
-    };
-    const id = idle(step);
-    return () => (window.cancelIdleCallback || clearTimeout)(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deckFx bewusst nur beim Trigger gelesen (Deckfarben je Lauf stabil)
-  }, [state.activeArchetypes, state.phase, offeredArchs]);
-
-  /* #372c — dieselbe Wärmung, aber im LADEBILDSCHIRM statt im Lauf.
-
-     Der Effekt oben wärmt, solange ein Angebot offen steht. Das nahm den Hänger auf der ersten reifen
-     Karte, verschob ihn aber auf die Skill-Auswahl — gemeldet als kurzes Stocken beim Öffnen. Beides
-     sind Frames, die flüssig sein sollen; der Ladebalken beim Run-Start ist der einzige Ort im Lauf,
-     an dem Warten vorgesehen ist. Also dorthin.
-
-     WELCHE Archetypen: die FREIGESCHALTETEN. Welcher gewählt wird, steht beim Run-Start noch nicht
-     fest, und der Angebots-Pool ist genau darauf begrenzt (buildSkillOffer). Alles andere wäre ein
-     Bitmap für eine Fraktion, die dieser Spieler diesen Lauf gar nicht sehen kann.
-
-     Die Merkliste (`fxPrewarmedRef`) ist dieselbe wie beim Effekt oben — was hier gewärmt wurde,
-     überspringt er später. Er bleibt als Netz bestehen: reißt der Deckel `maxWait` im Ladebildschirm,
-     wärmt er beim ersten Angebot nach. Ein zweiter Aufruf kostet ohnehin nichts (Map-Treffer).
-
-     FEUER fehlt bewusst: für FireHead gibt es keine Vorwärm-Funktion, es stünde also nur der
-     Chunk-Import da. Wer sie baut, trägt „fire" in FX_PREWARM ein — hier ändert sich dann nichts. */
-  const fxWarmTasks = () => {
-    const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
-    return ARCHETYPE_ORDER
-      .filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a))
-      .map((a) => () => { fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts); });
-  };
-
-  function beginRun() {
-    clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot
-    // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
-    // den Lauf reproduzierbar & teilbar; jeder Lauf bekommt einen, auch der normale „Neuer Run".
-    const seed = pendingSeed.current != null ? (pendingSeed.current >>> 0) : randomSeed();
-    seedWasChosen.current = pendingSeed.current != null; // #205: gewählt (Challenge/Ranked) vs. gewürfelt (casual)
-    pendingSeed.current = null;
-    currentTraj.current = [];
-    runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
-    recorded.current = false;
-    runId.current = Date.now();
-    timeBase.current = 0;
-    // Segment SOFORT starten (nicht nullen): bei „Neustart" aus einem bereits aktiven Lauf
-    // wechselt `active` true→true, der [active]-Timer-Effekt läuft NICHT erneut → segStart bliebe
-    // null → elapsedMs=0 → Timer/Anti-Infinity (#59) fröre ein (#50). Der ==null-Guard im Effekt
-    // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
-    segStart.current = Date.now();
-    setPaused(false);
-    // #366: Sichtbarkeit beim Start FRISCH aus dem Live-Zustand setzen. Sonst kann ein während des RunLoader-Vorladens
-    //   verschlucktes „wieder sichtbar"-Event ein stale `visible===false` hinterlassen → Auto-Play-Guard blockt den
-    //   frischen Lauf dauerhaft („Bereit — starte den Autobattler" bis Reload). Ein neuer Lauf beginnt immer sichtbar.
-    setVisible(typeof document === "undefined" || document.visibilityState !== "hidden");
-    // #351: Run-Start-Guards sauber zurücksetzen, BEVOR der erste phase:"play"-Render kommt (im selben Batch wie START_RUN):
-    //   - Turbo auf 1× (ein neuer Lauf erbte sonst den MAX-Turbo des vorigen — und nahm ihn als Hänger-Variable mit).
-    //   - offene Abbruch-/Neustart-Rückfragen zu, sonst friert der Auto-Play-Guard den frischen Lauf ein.
-    setSpeedMult(1);
-    setConfirmAbort(false);
-    setConfirmRestart(false);
-    setIsRecord(false);
-    const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
-    const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('ranked' = Wochen-Modus)
-    const contracts = pendingContracts.current; pendingContracts.current = false; // Zwischenaufgaben nur über den eigenen Knopf
-    // Kampagne: Stand + der Freischaltungs-Stand VON JETZT. Beide gehören zusammen in denselben
-    // Dispatch — ein Lauf, der mit den Unlocks des nächsten rechnete, wäre still zu stark.
-    const camp = pendingCampaign.current; pendingCampaign.current = null;
-    const unlocked = camp ? CP.unlocksOf(camp) : null;
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, contracts, campaign: camp, unlocked }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste · Aufträge · Kampagne
-  }
-  // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
-  // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
-  // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
-  // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
-  // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null, contracts = false, campaign: camp = null } = {}) {
-    pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
-    pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
-    pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
-    pendingContracts.current = !!contracts; // Zwischenaufgaben: nur wahr, wenn der Lauf vom „Aufträge"-Knopf kommt
-    pendingCampaign.current = camp || null; // Kampagne: nur ein Lauf aus der Kette trägt sie
-    // #393 Zufalls-Deck je Lauf: ist der Toggle an UND kein Ranglisten-Lauf (Ranked hat eine feste Baseline und bleibt
-    //   unberührt), für DIESEN Lauf einen zufälligen besessenen (farbigen) Pack ziehen. Neu je Lauf (bewusst nicht
-    //   persistiert); leerer Pool → null → gewähltes Deck. Sonst immer zurücksetzen, damit kein Alt-Override hängen bleibt.
-    const rv = (options.randomDeckEachRun && !ranked) ? pickRandomOwnedPack(profile, options) : null;
-    setRunVisual(rv);
-    // #perf: den ArchitectScreen-Chunk (erscheint mitten im Lauf in der Architekt-Phase) schon jetzt anstoßen —
-    // nicht-blockierend, damit der Phasenübergang später ohne Nachlade-Hitch ist. Fehlschlag unkritisch (Suspense fängt).
-    try { importArchitect(); } catch (e) { /* egal */ }
-    // #perf: neben dem eigenen Deck/Battlefield jetzt auch die Gegner-Deck-Bilder vorladen → keine Bild-Dekodier-Hitches,
-    // wenn im Lauf erstmals eine Gegnerkarte eines neuen Auswahl-Typs erscheint. RunLoader dedupt + hat Timeout-Sicherheitsnetz.
-    // #393: bei aktivem Zufalls-Override die Bilder des GEZOGENEN Packs vorladen (nicht die des gewählten Decks).
-    const preDeck = rv ? deckAssets(resolveSkinId(DECK_DEFS, rv.deckId, profile)) : deckSkin;
-    const preBf   = rv ? battlefieldAssets(resolveSkinId(BATTLEFIELD_DEFS, rv.battlefieldId, profile)) : bfSkin;
-    setPendingRun([preDeck.front, preDeck.back, ...(preBf ? [preBf.desktop, preBf.mobile] : []), ...OPP_SKIN_URLS]);
-  }
-  // Lauf beginnen — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
-  function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }
-  // Test-Code im Seed-Feld (StartScreen fängt ihn ab): `reset` = ganzes Profil wipen → Reload gibt den
-  // sauberen Erstbesuch-Zustand. `unlock`/`onboarding` sind mit der Meta-Progression gegangen (exp).
-  function handleSecretSeed(kind) {
-    if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
-  }
-  // #370 EIN Ranglisten-Modus: tree-unabhängige Baseline, alle spielen den Wochen-Seed (für alle gleich).
-  function startRankedRun() { launchRun({ ranked: "ranked", seed: currentWeek(new Date()).seed }); }
-  // Neustart behält die Lauf-Art UND einen GEWÄHLTEN Seed: Ranked → gleicher Modus + aktueller Wochen-Seed; ein
-  // Challenge-/Seed-Lauf (#205 „Nachspielen"/Einfügen) → GENAU derselbe Seed, sonst bekäme man beim Neustart ein
-  // anderes Brett als das, das man gerade übt. Casual (Seed nur gewürfelt) → wie gehabt frisches Brett.
-  function restartRun() {
-    const seed = state.ranked ? currentWeek(new Date()).seed
-      : (seedWasChosen.current ? (state.seed ?? null) : null);
-    // exp: ein Dev-Run startet mit DERSELBEN Config neu (Plan, Regeln, Voll-Katalog) — sonst würde „Neustart" still
-    // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
-    // Zwischenaufgaben: „Neustart" muss den Auftragslauf MITNEHMEN. Ohne das Flag fiel der neue Lauf
-    // stumm auf den normalen zurück und das Angebot blieb aus.
-    /* Kampagne: „Neustart" spielt DIESELBE Stufe noch einmal. Die Kettenfassung warf dafür die ganze
-       Ebene zurück, weil man sonst beliebig oft neu beginnen konnte, bis die Schwelle fiel — auf der
-       Leiter ist genau das die Regel (ein verfehlter Lauf wiederholt seine Stufe, Owner 2026-09-25),
-       also gibt es nichts mehr zurückzuwerfen. Der Stand bleibt unangetastet. */
-    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled,
-      campaign: state.campaign ? campaign : null });
-  }
-  // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
-  function startDevRun(dev) { launchRun({ dev }); }
+  const { beginRun, handleSecretSeed, launchRun, restartRun, startDevRun, startRankedRun, startRun } = useRunLaunch({ bfSkin, campaign, currentTraj, deckSkin, dispatch, options, pendingCampaign, pendingContracts, pendingDev, pendingRanked, pendingSeed, profile, recordTraj, recorded, runId, runStartRecordTraj, seedWasChosen, segStart, setConfirmAbort, setConfirmRestart, setIsRecord, setPaused, setPendingRun, setResumable, setRunVisual, setSpeedMult, setVisible, state, timeBase });
   // Lauf verlassen (#5).
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); };
   const endRun = () => dispatch({ type: "END_RUN" }); // Beenden → Endscreen; saveRun + clearActiveRun laufen über den gameover-Effekt
@@ -1026,33 +700,7 @@ function AutostichGame() {
      `rerollOffer.offered`, weil er nichts kostet und man ihn sich verdient hat. */
   const ifCoins = (fn) => (COINS.coinsOn(state) ? fn : null);
 
-  /* ---- Kampagne: die Kette zwischen den Läufen -------------------------------------------
-     Der Reducer rechnet den Lauf ab (settleRun in reducer.js, an RESOLVE_TRICK und END_RUN);
-     hier steht nur, was danach mit dem STAND passiert: speichern, Freischaltung buchen, das
-     nächste Panel zeigen. Die Trennung ist Absicht — der Reducer kennt weder localStorage noch
-     das Profil, und die Kette überlebt den Lauf-State. */
-
-  function openCampaign() {
-    const c = campaign || CP.startCampaign();
-    if (!campaign) { setCampaign(c); saveCampaign(c); }
-    setCampUnlock(null);
-    setCampScreen("overview");
-  }
-  /* (Owner 2026-09-28: „Aufgeben" gibt es nicht mehr. Die Übersicht verlassen heißt zurück ins Menü,
-     der Kampagnenstand bleibt liegen — `closeCampaign` rührt den Speicher nicht an. Wer wirklich von
-     vorn will, nimmt Zurücksetzen.) */
-  /* Testknopf (Owner 2026-09-22): alles zurück auf null. Er nimmt auch die Freischaltungen mit, sonst
-     könnte man Lauf 1 nie wieder unter Startbedingungen sehen, und zieht sofort eine frische Kette,
-     damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
-  function resetCampaign() {
-    clearCampaign();
-    const c = CP.startCampaign();
-    setCampaign(c); saveCampaign(c);
-    setCampUnlock(null); setCampScreen("overview");
-  }
-  function closeCampaign() { setCampScreen(null); setCampUnlock(null); if (state.phase !== "menu") toMenu(); }
-  // Übersicht → Bossblock → Lauf. Zwei Schritte, weil der Boss VOR dem Start gelesen werden soll.
-  function campaignRun() { setCampScreen(null); launchRun({ campaign }); }
+  const { campaignRun, closeCampaign, openCampaign, resetCampaign } = useCampaignFlow({ campaign, launchRun, setCampScreen, setCampUnlock, setCampaign, state, toMenu });
 
   /* Die Abrechnung EINES Laufendes. Sie hängt am runId und nicht an einem Zustands-Flag: `settled`
      sagt, dass der Reducer gerechnet hat, nicht dass die UI es schon gebucht hat — und dieser
@@ -1070,71 +718,14 @@ function AutostichGame() {
     setCampUnlock(CP.unlocksOf(c).slice(-1)[0] || null);
     setCampScreen(c.done ? "won" : "unlock");
   }, [state.phase, state.campaign]);
-  // RESUME (Phase 1): gespeicherten Lauf fortsetzen — Refs (Timer/Geist-Linie/Attribution) aus dem Snapshot
-  // wiederherstellen, dann den State laden. Der Timer läuft ab jetzt weiter (segStart neu gesetzt).
-  function resumeRun() {
-    const r = resumable; if (!r) return;
-    const m = r.meta || {};
-    timeBase.current = typeof m.timeBase === "number" ? m.timeBase : 0;
-    segStart.current = Date.now();
-    runId.current = m.runId || Date.now();
-    currentTraj.current = Array.isArray(m.currentTraj) ? m.currentTraj.slice() : [];
-    seedWasChosen.current = !!m.seedWasChosen; // #205: Challenge-Seed-Eigenschaft übersteht das Fortsetzen (→ Neustart)
-    runStartRecordTraj.current = recordTraj.current.slice();
-    recorded.current = false;
-    setPaused(false); setIsRecord(false);
-    setResumable(null);
-    dispatch({ type: "RESTORE_RUN", state: r.state });
-  }
-  // „Beenden & speichern" (Phase 2): Lauf pausieren fürs spätere Fortsetzen. Snapshot sichern, aber NICHT als
-  // beendeten Lauf werten (kein saveRun) und NICHT löschen (kein clearActiveRun) → zurück ins Menü, wo „Fortsetzen" steht.
-  function suspendRun() {
-    persistActiveRun();
-    setResumable(loadActiveRun());
-    setConfirmAbort(false); setPaused(false);
-    dispatch({ type: "TO_MENU" });
-  }
-  // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
-  const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
-    ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
-    : dispatch({ type: "PICK_PERK", perkId: entry, rng: Math.random });
-  // (#267: pickStat entfernt — es gibt keine Stat-Phase mehr; Crit-Perks laufen über den Perk-Fluss (Präzision-Familien).)
-  // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
-  const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
-  const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
-  const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
-  const buyEnergy = () => dispatch({ type: "BUY_ENERGY" });        // Münz-Ökonomie §3.2
-  const callFocus = (arch) => dispatch({ type: "CALL_FOCUS", arch, rng: Math.random });   // Münz-Ökonomie §3.3
-  const upgradeSkill = (skillId) => dispatch({ type: "UPGRADE_SKILL", skillId });          // Münz-Ökonomie §3.5
-  const upgradeFamily = (familyId) => dispatch({ type: "UPGRADE_FAMILY", familyId });      // dieselbe Leiter für Perks
-  const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
-  const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
-  const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
-  // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
-  const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
-  const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
-  const familyTargetFormationType = (formationType) => dispatch({ type: "FAMILY_TARGET_FORMATION_TYPE", formationType }); // #179 E_CORE
-  const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
-  // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
-  const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
-  const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
-  const chooseDoor = (index) => dispatch({ type: "CHOOSE_DOOR", index }); // exp skill rework: eine der zwei Türen öffnen
-  const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
-  const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138 + §2.3: Perk-Angebot ablehnen → +Münzen
-  const sellPerk = (kind, id) => dispatch({ type: "SELL_PERK", kind, id }); // §3.6: gehaltenen Perk abgeben → +Münzen
-  const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
-  // Architekt (#202, ersetzt den Shop): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
-  const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
-  const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
-  const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
-  const architectMoveMulti = (moves) => dispatch({ type: "ARCHITECT_MOVE_MULTI", moves });
-  const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
-  const architectRecolor = ({ buildingId, colorChoice }) => dispatch({ type: "ARCHITECT_RECOLOR", buildingId, colorChoice });
-  const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
-  const architectUndo = () => dispatch({ type: "ARCHITECT_UNDO" });   // #361: letzten Schritt dieser Phase zurück
-  const architectReset = () => dispatch({ type: "ARCHITECT_RESET" }); // #361: auf Phasen-Beginn zurück
-  const rerollArchitect = () => dispatch({ type: "REROLL_ARCHITECT", rng: Math.random }); // #263: Gebäude-Reroll-Pool
-  const buyCover = () => dispatch({ type: "BUY_COVER" });          // Münz-Ökonomie §3.4
+  const { resumeRun, suspendRun } = useResumeSuspend({ currentTraj, dispatch, persistActiveRun, recordTraj, recorded, resumable, runId, runStartRecordTraj, seedWasChosen, segStart, setConfirmAbort, setIsRecord, setPaused, setResumable, timeBase });
+  // In-run action creators (perk/skill/formation/architect/coins) live in useRunActions.js — one closure per
+  // reducer action, built once. (#267: pickStat entfernt — es gibt keine Stat-Phase mehr.)
+  const { pick, swapCards, undoSwap, resetFormation, buyEnergy, callFocus, upgradeSkill, upgradeFamily, confirmFormation,
+          lockGlacier, confirmTarget, familyTargetSuit, familyTargetCard, familyTargetFormationType, familyTargetConfirm,
+          pickSkill, declineSkill, chooseDoor, rerollPerk, declinePerk, sellPerk, rerollSkill,
+          architectBuild, architectUpgrade, architectMove, architectMoveMulti, architectDemolish, architectRecolor,
+          architectDone, architectUndo, architectReset, rerollArchitect, buyCover } = useRunActions(dispatch);
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -1538,4 +1129,360 @@ function AutostichGame() {
 
     </div>
   );
+}
+
+/* ---- AutostichGame's run lifecycle as hooks in this file (2026-09-28): scoring a run (useSaveRun), the FX prewarm
+   chain (useFxPrewarm), launching and restarting (useRunLaunch), the campaign panel chain (useCampaignFlow) and
+   resume/suspend (useResumeSuspend). Each was a block inside the 1,300-line component body; the code is verbatim,
+   the argument object is what the block read from the component, the return value what the rest still uses. The
+   five text ratchets on App.jsx (prefetch chain, RunLoader, StanceBar, shownSkillArchs, Gott flag) read lines that
+   did not move. ---- */
+function useSaveRun({ currentTraj, options, profile, recordTotal, recordTraj, recorded, runId, segStart, setHighscores, setIsRecord, setMyEntry, setPrevBests, setProfile, setPubToken, state, timeBase, totalCycles, username }) {
+  // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
+  // Genutzt von Game-Over UND vom vorzeitigen Beenden (#5), damit nichts verloren geht.
+  function saveRun() {
+    if (recorded.current) return;
+    /* Lauf ohne einen einzigen Stich (Abbruch in den Eröffnungsphasen): nichts zu werten — aber
+       die Anzeige-Reste des VORHERIGEN Laufs müssen weg (Review-Runde 2026-08-28, Zeile 34). */
+    if (!state.trickNo) {
+      setPrevBests(null);
+      return;
+    }
+    recorded.current = true;
+    const finalScore = Math.floor(state.score);
+    // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
+    const localEntry = {
+      score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
+      bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
+      skillTiers: state.skillTiers || {}, // exp skill rework: die gehaltene Stufe je Skill → die Rückblicke zeigen den Text dieser Stufe
+      maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
+      crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
+      bestGlacierTrickScore: state.bestGlacierTrickScore || 0, // bester Gletscher-Stich (nur wenn Eis gespielt) → separate KPI in Victory/Statistik
+      // Victory/Stats-Redesign: Fraktions-Score-Kanäle mitspeichern → die feine Score-Herkunft (Gletscher/Pflanze/
+      // Blitz/Feuer + Serie) steht ab jetzt auch in der Statistik (Bestes Build). Alt-Läufe ohne die Felder degradieren
+      // sauber aufs grobe Modell (factionShares klemmt fehlende Kanäle auf 0 → „Sonstige").
+      glacierYield: state.glacierYield || 0, streakScore: state.streakScore || 0, lightYield: state.lightYield || 0,
+      plantBase: state.plantBase || 0,
+      fireBase: state.fireBase || 0, fireWhite: state.fireWhite || 0,
+      // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
+      // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
+      seed: state.seed ?? null, seedCode: state.seed != null ? formatSeed(state.seed) : null,
+    };
+    setHighscores(recordHighscore(localEntry));
+    // #172 FB-10: denselben Lauf in die Historie (letzte 30) + Profil-Totals schreiben — Basis für den Statistik-Hub.
+    // Zusätzlich: Lauf-Dauer (aus dem HUD-Timer) + im Lauf genutzte Archetypen (unique) für die Analyse.
+    const durationMs = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
+    const archetypesUsed = [...new Set((state.skills || []).map(archetypeOf).filter(Boolean))];
+    const prevProfile = profile;
+    // #190 Challenge-Tracking: nur ein natürlich abgeschlossener Lauf (cycle === MAX_CYCLES) zählt; plus die
+    // Rohdaten für die Erkennung (Shop-Käufe im ganzen Lauf, gewählte Stats). Erkennung/Flags in storage.recordRun.
+    const completed = state.cycle >= totalCycles;
+    // #201.8 Stufe B: kompakte finale Aufstellung mitpersistieren (playerOrder ist bereits in Spielreihenfolge aufgelöst).
+    // Zusätzlich das Architekt-Gebäude-Overlay + die Gebäude-Liste (Positionen matchen die Snapshot-Karten-Reihenfolge),
+    // damit die Lauf-Details (RunDetail) die Gebäude ein-/austoggeln und Name·Stufe zeigen können — wie im Victory-Screen.
+    const archBuildingsSnap = ((state.architectEnabled && state.architect && state.architect.buildings) || [])
+      .map((b) => ({ id: b.id, familyId: b.familyId, tier: b.tier, footprint: b.footprint }));
+    const deckSnapshot = {
+      cards: (state.playerOrder || []).map((di) => { const c = state.deck[di]; return { id: c.id, value: c.value, suit: c.suit, green: !!c.green }; }),
+      /* Der Schnappschuss stand auf sieben Argumenten und liess Architekt, Pflanze und die offenen
+         Grenzen weg — die Chronik zeigte damit ANDERE Formationen als der Lauf gewertet hatte.
+         Beim Lueckenschluss faellt das auf: wer ihn haelt, saehe seine ueberbrueckten Formationen
+         hinterher nicht. Also die volle Liste, wie ueberall sonst. */
+      formations: computeFormations(state.playerOrder || [], state.deck || [], state.roles || {}, [], state.skills || [],
+        state.shop?.anchors || [], state.familyTiers || {}, state.architectEnabled ? state.architect : null,
+        { skillTiers: state.skillTiers || {}, growth: state.growth || {} }, openBordersOf(state)),
+      architectCover: architectCoverFor(state), // per-Position { name, tier, effects, … } oder null (kein Architekt/keine Gebäude)
+      buildings: archBuildingsSnap,
+      challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
+    };
+    /* #rd-verlauf: die zwei Verlaufsreihen des Laufs mit in die Historie — bis hierher existierten sie nur im
+       Live-State und der Victory-Screen war der einzige Ort, an dem man sie je zu sehen bekam. Beide sind klein
+       (Trajektorie: ein Wert je GHOST_STEP Stiche; Stich-Log: ein Zahlenpaar je Stich) und liegen damit weit
+       unter dem deckSnapshot, dem größten Posten der Historie. `won` als 0/1 statt bool spart im JSON die Hälfte.
+       Bewusst NICHT in `localEntry`: Highscore-Liste und Telemetrie brauchen sie nicht und bleiben unverändert. */
+    const trajSnap = currentTraj.current.filter((v) => typeof v === "number");
+    const trickLogSnap = (state.trickLog || []).map((c) => (c || []).map((tk) => ({ gained: Math.round(tk.gained || 0), won: tk.won ? 1 : 0 })));
+    /* exp: recordRun still books SP/DP/unlocks in the profile (data model untouched, nothing to migrate on
+       the way back), but nothing here reads them any more — the earn rollup, the onboarding banner and the
+       skin-unlock window left with the meta-progression. */
+    const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+      traj: trajSnap, trickLog: trickLogSnap, // #rd-verlauf: Score-Verlauf + Stich-Score je Durchlauf (Lauf-Details)
+      shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
+      ranked: state.ranked || null, // #303 Sparfuchs: Ranked-Wochen-Seed (Freischalt-Bedingung)
+      completed, deckSnapshot }); // #382 Challenge-Modus entfernt
+    setProfile(nextProfile);
+    // #go-ruhe: Vorher-Stand der vier All-Time-Rekorde fürs Bestleistungs-Panel (prevProfile = Profil vor recordRun).
+    setPrevBests({ score: prevProfile.bestScore || 0, streak: prevProfile.bestStreak || 0,
+      crits: prevProfile.maxCrits || 0, trick: prevProfile.bestTrickScore || 0 });
+    // #telemetrie: denselben Lauf anonym an die Telemetrie-Tabelle schicken — UNABHÄNGIG vom Leaderboard.
+    // Bewusst getrennt: das Board schreibt nur mit gesetztem Namen und nur den Wettbewerbs-Ausschnitt; fürs
+    // Balancing brauchen wir JEDEN Lauf (auch namenlose und vorzeitig beendete) samt Entscheidungs-Mitschrift.
+    // `nextProfile` (nicht `profile`) → der Baum-/Kosmetik-Stand NACH diesem Lauf. Fehler sind gekapselt.
+    telemetry.recordRun({
+      enabled: options.telemetry !== false, state, profile: nextProfile, options, durationMs, runId: runId.current,
+      localEntry: { ...localEntry, archetypes: archetypesUsed },
+      outcome: completed ? "completed" : "ended",
+    });
+    // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
+    // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
+    const name = [...(username || "").trim()].slice(0, 20).join(""); // #health-check S7: Codepoints statt UTF-16-Einheiten — .slice(0,20) konnte ein Surrogatpaar zerschneiden
+    // Archetyp je gehaltenem Skill am Laufende (#139): ein Eintrag pro Skill (z. B. "fire,fire,ice"),
+    // damit das Board ein Icon PRO Skill zeigt (4 Feuer → 4× 🔥). Leer, wenn keine Skills gehalten wurden.
+    // Reihenfolge egal — decodeArchetypes gruppiert/zählt beim Rendern.
+    const archetypes = (state.skills || []).map(archetypeOf).filter(Boolean).join(",");
+    // `level` bleibt im Payload (= Rundenzahl), damit die bestehende Supabase-Spalte befüllt ist
+    // (falls NOT NULL) — kein Schema-Wechsel nötig. Angezeigt wird ohnehin `cycles`.
+    const gEntry = { name, score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, archetypes,
+      seed: state.seed ?? null, // #205: Lauf-Seed mitposten → Board-Einträge sind nachspielbar + Challenge-Board (Top-3 pro Seed)
+      // #169 FB-8: Detailspalten (snake_case = Supabase-Spalten). perks/skills als kompakte ID-Liste (wie archetypes).
+      // publishRun stript sie per Fallback-Kaskade, falls die Spalten noch nicht migriert sind.
+      best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
+      max_formations: state.maxFormations, formation_score: state.formationScore,
+      crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
+      // exp: no tree → no tree_nodes column; the board's optional column stays NULL for playground runs.
+      // #370: Ranglisten-Läufe posten aufs Wochen-Board (Board-String bleibt vorerst "meister" = bestehendes
+      //   Wochen-Board + Champions; Seed segmentiert die Woche). Casual-Läufe posten OHNE board (→ NULL).
+      ...(state.ranked ? { board: "meister" } : {}) };
+    setMyEntry(gEntry);
+    // #174 Zweite Verteidigungslinie: das Modal blockt unsaubere Namen schon bei der Eingabe,
+    // aber ein VOR dem Filter gespeicherter Altname liegt weiter im localStorage und käme
+    // hier ungeprüft aufs globale Board. Lokal bleibt der Lauf sichtbar (myEntry oben) —
+    // nur veröffentlicht wird er nicht.
+    const nameOk = isAllowedUsername(name).ok;
+    if (leaderboardConfigured && name && nameOk) {
+      publishRun(gEntry).then((saved) => {
+        // #229 N2: die vom Board vergebene id nachtragen → GlobalLeaderboard markiert die Eigen-Zeile eindeutig.
+        if (saved && saved.id != null) setMyEntry((e) => (e ? { ...e, id: saved.id } : e));
+        setPubToken((t) => t + 1);
+      }).catch(() => {});
+    }
+    if (finalScore > recordTotal.current) {
+      recordTraj.current = currentTraj.current.slice();
+      recordTotal.current = finalScore;
+      saveGhost(recordTraj.current, finalScore);
+      setIsRecord(true);
+    }
+  }
+  return { saveRun };
+}
+
+function useFxPrewarm({ deckFx, state }) {
+  const fxPrewarmedRef = useRef(new Set());
+  /* #372b — die ANGEBOTENEN Archetypen zählen mit, nicht nur die aktiven.
+
+     Der gemeldete Ruckler („die erste ausgewachsene Pflanzen-Karte hängt beim Umdrehen") kam von einer
+     Lücke in genau diesem Effekt: `PICK_SKILL` setzt `activeArchetypes` UND `phase: "play"` in EINEM
+     Dispatch (reducer.js). Der Effekt läuft danach zwar, fällt aber sofort über seine erste Zeile —
+     Phase ist „play" — und der eben gewählte Archetyp wird übersprungen. Vorgewärmt wurde er erst in
+     der nächsten Nicht-Spiel-Phase, also mehrere Stiche später; die erste reife Karte kam vorher und
+     baute ihr teures Bitmap synchron auf dem Umdreh-Frame.
+
+     EIS war deshalb nie betroffen und der Fehler sah nach einem reinen Pflanzen-Problem aus: der
+     Eis-Pick geht auf „glacier-target", also in eine Nicht-Spiel-Phase, und wärmt dort ganz normal.
+
+     Vorgewärmt wird jetzt, WÄHREND das Angebot offen steht — eine Nicht-Spiel-Phase, in der der
+     Spieler ohnehin liest. Damit bleibt die Regel „nie mitten im Stichspiel" (#372) unangetastet:
+     die Wärmung passiert VOR dem Pick, nicht danach. Preis: ein Archetyp, der am Ende nicht gewählt
+     wird, ist umsonst gewärmt — ein Bitmap, einmal je Sitzung, gegen einen sichtbaren Hänger. */
+  // exp skill rework: vor der Türwahl stehen die Fraktionen BEIDER Türen im Netz — geöffnet wird erst danach.
+  const offeredArchs = (state.skillOffer || (state.skillDoors || []).flatMap((d) => d.skills || [])).map(archetypeOf).filter(Boolean).join(",");
+  useEffect(() => {
+    const arch = [...new Set([...(state.activeArchetypes || []), ...(offeredArchs ? offeredArchs.split(",") : [])])];
+    if (!arch.length || state.phase === "play") return undefined;   // nie mitten im Stichspiel prewarmen
+    const todo = arch.filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a));
+    if (!todo.length) return undefined;
+    const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 400));
+    let i = 0;
+    const step = () => {
+      if (i >= todo.length) return;
+      const a = todo[i++];
+      fxPrewarmedRef.current.add(a);
+      try { Promise.resolve(FX_PREWARM[a](opts)).catch(() => {}); } catch { /* Prewarm nie kritisch */ }
+      idle(step);
+    };
+    const id = idle(step);
+    return () => (window.cancelIdleCallback || clearTimeout)(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deckFx bewusst nur beim Trigger gelesen (Deckfarben je Lauf stabil)
+  }, [state.activeArchetypes, state.phase, offeredArchs]);
+
+  /* #372c — dieselbe Wärmung, aber im LADEBILDSCHIRM statt im Lauf.
+
+     Der Effekt oben wärmt, solange ein Angebot offen steht. Das nahm den Hänger auf der ersten reifen
+     Karte, verschob ihn aber auf die Skill-Auswahl — gemeldet als kurzes Stocken beim Öffnen. Beides
+     sind Frames, die flüssig sein sollen; der Ladebalken beim Run-Start ist der einzige Ort im Lauf,
+     an dem Warten vorgesehen ist. Also dorthin.
+
+     WELCHE Archetypen: die FREIGESCHALTETEN. Welcher gewählt wird, steht beim Run-Start noch nicht
+     fest, und der Angebots-Pool ist genau darauf begrenzt (buildSkillOffer). Alles andere wäre ein
+     Bitmap für eine Fraktion, die dieser Spieler diesen Lauf gar nicht sehen kann.
+
+     Die Merkliste (`fxPrewarmedRef`) ist dieselbe wie beim Effekt oben — was hier gewärmt wurde,
+     überspringt er später. Er bleibt als Netz bestehen: reißt der Deckel `maxWait` im Ladebildschirm,
+     wärmt er beim ersten Angebot nach. Ein zweiter Aufruf kostet ohnehin nichts (Map-Treffer).
+
+     FEUER fehlt bewusst: für FireHead gibt es keine Vorwärm-Funktion, es stünde also nur der
+     Chunk-Import da. Wer sie baut, trägt „fire" in FX_PREWARM ein — hier ändert sich dann nichts. */
+  const fxWarmTasks = () => {
+    const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
+    return ARCHETYPE_ORDER
+      .filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a))
+      .map((a) => () => { fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts); });
+  };
+  return { fxWarmTasks };
+}
+
+function useRunLaunch({ bfSkin, campaign, currentTraj, deckSkin, dispatch, options, pendingCampaign, pendingContracts, pendingDev, pendingRanked, pendingSeed, profile, recordTraj, recorded, runId, runStartRecordTraj, seedWasChosen, segStart, setConfirmAbort, setConfirmRestart, setIsRecord, setPaused, setPendingRun, setResumable, setRunVisual, setSpeedMult, setVisible, state, timeBase }) {
+  function beginRun() {
+    clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot
+    // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
+    // den Lauf reproduzierbar & teilbar; jeder Lauf bekommt einen, auch der normale „Neuer Run".
+    const seed = pendingSeed.current != null ? (pendingSeed.current >>> 0) : randomSeed();
+    seedWasChosen.current = pendingSeed.current != null; // #205: gewählt (Challenge/Ranked) vs. gewürfelt (casual)
+    pendingSeed.current = null;
+    currentTraj.current = [];
+    runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
+    recorded.current = false;
+    runId.current = Date.now();
+    timeBase.current = 0;
+    // Segment SOFORT starten (nicht nullen): bei „Neustart" aus einem bereits aktiven Lauf
+    // wechselt `active` true→true, der [active]-Timer-Effekt läuft NICHT erneut → segStart bliebe
+    // null → elapsedMs=0 → Timer/Anti-Infinity (#59) fröre ein (#50). Der ==null-Guard im Effekt
+    // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
+    segStart.current = Date.now();
+    setPaused(false);
+    // #366: Sichtbarkeit beim Start FRISCH aus dem Live-Zustand setzen. Sonst kann ein während des RunLoader-Vorladens
+    //   verschlucktes „wieder sichtbar"-Event ein stale `visible===false` hinterlassen → Auto-Play-Guard blockt den
+    //   frischen Lauf dauerhaft („Bereit — starte den Autobattler" bis Reload). Ein neuer Lauf beginnt immer sichtbar.
+    setVisible(typeof document === "undefined" || document.visibilityState !== "hidden");
+    // #351: Run-Start-Guards sauber zurücksetzen, BEVOR der erste phase:"play"-Render kommt (im selben Batch wie START_RUN):
+    //   - Turbo auf 1× (ein neuer Lauf erbte sonst den MAX-Turbo des vorigen — und nahm ihn als Hänger-Variable mit).
+    //   - offene Abbruch-/Neustart-Rückfragen zu, sonst friert der Auto-Play-Guard den frischen Lauf ein.
+    setSpeedMult(1);
+    setConfirmAbort(false);
+    setConfirmRestart(false);
+    setIsRecord(false);
+    const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
+    const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('ranked' = Wochen-Modus)
+    const contracts = pendingContracts.current; pendingContracts.current = false; // Zwischenaufgaben nur über den eigenen Knopf
+    // Kampagne: Stand + der Freischaltungs-Stand VON JETZT. Beide gehören zusammen in denselben
+    // Dispatch — ein Lauf, der mit den Unlocks des nächsten rechnete, wäre still zu stark.
+    const camp = pendingCampaign.current; pendingCampaign.current = null;
+    const unlocked = camp ? CP.unlocksOf(camp) : null;
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, contracts, campaign: camp, unlocked }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste · Aufträge · Kampagne
+  }
+  // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
+  // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
+  // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
+  // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
+  // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
+  function launchRun({ seed = null, dev = null, ranked = null, contracts = false, campaign: camp = null } = {}) {
+    pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
+    pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
+    pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
+    pendingContracts.current = !!contracts; // Zwischenaufgaben: nur wahr, wenn der Lauf vom „Aufträge"-Knopf kommt
+    pendingCampaign.current = camp || null; // Kampagne: nur ein Lauf aus der Kette trägt sie
+    // #393 Zufalls-Deck je Lauf: ist der Toggle an UND kein Ranglisten-Lauf (Ranked hat eine feste Baseline und bleibt
+    //   unberührt), für DIESEN Lauf einen zufälligen besessenen (farbigen) Pack ziehen. Neu je Lauf (bewusst nicht
+    //   persistiert); leerer Pool → null → gewähltes Deck. Sonst immer zurücksetzen, damit kein Alt-Override hängen bleibt.
+    const rv = (options.randomDeckEachRun && !ranked) ? pickRandomOwnedPack(profile, options) : null;
+    setRunVisual(rv);
+    // #perf: den ArchitectScreen-Chunk (erscheint mitten im Lauf in der Architekt-Phase) schon jetzt anstoßen —
+    // nicht-blockierend, damit der Phasenübergang später ohne Nachlade-Hitch ist. Fehlschlag unkritisch (Suspense fängt).
+    try { importArchitect(); } catch (e) { /* egal */ }
+    // #perf: neben dem eigenen Deck/Battlefield jetzt auch die Gegner-Deck-Bilder vorladen → keine Bild-Dekodier-Hitches,
+    // wenn im Lauf erstmals eine Gegnerkarte eines neuen Auswahl-Typs erscheint. RunLoader dedupt + hat Timeout-Sicherheitsnetz.
+    // #393: bei aktivem Zufalls-Override die Bilder des GEZOGENEN Packs vorladen (nicht die des gewählten Decks).
+    const preDeck = rv ? deckAssets(resolveSkinId(DECK_DEFS, rv.deckId, profile)) : deckSkin;
+    const preBf   = rv ? battlefieldAssets(resolveSkinId(BATTLEFIELD_DEFS, rv.battlefieldId, profile)) : bfSkin;
+    setPendingRun([preDeck.front, preDeck.back, ...(preBf ? [preBf.desktop, preBf.mobile] : []), ...OPP_SKIN_URLS]);
+  }
+  // Lauf beginnen — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
+  function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }
+  // Test-Code im Seed-Feld (StartScreen fängt ihn ab): `reset` = ganzes Profil wipen → Reload gibt den
+  // sauberen Erstbesuch-Zustand. `unlock`/`onboarding` sind mit der Meta-Progression gegangen (exp).
+  function handleSecretSeed(kind) {
+    if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
+  }
+  // #370 EIN Ranglisten-Modus: tree-unabhängige Baseline, alle spielen den Wochen-Seed (für alle gleich).
+  function startRankedRun() { launchRun({ ranked: "ranked", seed: currentWeek(new Date()).seed }); }
+  // Neustart behält die Lauf-Art UND einen GEWÄHLTEN Seed: Ranked → gleicher Modus + aktueller Wochen-Seed; ein
+  // Challenge-/Seed-Lauf (#205 „Nachspielen"/Einfügen) → GENAU derselbe Seed, sonst bekäme man beim Neustart ein
+  // anderes Brett als das, das man gerade übt. Casual (Seed nur gewürfelt) → wie gehabt frisches Brett.
+  function restartRun() {
+    const seed = state.ranked ? currentWeek(new Date()).seed
+      : (seedWasChosen.current ? (state.seed ?? null) : null);
+    // exp: ein Dev-Run startet mit DERSELBEN Config neu (Plan, Regeln, Voll-Katalog) — sonst würde „Neustart" still
+    // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
+    // Zwischenaufgaben: „Neustart" muss den Auftragslauf MITNEHMEN. Ohne das Flag fiel der neue Lauf
+    // stumm auf den normalen zurück und das Angebot blieb aus.
+    /* Kampagne: „Neustart" spielt DIESELBE Stufe noch einmal. Die Kettenfassung warf dafür die ganze
+       Ebene zurück, weil man sonst beliebig oft neu beginnen konnte, bis die Schwelle fiel — auf der
+       Leiter ist genau das die Regel (ein verfehlter Lauf wiederholt seine Stufe, Owner 2026-09-25),
+       also gibt es nichts mehr zurückzuwerfen. Der Stand bleibt unangetastet. */
+    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled,
+      campaign: state.campaign ? campaign : null });
+  }
+  // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
+  function startDevRun(dev) { launchRun({ dev }); }
+  return { beginRun, handleSecretSeed, launchRun, restartRun, startDevRun, startRankedRun, startRun };
+}
+
+function useCampaignFlow({ campaign, launchRun, setCampScreen, setCampUnlock, setCampaign, state, toMenu }) {
+  /* ---- Kampagne: die Kette zwischen den Läufen -------------------------------------------
+     Der Reducer rechnet den Lauf ab (settleRun in reducer.js, an RESOLVE_TRICK und END_RUN);
+     hier steht nur, was danach mit dem STAND passiert: speichern, Freischaltung buchen, das
+     nächste Panel zeigen. Die Trennung ist Absicht — der Reducer kennt weder localStorage noch
+     das Profil, und die Kette überlebt den Lauf-State. */
+
+  function openCampaign() {
+    const c = campaign || CP.startCampaign();
+    if (!campaign) { setCampaign(c); saveCampaign(c); }
+    setCampUnlock(null);
+    setCampScreen("overview");
+  }
+  /* (Owner 2026-09-28: „Aufgeben" gibt es nicht mehr. Die Übersicht verlassen heißt zurück ins Menü,
+     der Kampagnenstand bleibt liegen — `closeCampaign` rührt den Speicher nicht an. Wer wirklich von
+     vorn will, nimmt Zurücksetzen.) */
+  /* Testknopf (Owner 2026-09-22): alles zurück auf null. Er nimmt auch die Freischaltungen mit, sonst
+     könnte man Lauf 1 nie wieder unter Startbedingungen sehen, und zieht sofort eine frische Kette,
+     damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
+  function resetCampaign() {
+    clearCampaign();
+    const c = CP.startCampaign();
+    setCampaign(c); saveCampaign(c);
+    setCampUnlock(null); setCampScreen("overview");
+  }
+  function closeCampaign() { setCampScreen(null); setCampUnlock(null); if (state.phase !== "menu") toMenu(); }
+  // Übersicht → Bossblock → Lauf. Zwei Schritte, weil der Boss VOR dem Start gelesen werden soll.
+  function campaignRun() { setCampScreen(null); launchRun({ campaign }); }
+  return { campaignRun, closeCampaign, openCampaign, resetCampaign };
+}
+
+function useResumeSuspend({ currentTraj, dispatch, persistActiveRun, recordTraj, recorded, resumable, runId, runStartRecordTraj, seedWasChosen, segStart, setConfirmAbort, setIsRecord, setPaused, setResumable, timeBase }) {
+  // RESUME (Phase 1): gespeicherten Lauf fortsetzen — Refs (Timer/Geist-Linie/Attribution) aus dem Snapshot
+  // wiederherstellen, dann den State laden. Der Timer läuft ab jetzt weiter (segStart neu gesetzt).
+  function resumeRun() {
+    const r = resumable; if (!r) return;
+    const m = r.meta || {};
+    timeBase.current = typeof m.timeBase === "number" ? m.timeBase : 0;
+    segStart.current = Date.now();
+    runId.current = m.runId || Date.now();
+    currentTraj.current = Array.isArray(m.currentTraj) ? m.currentTraj.slice() : [];
+    seedWasChosen.current = !!m.seedWasChosen; // #205: Challenge-Seed-Eigenschaft übersteht das Fortsetzen (→ Neustart)
+    runStartRecordTraj.current = recordTraj.current.slice();
+    recorded.current = false;
+    setPaused(false); setIsRecord(false);
+    setResumable(null);
+    dispatch({ type: "RESTORE_RUN", state: r.state });
+  }
+  // „Beenden & speichern" (Phase 2): Lauf pausieren fürs spätere Fortsetzen. Snapshot sichern, aber NICHT als
+  // beendeten Lauf werten (kein saveRun) und NICHT löschen (kein clearActiveRun) → zurück ins Menü, wo „Fortsetzen" steht.
+  function suspendRun() {
+    persistActiveRun();
+    setResumable(loadActiveRun());
+    setConfirmAbort(false); setPaused(false);
+    dispatch({ type: "TO_MENU" });
+  }
+  return { resumeRun, suspendRun };
 }

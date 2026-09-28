@@ -1349,3 +1349,50 @@ describe("Aufträge · eine Grenzwahl ohne Ziel darf nicht stehen bleiben", () =
     expect(reducer(s, { type: "PICK_CONTRACT_BORDER", borders: [] })).toBe(s);
   });
 });
+
+describe("Aufträge · der Schluss-Stich zählt zur Durchlauf-Bilanz", () => {
+  /* The tally at the cycle boundary used to be fed the state from BEFORE the closing trick, whose
+     cycleWins stops at 39. `perfectRun` needs BOARD_POSITIONS (40) and was unreachable, so
+     "Durchmarsch schwer" could never be fulfilled, and `bestCycleWins` fell one short whenever the
+     last trick was won. Played on a real run with a deck that cannot lose: value 11 beats the
+     opponent's maximum of 10 (VALUE_CAP is null), so every trick of the first cycle is a win. */
+  function unbesiegbarerLauf(seed) {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, architect: true, contracts: true });
+    s = { ...s, deck: s.deck.map((c) => ({ ...c, baseRank: 11, value: 11 })) };
+    let guard = 0;
+    while (s.cycle < 1 && s.phase !== "gameover") {
+      if (++guard > 5000) throw new Error(`kein Fortschritt (seed ${seed}, phase ${s.phase})`);
+      const c = s.contracts || {};
+      if ((c.pendingLoot || []).length) {
+        const p = c.pendingLoot[0];
+        s = reducer(s, { type: "PICK_LOOT", lootId: p.id, tier: p.tier, rng });
+        continue;
+      }
+      if (c.pendingBorderPick) { s = reducer(s, { type: "PICK_CONTRACT_BORDER", borders: CT.ALL_BORDERS }); continue; }
+      if (c.pendingSkillPick) { s = reducer(s, { type: "PICK_CONTRACT_SKILL", skillId: CT.upgradableSkills(s)[0] }); continue; }
+      if ((c.offers || []).length) {
+        const o = c.offers.find((x) => x.taskId === "durchmarsch") || c.offers[0];
+        s = reducer(s, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step });
+        continue;
+      }
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return s;
+  }
+
+  it("ein 40/40-Durchlauf steht mit allen 40 Siegen in der Strichliste", () => {
+    const s = unbesiegbarerLauf(1);
+    expect(s.cycle).toBe(1);
+    expect(s.lastCycleWins, "die Engine friert die Siege des beendeten Durchlaufs ein").toBe(C.BOARD_POSITIONS);
+    expect(s.contractTally.bestCycleWins, "Durchmarsch I/II lesen die volle Siegzahl").toBe(C.BOARD_POSITIONS);
+    expect(s.contractTally.perfectRun, "Durchmarsch schwer: der makellose Durchlauf zählt").toBe(1);
+  });
+
+  it("die Strichliste liest den eingefrorenen Wert, nicht den zurückgesetzten Zähler", () => {
+    const s = unbesiegbarerLauf(2);
+    expect(s.cycleWins, "der laufende Zähler ist nach der Grenze wieder 0").toBe(0);
+    expect(s.contractTally.bestCycleWins).toBe(C.BOARD_POSITIONS);
+  });
+});

@@ -1109,376 +1109,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Ansage (TrickBreakdown, ganz unten in diesem Render), abschaltbar über `hideBreakdown`. Der gewonnene Score
   // steigt weiterhin zusätzlich als Float aus der Karte auf, der Gesamt-Score steht in der StatusBar.
 
-  // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
-  // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
-  // und entfernt sich nach seiner Dauer selbst, sodass aufeinanderfolgende Floats überlappen.
-  const [floats, setFloats] = useState([]);
-  const seenTrick = useRef(-1);
-  const floatTimers = useRef([]);
-  const floatScaleRef = useRef(0);  // laufender Größenmaßstab der Gewinne (decaying max, für die Entzerrung)
-  const floatCountRef = useRef(0);  // aktuell aktive Score-Floats (für die „zu voll"-Schwelle)
-  const floatLaneSeq = useRef(0);   // #: rotierender Spur-Index für die vertikale Staffelung der Score-Zahlen
-  useEffect(() => () => floatTimers.current.forEach(clearTimeout), []); // Timer bei Unmount aufräumen
-  useEffect(() => {
-    if (!t) { seenTrick.current = -1; floatScaleRef.current = 0; floatCountRef.current = 0; setFloats([]); return; } // Menü/neuer Lauf → Pool + Maßstab leeren
-    if (t.trickNo === seenTrick.current) return;
-    seenTrick.current = t.trickNo;
-    // #110/#196: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei
-    // RESOLVE_TRICK fest). Rate steigt dezent mit dem Turbo; Lautstärke bleibt konstant (die Stich-/Finisher-Sounds tragen
-    // die Wucht). #: Bass-Anhebung entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
-    const w = t.result === "win" || t.result === "win_tie";
-    // #: Jetzt tragen die Stich-/Finisher-Sounds die Wucht → der Flip-Sound bekommt eine KONSTANTE Lautstärke bei jedem
-    // Flip (Mitte zwischen dem alten Sieg- und Niederlage-Pegel), damit er gleichmäßig „tickt" statt bei Sieg/Niederlage
-    // stark zu springen. Tempo (rate) bleibt an flipMs gekoppelt. #: Bass entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
-    // #finisher-standard: Beim Standard-Finisher trägt der Flip selbst das Sieg-Gefühl — auf einem gewonnenen Stich
-    // wird der Aufdeck-Sound dezent HÖHER gestimmt (rate ×STICH_WIN_PITCH), sonst normal. Bei der Klinge bleibt der
-    // Flip neutral (dort vertont der fx_blade-Hit den Sieg). Niederlagen klingen in beiden Fällen normal.
-    const flipPitch = (w && !klinge) ? STICH_WIN_PITCH : 1;
-    audio.play("cardflip", {
-      rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)) * flipPitch,
-      gain: CARDFLIP_GAIN_CONST,
-    });
-    // #glutfunken-raus: Glutfunken-Aufstoß-Sound entfernt.
-    // #komet: Sternenfeld-Finisher — je Stich EIN Komet, exakt wie der Pixi-Erupt (Sieg UND Niederlage, nur bei reduced
-    // aus; NICHT lite-gegatet, der Komet läuft auch auf lite). Der FLUG-Whoosh (fx_comet, Vorlauf-Stille entfernt →
-    // sitzt jetzt am Start) läuft bei JEDEM Kometen. Ab Tier ≥ 1 (Siege mit Einschlag) kommt ZUSÄTZLICH die Explosion
-    // (fx_comet_impact = nur der Boom, der Woosh der Datei ist stumm; die datei-interne Stille hält den Boom auf ~0,8 s
-    // = deckt sich mit dem visuellen Impact IMP_AT×SHOOT_DUR = 0,9 s). rate BEWUSST 1: der Komet fliegt turbo-unabhängig
-    // feste 1 s Echtzeit → würde man rate an den Turbo koppeln, wanderte der Einschlag vom sichtbaren Impact weg.
-    if (bgFinisher === "starfield" && !reduced) {
-      const cometGain = CARDFLIP_GAIN_CONST * 0.29 * 1.7; // Pegel über Glutfunken, +70 %
-      audio.play("fx_comet", { gain: cometGain });                                 // Flug für ALLE Kometen
-      if (hitTier >= 1) audio.play("fx_comet_impact", { gain: cometGain });         // + Explosion nur bei großen Tiers
-    }
-    // #320 Schwarzes Loch: Sieg → „Sog-Puls" (Loch wächst + Gegnerkarte einsaugen); Niederlage bei aktivem Loch →
-    // „Schrumpf-Puls" (heat-artig verkleinern, kein Sofort-Kollaps). Persistentes Panel-Loch verarbeitet die Pulse.
-    if (blackhole) {
-      // #deckzug: Der Sog-Puls wartet auf den Zug — sonst saugt das Loch eine Karte, die noch flippt. Der Timer
-      // läuft über `floatTimers` (Unmount-Aufräumung); er feuert immer VOR dem nächsten Stich, weil zugMs
-      // (= flipDur ≤ 0,55 × flipMs) kürzer ist als der Stich-Takt.
-      const pulsZug = (fn) => { if (!zugMs) { fn(); return; } floatTimers.current.push(setTimeout(fn, zugMs)); };
-      // #320: Die eingesogene Karte IST die verlorene Stich-Karte des Gegners → echter Kartenwert (t.oValue) UND echte
-      //   Suit-Farbe (suitColor(t.oCard.suit)). Vorher zwang „deckA1 ||" jede Karte in die Deckfarbe → alle gleich/gleiche
-      //   Farbe. Jetzt variiert Farbe je nach Suit der tatsächlich verlorenen Karte (auch im Deck-Farbmodus des Lochs).
-      if (holeFinish) { pulsZug(() => { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) }); setHoleGrown(true); }); } // #: Sieg → Loch aktiv → Loop-Bett an
-      else if (holeActive && lost) pulsZug(() => setHolePulse({ id: t.trickNo, kind: "loss" }));
-    }
-    // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
-    // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
-    // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
-    // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
-    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst DECKFARBE (#390; Gold nur
-    // noch als Rückfall, wenn kein Deck gewählt ist → deckA1 null, z. B. Standard-/Genesis-Deck). Icons bleiben immer.
-    const hits = t.hitTypes || [];
-    const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)); // Icon-KEYS (Eis rendert als Bild, Rest als Emoji)
-    const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
-    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : (deckA1 || "#d4a63a"));
-    const entries = [];
-    // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
-    if (w && t.gained > 0) {
-      // Größenmaßstab fortschreiben (folgt der jüngsten Gewinn-Größenordnung, vergisst Spitzen langsam).
-      const scale = floatScaleRef.current = Math.max(t.gained, floatScaleRef.current * FLOAT_SCALE_DECAY);
-      // Entzerrung: bei Ballung („zu voll") winzige Gewinne (relativ zum Maßstab) NICHT als Float zeigen — Score zählt trotzdem.
-      const declutter = floatCountRef.current >= FLOAT_DECLUTTER_MIN && t.gained < scale * FLOAT_MIN_RATIO;
-      if (!declutter) {
-        // #: Score-Zahlen kürzer sichtbar als der Formations-Float (dur) — im Turbo enger an flipMs gekoppelt, damit sie
-        // schneller weg sind, wenn die Stiche schnell kommen (weniger gleichzeitig). Zusätzlich rotierende Spur (lane).
-        const scoreDur = Math.round(clamp(flipMs * 0.8, 340, 720) + clamp(flipMs * 1.6, 420, 1000));
-        entries.push({ id: `s${t.trickNo}`, zone: "score", dur: scoreDur, seed: t.trickNo * 2, value: t.gained,
-                       lane: (floatLaneSeq.current++) % FLOAT_LANES.length,
-                       text: `+${fmtScore(t.gained)}`, color: critC, icons: hitIcons }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
-      }
-    }
-    if (!entries.length) return;
-    // #315: Score-Float-Deckel — bei Max-Tempo weniger gleichzeitige Floats (sonst Überlappungs-Cluster). Beim Deckeln
-    // werden die NIEDRIGSTEN Werte zuerst verworfen → die grossen, aussagekräftigen Gewinne bleiben stehen (niedrigste
-    // zuerst abgebaut). Ausserhalb von Max-Tempo bleibt es bei bis zu 4.
-    const floatCap = flipMs < 300 ? 2 : flipMs < 520 ? 3 : 4;
-    setFloats((cur) => {
-      const merged = [...cur, ...entries];
-      const next = merged.length <= floatCap
-        ? merged
-        : [...merged].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, floatCap);
-      floatCountRef.current = next.length;
-      return next;
-    });
-    const ids = entries.map((e) => e.id);
-    const removeAfter = Math.max(...entries.map((e) => e.dur)); // #: nach der EIGENEN (kürzeren) Score-Dauer aufräumen → floatCount fällt schneller
-    const tm = setTimeout(() => {
-      setFloats((cur) => { const next = cur.filter((f) => !ids.includes(f.id)); floatCountRef.current = next.length; return next; });
-      floatTimers.current = floatTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen → kein unbegrenztes Wachstum über einen langen Lauf
-    }, removeAfter);
-    floatTimers.current.push(tm);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [t?.trickNo]);
+  const { floats } = useScoreFloats({ bgFinisher, blackhole, deckA1, flipMs, hitTier, holeActive, holeFinish, klinge, lost, reduced, setHoleGrown, setHolePulse, t, zugMs });
 
-  // #FB: Groß-Ansage-Pool („wie stark") — entkoppelt vom Stich-Takt (wie der Score-Float-Pool). Jeder Eintrag lebt
-  // BIG_ANNOUNCE_MS und entfernt sich selbst, unabhängig davon, wie schnell die Folgestiche kommen. So bleibt die
-  // Ansage auch bei 4×/MAX voll sichtbar, statt vom nächsten Stich abgeschnitten zu werden. Spur (lane) rotiert →
-  // aufeinanderfolgende Ansagen fächern vertikal, Pool klein gedeckelt → kein „zu sehr Überlappen".
-  const [bigFloats, setBigFloats] = useState([]);
-  const bigTimers = useRef([]);
-  const bigSeq = useRef(0);
-  const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
-  const goennShown = useRef(false);  // „Gönn dir" nur EINMAL je 200er-Serie → Ref scharf, sobald die Serie wieder unter die Schwelle fällt
-  const goennPrunkPending = useRef(false); // #gott-goenn: Signal vom Ansage-Effekt an den Prunk-Effekt — „Gönn dir" zeigt an → denselben aktiven Prunk feuern (im selben Stich konsumiert)
-  const bigCoolRef = useRef({});     // #315: letzter Anzeige-Zeitpunkt (ms) je Ansage-Stufe (text → ts) für den Cooldown
-  useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
-  useEffect(() => {
-    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; goennPrunkPending.current = false; bigCoolRef.current = {}; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
-    if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
-    // #355: Auswahl der anzuzeigenden Ansage ERST hier (nach dem Meilenstein-Once-Guard). Kann „Gönn dir" nicht (mehr)
-    // gezeigt werden (schon gelaufen), fällt es auf die zugrunde liegende Stufe zurück — Lawine bzw. Score-Stufe
-    // (Gottgleich/Irre/…) — statt die Ansage komplett zu verschlucken. Der Prunk-Trigger läuft separat → Text + Prunk synchron.
-    let toShow;
-    if (goennMilestone && !goennShown.current) { toShow = GOENNDIR_TIER; goennShown.current = true; goennPrunkPending.current = true; } // #gott-goenn: „Gönn dir" → auch den Prunk anstoßen (Konsum im Prunk-Effekt)
-    else { toShow = (baseBigTier && t.grosseLawine) ? LAWINE_TIER : baseBigTier; } // Fallback: Lawine bzw. Score-Stufe
-    if (!toShow) return;                      // nichts anzuzeigen (kein großer Sieg-Stich)
-    if (toShow === LAWINE_TIER) {             // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
-      if (lawineShown.current) return;
-      lawineShown.current = true;
-    }
-    // #315/rework: Gating der Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich). Zwei Regeln, beide nur für Stufen mit
-    // `rank` (die epischen Serien-/Lawine-Ansagen haben ihre eigene 1×-Logik oben und werden hier NICHT angefasst):
-    //   1) Dominanz: eine NIEDRIGERE Stufe kurz (BIG_DOMINANCE_MS) nach einer HÖHEREN unterdrücken → „nur die höchsten".
-    //   2) Throttle je Stufe (`cool`): dieselbe Stufe nicht bei jedem Stich → erscheint regelmäßig, aber reduziert.
-    // Übersprungene Ansagen kosten NICHTS am Score (der floatet unverändert weiter).
-    if (toShow.rank) {
-      const nowMs = Date.now();
-      if (toShow.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
-      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.key] || 0) < toShow.cool) return;
-      bigCoolRef.current[toShow.key] = nowMs;
-      bigCoolRef.current._rank = toShow.rank;
-      bigCoolRef.current._at = nowMs;
-    }
-    // #377: epische Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine"; alle epic:true, Stark/Brutal/Irre nicht) →
-    // sofortiger fx_godlike-Bass-Punch + darübergelegter 11-s-Supernova-Swell, der den Moment austrägt (Layer, nicht
-    // Ersatz). Cooldowns in audio.js (godlike 1,8 s · supernova 3,0 s) verhindern Dröhnen bei dichten epischen Stichen.
-    // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
-    if (toShow.epic) {
-      audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
-      // #gott-standard-sound: Der Swell IST der Sound der Prunk-Animation. Ohne Prunk (gottStandard = „Gottgleich anzeigen
-      //   ohne Animation") bleibt es allein beim Bass-Punch (fx_godlike), KEIN Animations-Swell. Mit Prunk (sonnenPuls/
-      //   Laser-Fächer/Prisma/Holo/Supernova) legt sich der Swell wie bisher über den Punch — je gewähltem Effekt eigener
-      //   Klang (Supernova mit abgeleitetem Timing aus supernovaTiming.js), sonst der generische Supernova-Swell.
-      if (gottEffect !== "gottStandard") {
-        const sw = GOTT_SWELL[gottEffect] || GOTT_SWELL_DEFAULT;
-        audio.play(sw.snd, { gain: sw.gain, delay: sw.delay });
-      }
-    }
-    bigSeq.current += 1;
-    // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
-    //   Stark 0.7 · Brutal 1.0 · Irre 1.4 · epische Ansagen (Gottgleich/Gönn dir/Lawine) 1.4. Nur wenn der Effekt aktiv
-    //   ist (sonst ungenutzter State); der Shader klingt den Puls über SURGE_DUR selbst ab.
-    if (neonsurfGL) {
-      const surgeMag = toShow.epic ? 1.4 : (toShow.rank <= 1 ? 0.7 : toShow.rank === 2 ? 1.0 : 1.4);
-      setSurfSurge({ id: `s${t.trickNo}-${bigSeq.current}`, mag: surgeMag });
-      // #376 Splash „on top" beim Surge — Lautstärke skaliert mit der Magnitude (Stark leiser ↔ Irre/Gott lauter),
-      //   Extra-Bass bei starkem Impact. Cooldown (audio.js 0,3 s) gegen Doppel-Trigger. Feste Surge-Dauer → keine rate.
-      audio.play("fx_neonsurf_splash", { gain: 0.6 + 0.7 * surgeMag, bass: surgeMag >= 1.2 ? 3 : 0 });
-    }
-    // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
-    /* #ansage-overlap: Seit #344 liegen ALLE Ansagen exakt mittig (left/top 50 %). Ein Pool von zwei gleichzeitigen
-       Einträgen heißt damit: zwei Wortmarken exakt übereinander. Im Playtest ergab BRUTAL + IRRE das unlesbare
-       „BIRRRE". Die bestehende Dominanz-Regel oben half nicht — sie unterdrückt nur eine NIEDRIGERE Stufe kurz NACH
-       einer höheren, nicht die höhere ÜBER einer noch laufenden niedrigeren. Und die epischen Ansagen (Lawine,
-       „Gönn dir") haben gar keinen `rank` und laufen an dem Gate komplett vorbei.
-       Regel jetzt, am Pool statt am Gate: es ist IMMER nur eine Ansage sichtbar.
-         • Läuft gerade eine HÖHERWERTIGE → die neue tritt nicht an (der größere Moment behält die Bühne).
-         • Sonst → die neue ERSETZT alles, was noch steht.
-       Rangvergleich über eine effektive Stufe: `rank`, und epische Ansagen ohne rank (Lawine/Gönn dir) zählen als
-       oberste Stufe — sie sind One-Shot-Höhepunkte und dürfen von einem Stark nicht weggeschoben werden. */
-    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: toShow, rank: bigRankOf(toShow) };
-    let superseded = false;
-    setBigFloats((cur) => {
-      if (cur.some((f) => f.rank > entry.rank)) { superseded = true; return cur; } // Höherwertige Ansage läuft → nicht antreten
-      return [entry];                                                              // sonst: ersetzt alles Laufende
-    });
-    if (superseded) return;
-    const tm = setTimeout(() => {
-      setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
-      bigTimers.current = bigTimers.current.filter((x) => x !== tm);
-    }, BIG_ANNOUNCE_MS + 80);
-    bigTimers.current.push(tm);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [t?.trickNo]);
+  const { bigFloats, goennPrunkPending } = useBigAnnouncements({ baseBigTier, goennMilestone, gottEffect, neonsurfGL, setSurfSurge, t });
 
-  // #322 Gottgleich-Prunk-Trigger: feuert den gewählten Pixi-Prunk bei einem gottgleichen Sieg, dessen Wert VOR dem
-  // Krit-Multiplikator die Schwelle erreicht — also auch bei Krit (dann zählt t.scoreBeforeCrit, sonst t.gained). So
-  // triggert ein echt-großer Stich den Prunk auch dann, wenn zusätzlich ein Krit lag; ein nur krit-aufgeblähter kleiner
-  // Stich aber NICHT. Höchstens alle GOTT_FX_COOLDOWN_MS (Echtzeit, ref-basiert). Während des Cooldowns bleibt nur die
-  // (eigen throttled) GOTTGLEICH-Ansage. Trigger = monotoner Zähler → replay der persistent gemounteten Pixi-Komponente.
-  // Bei „reduced" (Barrierefreiheit) läuft kein voller Prunk.
-  const [gottTrigger, setGottTrigger] = useState(0);
-  const gottLastAt = useRef(0);
-  /* #perf-warm: Der Prunk hing bisher am ERSTEN gottgleichen Sieg — dort fielen Chunk-Laden und Pixi-Init auf
-     einen Schlag an (gemessen: 362 ms blockierter Hauptthread, ausgerechnet im lautesten Moment des Laufs;
-     Supernova zieht dafür zwei Pixi-Apps auf). Jetzt wird die Bühne schon vorgewärmt, sobald das Brett zum
-     ERSTEN Mal von einem Vollbild-Overlay verdeckt ist (Auswahl-Phase/Pause): dort sieht niemand einen Hitch,
-     und bis zum ersten Gottgleich steht alles. `warm` baut auf, ohne abzuspielen (s. die Prunk-Dateien).
-     Einmal wahr, bleibt wahr — die Bühne soll nicht bei jedem Overlay neu entstehen. */
-  const [gottWarm, setGottWarm] = useState(false);
-  useEffect(() => { if (!boardOn) setGottWarm(true); }, [boardOn]);
-  const gottMounted = gottTrigger > 0 || gottWarm;   // gemountet = spielbereit (abgespielt wird erst am Trigger)
-  useEffect(() => {
-    if (!t) { gottLastAt.current = 0; return; }
-    /* Derselbe Wert wie die Ansage: `t.gained`, also der Stich-Score NACH dem Krit-Multiplikator.
-       Vorher stand hier bei Krit `scoreBeforeCrit` — ein Stich, der die 500k erst DURCH den Krit
-       erreicht (z. B. 250k × 2,4), fiel damit durch dieses Gatter, während die Ansage längst
-       „GOTTGLEICH" rief. Genau das war im Playtest zu sehen: Wort ja, Effekt nie.
-       Die Häufigkeit bremst weiterhin der 30-s-Cooldown unten, nicht ein zweiter Schwellenwert. */
-    const gottBase = t.gained || 0;
-    // #gott-goenn: „Gönn dir" (200er-Serien-Höhepunkt) setzt im Ansage-Effekt oben ein Flag → feuert HIER denselben
-    //   aktiven Prunk. Einmal je Stich konsumiert (das Flag lebt nie über den Stich hinaus).
-    const goennFires = goennPrunkPending.current; goennPrunkPending.current = false;
-    // #: Die Große Lawine löst denselben Gottgleich-Prunk aus wie ein gottgleicher Sieg — unabhängig vom Score (t.grosseLawine
-    //   ist der One-Shot-Finisher-Bruch). Gleicher reduced-Gate wie Gottgleich. „Gönn dir" ebenso (goennFires).
-    const gottWin = win && (gottBase > GOTT_FX_MIN || !!t.grosseLawine || goennFires) && gottEffect !== "gottStandard" && !reduced;
-    if (!gottWin) return;
-    const now = Date.now();
-    // Cooldown gilt für die Score-getriebenen Gottgleich-Prunks (sonst nur die Ansage). „Gönn dir" ist ein seltener
-    //   Serien-Höhepunkt (200er-Serie, 1× je Serie) und umgeht ihn bewusst → der Prunk kommt dort verlässlich.
-    if (!goennFires && now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return;
-    gottLastAt.current = now;
-    setGottTrigger((n) => n + 1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/isCrit/gained/gottEffect wechseln synchron mit t.trickNo
-  }, [t?.trickNo]);
+  const { gottMounted, gottTrigger } = useGottTrigger({ boardOn, goennPrunkPending, gottEffect, reduced, t, win });
 
-  // #321 Hologrid-Slice — monotoner Trigger → Replay der persistent gemounteten Pixi-Komponente (kein WebGL-Remount/Sieg).
-  const [hologridTrigger, setHologridTrigger] = useState(0);
-  useEffect(() => {
-    if (t && win && hologrid && !reduced && flipMs > 170) {
-      // #deckzug: erst ziehen, dann zerlegen — sonst läuft der Laser-Sweep über eine noch flippende Karte.
-      return nachZug(() => {
-      setHologridTrigger((n) => n + 1);
-      // #374 Laser-Sweep vertonen (war stumm): rate an die Sweep-Geschwindigkeit gekoppelt — der Effekt läuft mit
-      //   speed={scorchSpeed}, also denselben Turbo-Faktor nehmen und (wie fx_scorch) bei 2× deckeln (scorchSndRate) →
-      //   Ton bleibt bei schnellen Stichen synchron, hängt nicht nach. gain wie Klinge/Scorch. flipMs>170-Gate +
-      //   Cooldown (audio.js 0,08 s) verhindern Stapeln/„MG" bei Max-Turbo.
-      audio.play("fx_lasergrid", { rate: scorchSndRate, gain: 1.05 });
-      });
-    }
-    return undefined;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/hologrid wechseln synchron mit t.trickNo
-  }, [t?.trickNo]);
+  const { hologridTrigger } = useHologridTrigger({ flipMs, hologrid, nachZug, reduced, scorchSndRate, t, win });
 
-  // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
-  // geschnittene/berstende Karte erst wegfloatet, dann zerschneidet/explodiert und bei hohem Turbo/vielen Siegen mit
-  // dem nächsten Stich überlappt. Gilt jetzt für BEIDE Seiten (Spieler bei Niederlage, Gegner bei Sieg) mit
-  // identischen Timings → beide „laden gleich lang aus". Jeder Ghost hält die Daten SEINES Stichs fest.
-  const [slashGhosts, setSlashGhosts] = useState([]);
-  const ghostTimers = useRef([]);
-  // Fix (Turbo-Duplikat-Keys): monotoner Spawn-Zähler → jede Ghost-id ist GLOBAL eindeutig. `og${trickNo}`/`pg${trickNo}`
-  // allein kollidierte, wenn derselbe Stich zweimal einen Ghost spawnte (Turbo-Überlappung/Remount) → React „duplicate key".
-  const ghostSeq = useRef(0);
-  const sliceSeq = useRef(0);   // #klinge: per-Stich-Zähler der Klingen-Einfahrrichtung (mod aktueller Zyklus-Länge, s. sliceMove)
-  useEffect(() => () => ghostTimers.current.forEach(clearTimeout), []);
-  useEffect(() => {
-    if (!t) { setSlashGhosts([]); return undefined; }   // Menü/neuer Lauf → Pool leeren
-    if (!sliceOn) return undefined;                     // nur bei einem echten (animierten) Sieg/Niederlage-Stich
-    // #deckzug: Der Schnitt setzt erst ein, wenn die Karten LIEGEN — auf dem Desktop also um die Zugdauer
-    // verzögert. Ohne das slasht der Ghost eine Gegnerkarte, die noch vom Stapel herüberfliegt und flippt.
-    return nachZug(() => {
-    // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
-    const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
-    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale, flipMs };
-    const spawned = [];
-    // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
-    // #finisher: Der Klinge-Ghost entsteht NUR, wenn die Klinge als Finisher gewählt ist. Beim Standard-Finisher
-    // fliegt die Gegnerkarte stattdessen einfach weg (oppFlyAway, s. o.) — kein Ghost, kein Schnitt-Sound.
-    if (win && klinge) {   // Gegnerkarte verliert → Klinge-Ghost — auch bei Krit
-      // #klinge: Einfahrrichtung aus dem Siegesserie-MULTIPLIKATOR (t.breakdown.streakMult) + per-Stich-Zähler (sliceSeq).
-      // Grundzug LINKS; mit steigendem Multiplikator wächst der Zyklus (≥1.25 +rechts, ≥1.5 +oben, ≥2.0 +Z).
-      // (Früher aus der render-lokalen `bd`-Variable — die ist mit der Multiplikator-Leiste entfernt worden; hier
-      //  direkt aus dem Stich lesen, sonst ReferenceError → grauer Bildschirm beim ersten Klinge-Schnitt.)
-      const sliceDir = sliceMove(t.breakdown ? t.breakdown.streakMult : 1, sliceSeq.current++);
-      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
-        fx: "slice", sliceDir,
-        color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
-        suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
-        ionStacks: 0, green: !!t.oCard.green,
-        branded: brandActive[t.oCard.id] || 0, bloom: !!t.oCard.bloom, frontImage: oppFrontImg });
-    }
-    if (!spawned.length) return;
-    setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
-    const ids = spawned.map((g) => g.id);
-    // #klinge: Der Z-Schlag (Serie 4) hält die Karte, bis die drei Schläge durch sind (zHold), erst dann berstet sie →
-    // die Ghost-Lebensdauer muss diese Haltezeit mitnehmen, sonst wird der Zerfall abgeschnitten.
-    const zHold = spawned.some((g) => g.sliceDir === "z")
-      ? Math.round((KLINGE_TUNE.zSlashStep + KLINGE_TUNE.zSlashFactor) * sCut) : 0;
-    const ghostLife = sRest + zHold + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
-    const tm = setTimeout(() => {
-      setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
-      ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
-    }, ghostLife);
-    ghostTimers.current.push(tm);
-    // #312: Klingen-Sound synchron zum sichtbaren Schnitt. Der Ghost slasht bei delay = sRest; der Z-Schnitt sind ZWEI
-    // Slashes (Stagger 0 und zSlashStep × cutDur) → zwei schnelle Hits exakt auf die beiden Slash-Zeitpunkte. Andere
-    // Richtungen: EIN Hit auf dem einzelnen Schnitt. Timer laufen über ghostTimers (Cleanup bei Unmount/Trickwechsel).
-    if (flipMs > 170) {
-      const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
-      const isZ = spawned.some((g) => g.sliceDir === "z");
-      const bladeAt = (ms) => { const st = setTimeout(() => audio.play("fx_blade", { rate: fxRate, gain: 1.05 }), ms); ghostTimers.current.push(st); };
-      bladeAt(sRest);                                                       // erster Slash
-      if (isZ) bladeAt(sRest + Math.round(KLINGE_TUNE.zSlashStep * sCut));  // zweiter Slash (Z-Doppelschnitt)
-    }
-    // #cleanup: GOTTGLEICH-Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle) entfernt — die „gott"-Kategorie bleibt
-    // im Shop (nur „Standard"), neuer Prunk kommt später.
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [t?.trickNo]);
-  const playerGhosts = slashGhosts.filter((g) => g.side === "player");
-  const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
+  const { oppGhosts, playerGhosts } = useSlashGhosts({ brandActive, deckA1, deckA2, flipMs, fxScale, ghostCap, klinge, klingeDeck, nachZug, oppFrontImg, sBoom, sCut, sFloat, sHalves, sRest, sSpark, sliceOn, t, win });
 
-  // #188 v2 / #192: Screen-Effekte bei großem SIEG. Der Screen-Shake läuft jetzt für BEIDE Ergebnisse, gestaffelt
-  // nach Score: Krit-Sieg ab STARK (tier≥1, unverändert), normaler Sieg erst ab BRUTAL (tier≥2) — eine Stufe höher,
-  // damit der Crit die stärkere Stufe bleibt und große Siege seit SCORE_PER_WIN 100→400 (#178) nicht abstumpfen.
-  // Flash/Vignette (CritScreenFx) bleiben Crit-exklusiv (isCrit im State mitgeführt). Bei reduzierter Bewegung gar
-  // nicht gesetzt (kein Shake/Flash/Vignette). Auto-Reset nach ~700 ms → Overlay/Aura entfernt sich.
-  const [screenFx, setScreenFx] = useState(null);
-  const screenFxN = useRef(0);
-  const screenFxTimer = useRef(null);
-  useEffect(() => () => clearTimeout(screenFxTimer.current), []);
-  useEffect(() => {
-    if (t && win && !lite) {   // #: Screen-Shake ist ein Haupt-Ruckel-Treiber (wackelt den ganzen Teilbaum per transform → Dauer-Repaint) → in „ausgewogen" (lite) UND minimal aus
-      const { tier } = fxIntensity(t.gained || 0);
-      const minTier = isCrit ? 1 : 2; // Crit ab STARK (10k), normaler Sieg erst ab BRUTAL (50k)
-      if (tier >= minTier) {
-        screenFxN.current += 1;
-        const colors = isCrit ? CRIT_TIER_COLORS : WIN_TIER_COLORS;
-        setScreenFx({ n: screenFxN.current, tier, isCrit, color: colors[tier] || (isCrit ? critColor : "#5ab87a") });
-        clearTimeout(screenFxTimer.current);
-        screenFxTimer.current = setTimeout(() => setScreenFx(null), 700);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [t?.trickNo]);
-  // #: Screenshake NUR noch bei GOTTGLEICH (Tier 4) — überall sonst raus (Nutzer-Wunsch). Wichtig: nicht bloß die
-  // Amplitude nullen (die Keyframes drehen zusätzlich fest per rotate), sondern die ganze Animation weglassen. Die
-  // grün/gold Panel-Aura großer Siege (outerGlow, BRUTAL→GOTTGLEICH) bleibt davon unberührt — nur der Jitter entfällt.
-  const shakeOn   = !!screenFx && screenFx.tier >= 4;
-  const shakeAmp  = shakeOn ? 7 : 0;
-  const shakeDur  = shakeOn ? 160 + screenFx.tier * 50 : 0;
-  const shakeName = shakeOn ? (screenFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
+  const { screenFx, shakeAmp, shakeDur, shakeName } = useScreenFx({ critColor, isCrit, lite, t, win });
 
-  // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
-  // Stich entkoppelt in eigenem State. Ein Formations-Sieg setzt ihn (Phase „aktiv" = hält bei Opacity 1); sobald ein
-  // Folgestich ihn nicht mehr zeigt, klingt er über FORM_LINGER_MS aus und wird entfernt. In Pause (kein Folgestich)
-  // bleibt er stehen. `key` = Stich-Nr. → derselbe Float bleibt beim Ausklang erhalten (kein Remount/Neustart).
-  const [formFloat, setFormFloat] = useState(null);
-  const formOutTimer = useRef(null);
-  useEffect(() => () => clearTimeout(formOutTimer.current), []);
-  useEffect(() => {
-    if (!t) { setFormFloat(null); return; }
-    if (showFormation) setFormFloat({ key: t.trickNo, label: formLabel, mult: formationStr, color: formColor, peak: formPeak });
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [t?.trickNo, showFormation, formLabel, formationStr, formColor, formPeak]);
-  // „Verlässt gerade": der Float gehört zu einem früheren Stich als dem aktuell gezeigten Formations-Sieg.
-  const formLeaving = !!formFloat && formFloat.key !== (t ? t.trickNo : null);
-  useEffect(() => {
-    clearTimeout(formOutTimer.current);
-    if (formLeaving) formOutTimer.current = setTimeout(() => setFormFloat(null), FORM_LINGER_MS); // nach dem Ausklang entfernen
-  }, [formLeaving, formFloat?.key]);
+  const { formFloat, formLeaving } = useFormFloat({ formColor, formLabel, formPeak, formationStr, showFormation, t });
 
   // --- Panel-Rahmen + äußerer Bloom ---
   // Archetyp-Ambiente (Feuer-Glut / Blitz-Glow) ist zu den jeweiligen Fraktions-Panels gewandert (HeatBar/ChargeBar);
@@ -1934,4 +1577,400 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         (für große Siege, gemeinsam mit normalen Siegen); die „Kritisch!"-Anzeige + Lila bleiben unverändert. */}
    </>
   );
+}
+
+/* ---- Battlefield's per-trick effect pools as hooks (2026-09-28). Each one is a block that used to sit inline in the
+   1,250-line component body: same state, refs, effects and dependency lists, moved verbatim; the argument object is
+   what the block read from the component, the return value what the render still uses. Kept in this file on purpose:
+   the announce ladders, tuning constants and the text ratchets that read them stay where they are. ---- */
+function useScoreFloats({ bgFinisher, blackhole, deckA1, flipMs, hitTier, holeActive, holeFinish, klinge, lost, reduced, setHoleGrown, setHolePulse, t, zugMs }) {
+  // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
+  // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
+  // und entfernt sich nach seiner Dauer selbst, sodass aufeinanderfolgende Floats überlappen.
+  const [floats, setFloats] = useState([]);
+  const seenTrick = useRef(-1);
+  const floatTimers = useRef([]);
+  const floatScaleRef = useRef(0);  // laufender Größenmaßstab der Gewinne (decaying max, für die Entzerrung)
+  const floatCountRef = useRef(0);  // aktuell aktive Score-Floats (für die „zu voll"-Schwelle)
+  const floatLaneSeq = useRef(0);   // #: rotierender Spur-Index für die vertikale Staffelung der Score-Zahlen
+  useEffect(() => () => floatTimers.current.forEach(clearTimeout), []); // Timer bei Unmount aufräumen
+  useEffect(() => {
+    if (!t) { seenTrick.current = -1; floatScaleRef.current = 0; floatCountRef.current = 0; setFloats([]); return; } // Menü/neuer Lauf → Pool + Maßstab leeren
+    if (t.trickNo === seenTrick.current) return;
+    seenTrick.current = t.trickNo;
+    // #110/#196: Karten-Aufdeck-Sound je Stich — startet zeitgleich mit der Flip-Animation (Ergebnis steht bei
+    // RESOLVE_TRICK fest). Rate steigt dezent mit dem Turbo; Lautstärke bleibt konstant (die Stich-/Finisher-Sounds tragen
+    // die Wucht). #: Bass-Anhebung entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
+    const w = t.result === "win" || t.result === "win_tie";
+    // #: Jetzt tragen die Stich-/Finisher-Sounds die Wucht → der Flip-Sound bekommt eine KONSTANTE Lautstärke bei jedem
+    // Flip (Mitte zwischen dem alten Sieg- und Niederlage-Pegel), damit er gleichmäßig „tickt" statt bei Sieg/Niederlage
+    // stark zu springen. Tempo (rate) bleibt an flipMs gekoppelt. #: Bass entfernt — Bass gibt es nur noch beim „Schwarzen Loch".
+    // #finisher-standard: Beim Standard-Finisher trägt der Flip selbst das Sieg-Gefühl — auf einem gewonnenen Stich
+    // wird der Aufdeck-Sound dezent HÖHER gestimmt (rate ×STICH_WIN_PITCH), sonst normal. Bei der Klinge bleibt der
+    // Flip neutral (dort vertont der fx_blade-Hit den Sieg). Niederlagen klingen in beiden Fällen normal.
+    const flipPitch = (w && !klinge) ? STICH_WIN_PITCH : 1;
+    audio.play("cardflip", {
+      rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)) * flipPitch,
+      gain: CARDFLIP_GAIN_CONST,
+    });
+    // #glutfunken-raus: Glutfunken-Aufstoß-Sound entfernt.
+    // #komet: Sternenfeld-Finisher — je Stich EIN Komet, exakt wie der Pixi-Erupt (Sieg UND Niederlage, nur bei reduced
+    // aus; NICHT lite-gegatet, der Komet läuft auch auf lite). Der FLUG-Whoosh (fx_comet, Vorlauf-Stille entfernt →
+    // sitzt jetzt am Start) läuft bei JEDEM Kometen. Ab Tier ≥ 1 (Siege mit Einschlag) kommt ZUSÄTZLICH die Explosion
+    // (fx_comet_impact = nur der Boom, der Woosh der Datei ist stumm; die datei-interne Stille hält den Boom auf ~0,8 s
+    // = deckt sich mit dem visuellen Impact IMP_AT×SHOOT_DUR = 0,9 s). rate BEWUSST 1: der Komet fliegt turbo-unabhängig
+    // feste 1 s Echtzeit → würde man rate an den Turbo koppeln, wanderte der Einschlag vom sichtbaren Impact weg.
+    if (bgFinisher === "starfield" && !reduced) {
+      const cometGain = CARDFLIP_GAIN_CONST * 0.29 * 1.7; // Pegel über Glutfunken, +70 %
+      audio.play("fx_comet", { gain: cometGain });                                 // Flug für ALLE Kometen
+      if (hitTier >= 1) audio.play("fx_comet_impact", { gain: cometGain });         // + Explosion nur bei großen Tiers
+    }
+    // #320 Schwarzes Loch: Sieg → „Sog-Puls" (Loch wächst + Gegnerkarte einsaugen); Niederlage bei aktivem Loch →
+    // „Schrumpf-Puls" (heat-artig verkleinern, kein Sofort-Kollaps). Persistentes Panel-Loch verarbeitet die Pulse.
+    if (blackhole) {
+      // #deckzug: Der Sog-Puls wartet auf den Zug — sonst saugt das Loch eine Karte, die noch flippt. Der Timer
+      // läuft über `floatTimers` (Unmount-Aufräumung); er feuert immer VOR dem nächsten Stich, weil zugMs
+      // (= flipDur ≤ 0,55 × flipMs) kürzer ist als der Stich-Takt.
+      const pulsZug = (fn) => { if (!zugMs) { fn(); return; } floatTimers.current.push(setTimeout(fn, zugMs)); };
+      // #320: Die eingesogene Karte IST die verlorene Stich-Karte des Gegners → echter Kartenwert (t.oValue) UND echte
+      //   Suit-Farbe (suitColor(t.oCard.suit)). Vorher zwang „deckA1 ||" jede Karte in die Deckfarbe → alle gleich/gleiche
+      //   Farbe. Jetzt variiert Farbe je nach Suit der tatsächlich verlorenen Karte (auch im Deck-Farbmodus des Lochs).
+      if (holeFinish) { pulsZug(() => { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) }); setHoleGrown(true); }); } // #: Sieg → Loch aktiv → Loop-Bett an
+      else if (holeActive && lost) pulsZug(() => setHolePulse({ id: t.trickNo, kind: "loss" }));
+    }
+    // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
+    // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
+    // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
+    // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
+    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst DECKFARBE (#390; Gold nur
+    // noch als Rückfall, wenn kein Deck gewählt ist → deckA1 null, z. B. Standard-/Genesis-Deck). Icons bleiben immer.
+    const hits = t.hitTypes || [];
+    const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)); // Icon-KEYS (Eis rendert als Bild, Rest als Emoji)
+    const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
+    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : (deckA1 || "#d4a63a"));
+    const entries = [];
+    // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
+    if (w && t.gained > 0) {
+      // Größenmaßstab fortschreiben (folgt der jüngsten Gewinn-Größenordnung, vergisst Spitzen langsam).
+      const scale = floatScaleRef.current = Math.max(t.gained, floatScaleRef.current * FLOAT_SCALE_DECAY);
+      // Entzerrung: bei Ballung („zu voll") winzige Gewinne (relativ zum Maßstab) NICHT als Float zeigen — Score zählt trotzdem.
+      const declutter = floatCountRef.current >= FLOAT_DECLUTTER_MIN && t.gained < scale * FLOAT_MIN_RATIO;
+      if (!declutter) {
+        // #: Score-Zahlen kürzer sichtbar als der Formations-Float (dur) — im Turbo enger an flipMs gekoppelt, damit sie
+        // schneller weg sind, wenn die Stiche schnell kommen (weniger gleichzeitig). Zusätzlich rotierende Spur (lane).
+        const scoreDur = Math.round(clamp(flipMs * 0.8, 340, 720) + clamp(flipMs * 1.6, 420, 1000));
+        entries.push({ id: `s${t.trickNo}`, zone: "score", dur: scoreDur, seed: t.trickNo * 2, value: t.gained,
+                       lane: (floatLaneSeq.current++) % FLOAT_LANES.length,
+                       text: `+${fmtScore(t.gained)}`, color: critC, icons: hitIcons }); // #184: Score ganzzahlig (floor), keine Nachkommastelle
+      }
+    }
+    if (!entries.length) return;
+    // #315: Score-Float-Deckel — bei Max-Tempo weniger gleichzeitige Floats (sonst Überlappungs-Cluster). Beim Deckeln
+    // werden die NIEDRIGSTEN Werte zuerst verworfen → die grossen, aussagekräftigen Gewinne bleiben stehen (niedrigste
+    // zuerst abgebaut). Ausserhalb von Max-Tempo bleibt es bei bis zu 4.
+    const floatCap = flipMs < 300 ? 2 : flipMs < 520 ? 3 : 4;
+    setFloats((cur) => {
+      const merged = [...cur, ...entries];
+      const next = merged.length <= floatCap
+        ? merged
+        : [...merged].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, floatCap);
+      floatCountRef.current = next.length;
+      return next;
+    });
+    const ids = entries.map((e) => e.id);
+    const removeAfter = Math.max(...entries.map((e) => e.dur)); // #: nach der EIGENEN (kürzeren) Score-Dauer aufräumen → floatCount fällt schneller
+    const tm = setTimeout(() => {
+      setFloats((cur) => { const next = cur.filter((f) => !ids.includes(f.id)); floatCountRef.current = next.length; return next; });
+      floatTimers.current = floatTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen → kein unbegrenztes Wachstum über einen langen Lauf
+    }, removeAfter);
+    floatTimers.current.push(tm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+  }, [t?.trickNo]);
+  return { floats };
+}
+
+function useBigAnnouncements({ baseBigTier, goennMilestone, gottEffect, neonsurfGL, setSurfSurge, t }) {
+  // #FB: Groß-Ansage-Pool („wie stark") — entkoppelt vom Stich-Takt (wie der Score-Float-Pool). Jeder Eintrag lebt
+  // BIG_ANNOUNCE_MS und entfernt sich selbst, unabhängig davon, wie schnell die Folgestiche kommen. So bleibt die
+  // Ansage auch bei 4×/MAX voll sichtbar, statt vom nächsten Stich abgeschnitten zu werden. Spur (lane) rotiert →
+  // aufeinanderfolgende Ansagen fächern vertikal, Pool klein gedeckelt → kein „zu sehr Überlappen".
+  const [bigFloats, setBigFloats] = useState([]);
+  const bigTimers = useRef([]);
+  const bigSeq = useRef(0);
+  const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
+  const goennShown = useRef(false);  // „Gönn dir" nur EINMAL je 200er-Serie → Ref scharf, sobald die Serie wieder unter die Schwelle fällt
+  const goennPrunkPending = useRef(false); // #gott-goenn: Signal vom Ansage-Effekt an den Prunk-Effekt — „Gönn dir" zeigt an → denselben aktiven Prunk feuern (im selben Stich konsumiert)
+  const bigCoolRef = useRef({});     // #315: letzter Anzeige-Zeitpunkt (ms) je Ansage-Stufe (text → ts) für den Cooldown
+  useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; goennPrunkPending.current = false; bigCoolRef.current = {}; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
+    if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
+    // #355: Auswahl der anzuzeigenden Ansage ERST hier (nach dem Meilenstein-Once-Guard). Kann „Gönn dir" nicht (mehr)
+    // gezeigt werden (schon gelaufen), fällt es auf die zugrunde liegende Stufe zurück — Lawine bzw. Score-Stufe
+    // (Gottgleich/Irre/…) — statt die Ansage komplett zu verschlucken. Der Prunk-Trigger läuft separat → Text + Prunk synchron.
+    let toShow;
+    if (goennMilestone && !goennShown.current) { toShow = GOENNDIR_TIER; goennShown.current = true; goennPrunkPending.current = true; } // #gott-goenn: „Gönn dir" → auch den Prunk anstoßen (Konsum im Prunk-Effekt)
+    else { toShow = (baseBigTier && t.grosseLawine) ? LAWINE_TIER : baseBigTier; } // Fallback: Lawine bzw. Score-Stufe
+    if (!toShow) return;                      // nichts anzuzeigen (kein großer Sieg-Stich)
+    if (toShow === LAWINE_TIER) {             // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
+      if (lawineShown.current) return;
+      lawineShown.current = true;
+    }
+    // #315/rework: Gating der Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich). Zwei Regeln, beide nur für Stufen mit
+    // `rank` (die epischen Serien-/Lawine-Ansagen haben ihre eigene 1×-Logik oben und werden hier NICHT angefasst):
+    //   1) Dominanz: eine NIEDRIGERE Stufe kurz (BIG_DOMINANCE_MS) nach einer HÖHEREN unterdrücken → „nur die höchsten".
+    //   2) Throttle je Stufe (`cool`): dieselbe Stufe nicht bei jedem Stich → erscheint regelmäßig, aber reduziert.
+    // Übersprungene Ansagen kosten NICHTS am Score (der floatet unverändert weiter).
+    if (toShow.rank) {
+      const nowMs = Date.now();
+      if (toShow.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
+      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.key] || 0) < toShow.cool) return;
+      bigCoolRef.current[toShow.key] = nowMs;
+      bigCoolRef.current._rank = toShow.rank;
+      bigCoolRef.current._at = nowMs;
+    }
+    // #377: epische Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine"; alle epic:true, Stark/Brutal/Irre nicht) →
+    // sofortiger fx_godlike-Bass-Punch + darübergelegter 11-s-Supernova-Swell, der den Moment austrägt (Layer, nicht
+    // Ersatz). Cooldowns in audio.js (godlike 1,8 s · supernova 3,0 s) verhindern Dröhnen bei dichten epischen Stichen.
+    // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
+    if (toShow.epic) {
+      audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
+      // #gott-standard-sound: Der Swell IST der Sound der Prunk-Animation. Ohne Prunk (gottStandard = „Gottgleich anzeigen
+      //   ohne Animation") bleibt es allein beim Bass-Punch (fx_godlike), KEIN Animations-Swell. Mit Prunk (sonnenPuls/
+      //   Laser-Fächer/Prisma/Holo/Supernova) legt sich der Swell wie bisher über den Punch — je gewähltem Effekt eigener
+      //   Klang (Supernova mit abgeleitetem Timing aus supernovaTiming.js), sonst der generische Supernova-Swell.
+      if (gottEffect !== "gottStandard") {
+        const sw = GOTT_SWELL[gottEffect] || GOTT_SWELL_DEFAULT;
+        audio.play(sw.snd, { gain: sw.gain, delay: sw.delay });
+      }
+    }
+    bigSeq.current += 1;
+    // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
+    //   Stark 0.7 · Brutal 1.0 · Irre 1.4 · epische Ansagen (Gottgleich/Gönn dir/Lawine) 1.4. Nur wenn der Effekt aktiv
+    //   ist (sonst ungenutzter State); der Shader klingt den Puls über SURGE_DUR selbst ab.
+    if (neonsurfGL) {
+      const surgeMag = toShow.epic ? 1.4 : (toShow.rank <= 1 ? 0.7 : toShow.rank === 2 ? 1.0 : 1.4);
+      setSurfSurge({ id: `s${t.trickNo}-${bigSeq.current}`, mag: surgeMag });
+      // #376 Splash „on top" beim Surge — Lautstärke skaliert mit der Magnitude (Stark leiser ↔ Irre/Gott lauter),
+      //   Extra-Bass bei starkem Impact. Cooldown (audio.js 0,3 s) gegen Doppel-Trigger. Feste Surge-Dauer → keine rate.
+      audio.play("fx_neonsurf_splash", { gain: 0.6 + 0.7 * surgeMag, bass: surgeMag >= 1.2 ? 3 : 0 });
+    }
+    // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
+    /* #ansage-overlap: Seit #344 liegen ALLE Ansagen exakt mittig (left/top 50 %). Ein Pool von zwei gleichzeitigen
+       Einträgen heißt damit: zwei Wortmarken exakt übereinander. Im Playtest ergab BRUTAL + IRRE das unlesbare
+       „BIRRRE". Die bestehende Dominanz-Regel oben half nicht — sie unterdrückt nur eine NIEDRIGERE Stufe kurz NACH
+       einer höheren, nicht die höhere ÜBER einer noch laufenden niedrigeren. Und die epischen Ansagen (Lawine,
+       „Gönn dir") haben gar keinen `rank` und laufen an dem Gate komplett vorbei.
+       Regel jetzt, am Pool statt am Gate: es ist IMMER nur eine Ansage sichtbar.
+         • Läuft gerade eine HÖHERWERTIGE → die neue tritt nicht an (der größere Moment behält die Bühne).
+         • Sonst → die neue ERSETZT alles, was noch steht.
+       Rangvergleich über eine effektive Stufe: `rank`, und epische Ansagen ohne rank (Lawine/Gönn dir) zählen als
+       oberste Stufe — sie sind One-Shot-Höhepunkte und dürfen von einem Stark nicht weggeschoben werden. */
+    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: toShow, rank: bigRankOf(toShow) };
+    let superseded = false;
+    setBigFloats((cur) => {
+      if (cur.some((f) => f.rank > entry.rank)) { superseded = true; return cur; } // Höherwertige Ansage läuft → nicht antreten
+      return [entry];                                                              // sonst: ersetzt alles Laufende
+    });
+    if (superseded) return;
+    const tm = setTimeout(() => {
+      setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
+      bigTimers.current = bigTimers.current.filter((x) => x !== tm);
+    }, BIG_ANNOUNCE_MS + 80);
+    bigTimers.current.push(tm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+  }, [t?.trickNo]);
+  return { bigFloats, goennPrunkPending };
+}
+
+function useGottTrigger({ boardOn, goennPrunkPending, gottEffect, reduced, t, win }) {
+  // #322 Gottgleich-Prunk-Trigger: feuert den gewählten Pixi-Prunk bei einem gottgleichen Sieg, dessen Wert VOR dem
+  // Krit-Multiplikator die Schwelle erreicht — also auch bei Krit (dann zählt t.scoreBeforeCrit, sonst t.gained). So
+  // triggert ein echt-großer Stich den Prunk auch dann, wenn zusätzlich ein Krit lag; ein nur krit-aufgeblähter kleiner
+  // Stich aber NICHT. Höchstens alle GOTT_FX_COOLDOWN_MS (Echtzeit, ref-basiert). Während des Cooldowns bleibt nur die
+  // (eigen throttled) GOTTGLEICH-Ansage. Trigger = monotoner Zähler → replay der persistent gemounteten Pixi-Komponente.
+  // Bei „reduced" (Barrierefreiheit) läuft kein voller Prunk.
+  const [gottTrigger, setGottTrigger] = useState(0);
+  const gottLastAt = useRef(0);
+  /* #perf-warm: Der Prunk hing bisher am ERSTEN gottgleichen Sieg — dort fielen Chunk-Laden und Pixi-Init auf
+     einen Schlag an (gemessen: 362 ms blockierter Hauptthread, ausgerechnet im lautesten Moment des Laufs;
+     Supernova zieht dafür zwei Pixi-Apps auf). Jetzt wird die Bühne schon vorgewärmt, sobald das Brett zum
+     ERSTEN Mal von einem Vollbild-Overlay verdeckt ist (Auswahl-Phase/Pause): dort sieht niemand einen Hitch,
+     und bis zum ersten Gottgleich steht alles. `warm` baut auf, ohne abzuspielen (s. die Prunk-Dateien).
+     Einmal wahr, bleibt wahr — die Bühne soll nicht bei jedem Overlay neu entstehen. */
+  const [gottWarm, setGottWarm] = useState(false);
+  useEffect(() => { if (!boardOn) setGottWarm(true); }, [boardOn]);
+  const gottMounted = gottTrigger > 0 || gottWarm;   // gemountet = spielbereit (abgespielt wird erst am Trigger)
+  useEffect(() => {
+    if (!t) { gottLastAt.current = 0; return; }
+    /* Derselbe Wert wie die Ansage: `t.gained`, also der Stich-Score NACH dem Krit-Multiplikator.
+       Vorher stand hier bei Krit `scoreBeforeCrit` — ein Stich, der die 500k erst DURCH den Krit
+       erreicht (z. B. 250k × 2,4), fiel damit durch dieses Gatter, während die Ansage längst
+       „GOTTGLEICH" rief. Genau das war im Playtest zu sehen: Wort ja, Effekt nie.
+       Die Häufigkeit bremst weiterhin der 30-s-Cooldown unten, nicht ein zweiter Schwellenwert. */
+    const gottBase = t.gained || 0;
+    // #gott-goenn: „Gönn dir" (200er-Serien-Höhepunkt) setzt im Ansage-Effekt oben ein Flag → feuert HIER denselben
+    //   aktiven Prunk. Einmal je Stich konsumiert (das Flag lebt nie über den Stich hinaus).
+    const goennFires = goennPrunkPending.current; goennPrunkPending.current = false;
+    // #: Die Große Lawine löst denselben Gottgleich-Prunk aus wie ein gottgleicher Sieg — unabhängig vom Score (t.grosseLawine
+    //   ist der One-Shot-Finisher-Bruch). Gleicher reduced-Gate wie Gottgleich. „Gönn dir" ebenso (goennFires).
+    const gottWin = win && (gottBase > GOTT_FX_MIN || !!t.grosseLawine || goennFires) && gottEffect !== "gottStandard" && !reduced;
+    if (!gottWin) return;
+    const now = Date.now();
+    // Cooldown gilt für die Score-getriebenen Gottgleich-Prunks (sonst nur die Ansage). „Gönn dir" ist ein seltener
+    //   Serien-Höhepunkt (200er-Serie, 1× je Serie) und umgeht ihn bewusst → der Prunk kommt dort verlässlich.
+    if (!goennFires && now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return;
+    gottLastAt.current = now;
+    setGottTrigger((n) => n + 1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/isCrit/gained/gottEffect wechseln synchron mit t.trickNo
+  }, [t?.trickNo]);
+  return { gottMounted, gottTrigger };
+}
+
+function useHologridTrigger({ flipMs, hologrid, nachZug, reduced, scorchSndRate, t, win }) {
+  // #321 Hologrid-Slice — monotoner Trigger → Replay der persistent gemounteten Pixi-Komponente (kein WebGL-Remount/Sieg).
+  const [hologridTrigger, setHologridTrigger] = useState(0);
+  useEffect(() => {
+    if (t && win && hologrid && !reduced && flipMs > 170) {
+      // #deckzug: erst ziehen, dann zerlegen — sonst läuft der Laser-Sweep über eine noch flippende Karte.
+      return nachZug(() => {
+      setHologridTrigger((n) => n + 1);
+      // #374 Laser-Sweep vertonen (war stumm): rate an die Sweep-Geschwindigkeit gekoppelt — der Effekt läuft mit
+      //   speed={scorchSpeed}, also denselben Turbo-Faktor nehmen und (wie fx_scorch) bei 2× deckeln (scorchSndRate) →
+      //   Ton bleibt bei schnellen Stichen synchron, hängt nicht nach. gain wie Klinge/Scorch. flipMs>170-Gate +
+      //   Cooldown (audio.js 0,08 s) verhindern Stapeln/„MG" bei Max-Turbo.
+      audio.play("fx_lasergrid", { rate: scorchSndRate, gain: 1.05 });
+      });
+    }
+    return undefined;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/hologrid wechseln synchron mit t.trickNo
+  }, [t?.trickNo]);
+  return { hologridTrigger };
+}
+
+function useSlashGhosts({ brandActive, deckA1, deckA2, flipMs, fxScale, ghostCap, klinge, klingeDeck, nachZug, oppFrontImg, sBoom, sCut, sFloat, sHalves, sRest, sSpark, sliceOn, t, win }) {
+  // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
+  // geschnittene/berstende Karte erst wegfloatet, dann zerschneidet/explodiert und bei hohem Turbo/vielen Siegen mit
+  // dem nächsten Stich überlappt. Gilt jetzt für BEIDE Seiten (Spieler bei Niederlage, Gegner bei Sieg) mit
+  // identischen Timings → beide „laden gleich lang aus". Jeder Ghost hält die Daten SEINES Stichs fest.
+  const [slashGhosts, setSlashGhosts] = useState([]);
+  const ghostTimers = useRef([]);
+  // Fix (Turbo-Duplikat-Keys): monotoner Spawn-Zähler → jede Ghost-id ist GLOBAL eindeutig. `og${trickNo}`/`pg${trickNo}`
+  // allein kollidierte, wenn derselbe Stich zweimal einen Ghost spawnte (Turbo-Überlappung/Remount) → React „duplicate key".
+  const ghostSeq = useRef(0);
+  const sliceSeq = useRef(0);   // #klinge: per-Stich-Zähler der Klingen-Einfahrrichtung (mod aktueller Zyklus-Länge, s. sliceMove)
+  useEffect(() => () => ghostTimers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (!t) { setSlashGhosts([]); return undefined; }   // Menü/neuer Lauf → Pool leeren
+    if (!sliceOn) return undefined;                     // nur bei einem echten (animierten) Sieg/Niederlage-Stich
+    // #deckzug: Der Schnitt setzt erst ein, wenn die Karten LIEGEN — auf dem Desktop also um die Zugdauer
+    // verzögert. Ohne das slasht der Ghost eine Gegnerkarte, die noch vom Stapel herüberfliegt und flippt.
+    return nachZug(() => {
+    // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
+    const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
+    const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale, flipMs };
+    const spawned = [];
+    // Niederlage: KEIN Schnitt-Ghost mehr auf der Spielerseite — die eigene Karte fliegt nur weg (as-flyaway, s. o.).
+    // #finisher: Der Klinge-Ghost entsteht NUR, wenn die Klinge als Finisher gewählt ist. Beim Standard-Finisher
+    // fliegt die Gegnerkarte stattdessen einfach weg (oppFlyAway, s. o.) — kein Ghost, kein Schnitt-Sound.
+    if (win && klinge) {   // Gegnerkarte verliert → Klinge-Ghost — auch bei Krit
+      // #klinge: Einfahrrichtung aus dem Siegesserie-MULTIPLIKATOR (t.breakdown.streakMult) + per-Stich-Zähler (sliceSeq).
+      // Grundzug LINKS; mit steigendem Multiplikator wächst der Zyklus (≥1.25 +rechts, ≥1.5 +oben, ≥2.0 +Z).
+      // (Früher aus der render-lokalen `bd`-Variable — die ist mit der Multiplikator-Leiste entfernt worden; hier
+      //  direkt aus dem Stich lesen, sonst ReferenceError → grauer Bildschirm beim ersten Klinge-Schnitt.)
+      const sliceDir = sliceMove(t.breakdown ? t.breakdown.streakMult : 1, sliceSeq.current++);
+      spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
+        fx: "slice", sliceDir,
+        color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
+        suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
+        ionStacks: 0, green: !!t.oCard.green,
+        branded: brandActive[t.oCard.id] || 0, bloom: !!t.oCard.bloom, frontImage: oppFrontImg });
+    }
+    if (!spawned.length) return;
+    setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
+    const ids = spawned.map((g) => g.id);
+    // #klinge: Der Z-Schlag (Serie 4) hält die Karte, bis die drei Schläge durch sind (zHold), erst dann berstet sie →
+    // die Ghost-Lebensdauer muss diese Haltezeit mitnehmen, sonst wird der Zerfall abgeschnitten.
+    const zHold = spawned.some((g) => g.sliceDir === "z")
+      ? Math.round((KLINGE_TUNE.zSlashStep + KLINGE_TUNE.zSlashFactor) * sCut) : 0;
+    const ghostLife = sRest + zHold + Math.max(sHalves, sSpark) * (1 + fxP * 0.3) + 100;
+    const tm = setTimeout(() => {
+      setSlashGhosts((cur) => cur.filter((g) => !ids.includes(g.id)));
+      ghostTimers.current = ghostTimers.current.filter((x) => x !== tm); // #159: erledigten Timer aus dem Ref splicen (wie floatTimers)
+    }, ghostLife);
+    ghostTimers.current.push(tm);
+    // #312: Klingen-Sound synchron zum sichtbaren Schnitt. Der Ghost slasht bei delay = sRest; der Z-Schnitt sind ZWEI
+    // Slashes (Stagger 0 und zSlashStep × cutDur) → zwei schnelle Hits exakt auf die beiden Slash-Zeitpunkte. Andere
+    // Richtungen: EIN Hit auf dem einzelnen Schnitt. Timer laufen über ghostTimers (Cleanup bei Unmount/Trickwechsel).
+    if (flipMs > 170) {
+      const fxRate = Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs));
+      const isZ = spawned.some((g) => g.sliceDir === "z");
+      const bladeAt = (ms) => { const st = setTimeout(() => audio.play("fx_blade", { rate: fxRate, gain: 1.05 }), ms); ghostTimers.current.push(st); };
+      bladeAt(sRest);                                                       // erster Slash
+      if (isZ) bladeAt(sRest + Math.round(KLINGE_TUNE.zSlashStep * sCut));  // zweiter Slash (Z-Doppelschnitt)
+    }
+    // #cleanup: GOTTGLEICH-Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle) entfernt — die „gott"-Kategorie bleibt
+    // im Shop (nur „Standard"), neuer Prunk kommt später.
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+  }, [t?.trickNo]);
+  const playerGhosts = slashGhosts.filter((g) => g.side === "player");
+  const oppGhosts    = slashGhosts.filter((g) => g.side === "opp");
+  return { oppGhosts, playerGhosts };
+}
+
+function useScreenFx({ critColor, isCrit, lite, t, win }) {
+  // #188 v2 / #192: Screen-Effekte bei großem SIEG. Der Screen-Shake läuft jetzt für BEIDE Ergebnisse, gestaffelt
+  // nach Score: Krit-Sieg ab STARK (tier≥1, unverändert), normaler Sieg erst ab BRUTAL (tier≥2) — eine Stufe höher,
+  // damit der Crit die stärkere Stufe bleibt und große Siege seit SCORE_PER_WIN 100→400 (#178) nicht abstumpfen.
+  // Flash/Vignette (CritScreenFx) bleiben Crit-exklusiv (isCrit im State mitgeführt). Bei reduzierter Bewegung gar
+  // nicht gesetzt (kein Shake/Flash/Vignette). Auto-Reset nach ~700 ms → Overlay/Aura entfernt sich.
+  const [screenFx, setScreenFx] = useState(null);
+  const screenFxN = useRef(0);
+  const screenFxTimer = useRef(null);
+  useEffect(() => () => clearTimeout(screenFxTimer.current), []);
+  useEffect(() => {
+    if (t && win && !lite) {   // #: Screen-Shake ist ein Haupt-Ruckel-Treiber (wackelt den ganzen Teilbaum per transform → Dauer-Repaint) → in „ausgewogen" (lite) UND minimal aus
+      const { tier } = fxIntensity(t.gained || 0);
+      const minTier = isCrit ? 1 : 2; // Crit ab STARK (10k), normaler Sieg erst ab BRUTAL (50k)
+      if (tier >= minTier) {
+        screenFxN.current += 1;
+        const colors = isCrit ? CRIT_TIER_COLORS : WIN_TIER_COLORS;
+        setScreenFx({ n: screenFxN.current, tier, isCrit, color: colors[tier] || (isCrit ? critColor : "#5ab87a") });
+        clearTimeout(screenFxTimer.current);
+        screenFxTimer.current = setTimeout(() => setScreenFx(null), 700);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+  }, [t?.trickNo]);
+  // #: Screenshake NUR noch bei GOTTGLEICH (Tier 4) — überall sonst raus (Nutzer-Wunsch). Wichtig: nicht bloß die
+  // Amplitude nullen (die Keyframes drehen zusätzlich fest per rotate), sondern die ganze Animation weglassen. Die
+  // grün/gold Panel-Aura großer Siege (outerGlow, BRUTAL→GOTTGLEICH) bleibt davon unberührt — nur der Jitter entfällt.
+  const shakeOn   = !!screenFx && screenFx.tier >= 4;
+  const shakeAmp  = shakeOn ? 7 : 0;
+  const shakeDur  = shakeOn ? 160 + screenFx.tier * 50 : 0;
+  const shakeName = shakeOn ? (screenFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
+  return { screenFx, shakeAmp, shakeDur, shakeName };
+}
+
+function useFormFloat({ formColor, formLabel, formPeak, formationStr, showFormation, t }) {
+  // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
+  // Stich entkoppelt in eigenem State. Ein Formations-Sieg setzt ihn (Phase „aktiv" = hält bei Opacity 1); sobald ein
+  // Folgestich ihn nicht mehr zeigt, klingt er über FORM_LINGER_MS aus und wird entfernt. In Pause (kein Folgestich)
+  // bleibt er stehen. `key` = Stich-Nr. → derselbe Float bleibt beim Ausklang erhalten (kein Remount/Neustart).
+  const [formFloat, setFormFloat] = useState(null);
+  const formOutTimer = useRef(null);
+  useEffect(() => () => clearTimeout(formOutTimer.current), []);
+  useEffect(() => {
+    if (!t) { setFormFloat(null); return; }
+    if (showFormation) setFormFloat({ key: t.trickNo, label: formLabel, mult: formationStr, color: formColor, peak: formPeak });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+  }, [t?.trickNo, showFormation, formLabel, formationStr, formColor, formPeak]);
+  // „Verlässt gerade": der Float gehört zu einem früheren Stich als dem aktuell gezeigten Formations-Sieg.
+  const formLeaving = !!formFloat && formFloat.key !== (t ? t.trickNo : null);
+  useEffect(() => {
+    clearTimeout(formOutTimer.current);
+    if (formLeaving) formOutTimer.current = setTimeout(() => setFormFloat(null), FORM_LINGER_MS); // nach dem Ausklang entfernen
+  }, [formLeaving, formFloat?.key]);
+  return { formFloat, formLeaving };
 }
