@@ -29,7 +29,10 @@ import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Geb
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
 import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx dreistufig auf (full/balanced/minimal) → steuert Overlay-Blur + Sweeps
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
-import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
+import { getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
+import { usePerfMarks } from "./ui/usePerfMarks.js";
+import { useAudioSync } from "./ui/useAudioSync.js";
+import { useRunActions } from "./ui/useRunActions.js";
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
@@ -68,7 +71,6 @@ import { UpdateBanner } from "./ui/UpdateBanner.jsx"; // #update: „Neue Versio
 
 // #333: Musik-Ducking in den Auswahlphasen (Perk/Skill/Gebäude/Aufstell + übrige Nicht-„play"-Screens im Lauf) —
 // Faktor 0,6 = ~40 % leiser (tunebar); 1 = volle Lautstärke im aktiven Stichspiel.
-const MUSIC_DUCK = 0.6;
 
 // #351: harter Boden für den Auto-Play-Takt — selbst bei sehr hoher dynamischer Rundengeschwindigkeit (viele Siege ×
 //   MAX-Turbo) nie unter dieses Delay, und ein endlicher Fallback gegen NaN/Infinity. Verhindert 0-ms-Runaway/Nie-Feuern.
@@ -406,9 +408,6 @@ function AutostichGame() {
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, []);
-  // Optionen → Audio-Manager spiegeln (Mute/Lautstärke). #207: Haptik-Toggle spiegeln (Default an; wirkt nur auf Mobile).
-  useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
-  useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
   // #sprache: Sprachwechsel in den i18n-Kern spiegeln und `<html lang>` mitziehen (Screenreader, Browser-Übersetzung,
   // Silbentrennung). Der Kern benachrichtigt alle Abonnenten (useLocale) → die UI rendert in der neuen Sprache neu.
   // Der Tab-Titel zieht mit: index.html trägt den deutschen Titel statisch (er steht im HTML, bevor
@@ -422,52 +421,10 @@ function AutostichGame() {
     try { document.documentElement.lang = loc; } catch (e) {}
     try { document.title = t("meta.title"); } catch (e) {}
   }, [options.lang]);
-  // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
-  // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
-  const prevBuys = useRef(0);
-  useEffect(() => {
-    const n = state.shop?.purchaseLog?.length || 0;
-    if (n > prevBuys.current) { audio.play("buy"); haptics.tick(); } // #207: Kauf-Bestätigung buzzt mit (Cashout-Button ist data-sfx="none")
-    prevBuys.current = n;
-  }, [state.shop?.purchaseLog?.length]);
-  // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover
-  // → „Midnight Drive"; sonst (im Run) ein zufälliger Track aus dem harmonisierten Pool. Lautstärke/Mute spiegeln.
-  const [musicTitle, setMusicTitle] = useState(null);
-  useEffect(() => music.subscribe(setMusicTitle), []);
-  const musicHome = state.phase === "menu" || state.phase === "gameover";
-  // #339: aktuellen Score über einen Ref bereithalten (KEINE Effekt-Dep → die Musik startet nicht bei jedem Score-Tick neu),
-  //   damit enterRun beim Run-/Resume-Start die zum gespeicherten Score passende Stufe wählt (statt immer calm).
-  const scoreRef = useRef(state.score || 0);
-  useEffect(() => { scoreRef.current = state.score || 0; }, [state.score]);
-  useEffect(() => { if (musicHome) music.menu(); else music.enterRun(scoreRef.current); }, [musicHome]);
-  // Aktueller Score an die Musik: steuert die Intensitäts-Stufe (<1 Mio ruhig → 60 Mio+ Overdrive+).
-  useEffect(() => { if (!musicHome) music.setProgress(state.score || 0); }, [state.score, musicHome]);
-  useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
-  // Ruhiger Modus (Option): kappt die score-abhängige Musik-Eskalation bei „mid" (nur calm/mid-Tracks). Default aus.
-  useEffect(() => { music.setCalmMode(!!options.calmMusic); }, [options.calmMusic]);
-  // #333: In den Auswahl-/Aufbau-Screens im Lauf (alles außer „play") die Musik ~40 % leiser ziehen (sanft), im
-  // aktiven Stichspiel wieder voll. Deckt Perk/Skill/Gebäude/Aufstell und konsistent target/family-target/glacier-target/
-  // legendary ab. Duck ist KEIN Mute (Nutzer-Lautstärke/Mute bleiben unberührt).
-  useEffect(() => { music.setDuck(inRun && state.phase !== "play" ? MUSIC_DUCK : 1); }, [inRun, state.phase]);
-  // Pause-Knopf hält die Musik an (nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter) UND der
-  // Hintergrund/geschlossen-Zustand (!visible) hält sie IMMER an — sonst läuft die BGM auf dem Handy hinter dem
-  // gesperrten Bildschirm/App-Wechsel weiter. Beim Zurückkehren (visible) wird der Zustand neu berechnet → Musik läuft weiter.
-  useEffect(() => { music.setPaused((paused && state.phase === "play") || !visible); }, [paused, state.phase, visible]);
-  // #: „Game komplett samt Musik pausieren", wenn die App in den Hintergrund geht/geschlossen wird (Handy sperren,
-  // App-Wechsel): zusätzlich zur BGM den GANZEN Sound-Context suspendieren (alle SFX/Finisher-Betten einfrieren,
-  // Akku sparen) — und beim Zurückkehren nahtlos fortsetzen. Der Lauf selbst friert bereits über `visible` ein.
-  useEffect(() => { audio.setSuspended(!visible); }, [visible]);
-  // #: Persistente Finisher-Ton-Betten (Brennstrahl/Schwarzes Loch) dürfen NUR in zwei Zuständen klingen: (1) im aktiv
-  // laufenden Stichspiel und (2) in der Werkstatt-Vorschau (dort mounten die Preview-Betten). In JEDEM anderen Zustand
-  // — Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Overlays, Hintergrund-Tab UND besonders der Victory-/Gameover-Screen
-  // (Lauf zu Ende, aber der letzte Sieg-Loop hängt noch) — werden sie verstummt. Positiv-Logik (statt inRun-gated), damit
-  // auch der Gameover-Zustand (inRun=false) sicher greift.
-  useEffect(() => {
-    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && visible;
-    const loopsAllowed = inActivePlay || showCustomize; // Werkstatt-Showcase = einziger Nicht-Spiel-Ort mit Loop-Betten
-    audio.setLoopsSuspended(!loopsAllowed);
-    audio.setFxSuspended(!loopsAllowed); // #329: Effekt-One-Shots (fx_*) exakt wie die Loop-Betten gaten → kein Sound-Schwanz im Victory/Overlay
-  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, showCustomize]);
+  // Audio, music and haptics follow options and run state in useAudioSync.js (mute/volume mirrors, buy sound,
+  // music phase/progress/duck/pause, loop beds gated to active play or the workshop showcase).
+  const { musicTitle } = useAudioSync({ options, state, inRun, paused, visible,
+    overlays: { showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, showCustomize } });
   const changeOptions = (patch) => setOptions((o) => {
     // #telemetrie: Abschalten verwirft auch das, was noch in der Warteschlange liegt (siehe telemetry.purge).
     if (patch.telemetry === false && o.telemetry !== false) telemetry.purge();
@@ -767,16 +724,9 @@ function AutostichGame() {
      Phasenwechsel zurück ins Menü — der Eintrag ist beim Betreten also garantiert schon da. */
   const lastRun = useMemo(() => (state.phase === "menu" ? loadRunHistory()[0] || null : null), [state.phase]);
 
-  // Perf-Recorder: Spiel-Events markieren, damit Frame-Ruckler dem zugeordnet werden, WAS gerade
-  // passiert (perfMark ist außerhalb des Preview-Builds ein billiger No-op). Deck-Wechsel, laufender
-  // Stich-Takt, Overlays (Blur-Verdacht), Phasen/Durchläufe.
-  useEffect(() => { perfMark("phase:" + state.phase, { phase: state.phase }); }, [state.phase]);
-  useEffect(() => { if (state.trickNo) perfMark("trick", { trick: state.trickNo }); }, [state.trickNo]);
-  useEffect(() => { perfMark("cycle", { cycle: state.cycle }); }, [state.cycle]);
-  useEffect(() => { perfMark("deck-switch"); }, [deckSkin.front, deckSkin.back]);
-  useEffect(() => { if (showOptions) perfMark("overlay:options"); }, [showOptions]);
-  useEffect(() => { if (showChronik) perfMark("overlay:chronik"); }, [showChronik]);
-  useEffect(() => { if (glossaryOpen) perfMark("overlay:glossar"); }, [glossaryOpen]);
+  // Perf-Recorder marks (phase, trick, cycle, deck switch, overlays) live in usePerfMarks.js.
+  usePerfMarks({ phase: state.phase, trickNo: state.trickNo, cycle: state.cycle, deckFront: deckSkin.front, deckBack: deckSkin.back,
+                 showOptions, showChronik, glossaryOpen });
   // Auto-Dump bei Game-Over: jeder Lauf hinterlässt eine Perf-Bilanz in der Konsole (nur Preview).
   useEffect(() => {
     if (import.meta.env.VITE_PREVIEW === "1" && options.perfHud && state.phase === "gameover") {
@@ -1093,47 +1043,13 @@ function AutostichGame() {
     setConfirmAbort(false); setPaused(false);
     dispatch({ type: "TO_MENU" });
   }
-  // Perk-Auswahl: ein Angebotseintrag ist entweder eine Familie {familyId,tier} (Rarität #167) oder ein flacher perkId-String.
-  const pick = (entry) => (entry && typeof entry === "object" && entry.familyId)
-    ? dispatch({ type: "PICK_FAMILY", familyId: entry.familyId, tier: entry.tier, rng: Math.random })
-    : dispatch({ type: "PICK_PERK", perkId: entry, rng: Math.random });
-  // (#267: pickStat entfernt — es gibt keine Stat-Phase mehr; Crit-Perks laufen über den Perk-Fluss (Präzision-Familien).)
-  // Formationsphase (§22.8): Tausch / Undo / Zurücksetzen / Bestätigen.
-  const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
-  const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
-  const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
-  const buyEnergy = () => dispatch({ type: "BUY_ENERGY" });        // Münz-Ökonomie §3.2
-  const callFocus = (arch) => dispatch({ type: "CALL_FOCUS", arch, rng: Math.random });   // Münz-Ökonomie §3.3
-  const upgradeSkill = (skillId) => dispatch({ type: "UPGRADE_SKILL", skillId });          // Münz-Ökonomie §3.5
-  const upgradeFamily = (familyId) => dispatch({ type: "UPGRADE_FAMILY", familyId });      // dieselbe Leiter für Perks
-  const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
-  const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
-  const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
-  // Familien-Ziel-Auswahl (Rarität #167): Farbe(n) (Kat. A) bzw. Karten (Kat. C Rollen) für pickTarget-Stufen wählen.
-  const familyTargetSuit = (suit) => dispatch({ type: "FAMILY_TARGET_SUIT", suit });
-  const familyTargetCard = (cardId) => dispatch({ type: "FAMILY_TARGET_CARD", cardId });
-  const familyTargetFormationType = (formationType) => dispatch({ type: "FAMILY_TARGET_FORMATION_TYPE", formationType }); // #179 E_CORE
-  const familyTargetConfirm = () => dispatch({ type: "FAMILY_TARGET_CONFIRM", rng: Math.random });
-  // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
-  const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
-  const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
-  const chooseDoor = (index) => dispatch({ type: "CHOOSE_DOOR", index }); // exp skill rework: eine der zwei Türen öffnen
-  const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
-  const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138 + §2.3: Perk-Angebot ablehnen → +Münzen
-  const sellPerk = (kind, id) => dispatch({ type: "SELL_PERK", kind, id }); // §3.6: gehaltenen Perk abgeben → +Münzen
-  const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
-  // Architekt (#202, ersetzt den Shop): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
-  const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
-  const architectUpgrade = (buildingId) => dispatch({ type: "ARCHITECT_UPGRADE", buildingId });
-  const architectMove = ({ buildingId, footprint }) => dispatch({ type: "ARCHITECT_MOVE", buildingId, footprint });
-  const architectMoveMulti = (moves) => dispatch({ type: "ARCHITECT_MOVE_MULTI", moves });
-  const architectDemolish = (buildingId) => dispatch({ type: "ARCHITECT_DEMOLISH", buildingId });
-  const architectRecolor = ({ buildingId, colorChoice }) => dispatch({ type: "ARCHITECT_RECOLOR", buildingId, colorChoice });
-  const architectDone = () => dispatch({ type: "ARCHITECT_DONE" });
-  const architectUndo = () => dispatch({ type: "ARCHITECT_UNDO" });   // #361: letzten Schritt dieser Phase zurück
-  const architectReset = () => dispatch({ type: "ARCHITECT_RESET" }); // #361: auf Phasen-Beginn zurück
-  const rerollArchitect = () => dispatch({ type: "REROLL_ARCHITECT", rng: Math.random }); // #263: Gebäude-Reroll-Pool
-  const buyCover = () => dispatch({ type: "BUY_COVER" });          // Münz-Ökonomie §3.4
+  // In-run action creators (perk/skill/formation/architect/coins) live in useRunActions.js — one closure per
+  // reducer action, built once. (#267: pickStat entfernt — es gibt keine Stat-Phase mehr.)
+  const { pick, swapCards, undoSwap, resetFormation, buyEnergy, callFocus, upgradeSkill, upgradeFamily, confirmFormation,
+          lockGlacier, confirmTarget, familyTargetSuit, familyTargetCard, familyTargetFormationType, familyTargetConfirm,
+          pickSkill, declineSkill, chooseDoor, rerollPerk, declinePerk, sellPerk, rerollSkill,
+          architectBuild, architectUpgrade, architectMove, architectMoveMulti, architectDemolish, architectRecolor,
+          architectDone, architectUndo, architectReset, rerollArchitect, buyCover } = useRunActions(dispatch);
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
