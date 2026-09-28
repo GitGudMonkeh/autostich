@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { Fragment, useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, boostedTier, effectiveTierOf, tierIsLifted, numWord } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung)
@@ -6,7 +6,8 @@ import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH,
-         STANCE_THRESHOLD, STANCE_MIN_DURATION, STANCE_SCALE_MAX, STANCE_CRIT_STEPS, STANCE_GREEN_STEPS, STANCE_SCORE_STEPS } from "../game/constants.js";
+         STANCE_THRESHOLD, STANCE_MIN_DURATION, STANCE_SCALE_MAX, STANCE_CRIT_STEPS, STANCE_GREEN_STEPS, STANCE_SCORE_STEPS,
+         suitColor } from "../game/constants.js";
 import { focusPrice, UPGRADE_FROM, forfeitSkill, coinsOn } from "../game/coins.js"; // Münz-Ökonomie §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
 import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
@@ -52,6 +53,28 @@ const PASSIVE_KEYWORDS = {
 
 // Eine Staffel als Reihe: „15 / 30 / 45". #sprache: das Trennzeichen folgt der Sprache (fmtNum).
 const ladder = (steps, map = (v) => v) => steps.map((v) => fmtNum(map(v))).join(" / ");
+
+/* Prisma (§3.2): nach dem allgemeinen Satz die vier Haltungen mit ihren Werten je Stufe. Farbpunkt und Name
+   links, der Wert rechts — dieselbe Ordnung wie im Feldpanel, damit man dasselbe an zwei Stellen gleich liest.
+   Die Schlüssel stehen ausgeschrieben: der Tote-Schlüssel-Wächter liest Zeichenketten, keine Ausdrücke. */
+const STANCE_ROWS = [["R", "skill.passive.stance.R"], ["B", "skill.passive.stance.B"],
+                     ["G", "skill.passive.stance.G"], ["Y", "skill.passive.stance.Y"]];
+function StancePassive() {
+  const steps = { B: ladder(STANCE_CRIT_STEPS, (v) => Math.round(v * 100)), G: ladder(STANCE_GREEN_STEPS), Y: ladder(STANCE_SCORE_STEPS) };
+  return (
+    <div className="grid gap-x-2.5 gap-y-1 mt-2" style={{ gridTemplateColumns: "max-content 1fr" }}>
+      {STANCE_ROWS.map(([su, key]) => (
+        <Fragment key={su}>
+          <span className="inline-flex items-center gap-1.5 font-bold whitespace-nowrap" style={{ color: suitColor(su) }}>
+            <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: suitColor(su), display: "inline-block" }} />
+            {t(`suit.${su}.name`)}
+          </span>
+          <span className="opacity-90">{t(key, { steps: steps[su] })}</span>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
 
 // Blitz-Akzent: violett/elektrisch (dieselbe Deck-/Archetyp-Farbe wie im HUD).
 const LIGHT = "#8a7de0";
@@ -236,11 +259,8 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
           green: PLANT_GREEN_THRESHOLD, bloom: PLANT_BLOOM_THRESHOLD, score: PLANT_BLOOM_SCORE_PER_GREEN,
           weight: numWord(PLANT_BLOOM_WEIGHT), per: PLANT_BLOOM_WEIGHT_PER_GROWTH });
       case "stance":
-        /* Die drei Leitern kommen als fertige Reihe in den Satz, nicht als neun Platzhalter: sie stehen
-           in constants.js und sollen sich dort ändern lassen, ohne dass der Katalog nachzieht. */
-        return t("skill.passive.stance", { thr: STANCE_THRESHOLD, dur: STANCE_MIN_DURATION, max: STANCE_SCALE_MAX,
-          crit: ladder(STANCE_CRIT_STEPS, (v) => Math.round(v * 100)),
-          green: ladder(STANCE_GREEN_STEPS), score: ladder(STANCE_SCORE_STEPS) });
+        // Nur der Mechanismus; was die vier Haltungen zahlen, steht darunter als Tabelle (StancePassive).
+        return t("skill.passive.stance", { thr: STANCE_THRESHOLD, dur: STANCE_MIN_DURATION, max: STANCE_SCALE_MAX });
       default: return "";
     }
   };
@@ -625,6 +645,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                     <div className="text-meta-3 font-bold uppercase tracking-wide mb-1" style={{ color: archMeta(a).color }}><ArchIcon meta={archMeta(a)} size={12} /> {archMeta(a).label}</div>
                   )}
                   <div className="opacity-90">{unlockLine(a)}</div>
+                  {a === "stance" && <StancePassive />}
                   <KeywordGlossary tokens={PASSIVE_KEYWORDS[a] || []} />
                 </div>
               ))}
