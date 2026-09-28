@@ -55,8 +55,11 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2, 4.6, 6.7, 9.7]; // überlineare W
    41 % gehoben haben — derselbe Befund wie §7.72 B, weil Gletscher unabhängig vom Rest des Builds zahlen. Der
    Regler ist der eine Griff, der die ganze Fraktion gleichmäßig senkt, statt einen frisch reparierten Skill
    wieder totzuschneiden (die Lehre aus §7.66). Der Sweep oben bleibt gültig, 60 steht darin. UNGEMESSEN in der
-   neuen Kombination: der Sweep lief vor beiden Buffs. */
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 60);
+   neuen Kombination: der Sweep lief vor beiden Buffs.
+   2026-09-28 (Owner: „burst_scale runter auf 40. keine messung"): 60 → 40, derselbe Griff aus demselben Grund.
+   Anlass ist die Fraktions-Zusicherung im Skill-Angebot, die einen festgelegten Bau erstmals an seine Skills
+   bringt. UNGEMESSEN auf Ansage — der Playtest entscheidet, nicht der Sim. */
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 40);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen

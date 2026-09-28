@@ -811,31 +811,71 @@ export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legend
   return { offer: out, tiers };
 }
 
+/* Welche Tür welche zugesicherte Fraktion trägt. EIN Mischen, dann reihum ausgeteilt: die Paarung wechselt
+   von Phase zu Phase, und keine Tür bekommt mehr als `factions` davon. Mehr Zusicherungen als
+   Türen × Fraktionen lassen sich nicht halten — der Rest fällt weg, statt eine Tür über ihre Grenze zu
+   schieben. */
+function dealGuaranteed(must, doors, factions, rng) {
+  const out = Array.from({ length: doors }, () => []);
+  let d = 0;
+  for (const a of shuffle(must, rng)) {
+    let seen = 0;
+    while (seen < doors && out[d % doors].length >= factions) { d += 1; seen += 1; }
+    if (out[d % doors].length >= factions) break;
+    out[d % doors].push(a); d += 1;
+  }
+  return out;
+}
+
 /* The door offer (docs/skill-rework.md §1). A skill phase shows `doors` doors; every door hides `size` skills drawn
    from at most `factions` factions of the pool, repetition allowed — a door may read Feuer·Feuer·Blitz or
    Feuer·Feuer·Feuer. The door shows only the faction symbols (`door.skills.map(archetypeOf)` in slot order); the
    tiers are rolled with the door (rollSkillOfferTiers, legendary chance included) and revealed when it is opened
    (reducer CHOOSE_DOOR). Skills are distinct within a door and across the doors as long as the pool allows.
    Pool = the run's allowlist (unlockedArchetypes: the sim's `--arch`, START_RUN action.archetypes) or, without one,
-   C.SKILL_OFFER_ARCHETYPES — the exp world of Feuer and Blitz while Eis and Pflanze wait for their rework; narrowed
-   to factions that still have an offerable skill, and once `maxArchetypes` factions are active, to those. Two rng
-   streams like the flat offer: `rng` draws factions and skills, `rngTiers` the tiers. Deterministic. Nothing left →
-   [] (perk fallback). Returns [{ skills: [id…], tiers: { [id]: 0..3 } }, …] — doors without a skill are dropped. */
+   C.SKILL_OFFER_ARCHETYPES — all five factions; narrowed to factions that still have an offerable skill.
+
+   ZWEI Regeln um die gehaltenen Fraktionen (Owner 2026-09-28), die zusammen die Deckbau-Agency tragen:
+
+   1. SPERRE ab `lockAt` gehaltenen Fraktionen — dann zieht das Angebot nur noch aus ihnen. Wer drei hat,
+      bekommt keine vierte mehr geschenkt; sie kommt über den bezahlten Fokus-Ruf (reducer CALL_FOCUS).
+   2. ZUSICHERUNG: jede gehaltene Fraktion steht mit mindestens einem Skill im Angebot. Über BEIDE Türen
+      gerechnet, nicht je Tür — eine Tür trägt höchstens `factions` Fraktionen, vier gehaltene passen also
+      nie auf eine, über zwei Türen gehen sie genau auf. So bleibt die Türwahl eine echte Wahl: die gesuchte
+      Fraktion steht auf einer der beiden, und das Symbol sagt auf welcher.
+
+   Eine gehaltene Fraktion ohne freien Skill kann nichts zusichern und fällt aus der Rechnung. Ohne gehaltene
+   Fraktion (Erstangebot) zieht `dealGuaranteed` keinen einzigen rng-Wert — der Erstwurf bleibt byte-identisch.
+
+   Two rng streams like the flat offer: `rng` draws factions and skills, `rngTiers` the tiers. Deterministic.
+   Nothing left → [] (perk fallback). Returns [{ skills: [id…], tiers: { [id]: 0..3 } }, …] — doors without a
+   skill are dropped. */
 export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES,
   doors = C.SKILL_DOORS, size = C.SKILL_DOOR_SIZE, factions = C.SKILL_DOOR_FACTIONS, pool = C.SKILL_OFFER_ARCHETYPES,
-  legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, maxTier = 4 } = {}) {
+  lockAt = C.ARCHETYPE_LOCK_AT, lockToActive = true, legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, maxTier = 4 } = {}) {
   const have = owned || [];
   const active = activeArchetypes || [];
   const world = unlockedArchetypes || pool;
   let available = archetypesWithSkills(have).filter((a) => world.includes(a));
-  if (active.length >= maxArchetypes) available = available.filter((a) => active.includes(a));
+  /* `lockToActive: false` ist die EINE dokumentierte Ausnahme: der Fokus-Ruf (reducer CALL_FOCUS), der
+     die Sperre ja gerade gegen Bezahlung umgeht. Er trägt seine eigene Obergrenze und braucht diese hier
+     nicht. `maxArchetypes` bleibt die Untergrenze der Schwelle: ein Dev-Run mit max 2 sperrt bei 2. */
+  if (lockToActive && active.length >= Math.min(lockAt, maxArchetypes)) available = available.filter((a) => active.includes(a));
   const pools = {};
   for (const a of available) pools[a] = shuffle(offerPool(a, have), rng);
+  const must = available.filter((a) => active.includes(a) && pools[a].length);
+  const promised = dealGuaranteed(must, doors, factions, rng);
   const out = [];
   const taken = new Set(have);
   for (let d = 0; d < doors; d++) {
     const skills = [];
-    for (let i = 0; i < size; i++) {
+    // Zuerst die zugesicherten Plätze dieser Tür; eine inzwischen leergezogene Fraktion fällt still weg.
+    for (const a of promised[d]) {
+      if (skills.length >= size || !pools[a].length) continue;
+      const id = pools[a].shift();
+      skills.push(id); taken.add(id);
+    }
+    for (let i = skills.length; i < size; i++) {
       // Factions with a skill left; once `factions` distinct ones stand on the door, only those.
       let cands = available.filter((a) => pools[a].length);
       const onDoor = [...new Set(skills.map(archetypeOf))];
