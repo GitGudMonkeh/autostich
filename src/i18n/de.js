@@ -513,7 +513,7 @@ export default {
   "skill.passive.ice": "Jeder Eis-Skill friert eine deiner Karten dort fest, wo sie steht: Sie lässt sich in keiner Aufstellung mehr verschieben, sammelt dafür jeden Durchlauf Masse und bricht schließlich über ihre Nachbarn. Auch der offene Boden friert: Jedes freie Feld legt Schnee an und gibt ihn an deine Gletscher ab. Je weniger Gletscher du hast, desto mehr bekommt jeder einzelne.",
   /* Prisma: erst der Mechanismus, dann die vier Haltungen als Tabelle (StancePassive in SkillSelect.jsx).
      Die Leitern kommen fertig als „15 / 30 / 45" herein, damit constants.js die eine Quelle bleibt. */
-  "skill.passive.stance": "Vier Haltungen, eine je Grundfarbe. Jede zählt deine Siege in ihrer Grundfarbe, nie in der gefärbten. Bei {thr} wird sie aktiv, die abgelöste klingt {dur} Stiche nach und wirkt dabei voll weiter. Blau, Grün und Gelb wachsen mit jedem gehaltenen Prisma-Skill, voll ab {max}.",
+  "skill.passive.stance": "{thr} Siege einer Grundfarbe setzen dich in ihre Haltung. Die abgelöste verschwindet nicht, sie klingt {dur} Stiche nach: wer schnell wechselt, hat mehrere zugleich. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte. Blau, Grün und Gelb werden stärker mit jedem gehaltenen Prisma-Skill, bis zu einem Maximum von {max}.",
   "skill.passive.stance.R": "Jeder Stich eine Stufe höher: Niederlage → Gleichstand, Gleichstand → Sieg.",
   "skill.passive.stance.B": "Crit-Chance +{steps} %.",
   "skill.passive.stance.G": "+{steps} Score-Multiplikator je Formation im Segment.",
