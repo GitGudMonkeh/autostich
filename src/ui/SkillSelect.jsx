@@ -3,7 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, boostedTier, effectiveTierOf, tierIsLifted, numWord } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung)
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
+import { SKILL_SLOT_LIMIT, SKILL_OFFER_ARCHETYPES, MAX_ARCHETYPES, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH,
          STANCE_THRESHOLD, STANCE_MIN_DURATION, STANCE_SCALE_MAX, STANCE_CRIT_STEPS, STANCE_GREEN_STEPS, STANCE_SCORE_STEPS } from "../game/constants.js";
@@ -117,7 +117,10 @@ function FocusIcon({ size = 15 }) {
 /* Fokus rufen (docs/muenz-oekonomie.md §3.3) — unter den Türen, ein Chip je Fraktion, ein Tap wählt UND
    bezahlt. Einmal je Skill-Phase; danach ist der Block weg, weil die gerufene Tür darüber schon dasteht.
    Die Fraktion, von der man am meisten hält, ist hervorgehoben — das ist die, die man am ehesten sucht,
-   und der Chip sagt es, ohne dass man zählen muss. */
+   und der Chip sagt es, ohne dass man zählen muss.
+
+   Gezeigt wird NUR, was der Reducer auch annimmt (CALL_FOCUS): die Welt des Laufs, und bei vier
+   gehaltenen Fraktionen nur noch diese vier. Ein Chip, der auf Tap nichts tut, ist schlimmer als keiner. */
 function FocusCall({ state, onCallFocus }) {
   if (!onCallFocus || state.focusCalled) return null;
   const coins = state.coins || 0;
@@ -126,6 +129,11 @@ function FocusCall({ state, onCallFocus }) {
   const held = {};
   for (const id of state.skills || []) { const a = archetypeOf(id); if (a) held[a] = (held[a] || 0) + 1; }
   const lead = Object.keys(held).sort((a, b) => held[b] - held[a])[0] || null;
+  const world = state.unlockedArchetypes || SKILL_OFFER_ARCHETYPES;
+  const heldArchs = state.activeArchetypes || [];
+  const full = heldArchs.length >= MAX_ARCHETYPES;
+  const callable = ARCHETYPE_ORDER.filter((a) => world.includes(a) && (!full || heldArchs.includes(a)));
+  if (!callable.length) return null;
   return (
     <div className="sk-focus mt-4 rounded-xl p-3.5"
       style={{ background: "linear-gradient(180deg,#241f2e,#17151f)", border: "1px solid #6a5a9e" }}>
@@ -135,8 +143,8 @@ function FocusCall({ state, onCallFocus }) {
         <span className="ml-auto"><CoinAmount n={preis} size={12} dim={!can} have={coins} /></span>
       </div>
       <div className="text-body-5 leading-snug mt-1.5" style={{ color: "#9a93b5" }}>{t("focus.hint")}</div>
-      <div className="grid gap-1.5 mt-3" style={{ gridTemplateColumns: `repeat(${ARCHETYPE_ORDER.length}, minmax(0, 1fr))` }}>
-        {ARCHETYPE_ORDER.map((a) => {
+      <div className="grid gap-1.5 mt-3" style={{ gridTemplateColumns: `repeat(${callable.length}, minmax(0, 1fr))` }}>
+        {callable.map((a) => {
           const m = archMeta(a) || { color: "#8a8a95", label: a };
           const on = a === lead;
           return (

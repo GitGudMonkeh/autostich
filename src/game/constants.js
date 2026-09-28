@@ -320,6 +320,11 @@ export const FUNDAMENT_BONUS     = envNum("SIM_FUNDAMENT_BONUS", 0.75);   // Fun
 export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]
 export const SKILLS_OFFERED     = envNum("SIM_SKILLS_OFFERED", 12);   // Skills je Skill-Runde [Default 12 = 3+3+3+3 (je 3 pro Fraktion, alle 4 im Angebot); ENV-Sweep-Haken, z. B. =6 für den alten 2+2+2-Stand]
 export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichzeitig aktive Fraktionen [Default 4 = alle 4 mischbar; ENV-Sweep-Haken, z. B. =3 für den Sim-validierten 3-von-4-Stand (Cross-Vergleich)]
+/* Ab so vielen GEHALTENEN Fraktionen zieht das Türen-Angebot nur noch aus ihnen (Owner 2026-09-28).
+   Nicht dasselbe wie MAX_ARCHETYPES: bis zwei Fraktionen darf eine neue dazustoßen, ab drei führt der
+   Weg zur vierten über den bezahlten Fokus-Ruf. Das ist der Preis dafür, dass das Angebot ab hier
+   verlässlich die eigenen Fraktionen bedient (skills.js buildSkillDoors). */
+export const ARCHETYPE_LOCK_AT  = envNum("SIM_ARCHETYPE_LOCK_AT", 3);
 // ERKUNDUNG (Cross-Balance): Hebel 7 — Exponent auf die Commitment-Scaler (plant/fire/lightCommit = min(1, count/SKILL_SLOTS)^EXP).
 // 1 = linear (aktuell, neutral); >1 = konvex → Verdünnung kostet superlinear (naives Mischen ≤ Mono deutlicher). [ENV-Sweep-Haken]
 export const COMMIT_EXP        = envNum("SIM_COMMIT_EXP", 1);
