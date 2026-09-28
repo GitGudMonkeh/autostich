@@ -771,165 +771,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     return <div key={p} className="absolute rounded-md" style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top, background: `${dragGhost.color}33`, border: `2px solid ${dragGhost.color}cc`, boxShadow: "0 4px 12px #00000066" }} />; })}
                 </div>
               )}
-              {(() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null;
-                // #UI: beim Ziehen die Felder ANDERER Gebäude ausgrauen — dort ist kein Ablegen möglich.
-                const blocked = dragPrev ? (() => { const s = new Set(); for (const x of buildings) if (x.id !== dragPrev.id) for (const p of x.footprint) s.add(p); return s; })() : null;
-                return cards.map((card, pos) => {
-                const b = buildingAt(pos);
-                const isPending = b && b.id === PENDING_ID;
-                // Nur Zellen mit einem ziehbaren Gebäude fangen die Geste (touchAction:none) — sonst scrollt der Finger die Seite.
-                const canDragHere = !removeFor && ((phase === "place" && isPending) || (phase === "move" && !!b));
-                const fam = b ? familyDef(b.familyId) : null;
-                // Raritäts-Rahmen: Stufenfarbe (I grau · II grün · III blau · IV lila), Legendär = Gold. Füllung ist einheitlich (Typ-Farbe raus, #UI).
-                const tierCol = b ? (fam.legendary ? GOLD : tierColor(b.tier)) : null;
-                const ev = effValueAt(pos);
-                const boost = ev - card.value;
-                // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
-                const numCol = card.green ? (card.bloom ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
-                const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
-                const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // Gletscher-Eigenmasse
-                const fMass = firnStackByPos ? Math.round(firnStackByPos[pos] || 0) : 0;           // #386 Boden-Reserve (firnStack)
-                const isFirn = !isGlacier && fMass >= 1;                                           // Firn-Boden (Reserve, noch kein Gletscher)
-                const anchorCell = b ? Math.min(...b.footprint) : -1;
-                const isSel = b && b.id === selId;
-                const pf = formations[pos] || { mult: 1, formations: [] };
-                const inForm = pf.mult > 1;
-                const fb = formationBorder(pf);
-                const formLabels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
-                const sFac = structF[pos] || 1;
-                const cbHere = removeFor ? committedAt(pos) : null;
-                const isRemovable = !!removeFor && !!cbHere && replaceableSet.has(cbHere.id); // nur Gebäude, deren Abriss Platz schafft
-                const isMarkedDemolish = !!removeFor && !!cbHere && demolishIds.includes(cbHere.id); // #235/#281: markiertes Abriss-Ziel (Mehrfach)
-                // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
-                const upCan = phase === "upgrade" && b && !isPending && upInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
-                const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
-                const isInspected = phase === "choose" && inspectId != null && b && b.id === inspectId; // choose: aus der Liste inspiziertes Gebäude → leuchtet (cyan), zeigt wo es liegt
-                const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
-                // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
-                const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
-                const chLocked = chLockSet.has(pos); // #301 C2: dauerhaft gesperrte Bau-Zelle (rot/ausgegraut)
-                // Zell-Tooltip aus Bausteinen: Gebäude (+ Vorschau/Aufwertung) bzw. nur die Position, jeweils
-                // ergänzt um Formations- und Struktur-Faktor.
-                const formPart = inForm ? t("arch.cell.formation", { f: fmt(pf.mult) }) : "";
-                const structPart = sFac > 1 ? t("arch.cell.struct", { f: fmt(sFac) }) : "";
-                const title = b
-                  ? t("arch.cell.building", { name: fam.name, tier: tierLabel(b.tier) })
-                    + (isPending ? t("arch.cell.preview") : "") + " — " + famEff(fam, b)
-                    + (upCan ? t("arch.cell.upgrade", { tier: tierLabel(b.tier + 1), eff: famEff(fam, { tier: b.tier + 1 }) }) : "")
-                    + formPart + structPart
-                  : t("arch.cell.pos", { pos: pos + 1 })
-                    + (inForm ? t("arch.cell.formationOnly", { f: fmt(pf.mult) }) : "") + structPart;
-                const inDragPrev = dragCells ? dragCells.has(pos) : false;
-                const dragValid = dragPrev && dragPrev.valid;
-                const isDragOrig = draggingId != null && b && b.id === draggingId;
-                return (
-                  <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center ty-num${dragPrev ? "" : " transition-all"}${showCombos && !dragPrev && b && comboLit(pos) ? " arch-struct-lit" : ""}`}
-                    style={{
-                      // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
-                      // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
-                      // Karte darunter bleibt sichtbar. KEIN Transform → kein Mitziehen der Karte, keine Lücke. Der Rahmen wandert als Ghost.
-                      background: chLocked ? "#2a1214" : inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
-                      color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
-                      border: `1px solid ${chLocked ? "#e0555588" : inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
-                      opacity: chLocked ? 0.6 : (upgradeDim ? 0.28 : (isBlocked ? 0.5 : (isPending && !inDragPrev ? 0.82 : 1))),
-                      filter: chLocked ? "grayscale(0.5)" : (upgradeDim ? "grayscale(0.75)" : (isBlocked ? "grayscale(0.55)" : undefined)),
-                      touchAction: canDragHere ? "none" : "pan-y",
-                      boxShadow: [
-                        isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
-                        isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
-                        isInspected ? "inset 0 0 0 2px #5ec8f0, 0 0 14px #5ec8f0aa, inset 0 0 16px #5ec8f055" : null, // choose: inspiziertes Gebäude cyan leuchten lassen (wo liegt es?)
-                        // #UI: aufwertbares Gebäude dezent glühen lassen — in der TYP-Farbe (nicht Stufenfarbe). Der Rahmen
-                        // ist jetzt die durchgezogene Typ-Kontur (oben, ungedimmt für Aufwertbare); der Stufen-Farb-Zellrahmen entfällt.
-                        upCan && !isMarkedUpgrade ? `0 0 10px ${CAT[fam?.category]?.color || tierCol}55` : null,
-                        inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
-                        isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
-                        // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
-                        // in Stufenfarbe als EINE Gebäude-Form (wie in der Aufstellungsphase).
-                        b && !isDragOrig && fam.legendary ? `0 0 8px ${GOLD}55` : null,                     // Legendär → zusätzlicher warmer Glow (nicht am aufgehobenen Origin)
-                      ].filter(Boolean).join(", ") || undefined,
-                      outline: isMarkedDemolish ? "2px solid #ff6a4d" : isMarkedUpgrade ? "2px solid #f0b429" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (showForms && inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
-                      outlineOffset: 1,
-                      cursor: "pointer",
-                    }}
-                    title={title}>
-                    {/* #UI: Struktur-Kombi (volle Zeile/Spalte/Diagonale) → rote Fläche via `arch-struct-lit` (Klasse oben,
-                        identisch zum Aufstellboard). Distrikt-Bonus (gleiche Kategorie aneinander) → Rahmen glüht in Typ-Farbe. */}
-                    {showCombos && !dragPrev && distrLit(pos) && b && (() => {
-                      const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
-                      return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
-                    })()}
-                    {/* #358 Struktur-Platzier-Flash: die neu vervollständigte Zeile/Spalte/Diagonale blitzt kurz heller
-                        rot auf (über der persistenten Vollflächen-Rotfläche). Am key gekeyt → jede Platzierung neu. */}
-                    {showCombos && !dragPrev && b && placeFlash && placeFlash.structCells.has(pos) && (
-                      <span key={placeFlash.key} aria-hidden className="arch-struct-flash rounded-md" />
-                    )}
-                    {/* #eis-arch: Gletscher und Schnee unterscheiden sich hier bisher NUR am Marker — gleiches Icon,
-                        eine Nummer kleiner, etwas blasser. Auf einer Bau-Zelle ist das kein Unterschied, den man sieht.
-                        Die Aufstellungsphase trennt beides über die FLÄCHE (CardGrid: Schnee = zarter Blau-Wash,
-                        Gletscher zusätzlich Rahmen + Schein), und genau diese Sprache kommt hier her.
-
-                        Der Rahmen ist BEWUSST dünner und halbdurchlässig statt der 2px-Vollfarbe aus dem Aufstellboard:
-                        Cyan ist auf diesem Bildschirm schon vergeben — `isInspected` malt das inspizierte Gebäude mit
-                        `inset 0 0 0 2px #5ec8f0` plus kräftigem Außenschein. Ein zweiter kräftiger Cyan-Rahmen hieße
-                        „inspiziert" und „Gletscher" sähen gleich aus, und der Fehler wäre schlimmer als der behobene.
-                        Als eigene Ebene, nicht im `boxShadow`-Stapel der Zelle: der führt schon acht Zustände. */}
-                    {(isGlacier || isFirn) && (
-                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none"
-                        style={{ background: isGlacier ? "#5ec8f01f" : "#5ec8f014",
-                                 boxShadow: isGlacier ? "inset 0 0 0 1.5px #5ec8f066" : undefined }} />
-                    )}
-                    {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss. */}
-                    {chLocked && (
-                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
-                    )}
-                    {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
-                    {isBlocked && (
-                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
-                    )}
-                    {boost > 0 && <span className="absolute top-[1px] left-[3px] text-micro-2 font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
-                    {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
-                    {isGlacier && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={fMass >= 1 ? t("arch.glacier.reserve", { mass: gMass, firn: fMass }) : t("cardgrid.glacierMass.title", { mass: gMass })}>
-                        <FactionIcon type="ice" size={9} />
-                        {gMass}
-                      </span>
-                    )}
-                    {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
-                    )}
-                    {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
-                    <span className="ab-num text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
-                    {b && !isDragOrig && pos === anchorCell && (
-                      <span className="absolute bottom-[1px] left-[3px] text-micro-1 font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
-                        {fam.name.slice(0, 3).toUpperCase()}
-                        {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
-                      </span>
-                    )}
-                    {/* #UI: Stufen-Zahl (I–IV / ★) unten rechts im Gebäude, in der SELTENHEITS-Farbe — der Rahmen zeigt jetzt den Typ. */}
-                    {b && !isDragOrig && pos === Math.max(...b.footprint) && (
-                      <span className="absolute bottom-[1px] right-[3px] text-micro-3 font-extrabold leading-none"
-                        style={{ color: fam.legendary ? GOLD : tierColor(b.tier), textShadow: "0 1px 2px #000a" }}
-                        title={fam.legendary ? t("arch.legendary") : t("arch.tier", { tier: ROMAN[b.tier] })}>
-                        {fam.legendary ? "★" : ROMAN[b.tier]}
-                      </span>
-                    )}
-                    {/* Formations-Marke (Owner 2026-09-08: „etwas höher und etwas größer"). Sie klebte mit 7 px
-                        am unteren Kachelrand und war auf dem Brett kaum zu lesen. Jetzt 9 px und 4 px Abstand
-                        nach unten — die Zahl der Karte sitzt mittig im Flex und bleibt mehrere Pixel entfernt,
-                        auch auf der schmalsten Kachel (Handy, 300 px Brett → 57 px Zelle). */}
-                    {showForms && inForm && (
-                      <span className="absolute bottom-[4px] left-1/2 -translate-x-1/2 text-micro-3 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
-                        {formLabels}×{fmt(pf.mult)}
-                      </span>
-                    )}
-                    {b && pos === anchorCell && b.colorChoice && (
-                      <span className="absolute bottom-[2px] right-[3px] w-[8px] h-[8px] rounded-full" title={t("arch.buffsSuit", { suit: suitLabel(b.colorChoice) })}
-                        style={{ background: SUIT_COLOR[b.colorChoice], boxShadow: "0 0 0 1.5px rgba(255,255,255,0.9)" }} />
-                    )}
-                  </button>
-                );
-              }); })()}
+              <ArchBoardCells buildingAt={buildingAt} buildings={buildings} cards={cards} chLockSet={chLockSet} comboLit={comboLit} committedAt={committedAt} demolishIds={demolishIds} distrLit={distrLit} dragPrev={dragPrev} effValueAt={effValueAt} firnStackByPos={firnStackByPos} formations={formations} glacierMassByPos={glacierMassByPos} glacierPos={glacierPos} inspectId={inspectId} onCellDown={onCellDown} pendingUpgrade={pendingUpgrade} phase={phase} placeFlash={placeFlash} removeFor={removeFor} replaceableSet={replaceableSet} selId={selId} showCombos={showCombos} showForms={showForms} structF={structF} upInfo={upInfo} />
             </div>
             {/* Legende */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-meta-3 opacity-80">
@@ -959,317 +801,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           <section className="contents md:flex md:flex-col md:gap-4 md:order-2">
             {/* Bau-Assistent (Referenz + Anleitung + Farbwahl) — scrollt normal. Die Aktions-Buttons stehen in der
                 schwebenden Leiste darunter (#UI „nur Buttons"). */}
-            <div className="rounded-xl p-3 order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
-
-              {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
-              <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-meta-1 leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
-                head={<span className="uppercase tracking-wide opacity-55">{t("arch.struct.head")}</span>}>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                  <span>{t("arch.struct.row", { f: fmt(HAEUSERZEILE_FACTOR) })}</span>
-                  <span>{t("arch.struct.col", { f: fmt(SPALTE_FACTOR) })}</span>
-                  <span>{t("arch.struct.diag", { f: fmt(DIAGONALE_FACTOR) })}</span>
-                  <span>{t("arch.struct.district", { pct: Math.round(DISTRICT_BONUS * 100) })}</span>
-                </div>
-                <div className="opacity-60 mt-1">{t("arch.struct.note")}</div>
-                <div className="opacity-60 mt-1">{t("arch.struct.districtNote", { pct: Math.round(DISTRICT_BONUS * 100), cap: DISTRICT_CAP })}</div>
-              </ArchCollapse>
-
-              {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig (erst markieren, dann bestätigen).
-                  #281: MEHRFACH-Abriss — reicht ein Abriss nicht (großes Legendär), kann man weitere markieren, bis Platz reicht. */}
-              {removeFor && (() => {
-                const enough = !!demolishFit;
-                const n = demolishIds.length;
-                return (
-                  <div>
-                    <div className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: `3px solid ${enough ? "#ff6a4d" : "#d1462f"}` }}>
-                      {t("arch.noRoom", { name: pendingFamName(removeFor) })}{" "}
-                      {n === 0
-                        ? t("arch.noRoom.mark")
-                        : enough
-                          ? t("arch.noRoom.enough", { count: n })
-                          : t("arch.noRoom.more")}
-                    </div>
-                    {/* #281: alle Gebäude als Umschalter — markieren/entmarkieren; „reicht allein" = ein Abriss würde genügen. */}
-                    <div className="flex flex-col gap-1 mb-2">
-                      {committed.map((b) => {
-                        const bf = familyDef(b.familyId);
-                        if (!bf) return null;
-                        const marked = demolishIds.includes(b.id);
-                        const soloOk = replaceableSet.has(b.id);
-                        return (
-                          /* #kante: Abriss-Liste — zum Abriss markierte Gebäude tragen die rote Kante samt
-                             Schein, die übrigen bleiben neutral. */
-                          <button key={b.id} onClick={() => setDemolishIds((cur) => cur.includes(b.id) ? cur.filter((x) => x !== b.id) : [...cur, b.id])}
-                            className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-meta-3 leading-snug transition-all hover:brightness-110`}
-                            style={{ "--c": marked ? "#d1462f" : "#3a4a58" }}>
-                            <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
-                              <FormIcon form={bf.form} color={bf.legendary ? GOLD : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
-                              <b>{bf.name}</b>
-                              <span className="opacity-55">{bf.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(b.tier) })}</span>
-                              {marked ? <span style={{ color: "#ff8a6d" }}>{t("arch.marked")}</span> : (soloOk && <span className="opacity-45">{t("arch.soloEnough")}</span>)}
-                            </span>
-                            <span className="opacity-75"> — {famEff(bf, b)}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {n > 0 && <div className="text-meta-1 opacity-55 mb-2">{t("arch.demolish.warn")}</div>}
-                    <div className="flex gap-2">
-                      {/* #kante: Zurück neutral, Abreißen als roter Kanten-Knopf — destruktiv, aber hier ist es
-                          die gewollte Aktion, also volle Kante statt der leisen Fassung. */}
-                      <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }}
-                        className="as-edge-neutral as-edge-thin flex-1 rounded-lg py-1.5 text-body-5 font-bold">{t("arch.back")}</button>
-                      <button onClick={confirmDemolish} disabled={!enough}
-                        className={`${enough ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin flex-1 rounded-lg py-1.5 text-body-5 font-bold`}
-                        style={{ ...(enough ? { "--c": "#d1462f" } : null), opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
-                        {n > 0 ? t("arch.demolish.n", { n }) : t("arch.demolish")}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* #261: Auswahl im Perk-Stil — 3 Baupläne + „Aufwerten" als 4. Karte, alle vier NEBENEINANDER (kompakt).
-                  Die Wahl ist verbindlich: chooseOffer baut sofort und geht in die Verschiebe-Phase (kein Zurück).
-                  #361-Folge: Sobald die Hauptaktion verbraucht ist (gebaut/aufgewertet), ist das Bauplan-Fenster WEG —
-                  es bliebe sonst nur ein totes Auswahlfenster (Bauen/Aufwerten sind dann ohnehin gesperrt). */}
-              {!removeFor && phase === "choose" && !architect.actedMain && (
-                <div>
-                  <div className="text-body-lg-5 font-semibold mb-2">{t("arch.choose.head")}</div>
-                  {state.devMode ? (
-                    <DevArchCatalog offers={offers} onChoose={chooseOffer} canUpgradeAny={canUpgradeAny}
-                      onUpgrade={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} />
-                  ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {offers.map((o, idx) => {
-                      const fam = familyDef(o.familyId);
-                      if (!fam) return null;
-                      const cat = CAT[fam.category];
-                      const tierCol = o.legendary ? GOLD : tierColor(o.tier); // Rahmen/Badge = Stufe (Rarität): grau/grün/blau/lila/gold
-                      const noRoom = !fitFor(o);
-                      return (
-                        /* #kante: Angebotskarte in der Familie — die Stufenfarbe (Rarität) sitzt an der Kante
-                           statt als 1,5-px-Vollrahmen mit Glow rundum. Verbrauchte Angebote sind `is-locked`
-                           statt eigener opacity. Der Grund bleibt Petrol (--edge-bg am Container). */
-                        <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
-                          className={`as-edge-card as-edge-thin${o.used ? " is-locked" : ""} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
-                          style={{ "--c": tierCol, cursor: o.used ? "not-allowed" : "pointer" }}>
-                          <div className="flex items-center justify-between gap-1">
-                            <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
-                            <span className="text-micro-3 font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
-                              style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
-                              {o.legendary ? "★" : tierLabel(o.tier)}
-                            </span>
-                          </div>
-                          <div className="text-body-3 font-bold flex items-center gap-1 leading-tight">
-                            <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
-                          </div>
-                          <div className="text-meta-1 opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
-                          {!rotatableForm(fam.form) && <span className="self-start text-micro-3 px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
-                          {noRoom && !o.used && <span className="text-micro-3" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
-                        </button>
-                      );
-                    })}
-                    {/* 4. Karte: Aufwerten */}
-                    {/* Runde 2, R14 (Owner): die gestrichelte `is-soon`-Kante las sich als „ausgegraut",
-                        obwohl Aufwerten möglich war. Aktiv trägt die Karte jetzt die normale Angebots-
-                        Optik; gedimmt (gestrichelt + is-locked) NUR, wenn wirklich nichts aufwertbar ist. */}
-                    <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
-                      className={`as-edge-card as-edge-thin${canUpgradeAny ? "" : " is-soon is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
-                      style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
-                      <div className="text-title-5 leading-none">⬆</div>
-                      <div className="text-body-3 font-bold leading-tight">{t("arch.upgrade")}</div>
-                      <div className="text-meta-1 opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
-                    </button>
-                  </div>
-                  )}
-                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog).
-                      §3.1: ist der Pool leer, ist derselbe Knopf käuflich; ohne Münzen bleibt er sichtbar, aber aus.
-                      Den Legendär-Grundpreis gibt es hier nicht — der Plan bindet ihn an Skill- und Perk-Angebote. */}
-                  {!state.devMode && onReroll && archReroll.offered && (
-                    <button onClick={archReroll.can ? onReroll : undefined} disabled={!archReroll.can}
-                      className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all disabled:cursor-not-allowed"
-                      style={archReroll.can
-                        ? { background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }
-                        : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
-                      <span className="inline-flex items-center justify-center gap-1.5">
-                        <RerollLabel r={archReroll} freeKey="arch.reroll" buyKey="arch.reroll.buy" have={state.coins || 0} />
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* upgrade: Gebäude auswählen → Jetzt/Danach sehen → mit „Aufwerten bestätigen" committen (#237: kein Sofort-Upgrade). */}
-              {!removeFor && phase === "upgrade" && (() => {
-                const up = pendingUpgrade != null ? committed.find((x) => x.id === pendingUpgrade) : null;
-                const uf = up ? familyDef(up.familyId) : null;
-                return (
-                  <div>
-                    {up && uf ? (
-                      // Ausgewähltes Gebäude: aktueller UND nächster Effekt (beide sichtbar), bestätigt wird über den Knopf unten.
-                      <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: "3px solid #f0b429" }}>
-                        <div className="text-body-lg-5 font-semibold flex items-center gap-1.5 flex-wrap">
-                          <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
-                          {uf.name}
-                          <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(up.tier), to: tierLabel(up.tier + 1) })}</span>
-                        </div>
-                        <div className="mt-1.5 grid gap-1 text-meta-3 leading-snug">
-                          <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
-                            <span className="opacity-55">{t("arch.now")}</span> {famEff(uf, up)}
-                          </div>
-                          <div className="rounded px-2 py-1" style={{ background: "#15291a", border: "1px solid #2f6d3a" }}>
-                            <span className="opacity-55">{t("arch.after")}</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
-                          </div>
-                        </div>
-                        <div className="text-meta-3 opacity-60 mt-1.5">{t("arch.upgrade.confirmHint")}</div>
-                      </div>
-                    ) : (
-                      <>
-                        <ArchCollapse className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
-                          head={<b>{t("arch.upgrade")}</b>}>
-                          <div className="opacity-85 leading-snug">{t("arch.upgrade.help")}</div>
-                        </ArchCollapse>
-                        {upgradeMsg && (
-                          <div className="text-body-5 rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
-                            <b>„{upgradeMsg.name}"</b> — {t(UPGRADE_REASON[upgradeMsg.reason] || "arch.upgrade.reason.generic")}.
-                          </div>
-                        )}
-                        {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
-                            markiert das Gebäude (setPendingUpgrade) → es leuchtet gold am Brett und Jetzt/Danach erscheint;
-                            aufgewertet wird erst mit „Aufwerten bestätigen". Alternativ weiterhin per Tap aufs Brett. */}
-                        {committed.some((b) => upInfo(familyDef(b.familyId), b.tier).can) && (
-                          <div className="flex flex-col gap-1 mt-1">
-                            {committed.filter((b) => upInfo(familyDef(b.familyId), b.tier).can).map((b) => {
-                              const f = familyDef(b.familyId);
-                              return (
-                                <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}
-                                  className="rounded px-2 py-1.5 text-left text-meta-1 leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
-                                  style={{ background: "#16232f", border: "1px solid #2f4150" }}>
-                                  <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
-                                  <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
-                                  {/* #UI: schon in der Liste zeigen, was die Aufwertung bringt (jetzt → danach), ohne erst klicken zu müssen. */}
-                                  <span className="opacity-55">{famEff(f, b)}</span>
-                                  <span style={{ color: "#8fe0a0" }}>→ {famEff(f, { tier: b.tier + 1 })}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* #261: EINE kombinierte Platzier-/Verschiebe-Phase — alle Gebäude (inkl. des eben gewählten) sind frei
-                  ziehbar/drehbar; ein einziges „Bestätigen" unten schließt ab. */}
-              {!removeFor && phase === "move" && (
-                <div>
-                  {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
-                  {upgradeDone && (
-                    <div className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
-                      <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> {t("arch.upgraded")}
-                      <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(upgradeDone.from), to: tierLabel(upgradeDone.to) })}</span>
-                    </div>
-                  )}
-                  {/* #UI: Die Farbauswahl (colorLocked-Gebäude) liegt jetzt direkt über dem Brett, nicht mehr hier. */}
-                  <ArchCollapse className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
-                    head={<b>{t("arch.place.head")}</b>}>
-                    <div className="opacity-85 leading-snug">{t("arch.place.help")}</div>
-                  </ArchCollapse>
-                </div>
-              )}
-            </div>
+            <ArchAssistant archReroll={archReroll} architect={architect} canUpgradeAny={canUpgradeAny} chooseOffer={chooseOffer} committed={committed} confirmDemolish={confirmDemolish} demolishFit={demolishFit} demolishIds={demolishIds} fitFor={fitFor} offers={offers} onReroll={onReroll} pendingUpgrade={pendingUpgrade} phase={phase} removeFor={removeFor} replaceableSet={replaceableSet} rotatableForm={rotatableForm} setDemolishIds={setDemolishIds} setPendingUpgrade={setPendingUpgrade} setPhase={setPhase} setRemoveFor={setRemoveFor} setUpgradeMsg={setUpgradeMsg} state={state} upgradeDone={upgradeDone} upInfo={upInfo} upgradeMsg={upgradeMsg} />
 
             {/* #UI „nur Buttons": schmale, schwebende Aktions-Leiste (mobil oben angeheftet) — nur die Phasen-Buttons,
                 damit sie beim Ziehen am Brett erreichbar bleiben. Anleitung/Referenz/Farbwahl bleiben im Panel drüber.
                 Desktop: normale Leiste (md:static). */}
-            <div ref={stickyBarRef} className="order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
-              {/* #248/#UI: Rotieren in der schwebenden Leiste. In der Verschiebe-Phase steht „Drehen" KOMPAKT neben
-                  „Bestätigen" (unten) — kein voll-breiter Balken mehr. Außerhalb (place) bleibt es die eigene Zeile. */}
-              {showRotate && phase !== "move" && (selRotatable ? (
-                <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
-              ) : (
-                <button type="button" disabled aria-disabled="true"
-                  title={t("arch.noRotate.title")}
-                  className="w-full mb-2 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed"
-                  style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate.big")}</button>
-              ))}
-              {/* #266: „kein Platz zum Drehen" — ehrliches Feedback statt eines wirkungslosen Buttons am vollen Brettrand. */}
-              {showRotate && rotateMsg && (
-                <div className="mb-2 rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
-                  ⟳ {rotateMsg}
-                </div>
-              )}
-              {/* #361: „↶ Rückgängig" + „Zurücksetzen" — identische Beschriftung/Look wie die Aufstellungsphase
-                  (FormationPhase). Im Haupt-Fluss (choose/move) über den Phasen-Buttons; NICHT mit der bestehenden
-                  „← Zurück"-Sub-Navigation (Upgrade/Ersetzen) vermengen. Aktiv, sobald in dieser Phase etwas geschah. */}
-              {!removeFor && (phase === "choose" || phase === "move") && (
-                <div className="flex gap-2 mb-2">
-                  {/* #kante: Diese Leiste trug bis zuletzt das Menü-Grau (#20202a) mitten in der Petrol-Welt —
-                      sie sitzt weit weg vom Rest der Datei und war beim ersten Durchgang durchgerutscht.
-                      Als Kanten-Knöpfe erben sie den Grund des Architekten automatisch. */}
-                  <button onClick={doArchUndo} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 font-bold whitespace-nowrap"
-                    style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.undo")}</button>
-                  <button onClick={doArchReset} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 whitespace-nowrap"
-                    style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.reset")}</button>
-                </div>
-              )}
-              {removeFor ? (
-                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="as-edge-neutral as-edge-thin w-full rounded-lg py-2 text-body-5 font-bold">{t("arch.otherPlan")}</button>
-              ) : phase === "choose" ? (
-                // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
-                // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").
-                committed.length > 0 ? (
-                  <div className="flex gap-2">
-                    <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
-                  </div>
-                ) : (
-                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
-                )
-              ) : phase === "upgrade" && pendingUpgrade != null ? (
-                <div className="flex gap-2">
-                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.cancel")}</button>
-                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#f0b429", color: "#141419" }}>{t("arch.upgrade.confirm")}</button>
-                </div>
-              ) : phase === "upgrade" ? (
-                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
-              ) : phase === "move" ? (
-                <div className="flex flex-wrap gap-2">
-                  {/* Drehen kompakt (nur wenn ein Gebäude gewählt ist); Bestätigen bleibt der prominente Knopf. */}
-                  {showRotate && (selRotatable ? (
-                    <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
-                  ) : (
-                    <button type="button" disabled aria-disabled="true" title={t("arch.noRotate.title")}
-                      className="shrink-0 px-3 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
-                  ))}
-                  {/* §2.3: derselbe Ausgang wie „Nichts bauen", nur über das Umstellen erreicht — versetzen
-                      verbraucht keinen Bauplan, die Phase zahlt also weiterhin aus. Die Marke steht deshalb
-                      auch hier (Owner 2026-09-09); ohne sie bekäme man die Münzen, ohne sie je zu sehen. */}
-                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}<CoinReward n={idleReward} /></button>
-                </div>
-              ) : null}
-              {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
-              {(() => {
-                const eb = phase === "place" && pending ? pending : phase === "move" && selId ? buildings.find((x) => x.id === selId) : null;
-                const efam = eb ? familyDef(eb.familyId) : null;
-                if (!efam) return null;
-                return (
-                  // #UI: Effekt-Readout mit typ-farbigem Rahmen (Kategorie-Farbe = die Typ-Farbe, die vorher der Gebäude-Hintergrund trug).
-                  <div className="mt-2 rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug"
-                    style={{ border: `1px solid ${CAT[efam.category].color}`, background: `${CAT[efam.category].color}12` }}>
-                    <span className="inline-flex items-center gap-1.5 align-middle">
-                      <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
-                      <b>{efam.name}</b>
-                      <span className="opacity-55">{efam.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(eb.tier) })}</span>
-                    </span>
-                    <span className="opacity-80"> — {famEff(efam, eb)}</span>
-                  </div>
-                );
-              })()}
-            </div>
+            <ArchActionBar buildings={buildings} canArchUndo={canArchUndo} committed={committed} confirmUpgrade={confirmUpgrade} doArchReset={doArchReset} doArchUndo={doArchUndo} idleReward={idleReward} onDone={onDone} pending={pending} pendingUpgrade={pendingUpgrade} phase={phase} removeFor={removeFor} rotateMsg={rotateMsg} rotateSelected={rotateSelected} selId={selId} selRotatable={selRotatable} setDemolishIds={setDemolishIds} setInspectId={setInspectId} setPendingUpgrade={setPendingUpgrade} setPhase={setPhase} setRemoveFor={setRemoveFor} setSelId={setSelId} setUpgradeMsg={setUpgradeMsg} showRotate={showRotate} stickyBarRef={stickyBarRef} />
 
             {/* choose: „Was habe ich schon?" — alle gebauten Gebäude mit Beschreibung, verlinkt mit dem Brett.
                 Antippen (Liste ODER Brett) lässt Gebäude + Beschreibung gemeinsam cyan leuchten. Steht direkt unter „Nichts bauen". */}
@@ -1332,6 +869,488 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       </div>
     </div>
   ));
+}
+
+/* ---- The three big pieces of the Architekt overlay as sub-components (2026-09-28): the board cells, the build
+   assistant (replace / choose / upgrade / move panels) and the sticky action bar. Each was a JSX block inside the
+   1,240-line component; the markup is verbatim, the props are exactly the component values the block read. ---- */
+function ArchBoardCells({ buildingAt, buildings, cards, chLockSet, comboLit, committedAt, demolishIds, distrLit, dragPrev, effValueAt, firnStackByPos, formations, glacierMassByPos, glacierPos, inspectId, onCellDown, pendingUpgrade, phase, placeFlash, removeFor, replaceableSet, selId, showCombos, showForms, structF, upInfo }) {
+  return (() => { const dragCells = dragPrev ? new Set(dragPrev.footprint) : null; const draggingId = dragPrev ? dragPrev.id : null;
+    // #UI: beim Ziehen die Felder ANDERER Gebäude ausgrauen — dort ist kein Ablegen möglich.
+    const blocked = dragPrev ? (() => { const s = new Set(); for (const x of buildings) if (x.id !== dragPrev.id) for (const p of x.footprint) s.add(p); return s; })() : null;
+    return cards.map((card, pos) => {
+    const b = buildingAt(pos);
+    const isPending = b && b.id === PENDING_ID;
+    // Nur Zellen mit einem ziehbaren Gebäude fangen die Geste (touchAction:none) — sonst scrollt der Finger die Seite.
+    const canDragHere = !removeFor && ((phase === "place" && isPending) || (phase === "move" && !!b));
+    const fam = b ? familyDef(b.familyId) : null;
+    // Raritäts-Rahmen: Stufenfarbe (I grau · II grün · III blau · IV lila), Legendär = Gold. Füllung ist einheitlich (Typ-Farbe raus, #UI).
+    const tierCol = b ? (fam.legendary ? GOLD : tierColor(b.tier)) : null;
+    const ev = effValueAt(pos);
+    const boost = ev - card.value;
+    // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
+    const numCol = card.green ? (card.bloom ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
+    const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
+    const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // Gletscher-Eigenmasse
+    const fMass = firnStackByPos ? Math.round(firnStackByPos[pos] || 0) : 0;           // #386 Boden-Reserve (firnStack)
+    const isFirn = !isGlacier && fMass >= 1;                                           // Firn-Boden (Reserve, noch kein Gletscher)
+    const anchorCell = b ? Math.min(...b.footprint) : -1;
+    const isSel = b && b.id === selId;
+    const pf = formations[pos] || { mult: 1, formations: [] };
+    const inForm = pf.mult > 1;
+    const fb = formationBorder(pf);
+    const formLabels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
+    const sFac = structF[pos] || 1;
+    const cbHere = removeFor ? committedAt(pos) : null;
+    const isRemovable = !!removeFor && !!cbHere && replaceableSet.has(cbHere.id); // nur Gebäude, deren Abriss Platz schafft
+    const isMarkedDemolish = !!removeFor && !!cbHere && demolishIds.includes(cbHere.id); // #235/#281: markiertes Abriss-Ziel (Mehrfach)
+    // #237/#UI: Aufrüst-Phase = Spotlight — ALLES ausgegraut außer aufwertbaren Gebäuden (die werden hervorgehoben).
+    const upCan = phase === "upgrade" && b && !isPending && upInfo(fam, b.tier).can; // aufwertbar → hervorheben (Ziel-Stufe am Gebäude, #232)
+    const isMarkedUpgrade = phase === "upgrade" && pendingUpgrade != null && b && b.id === pendingUpgrade; // #237: markiertes Aufrüst-Ziel (gold)
+    const isInspected = phase === "choose" && inspectId != null && b && b.id === inspectId; // choose: aus der Liste inspiziertes Gebäude → leuchtet (cyan), zeigt wo es liegt
+    const upgradeDim = phase === "upgrade" && !upCan && !isMarkedUpgrade; // nicht-aufwertbar (inkl. leere Zellen) → ausgrauen
+    // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
+    const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
+    const chLocked = chLockSet.has(pos); // #301 C2: dauerhaft gesperrte Bau-Zelle (rot/ausgegraut)
+    // Zell-Tooltip aus Bausteinen: Gebäude (+ Vorschau/Aufwertung) bzw. nur die Position, jeweils
+    // ergänzt um Formations- und Struktur-Faktor.
+    const formPart = inForm ? t("arch.cell.formation", { f: fmt(pf.mult) }) : "";
+    const structPart = sFac > 1 ? t("arch.cell.struct", { f: fmt(sFac) }) : "";
+    const title = b
+      ? t("arch.cell.building", { name: fam.name, tier: tierLabel(b.tier) })
+        + (isPending ? t("arch.cell.preview") : "") + " — " + famEff(fam, b)
+        + (upCan ? t("arch.cell.upgrade", { tier: tierLabel(b.tier + 1), eff: famEff(fam, { tier: b.tier + 1 }) }) : "")
+        + formPart + structPart
+      : t("arch.cell.pos", { pos: pos + 1 })
+        + (inForm ? t("arch.cell.formationOnly", { f: fmt(pf.mult) }) : "") + structPart;
+    const inDragPrev = dragCells ? dragCells.has(pos) : false;
+    const dragValid = dragPrev && dragPrev.valid;
+    const isDragOrig = draggingId != null && b && b.id === draggingId;
+    return (
+      <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
+        className={`relative rounded-md aspect-square flex items-center justify-center ty-num${dragPrev ? "" : " transition-all"}${showCombos && !dragPrev && b && comboLit(pos) ? " arch-struct-lit" : ""}`}
+        style={{
+          // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
+          // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
+          // Karte darunter bleibt sichtbar. KEIN Transform → kein Mitziehen der Karte, keine Lücke. Der Rahmen wandert als Ghost.
+          background: chLocked ? "#2a1214" : inDragPrev ? (dragValid ? "#1f5a34" : "#5a2020") : (b && !isDragOrig ? "#233140" : "#16232f"),
+          color: (b && !isDragOrig) || inDragPrev ? "#fff" : "#adbecc",
+          border: `1px solid ${chLocked ? "#e0555588" : inDragPrev ? (dragValid ? "#5fce86" : "#e0705a") : (b && !isDragOrig ? "#2a3a46" : "#20303d")}`,
+          opacity: chLocked ? 0.6 : (upgradeDim ? 0.28 : (isBlocked ? 0.5 : (isPending && !inDragPrev ? 0.82 : 1))),
+          filter: chLocked ? "grayscale(0.5)" : (upgradeDim ? "grayscale(0.75)" : (isBlocked ? "grayscale(0.55)" : undefined)),
+          touchAction: canDragHere ? "none" : "pan-y",
+          boxShadow: [
+            isMarkedDemolish ? "inset 0 0 0 2px #ff6a4d, inset 0 0 16px #ff3b1e66" : null,     // #235: markiertes Abriss-Ziel rot hervorheben
+            isMarkedUpgrade ? "inset 0 0 0 2px #f0b429, inset 0 0 16px #f0b42966" : null,      // #237: markiertes Aufrüst-Ziel gold hervorheben
+            isInspected ? "inset 0 0 0 2px #5ec8f0, 0 0 14px #5ec8f0aa, inset 0 0 16px #5ec8f055" : null, // choose: inspiziertes Gebäude cyan leuchten lassen (wo liegt es?)
+            // #UI: aufwertbares Gebäude dezent glühen lassen — in der TYP-Farbe (nicht Stufenfarbe). Der Rahmen
+            // ist jetzt die durchgezogene Typ-Kontur (oben, ungedimmt für Aufwertbare); der Stufen-Farb-Zellrahmen entfällt.
+            upCan && !isMarkedUpgrade ? `0 0 10px ${CAT[fam?.category]?.color || tierCol}55` : null,
+            inDragPrev ? `inset 0 0 0 2px ${dragValid ? "#5fce86" : "#e0705a"}` : null,        // Drag-Vorschau (oben)
+            isSel && !inDragPrev ? "inset 0 0 0 2px #fff" : null,                              // ausgewählt (weiß)
+            // #UI: Raritäts-Rahmen JE ZELLE entfällt — die durchgezogene SVG-Kontur (oben) zeichnet ihn jetzt
+            // in Stufenfarbe als EINE Gebäude-Form (wie in der Aufstellungsphase).
+            b && !isDragOrig && fam.legendary ? `0 0 8px ${GOLD}55` : null,                     // Legendär → zusätzlicher warmer Glow (nicht am aufgehobenen Origin)
+          ].filter(Boolean).join(", ") || undefined,
+          outline: isMarkedDemolish ? "2px solid #ff6a4d" : isMarkedUpgrade ? "2px solid #f0b429" : (isRemovable ? "2px dashed #d1462f" : (isPending ? "2px dashed #ffffffcc" : (showForms && inForm && !fb.dashed ? `1.5px solid ${fb.color}` : undefined))),
+          outlineOffset: 1,
+          cursor: "pointer",
+        }}
+        title={title}>
+        {/* #UI: Struktur-Kombi (volle Zeile/Spalte/Diagonale) → rote Fläche via `arch-struct-lit` (Klasse oben,
+            identisch zum Aufstellboard). Distrikt-Bonus (gleiche Kategorie aneinander) → Rahmen glüht in Typ-Farbe. */}
+        {showCombos && !dragPrev && distrLit(pos) && b && (() => {
+          const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
+          return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
+        })()}
+        {/* #358 Struktur-Platzier-Flash: die neu vervollständigte Zeile/Spalte/Diagonale blitzt kurz heller
+            rot auf (über der persistenten Vollflächen-Rotfläche). Am key gekeyt → jede Platzierung neu. */}
+        {showCombos && !dragPrev && b && placeFlash && placeFlash.structCells.has(pos) && (
+          <span key={placeFlash.key} aria-hidden className="arch-struct-flash rounded-md" />
+        )}
+        {/* #eis-arch: Gletscher und Schnee unterscheiden sich hier bisher NUR am Marker — gleiches Icon,
+            eine Nummer kleiner, etwas blasser. Auf einer Bau-Zelle ist das kein Unterschied, den man sieht.
+            Die Aufstellungsphase trennt beides über die FLÄCHE (CardGrid: Schnee = zarter Blau-Wash,
+            Gletscher zusätzlich Rahmen + Schein), und genau diese Sprache kommt hier her.
+
+            Der Rahmen ist BEWUSST dünner und halbdurchlässig statt der 2px-Vollfarbe aus dem Aufstellboard:
+            Cyan ist auf diesem Bildschirm schon vergeben — `isInspected` malt das inspizierte Gebäude mit
+            `inset 0 0 0 2px #5ec8f0` plus kräftigem Außenschein. Ein zweiter kräftiger Cyan-Rahmen hieße
+            „inspiziert" und „Gletscher" sähen gleich aus, und der Fehler wäre schlimmer als der behobene.
+            Als eigene Ebene, nicht im `boxShadow`-Stapel der Zelle: der führt schon acht Zustände. */}
+        {(isGlacier || isFirn) && (
+          <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none"
+            style={{ background: isGlacier ? "#5ec8f01f" : "#5ec8f014",
+                     boxShadow: isGlacier ? "inset 0 0 0 1.5px #5ec8f066" : undefined }} />
+        )}
+        {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss. */}
+        {chLocked && (
+          <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
+        )}
+        {/* #UI: gesperrte Fläche beim Ziehen — Diagonal-Schraffur + Rim, damit „hier nicht ablegbar" klar heraussticht. */}
+        {isBlocked && (
+          <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
+        )}
+        {boost > 0 && <span className="absolute top-[1px] left-[3px] text-micro-2 font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
+        {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
+        {isGlacier && (
+          <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={fMass >= 1 ? t("arch.glacier.reserve", { mass: gMass, firn: fMass }) : t("cardgrid.glacierMass.title", { mass: gMass })}>
+            <FactionIcon type="ice" size={9} />
+            {gMass}
+          </span>
+        )}
+        {isFirn && (
+          <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
+        )}
+        {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
+        <span className="ab-num text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
+        {b && !isDragOrig && pos === anchorCell && (
+          <span className="absolute bottom-[1px] left-[3px] text-micro-1 font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
+            {fam.name.slice(0, 3).toUpperCase()}
+            {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
+          </span>
+        )}
+        {/* #UI: Stufen-Zahl (I–IV / ★) unten rechts im Gebäude, in der SELTENHEITS-Farbe — der Rahmen zeigt jetzt den Typ. */}
+        {b && !isDragOrig && pos === Math.max(...b.footprint) && (
+          <span className="absolute bottom-[1px] right-[3px] text-micro-3 font-extrabold leading-none"
+            style={{ color: fam.legendary ? GOLD : tierColor(b.tier), textShadow: "0 1px 2px #000a" }}
+            title={fam.legendary ? t("arch.legendary") : t("arch.tier", { tier: ROMAN[b.tier] })}>
+            {fam.legendary ? "★" : ROMAN[b.tier]}
+          </span>
+        )}
+        {/* Formations-Marke (Owner 2026-09-08: „etwas höher und etwas größer"). Sie klebte mit 7 px
+            am unteren Kachelrand und war auf dem Brett kaum zu lesen. Jetzt 9 px und 4 px Abstand
+            nach unten — die Zahl der Karte sitzt mittig im Flex und bleibt mehrere Pixel entfernt,
+            auch auf der schmalsten Kachel (Handy, 300 px Brett → 57 px Zelle). */}
+        {showForms && inForm && (
+          <span className="absolute bottom-[4px] left-1/2 -translate-x-1/2 text-micro-3 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
+            {formLabels}×{fmt(pf.mult)}
+          </span>
+        )}
+        {b && pos === anchorCell && b.colorChoice && (
+          <span className="absolute bottom-[2px] right-[3px] w-[8px] h-[8px] rounded-full" title={t("arch.buffsSuit", { suit: suitLabel(b.colorChoice) })}
+            style={{ background: SUIT_COLOR[b.colorChoice], boxShadow: "0 0 0 1.5px rgba(255,255,255,0.9)" }} />
+        )}
+      </button>
+    );
+  }); })();
+}
+
+function ArchAssistant({ archReroll, architect, canUpgradeAny, chooseOffer, committed, confirmDemolish, demolishFit, demolishIds, fitFor, offers, onReroll, pendingUpgrade, phase, removeFor, replaceableSet, rotatableForm, setDemolishIds, setPendingUpgrade, setPhase, setRemoveFor, setUpgradeMsg, state, upgradeDone, upInfo, upgradeMsg }) {
+  return (
+    <div className="rounded-xl p-3 order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
+
+      {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
+      <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-meta-1 leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
+        head={<span className="uppercase tracking-wide opacity-55">{t("arch.struct.head")}</span>}>
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+          <span>{t("arch.struct.row", { f: fmt(HAEUSERZEILE_FACTOR) })}</span>
+          <span>{t("arch.struct.col", { f: fmt(SPALTE_FACTOR) })}</span>
+          <span>{t("arch.struct.diag", { f: fmt(DIAGONALE_FACTOR) })}</span>
+          <span>{t("arch.struct.district", { pct: Math.round(DISTRICT_BONUS * 100) })}</span>
+        </div>
+        <div className="opacity-60 mt-1">{t("arch.struct.note")}</div>
+        <div className="opacity-60 mt-1">{t("arch.struct.districtNote", { pct: Math.round(DISTRICT_BONUS * 100), cap: DISTRICT_CAP })}</div>
+      </ArchCollapse>
+
+      {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig (erst markieren, dann bestätigen).
+          #281: MEHRFACH-Abriss — reicht ein Abriss nicht (großes Legendär), kann man weitere markieren, bis Platz reicht. */}
+      {removeFor && (() => {
+        const enough = !!demolishFit;
+        const n = demolishIds.length;
+        return (
+          <div>
+            <div className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: `3px solid ${enough ? "#ff6a4d" : "#d1462f"}` }}>
+              {t("arch.noRoom", { name: pendingFamName(removeFor) })}{" "}
+              {n === 0
+                ? t("arch.noRoom.mark")
+                : enough
+                  ? t("arch.noRoom.enough", { count: n })
+                  : t("arch.noRoom.more")}
+            </div>
+            {/* #281: alle Gebäude als Umschalter — markieren/entmarkieren; „reicht allein" = ein Abriss würde genügen. */}
+            <div className="flex flex-col gap-1 mb-2">
+              {committed.map((b) => {
+                const bf = familyDef(b.familyId);
+                if (!bf) return null;
+                const marked = demolishIds.includes(b.id);
+                const soloOk = replaceableSet.has(b.id);
+                return (
+                  /* #kante: Abriss-Liste — zum Abriss markierte Gebäude tragen die rote Kante samt
+                     Schein, die übrigen bleiben neutral. */
+                  <button key={b.id} onClick={() => setDemolishIds((cur) => cur.includes(b.id) ? cur.filter((x) => x !== b.id) : [...cur, b.id])}
+                    className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-meta-3 leading-snug transition-all hover:brightness-110`}
+                    style={{ "--c": marked ? "#d1462f" : "#3a4a58" }}>
+                    <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
+                      <FormIcon form={bf.form} color={bf.legendary ? GOLD : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
+                      <b>{bf.name}</b>
+                      <span className="opacity-55">{bf.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(b.tier) })}</span>
+                      {marked ? <span style={{ color: "#ff8a6d" }}>{t("arch.marked")}</span> : (soloOk && <span className="opacity-45">{t("arch.soloEnough")}</span>)}
+                    </span>
+                    <span className="opacity-75"> — {famEff(bf, b)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {n > 0 && <div className="text-meta-1 opacity-55 mb-2">{t("arch.demolish.warn")}</div>}
+            <div className="flex gap-2">
+              {/* #kante: Zurück neutral, Abreißen als roter Kanten-Knopf — destruktiv, aber hier ist es
+                  die gewollte Aktion, also volle Kante statt der leisen Fassung. */}
+              <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }}
+                className="as-edge-neutral as-edge-thin flex-1 rounded-lg py-1.5 text-body-5 font-bold">{t("arch.back")}</button>
+              <button onClick={confirmDemolish} disabled={!enough}
+                className={`${enough ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin flex-1 rounded-lg py-1.5 text-body-5 font-bold`}
+                style={{ ...(enough ? { "--c": "#d1462f" } : null), opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
+                {n > 0 ? t("arch.demolish.n", { n }) : t("arch.demolish")}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* #261: Auswahl im Perk-Stil — 3 Baupläne + „Aufwerten" als 4. Karte, alle vier NEBENEINANDER (kompakt).
+          Die Wahl ist verbindlich: chooseOffer baut sofort und geht in die Verschiebe-Phase (kein Zurück).
+          #361-Folge: Sobald die Hauptaktion verbraucht ist (gebaut/aufgewertet), ist das Bauplan-Fenster WEG —
+          es bliebe sonst nur ein totes Auswahlfenster (Bauen/Aufwerten sind dann ohnehin gesperrt). */}
+      {!removeFor && phase === "choose" && !architect.actedMain && (
+        <div>
+          <div className="text-body-lg-5 font-semibold mb-2">{t("arch.choose.head")}</div>
+          {state.devMode ? (
+            <DevArchCatalog offers={offers} onChoose={chooseOffer} canUpgradeAny={canUpgradeAny}
+              onUpgrade={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} />
+          ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {offers.map((o, idx) => {
+              const fam = familyDef(o.familyId);
+              if (!fam) return null;
+              const cat = CAT[fam.category];
+              const tierCol = o.legendary ? GOLD : tierColor(o.tier); // Rahmen/Badge = Stufe (Rarität): grau/grün/blau/lila/gold
+              const noRoom = !fitFor(o);
+              return (
+                /* #kante: Angebotskarte in der Familie — die Stufenfarbe (Rarität) sitzt an der Kante
+                   statt als 1,5-px-Vollrahmen mit Glow rundum. Verbrauchte Angebote sind `is-locked`
+                   statt eigener opacity. Der Grund bleibt Petrol (--edge-bg am Container). */
+                <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
+                  className={`as-edge-card as-edge-thin${o.used ? " is-locked" : ""} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
+                  style={{ "--c": tierCol, cursor: o.used ? "not-allowed" : "pointer" }}>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
+                    <span className="text-micro-3 font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                      style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
+                      {o.legendary ? "★" : tierLabel(o.tier)}
+                    </span>
+                  </div>
+                  <div className="text-body-3 font-bold flex items-center gap-1 leading-tight">
+                    <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
+                  </div>
+                  <div className="text-meta-1 opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
+                  {!rotatableForm(fam.form) && <span className="self-start text-micro-3 px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
+                  {noRoom && !o.used && <span className="text-micro-3" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
+                </button>
+              );
+            })}
+            {/* 4. Karte: Aufwerten */}
+            {/* Runde 2, R14 (Owner): die gestrichelte `is-soon`-Kante las sich als „ausgegraut",
+                obwohl Aufwerten möglich war. Aktiv trägt die Karte jetzt die normale Angebots-
+                Optik; gedimmt (gestrichelt + is-locked) NUR, wenn wirklich nichts aufwertbar ist. */}
+            <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
+              className={`as-edge-card as-edge-thin${canUpgradeAny ? "" : " is-soon is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
+              style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
+              <div className="text-title-5 leading-none">⬆</div>
+              <div className="text-body-3 font-bold leading-tight">{t("arch.upgrade")}</div>
+              <div className="text-meta-1 opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
+            </button>
+          </div>
+          )}
+          {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog).
+              §3.1: ist der Pool leer, ist derselbe Knopf käuflich; ohne Münzen bleibt er sichtbar, aber aus.
+              Den Legendär-Grundpreis gibt es hier nicht — der Plan bindet ihn an Skill- und Perk-Angebote. */}
+          {!state.devMode && onReroll && archReroll.offered && (
+            <button onClick={archReroll.can ? onReroll : undefined} disabled={!archReroll.can}
+              className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all disabled:cursor-not-allowed"
+              style={archReroll.can
+                ? { background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }
+                : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <RerollLabel r={archReroll} freeKey="arch.reroll" buyKey="arch.reroll.buy" have={state.coins || 0} />
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* upgrade: Gebäude auswählen → Jetzt/Danach sehen → mit „Aufwerten bestätigen" committen (#237: kein Sofort-Upgrade). */}
+      {!removeFor && phase === "upgrade" && (() => {
+        const up = pendingUpgrade != null ? committed.find((x) => x.id === pendingUpgrade) : null;
+        const uf = up ? familyDef(up.familyId) : null;
+        return (
+          <div>
+            {up && uf ? (
+              // Ausgewähltes Gebäude: aktueller UND nächster Effekt (beide sichtbar), bestätigt wird über den Knopf unten.
+              <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: "3px solid #f0b429" }}>
+                <div className="text-body-lg-5 font-semibold flex items-center gap-1.5 flex-wrap">
+                  <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
+                  {uf.name}
+                  <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(up.tier), to: tierLabel(up.tier + 1) })}</span>
+                </div>
+                <div className="mt-1.5 grid gap-1 text-meta-3 leading-snug">
+                  <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
+                    <span className="opacity-55">{t("arch.now")}</span> {famEff(uf, up)}
+                  </div>
+                  <div className="rounded px-2 py-1" style={{ background: "#15291a", border: "1px solid #2f6d3a" }}>
+                    <span className="opacity-55">{t("arch.after")}</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
+                  </div>
+                </div>
+                <div className="text-meta-3 opacity-60 mt-1.5">{t("arch.upgrade.confirmHint")}</div>
+              </div>
+            ) : (
+              <>
+                <ArchCollapse className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+                  head={<b>{t("arch.upgrade")}</b>}>
+                  <div className="opacity-85 leading-snug">{t("arch.upgrade.help")}</div>
+                </ArchCollapse>
+                {upgradeMsg && (
+                  <div className="text-body-5 rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
+                    <b>„{upgradeMsg.name}"</b> — {t(UPGRADE_REASON[upgradeMsg.reason] || "arch.upgrade.reason.generic")}.
+                  </div>
+                )}
+                {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
+                    markiert das Gebäude (setPendingUpgrade) → es leuchtet gold am Brett und Jetzt/Danach erscheint;
+                    aufgewertet wird erst mit „Aufwerten bestätigen". Alternativ weiterhin per Tap aufs Brett. */}
+                {committed.some((b) => upInfo(familyDef(b.familyId), b.tier).can) && (
+                  <div className="flex flex-col gap-1 mt-1">
+                    {committed.filter((b) => upInfo(familyDef(b.familyId), b.tier).can).map((b) => {
+                      const f = familyDef(b.familyId);
+                      return (
+                        <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}
+                          className="rounded px-2 py-1.5 text-left text-meta-1 leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
+                          style={{ background: "#16232f", border: "1px solid #2f4150" }}>
+                          <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
+                          <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
+                          {/* #UI: schon in der Liste zeigen, was die Aufwertung bringt (jetzt → danach), ohne erst klicken zu müssen. */}
+                          <span className="opacity-55">{famEff(f, b)}</span>
+                          <span style={{ color: "#8fe0a0" }}>→ {famEff(f, { tier: b.tier + 1 })}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* #261: EINE kombinierte Platzier-/Verschiebe-Phase — alle Gebäude (inkl. des eben gewählten) sind frei
+          ziehbar/drehbar; ein einziges „Bestätigen" unten schließt ab. */}
+      {!removeFor && phase === "move" && (
+        <div>
+          {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
+          {upgradeDone && (
+            <div className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
+              <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> {t("arch.upgraded")}
+              <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(upgradeDone.from), to: tierLabel(upgradeDone.to) })}</span>
+            </div>
+          )}
+          {/* #UI: Die Farbauswahl (colorLocked-Gebäude) liegt jetzt direkt über dem Brett, nicht mehr hier. */}
+          <ArchCollapse className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+            head={<b>{t("arch.place.head")}</b>}>
+            <div className="opacity-85 leading-snug">{t("arch.place.help")}</div>
+          </ArchCollapse>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArchActionBar({ buildings, canArchUndo, committed, confirmUpgrade, doArchReset, doArchUndo, idleReward, onDone, pending, pendingUpgrade, phase, removeFor, rotateMsg, rotateSelected, selId, selRotatable, setDemolishIds, setInspectId, setPendingUpgrade, setPhase, setRemoveFor, setSelId, setUpgradeMsg, showRotate, stickyBarRef }) {
+  return (
+    <div ref={stickyBarRef} className="order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
+      {/* #248/#UI: Rotieren in der schwebenden Leiste. In der Verschiebe-Phase steht „Drehen" KOMPAKT neben
+          „Bestätigen" (unten) — kein voll-breiter Balken mehr. Außerhalb (place) bleibt es die eigene Zeile. */}
+      {showRotate && phase !== "move" && (selRotatable ? (
+        <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
+      ) : (
+        <button type="button" disabled aria-disabled="true"
+          title={t("arch.noRotate.title")}
+          className="w-full mb-2 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed"
+          style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate.big")}</button>
+      ))}
+      {/* #266: „kein Platz zum Drehen" — ehrliches Feedback statt eines wirkungslosen Buttons am vollen Brettrand. */}
+      {showRotate && rotateMsg && (
+        <div className="mb-2 rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
+          ⟳ {rotateMsg}
+        </div>
+      )}
+      {/* #361: „↶ Rückgängig" + „Zurücksetzen" — identische Beschriftung/Look wie die Aufstellungsphase
+          (FormationPhase). Im Haupt-Fluss (choose/move) über den Phasen-Buttons; NICHT mit der bestehenden
+          „← Zurück"-Sub-Navigation (Upgrade/Ersetzen) vermengen. Aktiv, sobald in dieser Phase etwas geschah. */}
+      {!removeFor && (phase === "choose" || phase === "move") && (
+        <div className="flex gap-2 mb-2">
+          {/* #kante: Diese Leiste trug bis zuletzt das Menü-Grau (#20202a) mitten in der Petrol-Welt —
+              sie sitzt weit weg vom Rest der Datei und war beim ersten Durchgang durchgerutscht.
+              Als Kanten-Knöpfe erben sie den Grund des Architekten automatisch. */}
+          <button onClick={doArchUndo} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 font-bold whitespace-nowrap"
+            style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.undo")}</button>
+          <button onClick={doArchReset} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 whitespace-nowrap"
+            style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.reset")}</button>
+        </div>
+      )}
+      {removeFor ? (
+        <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="as-edge-neutral as-edge-thin w-full rounded-lg py-2 text-body-5 font-bold">{t("arch.otherPlan")}</button>
+      ) : phase === "choose" ? (
+        // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
+        // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").
+        committed.length > 0 ? (
+          <div className="flex gap-2">
+            <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
+            <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
+          </div>
+        ) : (
+          <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
+        )
+      ) : phase === "upgrade" && pendingUpgrade != null ? (
+        <div className="flex gap-2">
+          <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.cancel")}</button>
+          <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#f0b429", color: "#141419" }}>{t("arch.upgrade.confirm")}</button>
+        </div>
+      ) : phase === "upgrade" ? (
+        <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
+      ) : phase === "move" ? (
+        <div className="flex flex-wrap gap-2">
+          {/* Drehen kompakt (nur wenn ein Gebäude gewählt ist); Bestätigen bleibt der prominente Knopf. */}
+          {showRotate && (selRotatable ? (
+            <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
+          ) : (
+            <button type="button" disabled aria-disabled="true" title={t("arch.noRotate.title")}
+              className="shrink-0 px-3 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
+          ))}
+          {/* §2.3: derselbe Ausgang wie „Nichts bauen", nur über das Umstellen erreicht — versetzen
+              verbraucht keinen Bauplan, die Phase zahlt also weiterhin aus. Die Marke steht deshalb
+              auch hier (Owner 2026-09-09); ohne sie bekäme man die Münzen, ohne sie je zu sehen. */}
+          <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}<CoinReward n={idleReward} /></button>
+        </div>
+      ) : null}
+      {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
+      {(() => {
+        const eb = phase === "place" && pending ? pending : phase === "move" && selId ? buildings.find((x) => x.id === selId) : null;
+        const efam = eb ? familyDef(eb.familyId) : null;
+        if (!efam) return null;
+        return (
+          // #UI: Effekt-Readout mit typ-farbigem Rahmen (Kategorie-Farbe = die Typ-Farbe, die vorher der Gebäude-Hintergrund trug).
+          <div className="mt-2 rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug"
+            style={{ border: `1px solid ${CAT[efam.category].color}`, background: `${CAT[efam.category].color}12` }}>
+            <span className="inline-flex items-center gap-1.5 align-middle">
+              <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
+              <b>{efam.name}</b>
+              <span className="opacity-55">{efam.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(eb.tier) })}</span>
+            </span>
+            <span className="opacity-80"> — {famEff(efam, eb)}</span>
+          </div>
+        );
+      })()}
+    </div>
+  );
 }
 
 // Name eines Bauplan-Angebots (für die „kein Platz"-Meldung).
