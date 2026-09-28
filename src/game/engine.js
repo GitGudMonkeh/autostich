@@ -143,6 +143,7 @@ export function resolveTrick(state, rng) {
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsCapital = 0, zinsRate = C.ZINS_RATE_START, zinsPaidTotal = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz/kumulierte Auszahlung) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
     coins = 0, lastCycleCoins = null, lastCycleForms = null, // Münz-Ökonomie (§2): Kontostand + letzte Auszahlung (Anzeige)
+    lastCycleWins = null, // wins of the cycle that just ended, frozen before the per-cycle reset below (contract tally)
     cycleOpenScore = 0, // Vabanque: Score der Eröffnungsstiche DIESES Durchlaufs (Bezugsgröße der selbstskalierenden Wette)
     richtfestBonus = 0, // Gebäude-Legendäres Richtfest: Auszahlung des letzten Durchlaufs (reine Telemetrie, kein Stapel mehr)
     cycleScoreSum = 0,  // Summe der Stich-Erträge DIESES Durchlaufs — Bezugsgröße der Richtfest-Dividende
@@ -1184,6 +1185,10 @@ export function resolveTrick(state, rng) {
     // Zahl raus), und ein Lauf ohne das jeweilige System zahlt nur eine Feldabfrage.
     lastCycleCoins = CT.coinsPerCycleWith(state, CP.cycleCoinsWith(state, coinsForFormations(lastCycleForms)), cycle);
     coins += lastCycleCoins;
+    // The closing trick's win is already in cycleWins here; freeze the finished cycle's count before the reset, because
+    // the reducer's contract tally runs on the state AFTER this trick and would otherwise read 0 (or, from the
+    // pre-trick state, at most 39 — which made a 40/40 "Durchmarsch" impossible).
+    lastCycleWins = cycleWins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // §7.68 Lichtbogen Episch: „bis zum ersten Crit eines Durchlaufs" — die Marke gehört zum Durchlauf, nicht zum Lauf.
     if (lightning && lightning.critSeen) lightning = { ...lightning, critSeen: false };
@@ -1358,6 +1363,7 @@ export function resolveTrick(state, rng) {
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     coins, lastCycleCoins, lastCycleForms, // Münz-Ökonomie (§2): Kontostand des Laufs + die Auszahlung des letzten Durchlaufs
+    lastCycleWins, // wins of the cycle that just ended (null until the first cycle boundary)
     richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, skillOfferTiers: newSkillOfferTiers, skillDoors: newSkillDoors, lightning, // Skill-System / Blitz-Archetyp · exp: Stufe je angebotenem Skill · Türen

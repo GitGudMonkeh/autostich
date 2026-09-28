@@ -275,8 +275,10 @@ function contractStep(prev, next, rng = Math.random) {
       }
     }
     /* Die Spitzen des GERADE beendeten Durchlaufs. Der Auftrag muss mit: trägt seine Stufe eine
-       Zusatzbedingung, entscheidet sich hier, ob dieser Durchlauf überhaupt zählen darf. */
-    tally = CT.tallyCycleEnd(tally, prev, active);
+       Zusatzbedingung, entscheidet sich hier, ob dieser Durchlauf überhaupt zählen darf.
+       `prev` is the state BEFORE the closing trick, so its cycleWins stops at 39; the engine freezes
+       the finished cycle's full count in `lastCycleWins` (40 for a clean sweep) — take that one. */
+    tally = CT.tallyCycleEnd(tally, { ...prev, cycleWins: next.lastCycleWins ?? prev.cycleWins }, active);
     const finished = prev.cycle + 1;            // 1-basierte Anzeige-Nummer des beendeten Durchlaufs
     const activeWin = active && CT.WINDOWS.find((w) => w.id === active.windowId);
     /* Abgerechnet wird ERST am Fensterende, nicht in dem Moment, in dem der Zähler die Schwelle
