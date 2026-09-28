@@ -292,6 +292,16 @@ Auswahl, keine Vormerkung.
 
 Die Stufen der drei Skills werden wie überall gewürfelt; gerufen wird die Fraktion, nicht die Qualität.
 
+> **ERWEITERT (2026-09-28, Owner).** Der Ruf ist jetzt der **einzige Weg zur vierten Fraktion**: ab drei
+> gehaltenen bietet das Türen-Angebot nur noch die eigenen an (`docs/skill-rework.md` §1), und der Ruf ist
+> die bezahlte Ausnahme davon. Zwei Grenzen stehen dafür neu:
+>
+> - nur Fraktionen, die **dieser Lauf** führt (Kampagne, Sim-Allowlist, Onboarding),
+> - bei **vier** gehaltenen nur noch diese vier.
+>
+> Die Chip-Reihe zeigt genau die rufbaren Fraktionen; ein Chip, der auf Tap nichts tut, wäre schlimmer als
+> keiner.
+
 **Offen:** Zusammenspiel mit dem Startfokus (`docs/skill-rework.md` §1) — naheliegend wäre, dass der
 Ruf auf die Fokus-Fraktion weniger kostet. Entscheidbar erst, wenn der Fokus steht.
 

@@ -39,6 +39,34 @@ und gilt erst, wenn es nach Gesetzt wandert.
 - Angebot: **zwei Türen**, jede zeigt **drei Fraktionssymbole** (drei Skills aus höchstens zwei
   Fraktionen, Wiederholung erlaubt). Nach der Wahl drei Skills mit ihren Stufen, einer wird genommen.
   Stufen sind an der Tür nicht sichtbar.
+
+### Gesetzt (Owner, 2026-09-28) — gehaltene Fraktionen steuern das Angebot
+
+Mit Prisma als fünfter Fraktion würfelt das Angebot zu breit, um einen Bau tragen zu können. Zwei
+Regeln geben dem Spieler die Führung zurück, ohne die Türen aufzugeben.
+
+| gehaltene Fraktionen | Angebot |
+| --- | --- |
+| 0 | frei aus allen fünf (Erstangebot, unverändert) |
+| 1 | mindestens ein Skill dieser Fraktion, Rest frei |
+| 2 | mindestens ein Skill je Fraktion, Rest frei |
+| 3 | **nur noch** diese drei, mindestens ein Skill je Fraktion |
+| 4 | **nur noch** diese vier, mindestens ein Skill je Fraktion |
+
+- **Vier ist die Obergrenze.** Ab drei gehaltenen bietet das Angebot keine neue Fraktion mehr an; der
+  Weg zur vierten ist der bezahlte **Fokus-Ruf**. Bei vier gehaltenen ruft der Fokus nur noch aus
+  diesen vieren.
+- **Die Zusicherung gilt dem ANGEBOT, nicht der einzelnen Tür.** Eine Tür trägt höchstens zwei
+  Fraktionen; vier gehaltene passen also nie auf eine, über zwei Türen gehen sie genau auf. Damit
+  bleibt die Türwahl eine echte Wahl: die gesuchte Fraktion steht auf einer der beiden, und das
+  Symbol sagt auf welcher. Die Alternative (jede Tür trägt jede gehaltene Fraktion) hätte ab drei
+  gehaltenen beide Türen gleich aussehen lassen und die Türwahl abgeschafft.
+- Folge, bewusst in Kauf genommen: verliert man die letzte Karte einer Fraktion (Ersetzen), fällt
+  sie aus dem Bestand, und der frei gewordene Platz geht bei drei verbliebenen nur über den Fokus
+  wieder zu.
+
+Code: `skills.js buildSkillDoors` (Sperre `ARCHETYPE_LOCK_AT`, Zusicherung `dealGuaranteed`),
+`reducer.js CALL_FOCUS` (Welt des Laufs + Obergrenze). Wächter: `test/skill-doors.test.js`.
 - Münzen als Ökonomie, Bosse mit Mechaniken und Beute, Score mit Par. Zwillingstür und Brett-Änderungen
   geparkt. Details dazu außerhalb dieses Dokuments.
 

@@ -86,6 +86,155 @@ describe("buildSkillDoors — zwei Türen, drei Skills, höchstens zwei Fraktion
   });
 });
 
+/* ============================================================================
+   Gehaltene Fraktionen: Zusicherung und Sperre (Owner 2026-09-28)
+
+   Zwei Regeln, die zusammen den Deckbau tragen. Jede GEHALTENE Fraktion steht mit mindestens einem
+   Skill im Angebot — über beide Türen gerechnet, weil vier Fraktionen nie auf eine Tür passen. Und ab
+   drei gehaltenen zieht das Angebot nur noch aus ihnen; die vierte kommt über den bezahlten Fokus-Ruf.
+   ============================================================================ */
+const ALL5 = [...SKILL_OFFER_ARCHETYPES];
+// Ein Skill je Fraktion, damit ein Stand „hält diese Fraktionen" ohne den halben Pool zu belegen.
+const einSkillJe = (archs) => archs.map((a) => SKILL_LIST.find((s) => s.archetype === a && !s.legendary).id);
+
+describe("Türen · gehaltene Fraktionen", () => {
+  it("jede gehaltene Fraktion steht in JEDEM Angebot, von einer bis vier", () => {
+    for (let n = 1; n <= 4; n++) {
+      const archs = ALL5.slice(0, n);
+      for (let seed = 1; seed <= 40; seed++) {
+        const doors = doorsAt(seed, einSkillJe(archs), archs);
+        const imAngebot = archsOf(doors.flatMap((d) => d.skills));
+        for (const a of archs) expect(imAngebot, `n=${n} seed=${seed}: ${a} fehlt`).toContain(a);
+      }
+    }
+  });
+
+  it("vier gehaltene gehen über zwei Türen genau auf: je Tür zwei, keine Tür über ihrer Grenze", () => {
+    const archs = ALL5.slice(0, 4);
+    for (let seed = 1; seed <= 40; seed++) {
+      const doors = doorsAt(seed, einSkillJe(archs), archs);
+      expect(doors).toHaveLength(SKILL_DOORS);
+      for (const d of doors) expect(archsOf(d.skills).size).toBeLessThanOrEqual(SKILL_DOOR_FACTIONS);
+      expect(archsOf(doors.flatMap((d) => d.skills))).toEqual(new Set(archs));
+    }
+  });
+
+  it("ab DREI gehaltenen ist das Angebot zu; bei ZWEI kommt weiter Fremdes dazu", () => {
+    const drei = ALL5.slice(0, 3);
+    for (let seed = 1; seed <= 40; seed++) {
+      const zu = doorsAt(seed, einSkillJe(drei), drei).flatMap((d) => d.skills);
+      for (const id of zu) expect(drei, `seed=${seed}: ${archetypeOf(id)} ist fremd`).toContain(archetypeOf(id));
+    }
+    /* Die Gegenprobe zur Sperre: bei zwei gehaltenen muss noch etwas Fremdes durchkommen, sonst läge
+       die Grenze in Wahrheit bei zwei und der Test darüber wäre trotzdem grün. */
+    const zwei = ALL5.slice(0, 2);
+    const fremd = new Set();
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const id of doorsAt(seed, einSkillJe(zwei), zwei).flatMap((d) => d.skills)) {
+        if (!zwei.includes(archetypeOf(id))) fremd.add(archetypeOf(id));
+      }
+    }
+    expect(fremd.size, "bei zwei gehaltenen darf eine dritte Fraktion erscheinen").toBeGreaterThan(0);
+  });
+
+  it("ohne gehaltene Fraktion zieht das Erstangebot frei aus der ganzen Welt", () => {
+    const gesehen = new Set();
+    for (let seed = 1; seed <= 60; seed++) for (const id of doorsAt(seed).flatMap((d) => d.skills)) gesehen.add(archetypeOf(id));
+    expect(gesehen).toEqual(new Set(ALL5));
+  });
+
+  it("mehr Zusicherungen als Plätze: eine fällt weg, keine Tür wird überladen", () => {
+    /* Nur über die Dev-Run-Regeln erreichbar (maxArchetypes bis fünf): fünf gehaltene Fraktionen, aber
+       zwei Türen à höchstens zwei. Vier passen, die fünfte nicht — und dann muss sie wegfallen, statt
+       eine Tür über ihre Fraktionsgrenze zu schieben. Sonst zeigte eine Tür drei Symbole aus drei
+       Fraktionen, was die Türregel selbst bricht. */
+    for (let seed = 1; seed <= 30; seed++) {
+      const doors = doorsAt(seed, einSkillJe(ALL5), ALL5, { maxArchetypes: ALL5.length });
+      for (const d of doors) expect(archsOf(d.skills).size, `seed=${seed}: Tür überladen`).toBeLessThanOrEqual(SKILL_DOOR_FACTIONS);
+      expect(archsOf(doors.flatMap((d) => d.skills)).size, `seed=${seed}`).toBe(SKILL_DOORS * SKILL_DOOR_FACTIONS);
+    }
+  });
+
+  it("eine leergespielte Fraktion sichert nichts zu und wirft nichts um", () => {
+    // Feuer ist komplett gehalten, Blitz nicht: Blitz muss stehen, Feuer kann gar nicht mehr.
+    const feuerAlle = SKILL_LIST.filter((s) => s.archetype === "fire").map((s) => s.id);
+    const owned = [...feuerAlle, ...einSkillJe(["lightning"])];
+    for (let seed = 1; seed <= 30; seed++) {
+      const doors = doorsAt(seed, owned, ["fire", "lightning"]);
+      const imAngebot = archsOf(doors.flatMap((d) => d.skills));
+      expect(imAngebot, `seed=${seed}`).toContain("lightning");
+      expect(imAngebot, "Feuer hat nichts mehr").not.toContain("fire");
+    }
+  });
+
+  it("im ECHTEN Lauf gemessen, nicht am gesetzten Feld", () => {
+    /* Ein gebauter Stand beweist nur den Baustein. Hier läuft ein Lauf: START_RUN, Stich für Stich,
+       in jeder Skill-Phase wird wirklich eine Tür geöffnet und ein Skill genommen — und geprüft wird
+       an dem, was `state.skillDoors` danach trägt. */
+    const weiter = (s) => {
+      let g = 0;
+      while (g++ < 2000 && s.phase !== "gameover" && !(s.phase === "levelup" && s.skillDoors)) {
+        if (s.phase !== "play") s = { ...s, phase: "play" };   // Perk-/Aufstell-/Architektphase überspringen
+        s = resolveTrick(s, makeRng(g));
+      }
+      return s;
+    };
+    let s = reducer(menuState(), { type: "START_RUN", rng: makeRng(1), seed: 2026 });
+    let maxGehalten = 0;
+    for (let phase = 0; phase < 12 && s.skillDoors; phase++) {
+      const held = s.activeArchetypes || [];
+      const imAngebot = archsOf(s.skillDoors.flatMap((d) => d.skills));
+      for (const a of held) expect(imAngebot, `Phase ${phase}: ${a} gehalten, aber nicht angeboten`).toContain(a);
+      if (held.length >= 3) for (const a of imAngebot) expect(held, `Phase ${phase}: ${a} ist fremd`).toContain(a);
+      maxGehalten = Math.max(maxGehalten, held.length);
+      // Breit bauen: die Tür mit den meisten noch nicht gehaltenen Fraktionen, darin ein neuer Skill.
+      const rang = (d) => d.skills.filter((id) => !held.includes(archetypeOf(id))).length;
+      const idx = s.skillDoors.map((d, i) => i).sort((a, b) => rang(s.skillDoors[b]) - rang(s.skillDoors[a]))[0];
+      const opened = reducer(s, { type: "CHOOSE_DOOR", index: idx });
+      const neu = opened.skillOffer.find((id) => !held.includes(archetypeOf(id))) || opened.skillOffer[0];
+      s = weiter(reducer(opened, { type: "PICK_SKILL", skillId: neu, rng: makeRng(phase + 50) }));
+    }
+    expect(maxGehalten, "der Lauf hat die Sperre nie erreicht, der Test prüft dann zu wenig").toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("Fokus-Ruf · der einzige Weg zur vierten Fraktion", () => {
+  // Ein zusammenhängender Stand: die Türen sind für GENAU diese gehaltenen Fraktionen gewürfelt,
+  // sonst zeigte der Startwurf noch die ganze Welt und die Sperre wäre nicht die, die geprüft wird.
+  const mitMuenzen = (archs, coins = 20) => {
+    const s0 = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
+    const owned = einSkillJe(archs);
+    return { ...s0, coins, skills: owned, activeArchetypes: archs,
+             skillDoors: buildSkillDoors(owned, archs, makeRng(7), makeRng(8)) };
+  };
+
+  it("holt bei DREI gehaltenen die vierte, die das Angebot selbst nicht mehr zeigt", () => {
+    const drei = ALL5.slice(0, 3);
+    const vierte = ALL5[3];
+    const s = mitMuenzen(drei);
+    expect(archsOf(s.skillDoors.flatMap((d) => d.skills))).not.toContain(vierte); // gesperrt …
+    const r = reducer(s, { type: "CALL_FOCUS", arch: vierte });
+    expect(r.skillDoors).toHaveLength(s.skillDoors.length + 1);                    // … der Ruf kommt trotzdem durch
+    expect(archsOf(r.skillDoors[r.skillDoors.length - 1].skills)).toEqual(new Set([vierte]));
+    expect(r.coins).toBe(s.coins - 10);
+  });
+
+  it("bei VIER gehaltenen nur noch die gehaltenen, und der Fehlruf kostet nichts", () => {
+    const vier = ALL5.slice(0, 4);
+    const s = mitMuenzen(vier);
+    expect(reducer(s, { type: "CALL_FOCUS", arch: ALL5[4] }), "die fünfte ginge über die Obergrenze").toBe(s);
+    const ok = reducer(s, { type: "CALL_FOCUS", arch: vier[0] });
+    expect(ok.skillDoors).toHaveLength(s.skillDoors.length + 1);
+    expect(ok.coins).toBe(s.coins - 10);
+  });
+
+  it("ruft nie aus einer Fraktion, die dieser Lauf gar nicht führt", () => {
+    const s = { ...mitMuenzen(["fire"]), unlockedArchetypes: ["fire", "lightning"] };
+    expect(reducer(s, { type: "CALL_FOCUS", arch: "ice" }), "Eis ist in diesem Lauf nicht freigeschaltet").toBe(s);
+    expect(reducer(s, { type: "CALL_FOCUS", arch: "lightning" }).skillDoors).toHaveLength(s.skillDoors.length + 1);
+  });
+});
+
 describe("Reducer — Türstufe, CHOOSE_DOOR, Angebot", () => {
   const rng = makeRng(7);
   it("START_RUN öffnet die Türstufe: skillDoors gesetzt, skillOffer null; CHOOSE_DOOR macht die Tür zum Angebot samt Stufen", () => {

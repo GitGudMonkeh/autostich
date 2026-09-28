@@ -1031,16 +1031,22 @@ describe("Aufträge · abgerechnet wird erst am Fensterende (§3.7)", () => {
   }, 30_000);
 
   it("ein früh erfüllter Auftrag läuft weiter und wartet auf das Fensterende", () => {
-    /* Seed 1 erfüllt lange vor dem Fensterende und wird trotzdem erst danach bezahlt. WELCHES Fenster
-       das ist, hängt am Angebot: bis 2026-09-27 stand es auf D16, seit Prisma im Skill-Pool ist
-       (SKILL_OFFER_ARCHETYPES) zieht derselbe Seed einen anderen Auftrag und landet im zweiten.
-       Die Regel ist unverändert — deshalb steht hier das LETZTE Fensterende aus dem Register und
-       keine getippte Zahl, und die Wartezeit endet eine Runde davor. */
+    /* Seed 1 erfüllt vor dem Fensterende und wird trotzdem erst danach bezahlt.
+
+       WELCHES Fenster das ist und WIE VIELE es werden, hängt am Skill-Angebot, und das hat sich seit
+       2026-09-27 zweimal verschoben: erst Prisma im Pool, dann die Fraktions-Zusicherung. Zweimal
+       stand daraufhin dieser Test rot, ohne dass sich an der Auftragsregel etwas geändert hätte —
+       geprüft war eine Eigenheit des Laufs (eine einzige Auszahlung, und zwar im zweiten Fenster),
+       nicht die Regel.
+
+       Jetzt steht die REGEL da: bezahlt wird nur an einem Fensterende, dazwischen bekommt ein
+       erfüllter Auftrag nichts, und die Wartezeit läuft bis an die Auszahlung heran. Wie oft der
+       Lauf das schafft, ist seine Sache. */
     const { beuteBei, erfuelltOhne } = auftragslauf(1);
-    const ende = ENDEN[ENDEN.length - 1];
     expect(erfuelltOhne.length, "erfüllt, aber noch nicht bezahlt").toBeGreaterThan(0);
-    expect(beuteBei, "genau eine Auszahlung, am Fensterende").toEqual([ende]);
-    expect(Math.max(...erfuelltOhne), "die Wartezeit reicht bis an die Grenze").toBe(ende - 1);
+    expect(beuteBei.length, "und irgendwann bezahlt").toBeGreaterThan(0);
+    for (const d of beuteBei) expect(ENDEN, `Auszahlung im Durchlauf ${d}`).toContain(d);
+    expect(erfuelltOhne.some((d) => beuteBei.includes(d + 1)), "die Wartezeit reicht bis an die Grenze").toBe(true);
   }, 30_000);
 });
 
