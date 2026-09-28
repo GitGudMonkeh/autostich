@@ -10,15 +10,21 @@ Spiel angezeigt.
 
 > **Roguelite-Autobattler-Stechspiel** (Prototyp, Vite + React).
 > Eigenes Repo `GitGudMonkeh/autostich`, Deploy auf GitHub Pages unter `/autostich/`.
-> UI-Text **Deutsch**, Code-Identifier **Englisch**.
+> UI-Text **Deutsch** (Englisch, Spanisch und Chinesisch als Kataloge angelegt), Code-Identifier **Englisch**.
 >
-> Stand: **v0.3** — 4 Elementar-**Archetypen** (Feuer/Blitz/Eis/Pflanze), **Architekt** (ersetzt den alten
+> **Branches und Slots:** `main` → `/autostich/` · `test` → `/test/` · `dev` → `/pixi/` · `exp` → `/exp/`.
+> `exp` ist die Kernschleifen-Spielwiese neben der Promotionskette und wird nie promotet
+> (`AGENTS.md`, *The `exp` branch*). Diese Übersicht beschreibt den Stand von `dev`; was auf `exp`
+> anders ist, steht im Abschnitt *Stand auf `exp`* direkt unter dem Schnellstart.
+>
+> Stand `dev`: 4 Elementar-**Archetypen** (Feuer/Blitz/Eis/Pflanze), **Architekt** (ersetzt den alten
 > Shop/die Münzökonomie), **Upgrade-Baum** (laufübergreifend, SP/DP — ersetzt die früheren Meisterränge),
 > **Ranglisten-Wochenmodus** mit Wochen-Modifikatoren, Challenger-Seeds, Chronik, 4-Stufen-Raritätsfamilien.
 > Die frühere **Stat-Phase ist entfernt** (#267) — Crit-Chance/-Multiplikator kommen aus den
 > Präzision-Familien bzw. aus Blitz.
-> **1263 Vitest-Fälle** (84 Dateien), CI grün (Tests → Lint → Build → Pages).
-> Spielertexte folgen `docs/text-style-guide.md`; `node scripts/export-strings.mjs` zieht sie alle in eine CSV.
+> CI fährt Tests → Lint → Build → `gen:db` → Pages; den aktuellen Testumfang liefert `npm test`
+> (keine Zahlen hier — sie veralten mit jedem Commit).
+> Spielertexte folgen `docs/text-style-guide.md`; `npm run loc:export` zieht sie alle in eine CSV.
 > Diese Übersicht ist **aus dem Code abgeleitet** — die Quelle der Wahrheit bleibt der Code
 > (`src/game/*`). Bei Unstimmigkeit gilt der Code, nicht dieses Dokument.
 
@@ -34,8 +40,31 @@ npm run build     # Produktions-Build nach dist/ (base = /autostich/)
 npm run preview   # gebauten Stand lokal ansehen
 ```
 
-**Deploy:** GitHub Actions auf Push nach `main` → `npm ci` → `npm test` → `npm run build` → GitHub Pages
-(`/autostich/`). Entwickelt wird auf `Autostich_Test`, danach nach `main` gemergt.
+**Deploy:** GitHub Actions bei Push auf `main` → `npm ci` → `npm test` → `npm run lint -- --max-warnings=0`
+→ `npm run build` → `npm run gen:db` → GitHub Pages (`/autostich/`). Entwickelt wird auf `task/*`- und
+`feature/*`-Branches ab `dev`; Promotion `dev → test → main` ist fast-forward-only (`AGENTS.md`, *Branch model*).
+
+---
+
+## Stand auf `exp`
+
+`exp` ist die abgespeckte Kernschleifen-Spielwiese (Runden, Angebote, Balance): aus `dev` geschnitten,
+per Merge von `dev` nachgezogen, nie promotet — einzelne bewährte Regeln wandern per Cherry-Pick zurück.
+Deploy nach `/autostich/exp/` über `deploy-exp.yml` (Vorschau-Build, eigener localStorage-Namensraum `exp`).
+
+Gegenüber dem Rest dieser Übersicht gilt auf `exp`:
+
+- **Entfernt:** Upgrade-Baum als Spieler-Oberfläche (`UpgradeScreen`), Leitfäden (`GuideOverlay`,
+  `guides.js`), Tutorial-Szenen und Hinweise, `LegendarySelect`, `DeckDetail`, `ScoreMilestoneBar`.
+  `progression.js` bleibt nur als Lieferant für `storage.js` und `cosmetics.js`.
+- **Neu:** fünfte Fraktion **Prisma** (Haltungen, `game/factions/stance.js`, `docs/haltungen-fraktion.md`),
+  **Aufträge** (`game/contracts.js`, `docs/zwischenaufgaben.md`), **Münz-Ökonomie** (`game/coins.js`,
+  `docs/muenz-oekonomie.md`), **Kampagne** (`game/campaign.js`, `docs/kampagne.md`), Skill-Rework mit
+  Türen statt flachem Angebot (`docs/skill-rework.md`), Regelschalter in `game/rules.js`, die
+  Fraktionsmechanik je Datei unter `game/factions/`.
+- **Sprache:** nur Deutsch ist aktiv (`LOCALES` in `src/i18n/index.js`); die anderen Kataloge bleiben im
+  Baum, sind aber inaktiv und werden nicht angeboten.
+- **Kosmetik:** alles freigeschaltet (`ALL_UNLOCKED` in `game/cosmetics.js`).
 
 ---
 
@@ -321,11 +350,12 @@ angeboten, IV schließt ab (Karten-Familien bleiben nachkaufbar). `TIER_META` li
 ## 14. UI-Komponenten (`src/ui/`)
 
 `StartScreen`, `Controls`, `Battlefield` (+ Klingenschnitt-/Float-„Juice"), `Card`/`CardBack`, `CardGrid`,
-`CardDetail`, `BuildPanel`/`BuildSummary`, `PerkSelect`/`StatSelect`/`SkillSelect`, `FormationPhase`,
+`CardDetail`, `BuildPanel`/`BuildSummary`, `PerkSelect`/`SkillSelect`, `FormationPhase`,
 `ArchitectScreen` (Bauphase, #202) + `FamilyTargetSelect`/`TargetSelect`, `StatusRail`, `ChronikOverview`
-(Kartenübersicht), `GameOver`, `GlobalLeaderboard`, `MusicBar`/`MuteButton`, `AnleitungModal`,
-`OptionsModal`, `UsernameModal`, Archetyp-HUD (`HeatBar`/`ChargeBar`/`CrystalBar`/`FrostOverlay`),
-`Sparkline`, `CrtParticles`.
+(Kartenübersicht), `GameOver`, `GlobalLeaderboard`, `MusicBar`/`MuteButton`, `Glossary`,
+`OptionsModal`, `UsernameModal`, Archetyp-HUD (`HeatBar`/`ChargeBar`/`GlacierBar`/`PlantBar`/`StanceBar`),
+`Sparkline`, `CrtParticles`. Auf `exp` dazu `ContractPhase` und `CampaignScreens` (s. *Stand auf `exp`*).
+Die vollständige Liste ist `src/ui/` selbst — dieser Absatz nennt nur die Einstiegspunkte.
 
 Bewegung respektiert `prefers-reduced-motion` (gemeinsamer Hook `usePrefersReducedMotion`); abweisbare
 Overlays teilen sich `useEscape` (Escape schließt).
@@ -358,6 +388,11 @@ src/game/
   color.js         effColor/colorMatches — grün- und allianz-bewusstes Farb-Matching
   shop.js          inerter Rest-Substate des alten Shops (Positionsanker/Zeitsegment)
   rarity.js        Stufen-Meta (TIER_META/TIER_WEIGHTS)
+  rules.js         (exp) Regelschalter eines Laufs — die eine Stelle, die Angebote/Türen/Deckel liest
+  contracts.js     (exp) Aufträge: Fenster, Aufgaben, Strichliste, Beute
+  coins.js         (exp) Münz-Ökonomie: Einnahme, Preisleitern, Verzicht, Verkauf
+  campaign.js      (exp) Kampagne: Leiter, Schwellen, Freischaltungen
+  factions/*.js    (exp) je Fraktion ein Modul (fire/ice/lightning/plant/stance) — Stufen, Haken, Patches
   storage.js       localStorage: Profil + Geist + Top-5 + Optionen + Flags
   leaderboard.js   globale Bestenliste (Supabase, fetch)
 src/ui/            React-Komponenten (s. o.)
@@ -401,8 +436,8 @@ Archetyp-Feintuning steht ebenfalls im Tuning-Block (`LIGHTNING_*`, `HEAT_*`/`FI
 
 ## 17. Tests & Deployment
 
-- **Tests:** Vitest — **1263 Fälle** in 84 Dateien (`vite.config.js` → `environment: "node"`).
-  `npm test` / `npm run test:watch`.
+- **Tests:** Vitest (`vite.config.js` → `environment: "node"`). `npm test` / `npm run test:watch` —
+  der aktuelle Umfang steht in der Ausgabe, nicht hier.
 - **Wo die Abdeckung liegt — und wo nicht.** Der Schwerpunkt ist der `game/`-Layer: rund neun von zehn
   Test-Importen zeigen dorthin. Die UI ist dünn abgedeckt, die Effekt-Schicht `src/ui/fx/` praktisch gar
   nicht (ein einziger Import, und der prüft nur Timing-Konstanten). Wo die UI geprüft wird, geschieht das
@@ -414,9 +449,10 @@ Archetyp-Feintuning steht ebenfalls im Tuning-Block (`LIGHTNING_*`, `HEAT_*`/`FI
   `--max-warnings=0` — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
 - **Deployment:** GitHub Actions → `npm ci` → `npm test` → `npm run lint -- --max-warnings=0` →
   `npm run build` → `npm run gen:db` → Pages. Vier Slots auf **derselben** Pages-Seite, je Branch einer:
-  `main` → `/autostich/` · `Autostich_Test` → `/test/` · `Autostich/pixi` → `/pixi/` · `balancing` →
-  `/balancing/`. `vite.config.js`: `base = "/autostich/"` beim Build (die Slots überschreiben via
-  `DEPLOY_BASE`), `"/"` im Dev.
+  `main` → `/autostich/` · `test` → `/test/` · `dev` → `/pixi/` · `exp` → `/exp/`
+  (`deploy.yml`, `deploy-test.yml`, `deploy-pixi.yml`, `deploy-exp.yml`). Alle anderen Branches fahren
+  dieselben Gates ohne Deploy in `ci.yml`. `vite.config.js`: `base = "/autostich/"` beim Build (die Slots
+  überschreiben via `DEPLOY_BASE`), `"/"` im Dev.
 - **Medien** (55 Musikstücke, ~150 MB) liegen bewusst außerhalb von `src/` und `public/` im Ordner
   `media/` und wandern damit in **keinen** Slot-Build. Veröffentlicht wird einmal zentral nach
   `/autostich/media/` (`deploy-media.yml`); alle vier Slots referenzieren denselben absoluten Pfad über
