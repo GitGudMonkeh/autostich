@@ -260,10 +260,10 @@ export function Ladder({ campaign, onStart = null }) {
 
    Der Startknopf steht NUR in der Karte der aktuellen Stufe, nicht noch einmal im Fuß: zwei gleich
    beschriftete Knöpfe auf einem Handyschirm sind keine zwei Angebote, sondern eine Rückfrage. ---- */
-export function CampaignOverview({ campaign, onStart, onGiveUp, onReset = null }) {
+export function CampaignOverview({ campaign, onStart, onMenu, onReset = null }) {
   const c = campaign || CP.emptyCampaign();
   const step = c.step || 1;
-  const [armed, setArmed] = useState(null); // null | "giveUp" | "reset"
+  const [armed, setArmed] = useState(false);   // nur der Zurücksetzen-Knopf muss sich noch bestätigen
   return (
     <Shell accent="gold">
       <div className="mb-4">
@@ -271,14 +271,20 @@ export function CampaignOverview({ campaign, onStart, onGiveUp, onReset = null }
         <h2 className="ty-title text-head font-bold mt-1">{t("campaign.title", { n: step, max: CP.STEPS })}</h2>
       </div>
 
-      <Ladder campaign={c} onStart={() => { setArmed(null); onStart(); }} />
+      <Ladder campaign={c} onStart={() => { setArmed(false); onStart(); }} />
 
       <div className="flex items-center gap-5 mt-5 flex-wrap">
-        <KillButton armed={armed === "giveUp"} onArm={() => setArmed("giveUp")} onFire={onGiveUp}
-          label={t("campaign.giveUp")} sure={t("campaign.giveUp.sure")} color={RED} />
+        {/* Owner 2026-09-28: das Verlassen zerstört nichts mehr, der Stand bleibt stehen. Deshalb
+            ist es ein gewöhnlicher Knopf ohne Bestätigung und heißt, was es tut. Ein rotes
+            „Wirklich aufgeben?" vor einer folgenlosen Handlung erzieht dazu, die Rückfrage zu
+            überlesen — und daneben steht mit Zurücksetzen eine, die wirklich etwas kostet. */}
+        <button type="button" onClick={onMenu} className="text-meta opacity-60 hover:opacity-100">
+          {t("campaign.failed.menu")}
+        </button>
+        <div className="flex-1" />
         {/* Testknopf: setzt die Leiter auf Stufe 1 zurück, samt Freischaltungen. */}
         {onReset && (
-          <KillButton armed={armed === "reset"} onArm={() => setArmed("reset")} onFire={onReset}
+          <KillButton armed={armed} onArm={() => setArmed(true)} onFire={onReset}
             label={t("campaign.reset")} sure={t("campaign.reset.sure")} color={RED} />
         )}
       </div>
