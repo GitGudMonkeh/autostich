@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as CP from "../src/game/campaign.js";
@@ -27,7 +28,7 @@ const camp = (over = {}) => ({ ...CP.emptyCampaign(), ...over });
 
 describe("Kampagne · Übersicht zeigt die ganze Leiter", () => {
   const h = txt(html(CampaignOverview, { campaign: camp({ step: 3, scores: [6e6, 12e6] }),
-    onStart: () => {}, onGiveUp: () => {}, onReset: () => {} }));
+    onStart: () => {}, onMenu: () => {}, onReset: () => {} }));
 
   it("führt alle fünf Schwellen als Zahlen", () => {
     for (const rung of CP.LADDER) expect(h, `Stufe ${rung.step}`).toContain(`${mio(rung.threshold)} Mio`);
@@ -74,8 +75,21 @@ describe("Kampagne · Übersicht zeigt die ganze Leiter", () => {
 
   it("bietet keinen Start mehr an, wenn die Leiter durch ist", () => {
     const fertig = txt(html(CampaignOverview, { campaign: camp({ step: CP.STEPS, done: true, scores: [1e6, 2e6, 3e6, 4e6, 5e6] }),
-      onStart: () => {}, onGiveUp: () => {} }));
+      onStart: () => {}, onMenu: () => {} }));
     expect(fertig).not.toContain("starten");
+  });
+
+  it("verlässt die Kampagne ins Menü, ohne mit Aufgeben zu drohen", () => {
+    /* Owner 2026-09-28: das Verlassen kostet nichts mehr. Also steht da auch kein „Kampagne
+       aufgeben" und keine Rückfrage — der Knopf sagt, wohin er führt. */
+    expect(h).toContain(t("campaign.failed.menu"));
+    expect(h.toLowerCase(), "nichts mehr vom Aufgeben").not.toContain("aufgeb");
+  });
+
+  it("stellt nur EINE Rückfrage, und die gehört dem Zurücksetzen", () => {
+    // Unbestätigt steht nirgends ein „Wirklich …?" — sonst erzieht der Schirm zum Wegklicken.
+    expect(h, "der Reset ist noch nicht scharf").not.toContain(t("campaign.reset.sure"));
+    expect(h).toContain(t("campaign.reset"));
   });
 
   it("trägt den Zurücksetzen-Knopf, wenn er angeschlossen ist", () => {
@@ -156,14 +170,13 @@ describe("Kampagne · verfehlte Stufe", () => {
     expect(bar, "12,5 von 25 Mio").toContain("width:50%");
   });
 
-  it("bietet ein Zurücksetzen an, aber kein Aufgeben", () => {
+  it("bietet ein Zurücksetzen an, und daneben nur den Weg ins Menü", () => {
     /* Owner 2026-09-25: der Knopf gehört auch hierher — wer an einer Stufe hängt, soll die Leiter
-       neu anfangen können, ohne erst über die Übersicht zu gehen. Aufgeben bleibt dort: die
-       Kampagne ist nach einer verfehlten Stufe nicht vorbei. */
+       neu anfangen können, ohne erst über die Übersicht zu gehen. */
     const r = txt(html(CampaignFailed, { campaign: camp({ step: 3 }), score: 9e6,
       onAgain: () => {}, onMenu: () => {}, onReset: () => {} }));
     expect(r).toContain(t("campaign.reset"));
-    expect(r).not.toContain(t("campaign.giveUp"));
+    expect(r).toContain(t("campaign.failed.menu"));
     expect(h, "ohne Handler kein Knopf").not.toContain(t("campaign.reset"));
   });
 });
@@ -266,6 +279,29 @@ describe("Lauf-Kachel", () => {
 
   it("rendert ohne Kampagne gar nichts", () => {
     expect(html(CampaignTile, { state: {} })).toBe("");
+  });
+});
+
+describe("Die Übersicht zu verlassen kostet den Stand nicht", () => {
+  /* Der Knopf selbst ist oben geprüft; hier hängt die VERDRAHTUNG. Die Kette, die der Owner am
+     28.09. abgeschafft hat, lief über App.jsx: der Übersichts-Knopf rief `giveUpCampaign`, und das
+     rief `clearCampaign`, also `localStorage.removeItem`. Beides steht in einer React-Komponente,
+     die sich ohne DOM nicht rendern lässt — deshalb wird die Naht am Quelltext geprüft und nicht
+     an einem Feld, das irgendwer gesetzt hat. */
+  const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+
+  it("der Knopf der Übersicht führt ins Menü, nicht in eine Löschung", () => {
+    const aufruf = src.match(/<CampaignOverview[\s\S]*?\/>/);
+    expect(aufruf, "die Übersicht wird gar nicht mehr gerendert?").not.toBeNull();
+    expect(aufruf[0]).toMatch(/onMenu=\{closeCampaign\}/);
+    expect(aufruf[0], "kein Aufgeben-Weg mehr").not.toContain("onGiveUp");
+  });
+
+  it("closeCampaign fasst den Speicher nicht an", () => {
+    const fn = src.match(/function closeCampaign\(\)[^\n]*/);
+    expect(fn, "closeCampaign gibt es nicht mehr").not.toBeNull();
+    expect(fn[0], "hier darf nichts gelöscht werden").not.toContain("clearCampaign");
+    expect(fn[0], "und der Stand darf auch nicht im Speicher des Laufs verschwinden").not.toContain("setCampaign(null)");
   });
 });
 

@@ -511,9 +511,13 @@ export default {
   "skill.passive.lightning": "Blitz gibt +{socket} % Crit-Chance, jeder gehaltene Blitz-Skill zusätzlich +{each} %. Alle {bar} Crits ist die Ladungsleiste voll und ionisiert die nächste Karte in der Reihenfolge: Sie bekommt einen Stapel und dauerhaft +{value} Kartenwert; jeder Stapel gibt bei Sieg mit ihr +{stack} Score in die Basis und +{critPer}× Crit-Multiplikator.",
   "skill.passive.fire": "Siege ab {margin} Kampfwert-Vorsprung geben Hitze: +{per} % je Punkt Vorsprung über {offset}, ohne Deckel. Niederlagen kühlen −{cool} %. Je 10 % gehaltener Hitze zählt jeder Sieg +{mult} % Score, als eigener Multiplikator. Die Feuer-Skills nutzen die Hitze.",
   "skill.passive.ice": "Jeder Eis-Skill friert eine deiner Karten dort fest, wo sie steht: Sie lässt sich in keiner Aufstellung mehr verschieben, sammelt dafür jeden Durchlauf Masse und bricht schließlich über ihre Nachbarn. Auch der offene Boden friert: Jedes freie Feld legt Schnee an und gibt ihn an deine Gletscher ab. Je weniger Gletscher du hast, desto mehr bekommt jeder einzelne.",
-  /* Prisma: der Wechsel, der Nachklang, die vier Passive und die Staffel — in dieser Reihenfolge, weil der
-     Spieler sie in dieser Reihenfolge erlebt. Die drei Leitern kommen fertig als „15 / 30 / 45" herein. */
-  "skill.passive.stance": "Vier Haltungen, eine je Grundfarbe. Jede zählt deine gewonnenen Stiche in ihrer Farbe; bei {thr} wird sie zur aktiven Haltung, und die abgelöste klingt noch {dur} Stiche nach. Solange wirken beide. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte. Rot rutscht jeden Stich eine Stufe hoch: Niederlage → Gleichstand, Gleichstand → Sieg. Blau gibt Crit-Chance, Grün zählt die Formationen aller Karten deines Segments, Gelb multipliziert den Sieg-Score. Diese drei wachsen mit jedem gehaltenen Prisma-Skill und stehen ab {max} Skills voll: Crit +{crit} %, je Formation +{green}, Score ×{score}.",
+  /* Prisma: erst der Mechanismus, dann die vier Haltungen als Tabelle (StancePassive in SkillSelect.jsx).
+     Die Leitern kommen fertig als „15 / 30 / 45" herein, damit constants.js die eine Quelle bleibt. */
+  "skill.passive.stance": "{thr} Siege einer Grundfarbe setzen dich in ihre Haltung. Die abgelöste verschwindet nicht, sie klingt {dur} Stiche nach: wer schnell wechselt, hat mehrere zugleich. Gezählt wird die Grundfarbe der Karte, nicht die gefärbte. Blau, Grün und Gelb werden stärker mit jedem gehaltenen Prisma-Skill, bis zu einem Maximum von {max}.",
+  "skill.passive.stance.R": "Jeder Stich eine Stufe höher: Niederlage → Gleichstand, Gleichstand → Sieg.",
+  "skill.passive.stance.B": "Crit-Chance +{steps} %.",
+  "skill.passive.stance.G": "+{steps} Score-Multiplikator je Formation im Segment.",
+  "skill.passive.stance.Y": "Sieg-Score ×{steps}.",
   "skill.passive.plant": "Sobald die Pflanze steht, sind die Karten der Farbe Grün von Anfang an grün. Jeder Sieg lässt die Siegkarte wachsen: +{win} Wachstum, dazu +{perForm} je Formation an ihrer Position. Niederlagen geben nichts. Ab {green} Wachstum ist die Karte grün. Ab {bloom} blüht sie, und ein Sieg mit ihr gibt +{score} Basis-Score je grüner Karte in ihren Formationen. Eine blühende Karte zahlt dabei {weight}fach. Je {per} weitere Wachstumspunkte zahlt sie einmal mehr.",
   "skill.forms.head": "Deine aktiven Formationen",
   "skill.forms.expand": "Aufstellfeld ausklappen",
@@ -1745,8 +1749,6 @@ export default {
   "campaign.bar.progress": "{a} / {b} Mio",
   "campaign.threshold": "{n} Mio",
   "campaign.start": "Stufe {n} starten",
-  "campaign.giveUp": "Kampagne aufgeben",
-  "campaign.giveUp.sure": "Wirklich aufgeben?",
   "campaign.reset": "Kampagne zurücksetzen",
   "campaign.reset.sure": "Alles zurück auf null?",
 

@@ -700,7 +700,7 @@ function AutostichGame() {
      `rerollOffer.offered`, weil er nichts kostet und man ihn sich verdient hat. */
   const ifCoins = (fn) => (COINS.coinsOn(state) ? fn : null);
 
-  const { campaignRun, closeCampaign, giveUpCampaign, openCampaign, resetCampaign } = useCampaignFlow({ campaign, launchRun, setCampScreen, setCampUnlock, setCampaign, state, toMenu });
+  const { campaignRun, closeCampaign, openCampaign, resetCampaign } = useCampaignFlow({ campaign, launchRun, setCampScreen, setCampUnlock, setCampaign, state, toMenu });
 
   /* Die Abrechnung EINES Laufendes. Sie hängt am runId und nicht an einem Zustands-Flag: `settled`
      sagt, dass der Reducer gerechnet hat, nicht dass die UI es schon gebucht hat — und dieser
@@ -1005,7 +1005,7 @@ function AutostichGame() {
           der darunter stehen bleibt: der Lauf ist normal gewertet, nur nicht der letzte Bildschirm. */}
       {campScreen === "overview" && campaign && (
         <CampaignOverview campaign={campaign}
-          onStart={() => setCampScreen("boss")} onGiveUp={giveUpCampaign} onReset={resetCampaign} />
+          onStart={() => setCampScreen("boss")} onMenu={closeCampaign} onReset={resetCampaign} />
       )}
       {campScreen === "boss" && campaign && (
         <CampaignBoss campaign={campaign} onStart={campaignRun} />
@@ -1441,11 +1441,12 @@ function useCampaignFlow({ campaign, launchRun, setCampScreen, setCampUnlock, se
     setCampUnlock(null);
     setCampScreen("overview");
   }
-  function giveUpCampaign() { clearCampaign(); setCampaign(null); setCampScreen(null); setCampUnlock(null); }
-  /* Testknopf (Owner 2026-09-22): alles zurück auf null, ANDERS als „Aufgeben". Aufgeben beendet die
-     Kette und lässt die Freischaltungen stehen — das ist die Spielregel. Der Reset nimmt auch sie
-     mit, sonst könnte man Lauf 1 nie wieder unter Startbedingungen sehen. Er zieht sofort eine
-     frische Kette, damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
+  /* (Owner 2026-09-28: „Aufgeben" gibt es nicht mehr. Die Übersicht verlassen heißt zurück ins Menü,
+     der Kampagnenstand bleibt liegen — `closeCampaign` rührt den Speicher nicht an. Wer wirklich von
+     vorn will, nimmt Zurücksetzen.) */
+  /* Testknopf (Owner 2026-09-22): alles zurück auf null. Er nimmt auch die Freischaltungen mit, sonst
+     könnte man Lauf 1 nie wieder unter Startbedingungen sehen, und zieht sofort eine frische Kette,
+     damit man weitertesten kann, statt erst zurück ins Menü zu müssen. */
   function resetCampaign() {
     clearCampaign();
     const c = CP.startCampaign();
@@ -1455,7 +1456,7 @@ function useCampaignFlow({ campaign, launchRun, setCampScreen, setCampUnlock, se
   function closeCampaign() { setCampScreen(null); setCampUnlock(null); if (state.phase !== "menu") toMenu(); }
   // Übersicht → Bossblock → Lauf. Zwei Schritte, weil der Boss VOR dem Start gelesen werden soll.
   function campaignRun() { setCampScreen(null); launchRun({ campaign }); }
-  return { campaignRun, closeCampaign, giveUpCampaign, openCampaign, resetCampaign };
+  return { campaignRun, closeCampaign, openCampaign, resetCampaign };
 }
 
 function useResumeSuspend({ currentTraj, dispatch, persistActiveRun, recordTraj, recorded, resumable, runId, runStartRecordTraj, seedWasChosen, segStart, setConfirmAbort, setIsRecord, setPaused, setResumable, timeBase }) {

@@ -1065,14 +1065,26 @@ function onCallFocus(state, action) {
     if (state.focusCalled) return state;                            // einmal je Phase
     const arch = action.arch;
     if (!arch || !ARCHETYPE_ORDER.includes(arch)) return state;
+    /* Der Ruf ist der einzige Weg zur vierten Fraktion (Owner 2026-09-28): ab drei gehaltenen bietet
+       das Türen-Angebot nur noch die eigenen an, der Ruf umgeht genau diese Sperre. Zwei Grenzen
+       bleiben aber stehen. Die WELT des Laufs — sonst holte der Ruf eine Fraktion, die dieser Lauf
+       gar nicht führt (Kampagne, Sim-Allowlist, Onboarding), und das Angebot danach nie wieder. Und
+       bei vollem Stand nur noch die GEHALTENEN, weil eine fünfte über die Obergrenze ginge. */
+    const world = state.unlockedArchetypes || C.SKILL_OFFER_ARCHETYPES;
+    if (!world.includes(arch)) return state;
+    const heldArchs = state.activeArchetypes || [];
+    if (heldArchs.length >= C.MAX_ARCHETYPES && !heldArchs.includes(arch)) return state;
     // Handelsbrief gilt auch hier: der Ruf ist ein Kauf wie jeder andere.
     const focusCost = focusPrice(state);
     if ((state.coins || 0) < focusCost) return state;
     const held = (state.skillDoors || []).flatMap((d) => d.skills || []); // die gewürfelten Türen doppeln sich nicht in die gerufene
     const built = buildSkillDoors([...state.skills, ...held], state.activeArchetypes || [],
       rngFor(state, action, state.cycle, "focus", 0), rngFor(state, action, state.cycle, "focus", 0, "tiers"),
-      { unlockedArchetypes: [arch], maxArchetypes: C.MAX_ARCHETYPES, doors: 1, factions: 1,
-        size: skillOfferParams(state).doorSize, maxTier: state.rareCap || 4 });
+      /* `lockToActive: false` — DIESE Tür ist die Ausnahme von der Sperre. Mit ihr striche sie sich
+         selbst weg (die gerufene Fraktion ist ja gerade die ungehaltene) und der Ruf wäre ab drei
+         gehaltenen tot. Die Obergrenze steht dafür oben, an einer Stelle statt an zweien. */
+      { unlockedArchetypes: [arch], maxArchetypes: C.MAX_ARCHETYPES, lockToActive: false,
+        doors: 1, factions: 1, size: skillOfferParams(state).doorSize, maxTier: state.rareCap || 4 });
     if (!built.length || !(built[0].skills || []).length) return state; // Fraktion hat nichts mehr → nicht kassieren
     return { ...state, coins: (state.coins || 0) - focusCost, focusCalled: true,
              skillDoors: [...state.skillDoors, { ...built[0], called: true, arch }] };
