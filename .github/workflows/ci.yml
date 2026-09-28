@@ -1,11 +1,11 @@
 name: CI (Tests · Lint · Build)
 
-# Die dauerhaften Deploy-Branches main, test und dev fahren ihre Qualitaetschecks bereits in den
+# Die dauerhaften Deploy-Branches main, test, dev und exp fahren ihre Qualitaetschecks bereits in den
 # jeweiligen Deploy-Workflows. Auf allen anderen Branches stellt dieser Workflow dieselben Gates
-# sicher, ohne irgendetwas zu deployen.
+# sicher, ohne irgendetwas zu deployen. (exp stand hier bis 2026-09-28 nicht — jeder Push lief doppelt.)
 on:
   push:
-    branches-ignore: [main, test, dev]
+    branches-ignore: [main, test, dev, exp]
   pull_request:
   workflow_dispatch:
 
@@ -21,6 +21,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # AGENTS.md — Engineering language: commit messages are English with a conventional prefix. Checked on the
+      # pushed head only (pull_request checkouts are a "Merge …" commit and are skipped, as are reverts).
+      - name: Commit subject follows the convention
+        run: |
+          subject="$(git log -1 --format=%s HEAD)"
+          case "$subject" in
+            Merge\ *|Revert\ *) echo "merge/revert commit, skipped: $subject"; exit 0 ;;
+          esac
+          if ! printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|test|chore|refactor|ci|perf|build|style)(\([^)]+\))?!?: [A-Za-z]'; then
+            echo "::error::Commit subject must be English with a conventional prefix (feat|fix|docs|test|chore|refactor|ci|perf|build|style): \"$subject\" — AGENTS.md, Engineering language"
+            exit 1
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22

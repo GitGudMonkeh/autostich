@@ -335,6 +335,11 @@ All **new** engineering/code-side material should be English, including:
 - PR descriptions
 - new test names/descriptions where practical
 
+CI enforces the commit-message part: `ci.yml` (task and feature branches) and `deploy-exp.yml` check
+that the pushed head's subject line is English with a conventional prefix — `feat:`, `fix:`, `docs:`,
+`test:`, `chore:`, `refactor:`, `ci:`, `perf:`, `build:` or `style:`, optionally scoped like
+`feat(exp):`. Merge and revert commits are exempt. A subject that fails the check fails the gate.
+
 ### Code identifiers
 
 Code identifiers remain English.
